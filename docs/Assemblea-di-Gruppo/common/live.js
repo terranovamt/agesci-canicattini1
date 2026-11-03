@@ -1,4 +1,4 @@
-/* mobile.js — sincronizzazione live regia → pubblico (Firebase Realtime Database, via REST + SSE).
+/* common/live.js — sincronizzazione live regia → pubblico (Firebase Realtime Database, via REST + SSE).
    Si appoggia al motore di index.html (go, next, prev, scenes, si, sk). */
 (function () {
   const L = window.LIVE;
@@ -51,6 +51,13 @@
   ['click', 'touchstart', 'touchend'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
   const $ = id => bar.querySelector('#' + id);
   const bp = $('lv-p'), bx = $('lv-x'), bl = $('lv-l'), bn = $('lv-n');
+  const mobile = matchMedia('(pointer: coarse) and (max-width: 1024px)');
+  function deviceUi() {
+    $('lv-r').hidden = !mobile.matches;
+    if (!mobile.matches) rot = false;
+    myFit();
+  }
+  mobile.addEventListener('change', deviceUi);
 
   /* ogni spostamento, da qualunque parte arrivi (swipe, menu, salti), passa da qui */
   go = (i, k) => {
@@ -73,8 +80,8 @@
   }
   setInterval(() => { if (pend && scenes.length) on() }, 300);
 
-  bp.onclick = () => prev();
-  bx.onclick = () => next();
+  bp.onclick = () => { if (cur) prev() };
+  bx.onclick = () => { if (cur) next() };
   bl.onclick = () => { const d = dec(lim); go(d.i, d.k) };
   $('lv-r').onclick = () => { rot = !rot; myFit() };
 
@@ -82,7 +89,9 @@
   let tx = 0;
   ['click', 'keydown', 'touchstart', 'touchend'].forEach(ev => addEventListener(ev, e => {
     if (bar.contains(e.target)) return;
-    e.stopPropagation();
+    if (ev === 'click' && e.target.closest?.('[data-live-control]')) return;
+    e.stopImmediatePropagation();
+    if (!cur) return;
     if (ev === 'keydown') {
       if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); next() }
       if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev() }
@@ -93,12 +102,10 @@
 
   /* adattamento allo schermo del telefono (con opzione "ruota") */
   function myFit() {
-    const W = innerWidth, H = innerHeight - 64;
-    if (W > innerHeight) rot = false;
-    if (!rot) { const k = Math.min(W / 1280, H / 720); st.style.transform = `translate(${(W - 1280 * k) / 2}px,${(H - 720 * k) / 2}px) scale(${k})` }
-    else { const k = Math.min(W / 720, H / 1280); st.style.transform = `translate(${(W - 720 * k) / 2 + 720 * k}px,${(H - 1280 * k) / 2}px) rotate(90deg) scale(${k})` }
+    if (innerWidth > innerHeight) rot = false;
+    window.mobileLayout.rotate(rot);
   }
-  addEventListener('resize', myFit); addEventListener('orientationchange', () => setTimeout(myFit, 200)); myFit();
+  addEventListener('resize', myFit); addEventListener('orientationchange', () => setTimeout(myFit, 200)); deviceUi();
 
   /* ascolto in tempo reale (SSE) + controllo di sicurezza ogni 8 s */
   const es = new EventSource(U + '/live/stato.json');

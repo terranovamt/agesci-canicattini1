@@ -1,0 +1,21 @@
+/* ---- slide_area_obiettivi: un'area d'intervento, con ogni obiettivo accanto al suo percorso educativo ----
+   campi: titolo_barra, numero, titolo, citazione, autore, colore (es. "var(--v)"), obiettivi: [{titolo, percorso}]
+   ad ogni click compare un obiettivo */
+const areaObiettivi = x => (r, D) => {
+  cnt.className = ''; /* nessuna barra del titolo: il titolo dell'area è già scritto nel pannello a sinistra */
+  const col = x.colore || 'var(--v)', L = x.obiettivi || [], n = L.length || 1, gap = 24, rowH = Math.min(180, (600 - (n - 1) * gap) / n), y0 = 40 + (640 - (n * rowH + (n - 1) * gap)) / 2;
+  r.append(h(`<div style="position:absolute;left:0;top:0;width:430px;bottom:0;background:${col};color:#fff;padding:70px 40px 20px"><div style="font:800 120px/1 Montserrat,sans-serif;color:var(--y)">${x.numero || ''}</div><div style="font:700 12px Montserrat,sans-serif;letter-spacing:2px;opacity:.75;margin-top:6px">AREA DI INTERVENTO</div><div class="pe-tit" style="font-weight:800;font-size:38px;line-height:1.1;margin-top:10px">${x.titolo}</div><div style="width:90px;height:6px;background:var(--y);border-radius:3px;margin:24px 0"></div><div style="font-style:italic;font-size:19px;line-height:1.4;opacity:.95">“${x.citazione}”</div><div style="margin-top:10px;font-weight:700;font-size:14px;opacity:.8">— ${x.autore || ''}</div></div>`));
+  const els = L.map((o, i) => {
+    const e = h(`<div class="fade" style="position:absolute;left:480px;top:${y0 + i * (rowH + gap)}px;width:770px;height:${rowH}px;display:flex;align-items:stretch"><div class="card pe-c" style="position:relative;width:300px;border-left:12px solid var(--y);padding:18px 22px;display:flex;flex-direction:column;justify-content:center;overflow:hidden"><div style="align-self:flex-start;font-weight:800;font-size:12px;letter-spacing:1.5px;padding:5px 12px;border-radius:14px;background:color-mix(in srgb,var(--y) 28%,transparent);margin-bottom:8px">OBIETTIVO ${i + 1}</div><div class="pe-t" style="font-weight:800;font-size:23px;line-height:1.15">${o.titolo}</div></div><div style="width:56px;display:flex;align-items:center;justify-content:center;font:800 38px Montserrat,sans-serif;color:var(--v2)">→</div><div class="card pe-c" style="position:relative;width:414px;padding:18px 24px;display:flex;flex-direction:column;justify-content:center;overflow:hidden"><div style="align-self:flex-start;font-weight:800;font-size:12px;letter-spacing:1.5px;padding:5px 12px;border-radius:14px;background:color-mix(in srgb,var(--v) 14%,transparent);color:var(--v);margin-bottom:8px">PERCORSO EDUCATIVO</div><div class="pe-t" style="font-weight:500;font-size:20px;line-height:1.3">${o.percorso}</div></div></div>`);
+    r.append(e); return e
+  });
+  /* "punti" (facoltativo): le 3 idee dell'area, mostrate prima degli obiettivi; al primo click lasciano il posto agli obiettivi */
+  const P = x.punti || [];
+  const pe = P.length ? h(`<div class="card fade pe-c" style="left:480px;top:40px;width:770px;height:640px;border-left:12px solid var(--y);padding:34px 40px;display:flex;flex-direction:column;justify-content:center;overflow:hidden"><div style="align-self:flex-start;font-weight:800;font-size:13px;letter-spacing:1.5px;padding:6px 14px;border-radius:14px;background:color-mix(in srgb,var(--y) 28%,transparent);margin-bottom:20px">PERCHÉ QUESTA AREA</div><div class="pe-t" style="font-size:26px">${P.map((t, i) => `<div style="display:flex;gap:18px;align-items:flex-start;margin-top:${i ? 22 : 0}px;line-height:1.3;font-weight:500"><span style="flex:none;width:44px;height:44px;border-radius:50%;background:var(--v);color:var(--y);font:800 24px Montserrat,sans-serif;display:flex;align-items:center;justify-content:center">${i + 1}</span><span>${t}</span></div>`).join('')}</div></div>`) : null;
+  if (pe) r.append(pe);
+  const fit = () => { r.querySelectorAll('.pe-c').forEach(c => { const t = c.querySelector('.pe-t'), b = parseFloat(t.style.fontSize); for (let f = b; f >= 13; f--) { t.style.fontSize = f + 'px'; if (c.scrollHeight <= c.clientHeight + 1) break } }) };
+  fit(); if (document.fonts) document.fonts.ready.then(fit);
+  return { steps: L.length, show(k) { els.forEach((e, i) => e.classList.toggle('on', i < k)); if (pe) pe.classList.toggle('on', k === 0) } }
+};
+
+LANDSCAPE.slide_area_obiettivi = areaObiettivi;

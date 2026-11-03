@@ -1,0 +1,156 @@
+/* modifiche a un documento: prima / dopo con differenze evidenziate */
+.mod .mt {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  top: 96px;
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--vd);
+  line-height: 1.15
+}
+
+.mod .col {
+  position: absolute;
+  top: 158px;
+  bottom: 76px;
+  width: 575px;
+  background: var(--w);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px var(--shadow);
+  padding: 22px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 12px solid
+}
+
+.mod .tg {
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 6px 16px;
+  border-radius: 18px
+}
+
+.mod .tx {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  font-size: var(--fs, 24px);
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ink)
+}
+
+.mod del,
+.mod ins {
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 0 2px;
+  transition: background .5s, color .5s
+}
+
+.mod.dif del {
+  background: color-mix(in srgb, var(--r) 14%, transparent);
+  color: var(--vd);
+  text-decoration: none;
+  border-bottom: 2px solid color-mix(in srgb, var(--r) 45%, transparent)
+}
+
+.mod.dif ins {
+  background: color-mix(in srgb, var(--g) 18%, transparent);
+  color: var(--g);
+  font-weight: 700
+}
+
+.mod .nt2 {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  bottom: 20px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: .75
+}
+
+/* modifiche documento: card unica con differenze nel testo */
+.mod .one .tx {
+  transition: opacity .18s
+}
+
+.mod .one del {
+  background: color-mix(in srgb, var(--r) 14%, transparent);
+  color: var(--vd);
+  text-decoration: none;
+  border-bottom: 2px solid color-mix(in srgb, var(--r) 45%, transparent)
+}
+
+.mod .one ins {
+  background: color-mix(in srgb, var(--g) 18%, transparent);
+  color: var(--g);
+  font-weight: 700
+}
+
+.mod .one .ch {
+  background: color-mix(in srgb, var(--y) 55%, transparent);
+  border-radius: 4px;
+  padding: 0 3px
+}
+
+.mod .one .ch s {
+  color: var(--v2);
+  opacity: .75
+}
+
+.mod .one .ch b {
+  color: var(--vd)
+}
+
+.mod .lg {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600
+}
+
+.mod .lg i {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: -2px
+}
+
+/* card unica con transizioni (attuale -> differenze -> proposto) */
+.col.one{transition:border-color .45s ease}
+.col.one .tg{transition:background-color .45s ease,color .45s ease,opacity .2s ease}
+.col.one .tx del,.col.one .tx ins,.col.one .tx s,.col.one .tx b,.col.one .tx .ch{
+  font-size:1em;opacity:1;font-weight:inherit;font-style:inherit;color:inherit;background-color:transparent;
+  text-decoration-line:none;border-radius:6px;
+  transition:font-size .5s ease,opacity .4s ease,color .4s ease,background-color .4s ease,text-decoration-color .4s ease}
+.col.one .tx del,.col.one .tx s{text-decoration-line:none}
+/* passo 0: testo attuale (le aggiunte sono nascoste) */
+.col.one[data-s="0"] .tx ins,.col.one[data-s="0"] .tx b{font-size:0;opacity:0}
+/* passo 1: differenze */
+.col.one[data-s="1"] .tx del{color:var(--vd);background-color:color-mix(in srgb,var(--r) 14%,transparent);border-bottom:2px solid color-mix(in srgb,var(--r) 45%,transparent)}
+.col.one[data-s="1"] .tx ins{color:var(--g);background-color:color-mix(in srgb,var(--g) 25%,transparent)}
+.col.one[data-s="1"] .tx .ch{background-color:color-mix(in srgb,var(--y) 55%,transparent)}
+.col.one[data-s="1"] .tx s{color:var(--vd)}
+.col.one[data-s="1"] .tx b{color:var(--g)}
+/* passo 2: testo proposto (le parti tolte sono nascoste) */
+.col.one[data-s="2"] .tx del,.col.one[data-s="2"] .tx s{font-size:0;opacity:0}
+/* nessuna transizione durante misura/avvio */
+.col.one.nt,.col.one.nt *{transition:none!important}
+/* nota e legenda: si scambiano il posto */
+.mod .nt2{transition:opacity .4s ease}
+.mod .lg2{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:40px;
+  opacity:0;transition:opacity .4s ease;pointer-events:none}
+.mod .lg2.on{opacity:1}
+.mod .lg2 span{display:inline-flex;align-items:center;gap:12px}
+.mod .lg2 i{display:inline-block;width:1em;height:1em;border-radius:5px}

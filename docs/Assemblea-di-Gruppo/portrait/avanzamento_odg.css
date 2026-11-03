@@ -1,0 +1,48 @@
+body.pm .ent {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
+}
+body.pm .ent.on {
+  opacity: 1;
+  transform: none;
+}
+body.pm .rw.dn,
+body.pm .rw.td {
+  flex: 1 1 0;
+}
+body.pm .rw.dn .ck {
+  flex: none;
+  width: 1.4em;
+  font-weight: 800;
+  color: var(--g);
+}
+body.pm .rw.dn .tt {
+  color: var(--v2);
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+body.pm .rw.td .no {
+  color: var(--vl);
+}
+body.pm .rw.nxr {
+  flex: 3.2 1 0;
+  background: var(--y);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.6em 0.8em;
+}
+body.pm .nxr .pt {
+  background: var(--vd);
+  color: var(--y);
+}
+body.pm .nxr .nxt {
+  font-size: 1.5em;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--vd);
+}
