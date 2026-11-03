@@ -12,7 +12,7 @@ const PORTRAIT = {},
   removeEventListener('resize', fit);
   /* ---------- palco ---------- */ fit = function () {
     const W = innerWidth,
-      H = innerHeight - (window.LIVE?.ruolo === 'pubblico' ? 64 : 0);
+      H = innerHeight - (window.LIVE?.ruolo === 'pubblico' && !matchMedia('(pointer: coarse)').matches ? 64 : 0);
     const previous = PM,
       previousHeight = SH;
     PM = !exporting && !rotated && W < 820 && innerHeight > W;

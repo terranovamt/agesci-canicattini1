@@ -22,8 +22,10 @@ e possono tornare indietro, ma non superare la posizione consentita da `config.j
 Sui dispositivi mobili touch appare anche il pulsante per ruotare la presentazione.
 Il ruolo nell'interfaccia non sostituisce le regole Firebase, che devono impedire
 scritture senza una chiave valida.
-Sui dispositivi touch i controlli si nascondono dopo 3 secondi e ricompaiono al
-primo tocco. Il tasto `f` attiva lo schermo intero da tastiera. Su iPhone Safari
+Sui dispositivi touch la slide occupa tutto lo schermo e i controlli, sovrapposti,
+si nascondono dopo 3 secondi e ricompaiono al primo tocco. Quando lo spettatore
+e' indietro rispetto alla regia, il contatore lascia il posto al pulsante
+Slide attuale. Il tasto `f` attiva lo schermo intero da tastiera. Su iPhone Safari
 non permette a una pagina di nascondere la barra dell'URL: per vederla senza
 barre, scegliere Condividi > Aggiungi alla schermata Home e aprirla dall'icona.
 Con Ruota, slide e icone dei pulsanti ruotano; la barra resta in basso e lo

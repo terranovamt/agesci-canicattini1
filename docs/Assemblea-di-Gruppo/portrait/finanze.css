@@ -373,6 +373,10 @@ body.pm .fp .fbp {
   color: var(--v);
 }
 
+body.pm .fp .frw.ent.gone {
+  opacity: 0;
+  transform: translateX(-110%);
+}
 /* patrimonio ciambella */
 body.pm .fp .fpl {
   min-height: auto;

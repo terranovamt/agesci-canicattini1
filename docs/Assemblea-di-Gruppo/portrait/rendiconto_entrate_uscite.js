@@ -58,17 +58,48 @@
     box.append(wrap, cd, rows);
     zfit(box);
     let ph = null,
-      pr = L;
+      pr = L,
+      swap;
     return {
       steps: nE + 1 + Us.length,
       show(k) {
         const p2 = k > nE,
           nu = Math.max(0, k - nE - 1),
           Uk = sum(Us.slice(0, nu).map((x) => x.importo));
-        rE.lst.style.display = p2 ? 'none' : '';
-        rU.lst.style.display = p2 ? '' : 'none';
-        rE.els.forEach((e, i) => e.classList.toggle('on', i < Math.min(k, nE)));
-        rU.els.forEach((e, i) => e.classList.toggle('on', i < nu));
+        clearTimeout(swap);
+        const inn = p2 ? rU : rE,
+          out = p2 ? rE : rU,
+          setOn = () => {
+            rE.els.forEach((e, i) => e.classList.toggle('on', i < Math.min(k, nE)));
+            rU.els.forEach((e, i) => e.classList.toggle('on', i < nu));
+          };
+        /* al cambio entrate/uscite le card escono una dopo l'altra prima che arrivino le nuove */
+        if (ph !== null && p2 !== ph && !INST && out.lst.style.display !== 'none') {
+          const vis = out.els.filter((e) => e.classList.contains('on'));
+          vis.forEach((e, i) => {
+            e.style.transitionDelay = i * 70 + 'ms';
+            e.classList.add('gone');
+          });
+          inn.lst.style.display = 'none';
+          swap = setTimeout(() => {
+            out.els.forEach((e) => {
+              e.classList.remove('gone', 'on');
+              e.style.transitionDelay = '';
+            });
+            out.lst.style.display = 'none';
+            inn.lst.style.display = '';
+            inn.lst.offsetWidth;
+            setOn();
+          }, 450 + vis.length * 70);
+        } else {
+          [rE, rU].forEach((x) => x.els.forEach((e) => {
+            e.classList.remove('gone');
+            e.style.transitionDelay = '';
+          }));
+          inn.lst.style.display = '';
+          out.lst.style.display = 'none';
+          setOn();
+        }
         if (p2 !== ph) {
           fbig._v = 0;
           fP._v = 0;

@@ -45,14 +45,19 @@
     #lv-m{display:flex;align-items:center;justify-content:center}
     #lv-m svg{position:static;flex:none}
     #lv-bar button,#lv-n{transition:transform .3s}
-    body.lv-rot #lv-bar button:not(#lv-l),body.lv-rot #lv-n{transform:rotate(90deg)}
+    body.lv-rot #lv-bar button,body.lv-rot #lv-n{transform:rotate(90deg)}
     @media(max-width:360px){#lv-bar{gap:4px;padding:0 6px}#lv-bar button{min-width:40px}}
     #lv-c{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-    #lv-l{height:26px!important;min-width:0!important;font-size:12px!important;padding:0 10px;background:var(--y)!important;color:var(--vd)!important}`;
+    #lv-l{height:40px!important;min-width:0!important;max-width:100%;font-size:14px!important;padding:0 12px;background:var(--y)!important;color:var(--vd)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    @media(max-width:360px){#lv-l{font-size:12px!important;padding:0 8px}}
+    #lv-l svg{position:static;vertical-align:-3px;margin-right:6px}
+    body.lv-rot #lv-l{width:46px;height:46px!important;padding:0;border-radius:50%!important}
+    body.lv-rot #lv-l svg{margin:0}
+    body.lv-rot #lv-l span{display:none}`;
   document.head.append(css);
 
   const bar = document.createElement('div'); bar.id = 'lv-bar';
-  bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="min-width:44px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden>● Vai alla slide attuale</button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
+  bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="min-width:44px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden aria-label="Vai alla slide attuale"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg><span>Slide attuale</span></button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
   document.body.append(bar);
   ['click', 'touchstart', 'touchend'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
   const $ = id => bar.querySelector('#' + id);
@@ -76,7 +81,7 @@
     if (!scenes.length) return;
     const here = enc(si, sk);
     bn.textContent = (si + 1) + ' / ' + scenes.length;
-    bp.disabled = !si && !sk; bx.disabled = here >= lim; bl.hidden = here >= lim;
+    bp.disabled = !si && !sk; bx.disabled = here >= lim; bl.hidden = here >= lim; bn.hidden = here < lim;
     $('lv-m').disabled = enc(odgIdx(), 0) > lim;
     document.querySelectorAll('[data-slide-link]').forEach(el => {
       const i = scenes.findIndex(sc => sc.id === el.dataset.slideLink);
