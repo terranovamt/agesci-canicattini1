@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "live": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "stato": {
+        ".read": true
+      }
+    },
+    "modifiche": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "patch": {
+        ".read": true,
+        ".validate": "newData.isString() && newData.val().length < 1000000"
+      },
+      "t": {
+        ".read": true
+      }
+    }
+  }
+}

@@ -1,45 +1,120 @@
 # agesci-canicattini1
 
-La presentazione dell'Assemblea di Gruppo si trova in
-`docs/Assemblea-di-Gruppo/`.
+Presentazione dell'**Assemblea di Gruppo AGESCI Canicattini 1**, con regia live,
+spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
-Per pubblicarla, in **Settings > Pages** scegliere **Deploy from a branch**,
-branch `main` e cartella `/docs`, quindi salvare.
+> 📘 Guida illustrata (stesso stile della presentazione):
+> https://terranovamt.github.io/agesci-canicattini1/Assemblea-di-Gruppo/guida.html
 
-Dopo il deploy, la presentazione sara disponibile all'indirizzo
-https://terranovamt.github.io/agesci-canicattini1/Assemblea-di-Gruppo/.
-L'indirizzo principale del sito reindirizza direttamente a
-`Assemblea-di-Gruppo/index.html`, conservando parametri URL e posizione della slide.
+## Indirizzi
 
-## Regia e spettatori
+| Chi | Indirizzo |
+| --- | --- |
+| Pubblico | https://terranovamt.github.io/agesci-canicattini1/ (reindirizza alla presentazione) |
+| Regia | `.../Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` |
+| Setup (modifiche live) | `.../Assemblea-di-Gruppo/setup.html?regia=LA-TUA-CHIAVE` |
+| Guida | `.../Assemblea-di-Gruppo/guida.html` |
 
-Aprire `Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` per la regia, usando la chiave
-prevista dalle regole del Realtime Database Firebase. Il parametro deve restare
-nell'URL anche quando si ricarica la pagina: la chiave non viene salvata nel browser.
+La chiave non viene salvata nel browser: deve restare nell'URL (anche ricaricando).
+Non condividere mai link con `?regia=`.
 
-Condividere con gli spettatori l'indirizzo senza `?regia=...`: seguono la regia
-e possono tornare indietro, ma non superare la posizione consentita da `config.js`.
-Sui dispositivi mobili touch appare anche il pulsante per ruotare la presentazione.
-Il ruolo nell'interfaccia non sostituisce le regole Firebase, che devono impedire
-scritture senza una chiave valida.
-Sui dispositivi touch la slide occupa tutto lo schermo e i controlli, sovrapposti,
-si nascondono dopo 3 secondi e ricompaiono al primo tocco. Quando lo spettatore
-e' indietro rispetto alla regia, il contatore lascia il posto al pulsante
-Slide attuale. Il tasto `f` attiva lo schermo intero da tastiera. Su iPhone Safari
-non permette a una pagina di nascondere la barra dell'URL: per vederla senza
-barre, scegliere Condividi > Aggiungi alla schermata Home e aprirla dall'icona.
-Con Ruota, slide e icone dei pulsanti ruotano; la barra resta in basso e lo
-swipe segue l'orientamento ruotato.
+## Pubblicazione (GitHub Pages)
+
+In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella `/docs`.
+Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
+del sito reindirizza a `Assemblea-di-Gruppo/index.html`, conservando parametri
+e posizione (`#slide.passo`).
+
+## Durante l'assemblea
+
+**Regia** (PC collegato al proiettore): clic o frecce per avanzare (clic nel 20%
+sinistro = indietro). Tasti: `→ ↓ spazio Invio PagGiù` avanti, `← ↑ PagSu
+Backspace` indietro, `H` slide 1, `M` ordine del giorno, `R` torna alla slide di
+partenza, `F` schermo intero, `P` PDF (sull'ultima slide). Il pallino in alto a
+destra è verde se Firebase riceve la posizione, rosso se c'è un problema. Il
+pulsante ⚙ apre la pagina di setup.
+
+**Pubblico** (telefono): segue la regia e può tornare indietro, ma non andare
+oltre il limite di `config.js` (`limite: 'corrente'` = la slide mostrata ora,
+`'massimo'` = la più avanzata raggiunta). Barra in basso: indietro, ODG, contatore
+o **Slide attuale** (quando si è rimasti indietro), Ruota, avanti; swipe per
+cambiare slide. Su touch la slide occupa tutto lo schermo e i controlli si
+nascondono dopo 3 secondi: il primo tocco li fa solo ricomparire. Con **Ruota**
+slide, icone e swipe passano in orizzontale; la barra resta in basso.
+
+**iPhone senza barra dell'indirizzo**: Safari non permette a una pagina di
+nasconderla. Aprire il sito in Safari → Condividi → **Aggiungi alla schermata
+Home** e avviarlo dall'icona (a schermo intero).
+
+## Modificare i contenuti
+
+| Modo | Quando | Tempo | Durata |
+| --- | --- | --- | --- |
+| **Setup** (`setup.html?regia=…`) | durante l'assemblea: nomi, orari, slide nascoste, testi, numeri | ~1 s regia, ≤10 s pubblico | finché non premi "Togli tutte le modifiche live" |
+| **`dati.js` su GitHub** (matita ✏️ → Commit) | prima dell'assemblea, modifiche definitive | ~1 min (Pages) + ≤30 s | per sempre |
+
+La pagina di setup è divisa in schede:
+
+| Scheda | Cosa contiene |
+| --- | --- |
+| **Generale** | anno, data, luogo, orari delle convocazioni |
+| **Slide** | ordine delle slide (trascina o ↑ ↓), 👁 nascondi/mostra, ✎ apre i contenuti |
+| **Contenuti** | testi e nomi di ogni slide (anche Progetto Educativo) |
+| **Bilancio** | censimenti, soglie, entrate, uscite, storico avanzi, patrimonio |
+| **JSON** | tutti i dati in JSON, per aggiungere slide o modifiche avanzate |
+| **Guida** / **Limiti** | questa guida e i limiti del piano Firebase gratuito |
+
+I campi diversi da `dati.js` sono evidenziati in giallo e ↺ li riporta
+all'originale; ✕ e **+ Aggiungi** tolgono o aggiungono elementi alle liste.
+Premi **Pubblica**: su Firebase va solo la differenza rispetto a `dati.js`, così
+le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.
+Per renderle definitive: **⋯ → Scarica dati.js aggiornato** (senza commenti) o
+riportale a mano in `dati.js`, poi **⋯ → Togli tutte le modifiche live**.
+
+Con un errore di sintassi in `dati.js` gli schermi già aperti restano alla
+versione precedente; chi apre la pagina vede "Non trovo dati.js".
+
+## Firebase
+
+Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
+
+| Nodo | Scrive | Legge | Contenuto |
+| --- | --- | --- | --- |
+| `live/stato` | regia | tutti | `pos`, `max` = slide × 1000 + passo |
+| `live/k`, `modifiche/k` | regia / setup | nessuno | chiave inviata a ogni scrittura |
+| `modifiche/patch` | setup | tutti | differenze rispetto a `dati.js` (JSON in una stringa) |
+| `modifiche/t` | setup | tutti | ora dell'ultima pubblicazione |
+
+**Regole**: copiare [`firebase/database.rules.json`](firebase/database.rules.json)
+in Console Firebase → Realtime Database → **Regole**, sostituire le due
+`LA-TUA-CHIAVE` con la chiave della regia (solo nella console, mai nel repository)
+e premere **Pubblica**. Senza il nodo `modifiche` nelle regole il setup risponde
+"Chiave non valida o regole Firebase non aggiornate".
+
+### Limiti del piano gratuito (Spark)
+
+| Risorsa | Limite Spark | Uso della presentazione |
+| --- | --- | --- |
+| Connessioni simultanee | **100** | 1 per spettatore (stato live), 1 regia, 1 setup → **~97 spettatori** |
+| Dati archiviati | 1 GB | pochi KB |
+| Download | 10 GB / mese | ~0,5 MB/ora per spettatore → 100 persone × 3 ore ≈ 150 MB |
+| Database | 1 per progetto | 1 |
+
+Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero
+non seguire la regia (possono comunque tornare indietro e ricaricare). Per
+assemblee più numerose passare al piano **Blaze** (a consumo, 200.000
+connessioni; per un'assemblea il costo resta praticamente nullo) o proiettare
+senza far collegare tutti. Il pubblico non apre una seconda connessione per le
+modifiche: controlla `modifiche/t` ogni 10 s. Limiti aggiornati:
+https://firebase.google.com/pricing.
 
 ## Layout verticale
 
 Sui telefoni in verticale le slide titolo, divisore, chiusura, foto e grazie
 vengono adattate dal CSS; articoli, modifiche ai documenti, prima/dopo, ordine
-del giorno, avanzamento, composizione dell'organo e quorum hanno un layout
-dedicato. Le altre slide mantengono il layout orizzontale ridimensionato.
-Ruotando il telefono o usando il pulsante di rotazione si torna al layout
-orizzontale, mantenendo la posizione e i limiti dello spettatore.
-L'esportazione PDF resta orizzontale.
+del giorno, avanzamento, composizione dell'organo, quorum, rendiconto e
+patrimonio hanno un layout dedicato. Le altre slide mantengono il layout
+orizzontale ridimensionato. L'esportazione PDF resta orizzontale.
 
 ## Dove modificare cosa
 
@@ -78,7 +153,13 @@ File comuni:
   confronto parola per parola dei testi.
 - `common/motore.js`: navigazione, caricamento di `dati.js`, alias dei tipi.
 - `common/pdf.js`: esportazione PDF; `common/live.js`: regia e spettatori
-  (Firebase); `common/avvio.js`: avvio, caricato per ultimo.
+  (Firebase); `common/modifiche.js`: modifiche live sopra `dati.js`;
+  `common/avvio.js`: avvio, caricato per ultimo.
+- `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup.
+- `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero
+  dalla schermata Home.
+- `firebase/database.rules.json` (radice del repository): regole Firebase.
+- `tests/`: `node --test tests/*.test.cjs`.
 - `portrait/base.js` e `portrait/base.css`: rilevamento del verticale, palco,
   funzioni comuni e ripiego orizzontale per i tipi senza layout verticale.
 

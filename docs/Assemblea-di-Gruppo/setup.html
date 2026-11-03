@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Setup Assemblea di Gruppo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="common/setup.css">
+</head>
+
+<body>
+  <header>
+    <h1>Setup Assemblea</h1>
+    <span id="stato" class="pill">Caricamento…</span>
+  </header>
+
+  <section id="login" hidden>
+    <p>Inserisci la chiave della regia (la stessa di <code>?regia=</code>).</p>
+    <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
+  </section>
+
+  <main id="app" hidden>
+    <nav class="tabs">
+      <button data-tab="generale" class="on">Generale</button>
+      <button data-tab="ordine">Slide</button>
+      <button data-tab="contenuti">Contenuti</button>
+      <button data-tab="bilancio">Bilancio</button>
+      <button data-tab="json">JSON</button>
+      <span class="sep"></span>
+      <button data-tab="guida" class="doc">Guida</button>
+      <button data-tab="limiti" class="doc">Limiti</button>
+      <span class="links"><a id="apri-regia" target="assemblea-regia">Regia ↗</a><a href="index.html" target="assemblea-pubblico">Pubblico ↗</a></span>
+    </nav>
+    <p id="intro" class="intro"></p>
+    <div id="campi"></div>
+    <div id="json" hidden>
+      <textarea id="json-text" spellcheck="false"></textarea>
+      <div class="row"><button id="json-apply">Applica JSON</button><span id="json-err" class="err"></span></div>
+    </div>
+    <iframe id="doc" title="Guida" hidden></iframe>
+  </main>
+
+  <footer id="bar" hidden>
+    <span id="dirty"></span>
+    <button id="annulla" class="sec">Annulla</button>
+    <button id="pubblica">Pubblica</button>
+    <details class="more">
+      <summary title="Altro">⋯</summary>
+      <div>
+        <button id="ripristina" class="sec">Togli tutte le modifiche live</button>
+        <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
+      </div>
+    </details>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="common/modifiche.js"></script>
+  <script src="common/setup.js"></script>
+</body>
+
+</html>

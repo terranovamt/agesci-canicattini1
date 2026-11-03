@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Guida · Assemblea di Gruppo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
+  <link rel="icon" href="img/logo.png">
+  <style>
+    :root { --y: #FDC500; --vd: #211638; --v: #462678; --v2: #6B478D; --vl: #AEB0D9; --g: #21A067; --r: #E74030; --bg: #F4F1EA }
+    * { box-sizing: border-box }
+    body { margin: 0; font: 16px/1.55 Montserrat, system-ui, sans-serif; color: var(--vd); background: var(--bg) }
+    .hd { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--v); color: #fff; box-shadow: 0 3px 12px rgba(33, 22, 56, .25) }
+    .hd b { flex: 1; font: 800 clamp(16px, 3.6vw, 24px)/1.1 Georgia, 'Times New Roman', serif; letter-spacing: .5px; text-transform: uppercase }
+    .hd img { height: 44px }
+    .hero { background: linear-gradient(135deg, var(--v), var(--vd)); color: #fff; padding: 46px 20px 70px; text-align: center }
+    .hero h1 { margin: 0 0 8px; font: 800 clamp(30px, 7vw, 54px)/1.05 Georgia, serif }
+    .hero p { margin: 0 auto; max-width: 620px; opacity: .85 }
+    .hero .bar { width: 90px; height: 6px; border-radius: 3px; background: var(--y); margin: 18px auto 0 }
+    main { max-width: 920px; margin: -44px auto 0; padding: 0 14px 60px }
+    nav.toc { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 18px }
+    nav.toc a { background: #fff; color: var(--v); text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 99px; box-shadow: 0 2px 8px rgba(33, 22, 56, .12) }
+    nav.toc a:hover { background: var(--y); color: var(--vd) }
+    section { scroll-margin-top: 76px; background: #fff; border-radius: 22px; padding: 22px clamp(16px, 4vw, 30px); margin: 0 0 18px; box-shadow: 0 4px 16px rgba(33, 22, 56, .08) }
+    h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font: 800 22px/1.2 Montserrat, sans-serif; color: var(--v) }
+    h2 .n { flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--y); color: var(--vd); display: grid; place-items: center; font-size: 18px }
+    h3 { margin: 18px 0 6px; font-size: 16px; color: var(--v2) }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0 }
+    .card { border-radius: 16px; padding: 14px 16px; background: var(--bg); border-left: 6px solid var(--v) }
+    .card.y { border-color: var(--y) } .card.g { border-color: var(--g) } .card.r { border-color: var(--r) }
+    .card b { display: block; margin-bottom: 4px }
+    .card code { word-break: break-all }
+    code { background: #EFEAF7; padding: 1px 6px; border-radius: 6px; font-size: .9em }
+    kbd { display: inline-block; min-width: 26px; text-align: center; padding: 1px 7px; border-radius: 7px; background: #fff; border: 1.5px solid var(--vl); border-bottom-width: 3px; font: 700 13px Montserrat, sans-serif }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0; font-size: 14px; overflow: hidden; border-radius: 14px }
+    th { background: var(--v); color: #fff; text-align: left; padding: 10px 12px }
+    td { padding: 10px 12px; border-bottom: 1px solid #EEE9F5; vertical-align: top }
+    tr:nth-child(even) td { background: #FAF8FD }
+    .big { font-size: 22px; font-weight: 800; color: var(--v) }
+    ol.steps { counter-reset: s; list-style: none; padding: 0 }
+    ol.steps li { counter-increment: s; position: relative; padding: 4px 0 10px 44px }
+    ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 30px; height: 30px; border-radius: 50%; background: var(--v); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px }
+    .note { background: #FFF6CC; border-radius: 14px; padding: 12px 16px; margin: 12px 0; font-size: 14px }
+    .warn { background: #FDE3DF }
+    pre { background: var(--vd); color: #F3EEFF; padding: 14px; border-radius: 14px; overflow: auto; font-size: 13px }
+    a { color: var(--v) }
+    .btn { display: inline-block; background: var(--v); color: #fff; text-decoration: none; font-weight: 700; padding: 10px 16px; border-radius: 12px; margin: 4px 6px 4px 0 }
+    .btn.y { background: var(--y); color: var(--vd) }
+    footer { text-align: center; font-size: 13px; opacity: .6; padding: 0 0 30px }
+    @media (max-width: 600px) { table { font-size: 13px } td, th { padding: 8px } }
+    html.emb .hd, html.emb .hero, html.emb footer { display: none }
+    html.emb body { background: transparent }
+    html.emb main { margin: 0 auto; padding: 0 0 10px }
+    html.solo nav.toc, html.solo main > section:not(#limiti):not(#firebase) { display: none }
+  </style>
+  <script>
+    /* dentro la pagina di setup (?embed): senza intestazione; con &solo=limiti mostra solo Firebase e limiti */
+    const q = new URLSearchParams(location.search);
+    if (q.has('embed')) document.documentElement.classList.add('emb');
+    if (q.get('solo') === 'limiti') document.documentElement.classList.add('solo');
+    if (q.has('embed')) addEventListener('click', e => { const a = e.target.closest('a[href]'); if (a && !a.getAttribute('href').startsWith('#')) a.target = '_blank' });
+  </script>
+</head>
+
+<body>
+  <div class="hd"><b>Guida · Assemblea di Gruppo</b><img src="img/logo.png" alt=""></div>
+  <div class="hero">
+    <h1>Come usare la presentazione</h1>
+    <p>Regia, pubblico sul telefono, modifiche in tempo reale e Firebase: tutto quello che serve sapere prima e durante l'assemblea.</p>
+    <div class="bar"></div>
+  </div>
+  <main>
+    <nav class="toc">
+      <a href="#link">Link</a><a href="#regia">Regia</a><a href="#pubblico">Pubblico</a><a href="#setup">Modifiche live</a>
+      <a href="#dati">dati.js</a><a href="#firebase">Firebase</a><a href="#limiti">Limiti gratuiti</a><a href="#problemi">Problemi</a>
+    </nav>
+
+    <section id="link">
+      <h2><span class="n">1</span>I link</h2>
+      <div class="cards">
+        <div class="card g"><b>👥 Pubblico</b>Da condividere (anche col QR della slide 0):<br><code>terranovamt.github.io/agesci-canicattini1</code></div>
+        <div class="card"><b>🎬 Regia</b>Sul PC del proiettore:<br><code>…/Assemblea-di-Gruppo/?regia=CHIAVE</code></div>
+        <div class="card y"><b>⚙️ Setup</b>Modifiche live, da telefono o PC:<br><code>…/Assemblea-di-Gruppo/setup.html?regia=CHIAVE</code></div>
+      </div>
+      <p><a class="btn y" href="./">Apri la presentazione</a><a class="btn" href="setup.html">Apri il setup</a></p>
+      <div class="note warn">🔒 Non condividere mai un link con <code>?regia=</code>: chi ha la chiave può guidare la presentazione e cambiare i dati. La chiave non viene salvata: deve restare nell'indirizzo.</div>
+    </section>
+
+    <section id="regia">
+      <h2><span class="n">2</span>Regia</h2>
+      <p>Clic sulla slide per avanzare (clic nel 20% a sinistra per tornare indietro), oppure da tastiera:</p>
+      <table>
+        <tr><th>Tasto</th><th>Azione</th></tr>
+        <tr><td><kbd>→</kbd> <kbd>↓</kbd> <kbd>Spazio</kbd> <kbd>Invio</kbd></td><td>Avanti</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>↑</kbd> <kbd>Backspace</kbd></td><td>Indietro</td></tr>
+        <tr><td><kbd>H</kbd></td><td>Slide 1 (titolo, salta il QR)</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Ordine del giorno (clic su un punto per saltarci)</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Torna alla slide da cui eri partito</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Schermo intero</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Salva il PDF (sull'ultima slide)</td></tr>
+      </table>
+      <p>Il <b>pallino</b> in alto a destra è <span style="color:var(--g);font-weight:800">verde</span> quando Firebase riceve la posizione, <span style="color:var(--r);font-weight:800">rosso</span> se c'è un problema (rete o chiave). Il pulsante <b>⚙</b> in basso apre il setup.</p>
+    </section>
+
+    <section id="pubblico">
+      <h2><span class="n">3</span>Pubblico sul telefono</h2>
+      <div class="cards">
+        <div class="card"><b>Segue la regia</b>Può tornare indietro ma non andare oltre: in <code>config.js</code>, <code>limite: 'corrente'</code> (la slide mostrata ora) o <code>'massimo'</code> (la più avanzata raggiunta).</div>
+        <div class="card y"><b>Slide attuale</b>Se è rimasto indietro, al posto del contatore compare il pulsante giallo per tornare dove è la regia.</div>
+        <div class="card g"><b>Schermo pieno</b>La slide occupa tutto lo schermo; i pulsanti si nascondono dopo 3 s e il primo tocco li fa solo ricomparire.</div>
+        <div class="card"><b>Ruota ⟳</b>Mostra la versione orizzontale: slide, icone e swipe ruotano, la barra resta in basso.</div>
+      </div>
+      <h3>📱 iPhone senza barra dell'indirizzo</h3>
+      <ol class="steps">
+        <li>Apri il link del pubblico in <b>Safari</b>.</li>
+        <li>Tocca <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>.</li>
+        <li>Avvia la presentazione dall'icona: si apre a schermo intero. (Da Safari normale la barra non si può nascondere.)</li>
+      </ol>
+    </section>
+
+    <section id="setup">
+      <h2><span class="n">4</span>Modifiche live (setup)</h2>
+      <p>Per cambiare <b>nomi, orari, date, testi, numeri</b>, l'<b>ordine delle slide</b> o nasconderne una <b>durante l'assemblea</b>, senza toccare GitHub.</p>
+      <table>
+        <tr><th>Scheda</th><th>Cosa contiene</th></tr>
+        <tr><td><b>Generale</b></td><td>Anno, data, luogo, orari delle convocazioni.</td></tr>
+        <tr><td><b>Slide</b></td><td>Ordine delle slide: trascinale o usa ↑ ↓; 👁 nasconde/mostra; ✎ apre i contenuti.</td></tr>
+        <tr><td><b>Contenuti</b></td><td>Testi e nomi di ogni slide, anche del Progetto Educativo.</td></tr>
+        <tr><td><b>Bilancio</b></td><td>Censimenti, soglie, entrate, uscite, storico avanzi, patrimonio.</td></tr>
+        <tr><td><b>JSON</b></td><td>Tutti i dati in JSON, per aggiungere slide o modifiche avanzate.</td></tr>
+        <tr><td><b>Guida</b> · <b>Limiti</b></td><td>Questa guida e i limiti del piano gratuito.</td></tr>
+      </table>
+      <ol class="steps">
+        <li>Apri <code>setup.html?regia=CHIAVE</code> (o il pulsante ⚙ in regia).</li>
+        <li>Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano <mark style="background:#FFF3BF">gialli</mark>, ↺ li riporta all'originale. ✕ e <b>+ Aggiungi</b> tolgono o aggiungono persone, punti, righe.</li>
+        <li>Premi <b>Pubblica</b>: la regia si aggiorna in circa 1 secondo, il pubblico entro 10 secondi, restando sulla slide in cui si trova.</li>
+      </ol>
+      <div class="cards">
+        <div class="card"><b>Tutti i campi</b>Anche le slide del Progetto Educativo, il bilancio e il patrimonio. La scheda <strong>JSON</strong> permette di aggiungere slide.</div>
+        <div class="card y"><b>Solo le differenze</b>Su Firebase va solo ciò che hai cambiato: le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.</div>
+        <div class="card r"><b>Renderle definitive</b><strong>⋯ → Scarica dati.js aggiornato</strong> (o riportale a mano), poi <strong>⋯ → Togli tutte le modifiche live</strong>.</div>
+      </div>
+    </section>
+
+    <section id="dati">
+      <h2><span class="n">5</span>Modificare dati.js (definitivo)</h2>
+      <ol class="steps">
+        <li>Apri <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/docs/Assemblea-di-Gruppo/dati.js">dati.js su GitHub</a> e tocca la matita ✏️.</li>
+        <li>Modifica e premi <b>Commit changes</b>.</li>
+        <li>Dopo circa 1 minuto (pubblicazione di GitHub Pages) gli schermi si aggiornano da soli.</li>
+      </ol>
+      <p>In alto ci sono <code>assemblea</code> (data, titolo, orari delle convocazioni), poi la lista <code>slide</code> in ordine di presentazione, poi censimenti, bilancio e patrimonio. Ogni slide accetta <code>"nascosta": true</code>; nei testi <code>&lt;br&gt;</code> va a capo e <code>&lt;b&gt;…&lt;/b&gt;</code> è grassetto.</p>
+      <div class="note warn">⚠️ Attenzione a virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e chi apre la pagina vede “Non trovo dati.js”. Durante l'assemblea è più sicuro il setup.</div>
+    </section>
+
+    <section id="firebase">
+      <h2><span class="n">6</span>Firebase</h2>
+      <p>Realtime Database <code>assemblea-canicattini1</code> (europe-west1), indirizzo in <code>config.js</code>.</p>
+      <table>
+        <tr><th>Nodo</th><th>Chi scrive</th><th>Chi legge</th><th>Cosa contiene</th></tr>
+        <tr><td><code>live/stato</code></td><td>regia</td><td>tutti</td><td>posizione: slide × 1000 + passo</td></tr>
+        <tr><td><code>modifiche/patch</code></td><td>setup</td><td>tutti</td><td>differenze rispetto a dati.js</td></tr>
+        <tr><td><code>modifiche/t</code></td><td>setup</td><td>tutti</td><td>ora dell'ultima pubblicazione</td></tr>
+        <tr><td><code>live/k</code>, <code>modifiche/k</code></td><td>regia, setup</td><td>nessuno</td><td>chiave, controllata dalle regole</td></tr>
+      </table>
+      <h3>Regole (da fare una volta)</h3>
+      <ol class="steps">
+        <li>Console Firebase → <b>Realtime Database</b> → scheda <b>Regole</b>.</li>
+        <li>Incolla il contenuto di <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/firebase/database.rules.json"><code>firebase/database.rules.json</code></a>.</li>
+        <li>Sostituisci le due <code>LA-TUA-CHIAVE</code> con la chiave della regia (solo nella console, mai nel repository) e premi <b>Pubblica</b>.</li>
+      </ol>
+<pre>{
+  "rules": {
+    ".read": false, ".write": false,
+    "live": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "stato": { ".read": true }
+    },
+    "modifiche": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "patch": { ".read": true, ".validate": "newData.isString() &amp;&amp; newData.val().length &lt; 1000000" },
+      "t": { ".read": true }
+    }
+  }
+}</pre>
+    </section>
+
+    <section id="limiti">
+      <h2><span class="n">7</span>Limiti del piano gratuito (Spark)</h2>
+      <div class="cards">
+        <div class="card r"><span class="big">100</span><b>connessioni simultanee</b>1 per spettatore + regia + setup → circa <strong>97 telefoni</strong> collegati insieme.</div>
+        <div class="card g"><span class="big">10 GB</span><b>download al mese</b>Circa 0,5 MB all'ora per spettatore: 100 persone per 3 ore ≈ 150 MB.</div>
+        <div class="card g"><span class="big">1 GB</span><b>dati archiviati</b>La presentazione usa pochi KB.</div>
+      </div>
+      <p>Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero non seguire la regia. Per assemblee più numerose passa al piano <b>Blaze</b> (a consumo, 200.000 connessioni; per un'assemblea il costo resta praticamente nullo) oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live con una lettura leggera ogni 10 s, senza occupare una seconda connessione.</p>
+      <p style="font-size:13px;opacity:.7">Limiti indicativi: verifica quelli aggiornati su <a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a>.</p>
+    </section>
+
+    <section id="problemi">
+      <h2><span class="n">8</span>Se qualcosa non va</h2>
+      <table>
+        <tr><th>Problema</th><th>Soluzione</th></tr>
+        <tr><td>Pallino rosso in regia</td><td>Controlla la rete e che la chiave nell'indirizzo sia quella delle regole.</td></tr>
+        <tr><td>Setup: “Chiave non valida o regole Firebase non aggiornate”</td><td>Chiave sbagliata, o mancano le regole del nodo <code>modifiche</code> (sezione 6).</td></tr>
+        <tr><td>“Non trovo dati.js”</td><td>Errore di sintassi in dati.js: correggilo su GitHub o annulla l'ultimo commit.</td></tr>
+        <tr><td>Il pubblico non si sposta</td><td>Ricaricare la pagina; con più di ~97 telefoni vedi i limiti (sezione 7).</td></tr>
+        <tr><td>Modifiche su GitHub non visibili</td><td>Attendi la pubblicazione (~1 min); se un campo è cambiato anche dal setup, vale il setup.</td></tr>
+      </table>
+    </section>
+  </main>
+  <footer>AGESCI Canicattini 1 · Assemblea di Gruppo</footer>
+</body>
+
+</html>

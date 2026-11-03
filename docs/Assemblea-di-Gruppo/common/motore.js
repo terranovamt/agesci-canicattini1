@@ -62,9 +62,17 @@ function load(first) {
   p.onload = p.onerror = () => { p.remove(); loadDati(first) };
   document.head.append(p);
 }
+/* dati effettivi = dati.js + eventuali modifiche live da Firebase (common/modifiche.js) */
+function refreshDati() {
+  const M = window.MODIFICHE, base = window.DATI_BASE;
+  if (!base || (M && !M.ready)) return;
+  const data = M ? M.applyPatch(base, M.patch) : base, j = JSON.stringify(data);
+  window.DATI = data;
+  if (j !== last) { last = j; start(data) }
+}
 function loadDati(first) {
   const s = document.createElement('script'); s.src = 'dati.js?t=' + Date.now();
-  s.onload = () => { s.remove(); if (!window.DATI) { if (first) document.getElementById('msg').style.display = 'flex'; return } const j = JSON.stringify(window.DATI); if (j !== last) { last = j; start(window.DATI) } };
+  s.onload = () => { s.remove(); if (!window.DATI) { if (first) document.getElementById('msg').style.display = 'flex'; return } window.DATI_BASE = window.DATI; refreshDati() };
   s.onerror = () => { s.remove(); if (first) document.getElementById('msg').style.display = 'flex' };
   document.head.append(s);
 }

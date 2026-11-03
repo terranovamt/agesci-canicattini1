@@ -1,0 +1,273 @@
+/* Pagina di setup: modifica qualsiasi campo di dati.js (e progetto_educativo.js) e lo pubblica su Firebase.
+   Su Firebase va solo la differenza rispetto a dati.js (vedi common/modifiche.js). */
+(function () {
+  const $ = s => document.querySelector(s);
+  const M = window.MODIFICHE, L = window.LIVE || {};
+  const U = (L.url || '').replace(/\/$/, '');
+  const clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const getAt = (o, p) => p.reduce((x, k) => x == null ? undefined : x[k], o);
+  const setAt = (o, p, v) => { const t = getAt(o, p.slice(0, -1)); if (v === undefined) { if (Array.isArray(t)) t.splice(p.at(-1), 1); else delete t[p.at(-1)] } else t[p.at(-1)] = v };
+  const strip = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
+  const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e };
+
+  let key = new URLSearchParams(location.search).get('regia') || '';
+  let base, published, edit, remotePatch, view = 'generale';
+  const open = new Set(['assemblea']);
+
+  function toast(msg) {
+    const t = el('div', { className: 'toast', textContent: msg });
+    document.body.append(t); setTimeout(() => t.remove(), 2600);
+  }
+  function status(text, cls) { const s = $('#stato'); s.textContent = text; s.className = 'pill ' + (cls || '') }
+
+  /* carica dati.js "pulito" (come la presentazione: prima progetto_educativo.js, poi dati.js) */
+  function script(src) {
+    return new Promise(res => { const s = el('script', { src: src + '?t=' + Date.now() }); s.onload = s.onerror = () => { s.remove(); res() }; document.head.append(s) });
+  }
+  async function loadBase() {
+    window.DATI = undefined; window.SLIDE_PE = undefined;
+    await script('progetto_educativo.js'); await script('dati.js');
+    if (!window.DATI) throw new Error('dati.js non trovato o con errori');
+    return clone(window.DATI);
+  }
+  const parse = s => { try { return s ? JSON.parse(s) : undefined } catch (e) { return undefined } };
+  const dirty = () => !same(edit, published);
+
+  function sync(newBase, newPatch) {
+    const wasDirty = edit && dirty();
+    base = newBase; remotePatch = newPatch;
+    published = M.applyPatch(base, remotePatch);
+    if (!edit || !wasDirty) { edit = clone(published); render() } else updateDirty();
+    status(remotePatch === undefined ? 'Uguale a dati.js' : 'Modifiche live attive', remotePatch === undefined ? 'ok' : 'live');
+  }
+
+  /* ---------- campi ---------- */
+  function field(path, value, label) {
+    const b = getAt(base, path);
+    const wrap = el('div', { className: 'field' });
+    const lab = el('label', { textContent: label });
+    let input;
+    const commit = v => { setAt(edit, path, v); mark(); updateDirty() };
+    const mark = () => wrap.classList.toggle('mod', !same(getAt(edit, path), b));
+    if (typeof value === 'boolean') {
+      wrap.classList.add('chk');
+      input = el('input', { type: 'checkbox', checked: value });
+      input.onchange = () => commit(!input.checked && b === undefined ? undefined : input.checked);
+    } else if (typeof value === 'number') {
+      input = el('input', { type: 'number', step: 'any', value: String(value) });
+      input.oninput = () => { if (input.value !== '' && !isNaN(+input.value)) commit(+input.value) };
+    } else {
+      const long = String(value ?? '').length > 70 || /\n/.test(value);
+      input = el(long ? 'textarea' : 'input', { value: value ?? '' });
+      if (long) { input.rows = Math.min(8, Math.ceil(String(value).length / 60) + 1) }
+      input.oninput = () => commit(input.value);
+    }
+    const id = 'f' + path.join('_').replace(/[^\w-]/g, '');
+    input.id = lab.htmlFor = id;
+    const reset = el('button', { className: 'reset', type: 'button', title: 'Ripristina il valore di dati.js', textContent: '↺' });
+    reset.onclick = () => { if (b === undefined) { setAt(edit, path, undefined); render() } else { commit(clone(b)); if (input.type === 'checkbox') input.checked = b; else input.value = b } };
+    if (input.type === 'checkbox') wrap.append(input, lab, reset); else wrap.append(lab, input, reset);
+    mark();
+    return wrap;
+  }
+  const human = k => String(k).replace(/_/g, ' ');
+
+  function node(path, value, label) {
+    if (Array.isArray(value)) {
+      const fs = el('fieldset', {}, el('legend', { textContent: label + ' (' + value.length + ')' }));
+      value.forEach((item, i) => {
+        const child = node(path.concat(i), item, '#' + (i + 1));
+        const rm = el('button', { type: 'button', className: 'sec', title: 'Togli questo elemento', textContent: '✕' });
+        rm.onclick = () => { setAt(edit, path.concat(i), undefined); render() };
+        if (child.tagName === 'FIELDSET') child.querySelector('legend').append(rm);
+        else child.append(rm);
+        fs.append(child);
+      });
+      if (value.length) {
+        const add = el('button', { type: 'button', className: 'sec add', textContent: '+ Aggiungi' });
+        add.onclick = () => { getAt(edit, path).push(blank(value.at(-1))); render() };
+        fs.append(add);
+      }
+      return fs;
+    }
+    if (plain(value)) {
+      const fs = el('fieldset', {}, el('legend', { textContent: label }));
+      Object.entries(value).forEach(([k, v]) => fs.append(node(path.concat(k), v, human(k))));
+      return fs;
+    }
+    return field(path, value, label);
+  }
+  /* nuovo elemento di una lista: stessa struttura dell'ultimo, ma vuoto */
+  const blank = v => Array.isArray(v) ? [] : plain(v) ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blank(x)])) : typeof v === 'number' ? 0 : typeof v === 'boolean' ? false : '';
+
+  function box(id, title, sub, badges, fill) {
+    const d = el('details', { className: 'box', open: open.has(id) });
+    d.dataset.id = id;
+    d.ontoggle = () => { d.open ? open.add(id) : open.delete(id) };
+    d.append(el('summary', {}, el('span', { className: 't', textContent: title }), sub ? el('small', { textContent: sub }) : null, ...badges));
+    const body = el('div', { className: 'body' });
+    fill(body); d.append(body);
+    return d;
+  }
+  const badge = (t, c) => el('span', { className: 'badge ' + (c || ''), textContent: t });
+
+  const GENERALE = ['anno_esercizio', 'assemblea'];
+  const INTRO = {
+    generale: 'Data, luogo e orari dell\'assemblea.',
+    ordine: 'Trascina le slide (o usa ↑ ↓) per cambiare l\'ordine; 👁 le nasconde senza cancellarle. ✎ apre i contenuti della slide.',
+    contenuti: 'Testi e nomi di ogni slide. Le slide del bilancio prendono i numeri dalla scheda Bilancio.',
+    bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
+    json: 'Tutti i dati (dati.js + modifiche) in formato JSON, per modifiche avanzate.'
+  };
+  const tipoOf = x => String(x.tipo || '').replace(/^slide_/, '');
+  const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
+  const sezione = x => x.tipo === 'slide_divisore_sezione';
+
+  /* posizione originale (in dati.js) di ogni slide, per segnalare quelle spostate */
+  function origins() {
+    const used = new Set(), bs = (base.slide || []).map(x => JSON.stringify(x));
+    const find = (x, i) => { const j = bs.findIndex((y, k) => !used.has(k) && y === JSON.stringify(x)); if (j >= 0) { used.add(j); return j } return -1 };
+    return edit.slide.map(find);
+  }
+  function move(from, to) {
+    if (to < 0 || to >= edit.slide.length || from === to) return;
+    const [x] = edit.slide.splice(from, 1); edit.slide.splice(to, 0, x);
+    [...open].filter(k => k.startsWith('slide-')).forEach(k => open.delete(k));
+    render();
+    const r = document.querySelector(`.ord li[data-i="${to}"]`); if (r) { r.classList.add('flash'); r.scrollIntoView({ block: 'nearest' }) }
+  }
+
+  function renderOrdine(c) {
+    const org = origins(), ol = el('ol', { className: 'ord' });
+    let drag = -1;
+    edit.slide.forEach((x, i) => {
+      const hid = !!x.nascosta, moved = org[i] !== i && org[i] >= 0;
+      const btn = (t, title, fn, dis) => { const b = el('button', { type: 'button', className: 'ic', textContent: t, title, disabled: !!dis }); b.onclick = fn; return b };
+      const li = el('li', { className: (sezione(x) ? 'sez ' : '') + (hid ? 'hid ' : ''), draggable: true },
+        el('span', { className: 'grip', textContent: '⋮⋮', title: 'Trascina' }),
+        el('span', { className: 'num', textContent: i + 1 }),
+        el('span', { className: 't' }, el('b', { textContent: titleOf(x) }), el('small', { textContent: tipoOf(x) })),
+        moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
+        btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
+        btn('↑', 'Sposta su', () => move(i, i - 1), i === 0),
+        btn('↓', 'Sposta giù', () => move(i, i + 1), i === edit.slide.length - 1),
+        btn('✎', 'Modifica i contenuti', () => { open.add('slide-' + i); go('contenuti'); setTimeout(() => document.querySelector(`details[data-id="slide-${i}"]`)?.scrollIntoView({ block: 'start' }), 0) }));
+      li.dataset.i = i;
+      li.ondragstart = e => { drag = i; li.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i) };
+      li.ondragend = () => li.classList.remove('drag');
+      li.ondragover = e => { e.preventDefault(); ol.querySelectorAll('.over').forEach(o => o.classList.remove('over')); li.classList.add('over') };
+      li.ondrop = e => { e.preventDefault(); if (drag >= 0) move(drag, i); drag = -1 };
+      ol.append(li);
+    });
+    c.append(ol);
+  }
+
+  function renderContenuti(c) {
+    edit.slide.forEach((x, i) => {
+      const p = ['slide', i], b = [];
+      if (x.nascosta) b.push(badge('nascosta', 'hid'));
+      const fields = Object.keys(x).filter(k => k !== 'tipo' && k !== 'nascosta');
+      if (getAt(base, p) && !same(x, getAt(base, p))) b.push(badge('modificata'));
+      c.append(box('slide-' + i, (i + 1) + '. ' + titleOf(x), tipoOf(x), b, body => {
+        body.append(field(p.concat('nascosta'), !!x.nascosta, 'Nascosta (salta questa slide)'));
+        if (!fields.length) body.append(el('p', { className: 'hint', textContent: /rendiconto|patrimonio/.test(x.tipo) ? 'I numeri di questa slide sono nella scheda Bilancio.' : 'Questa slide non ha testi da modificare.' }));
+        fields.forEach(kk => body.append(node(p.concat(kk), x[kk], human(kk))));
+      }));
+    });
+  }
+
+  function renderSezioni(c, keys) {
+    keys.filter(k => k in edit).forEach(k => {
+      const v = edit[k];
+      c.append(box(k, human(k), '', same(v, base[k]) ? [] : [badge('modificata')], body => {
+        if (plain(v)) Object.entries(v).forEach(([kk, x]) => body.append(node([k, kk], x, human(kk))));
+        else body.append(node([k], v, human(k)));
+      }));
+    });
+  }
+
+  function render() {
+    const y = scrollY, c = $('#campi');
+    c.innerHTML = '';
+    if (view === 'generale') renderSezioni(c, GENERALE);
+    else if (view === 'bilancio') renderSezioni(c, Object.keys(edit).filter(k => k !== 'slide' && !GENERALE.includes(k)));
+    else if (view === 'ordine' && Array.isArray(edit.slide)) renderOrdine(c);
+    else if (view === 'contenuti' && Array.isArray(edit.slide)) renderContenuti(c);
+    if (view === 'json') $('#json-text').value = JSON.stringify(edit, null, 2);
+    scrollTo(0, y);
+    updateDirty();
+  }
+
+  function go(tab) {
+    const prev = view; view = tab;
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+    const doc = tab === 'guida' || tab === 'limiti';
+    $('#campi').hidden = doc || tab === 'json'; $('#json').hidden = tab !== 'json'; $('#doc').hidden = !doc;
+    $('#intro').hidden = doc; $('#intro').textContent = INTRO[tab] || '';
+    if (doc) { const src = 'guida.html?embed' + (tab === 'limiti' ? '&solo=limiti' : ''); if ($('#doc').getAttribute('src') !== src) $('#doc').src = src }
+    else if (edit) { if (prev !== tab) scrollTo(0, 0); render() }
+  }
+
+  function updateDirty() {
+    const d = dirty();
+    $('#dirty').textContent = d ? '● Modifiche non pubblicate' : '✓ Tutto pubblicato';
+    $('#dirty').style.color = d ? 'var(--r)' : 'var(--g)';
+    $('#pubblica').disabled = $('#annulla').disabled = !d;
+    $('#ripristina').disabled = remotePatch === undefined;
+  }
+
+  /* ---------- Firebase ---------- */
+  async function save(patch) {
+    const body = { k: key, patch: patch === undefined ? null : JSON.stringify(patch), t: { '.sv': 'timestamp' } };
+    const r = await fetch(U + '/modifiche.json', { method: 'PUT', body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Chiave non valida o regole Firebase non aggiornate' : 'Errore ' + r.status);
+  }
+  async function publish(patch, msg) {
+    $('#pubblica').disabled = true;
+    try { await save(patch); sync(base, patch); edit = clone(published); render(); toast(msg) }
+    catch (e) { toast('⚠ ' + e.message); status('Errore', 'ko'); updateDirty() }
+  }
+
+  async function init() {
+    $('#app').hidden = $('#bar').hidden = false;
+    go(view);
+    $('#apri-regia').href = 'index.html?regia=' + encodeURIComponent(key);
+    try {
+      const [b, p] = await Promise.all([loadBase(), fetch(U + '/modifiche/patch.json').then(r => r.json())]);
+      sync(b, parse(p));
+    } catch (e) { status('Errore', 'ko'); $('#campi').textContent = '⚠ ' + e.message; return }
+    const es = new EventSource(U + '/modifiche/patch.json');
+    es.addEventListener('put', e => { const m = JSON.parse(e.data); if (m.path === '/' && !same(parse(m.data), remotePatch)) { sync(base, parse(m.data)); if (dirty()) toast('Altre modifiche pubblicate da un altro dispositivo') } });
+    setInterval(async () => { try { const b = await loadBase(); if (!same(b, base)) sync(b, remotePatch) } catch (e) { } }, 30000);
+  }
+
+  $('#pubblica').onclick = () => publish(M.diffPatch(base, edit), 'Pubblicato: gli schermi si aggiornano ora');
+  $('#annulla').onclick = () => { edit = clone(published); render() };
+  $('#ripristina').onclick = () => { if (confirm('Togliere tutte le modifiche live e tornare a dati.js?')) publish(undefined, 'Tornato a dati.js') };
+  $('#scarica').onclick = () => {
+    const txt = '// dati.js generato dalla pagina di setup il ' + new Date().toLocaleString('it-IT') + '\n// (i commenti del file originale non sono inclusi)\nwindow.DATI = ' + JSON.stringify(edit, null, 2) + ';\n';
+    const a = el('a', { href: URL.createObjectURL(new Blob([txt], { type: 'text/javascript' })), download: 'dati.js' });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => go(b.dataset.tab));
+  $('#doc').onload = () => { try { const d = $('#doc').contentDocument; $('#doc').style.height = d.documentElement.scrollHeight + 'px' } catch (e) { } };
+  $('#json-apply').onclick = () => {
+    try { const v = JSON.parse($('#json-text').value); if (!plain(v) || !Array.isArray(v.slide)) throw new Error('serve un oggetto con la lista "slide"'); edit = v; $('#json-err').textContent = ''; render(); toast('Applicato: ora premi Pubblica') }
+    catch (e) { $('#json-err').textContent = 'JSON non valido: ' + e.message }
+  };
+  addEventListener('beforeunload', e => { if (edit && dirty()) e.preventDefault() });
+
+  if (!U) { status('Firebase non configurato', 'ko'); document.body.append(el('p', { textContent: 'Imposta "url" in config.js.' })); return }
+  if (key) init();
+  else {
+    status('Serve la chiave');
+    $('#login').hidden = false;
+    $('#login-form').onsubmit = e => {
+      e.preventDefault(); key = $('#chiave').value.trim(); if (!key) return;
+      history.replaceState(null, '', '?regia=' + encodeURIComponent(key));
+      $('#login').hidden = true; init();
+    };
+  }
+})();
