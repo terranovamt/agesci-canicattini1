@@ -6,6 +6,9 @@ let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null; const nav 
   bM = h('<button class="nb" title="Ordine del giorno (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>'),
   bB = h('<button class="nb" title="Torna alla slide da cui eri partito (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span></span></button>');
 nav.append(bH, bM, bB); st.append(nav); bH.style.display = bM.style.display = bB.style.display = 'none';
+const bF = h('<button class="nb" title="Schermo intero" aria-label="Schermo intero"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button>');
+bF.onclick = e => { e.stopPropagation(); toggleFullscreen() };
+nav.append(bF);
 const odgIdx = () => Math.max(0, scenes.findIndex(s => s.tipo === 'slide_ordine_del_giorno'));
 const home = () => { const i = Math.min(1, scenes.length - 1); if (scenes.length && si !== i) { saved = { i: si, k: sk }; go(i, 0) } };
 const menu = () => { const t = odgIdx(); if (si !== t) { saved = { i: si, k: sk }; go(t, 0); go(t, cur.steps) } };
@@ -34,7 +37,7 @@ function go(i, k) {
 }
 const next = () => { if (sk < cur.steps) go(si, sk + 1); else if (si < scenes.length - 1) go(si + 1, 0) };
 const prev = () => { if (sk > 0) go(si, sk - 1); else if (si > 0) { const n = si - 1; go(n, 0); go(n, cur.steps) } };
-addEventListener('keydown', e => { if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() } if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) prev(); if (e.key === 'h') home(); if (e.key === 'm') menu(); if (e.key === 'r') back(); if (e.key === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() });
+addEventListener('keydown', e => { if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() } if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) prev(); if (e.key === 'h') home(); if (e.key === 'm') menu(); if (e.key === 'r') back(); if (e.key === 'f') toggleFullscreen() });
 addEventListener('click', e => e.clientX < innerWidth * .2 ? prev() : next());
 let tx; addEventListener('touchstart', e => tx = e.touches[0].clientX); addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) { e.preventDefault(); d < 0 ? next() : prev() } });
 

@@ -22,6 +22,10 @@ e possono tornare indietro, ma non superare la posizione consentita da `config.j
 Sui dispositivi mobili touch appare anche il pulsante per ruotare la presentazione.
 Il ruolo nell'interfaccia non sostituisce le regole Firebase, che devono impedire
 scritture senza una chiave valida.
+Il pulsante Schermo intero e' disponibile per regia e pubblico. Su Android usa
+la Fullscreen API; sui browser non compatibili mostra istruzioni. Su iPhone
+aprire in Safari, scegliere Condividi > Aggiungi alla schermata Home e avviare
+la presentazione dalla nuova icona per nascondere le barre del browser.
 
 ## Layout verticale
 

@@ -27,6 +27,17 @@ function counter(el, to, dur = 1000) {
 }
 /* la barra del titolo ora è fissa: la slide dichiara solo il suo titolo */
 const band = (r, t) => { r.dataset.hd = t };
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen && document.fullscreenEnabled !== false)
+      await document.documentElement.requestFullscreen();
+    else alert('Questo browser non supporta lo schermo intero. Su iPhone: apri in Safari, tocca Condividi > Aggiungi alla schermata Home, poi apri la presentazione dalla nuova icona.');
+  } catch (error) {
+    console.error('Impossibile attivare lo schermo intero:', error);
+    alert('Impossibile attivare lo schermo intero. Controlla le impostazioni del browser.');
+  }
+}
 function linkSlide(el, point) {
   if (!point.slide_collegata) return;
   el.dataset.liveControl = '';

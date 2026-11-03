@@ -33,7 +33,7 @@ function viewer(isMobile) {
   const writes = [];
   const rotations = [];
   const element = () => ({
-    style: {}, append() {}, addEventListener() {},
+    style: {}, append() {}, addEventListener() {}, setAttribute() {},
     contains: target => Object.values(elements).includes(target),
     querySelector: selector => elements[selector] ||= element(),
   });
