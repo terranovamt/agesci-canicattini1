@@ -32,6 +32,7 @@ function viewer(isMobile) {
   const streams = {};
   const writes = [];
   const rotations = [];
+  const navigations = [];
   const element = () => ({
     style: {}, append() {}, addEventListener() {}, setAttribute() {},
     contains: target => Object.values(elements).includes(target),
@@ -54,12 +55,12 @@ function viewer(isMobile) {
       addEventListener(name, handler) { streams[name] = handler }
     },
   };
-  context.go = (i, k) => { context.si = i; context.sk = k };
+  context.go = (i, k) => { navigations.push([i, k]); context.si = i; context.sk = k };
   context.next = () => context.go(context.si, context.sk + 1);
   context.prev = () => context.go(context.si, context.sk - 1);
   vm.runInNewContext(sync, context);
   streams.put({ data: JSON.stringify({ path: '/', data: { pos: 1001, max: 2000 } }) });
-  return { context, elements, listeners, writes, rotations };
+  return { context, elements, listeners, writes, rotations, navigations, streams };
 }
 
 test('spectators follow regia and cannot move beyond its current position', () => {
@@ -133,4 +134,20 @@ test('ODG button and topic links follow the live limit', () => {
   elements['#lv-m'].onclick();
   assert.equal(menus, 1);
   context.go(1, 0);
+});
+
+test('unchanged live updates do not replay the current slide animation', () => {
+  const { context, navigations, streams } = viewer(true);
+  context.cur = { i: context.si };
+  const before = navigations.length;
+  const update = pos => streams.put({ data: JSON.stringify({ path: '/', data: { pos, max: pos } }) });
+  update(1001);
+  update(1001);
+  context.go(1, 1);
+  assert.equal(navigations.length, before);
+  assert.equal(context.si, 1);
+  assert.equal(context.sk, 1);
+  update(1002);
+  assert.equal(navigations.length, before + 1);
+  assert.equal(context.sk, 2);
 });

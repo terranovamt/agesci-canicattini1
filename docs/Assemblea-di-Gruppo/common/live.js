@@ -76,6 +76,7 @@
   go = (i, k) => {
     const l = dec(lim); i = Math.max(0, Math.min(i, scenes.length - 1));
     if (i > l.i || (i === l.i && k > l.k)) { i = l.i; k = l.k }
+    if (cur && cur.i === i && si === i && sk === k) { ui(); return }
     __go(i, k); ui();
   };
   function ui() {
