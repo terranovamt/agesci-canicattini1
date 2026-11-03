@@ -42,6 +42,8 @@
     #lv-bar button:disabled{opacity:.3;cursor:not-allowed}
     [data-slide-link][aria-disabled="true"]{filter:grayscale(1);color:var(--muted)!important;cursor:not-allowed!important}
     #lv-bar button:active:not(:disabled){background:var(--v2)}
+    #lv-m{display:flex;align-items:center;justify-content:center}
+    #lv-m svg{position:static;flex:none}
     #lv-c{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
     #lv-l{height:26px!important;min-width:0!important;font-size:12px!important;padding:0 10px;background:var(--y)!important;color:var(--vd)!important}`;
   document.head.append(css);
