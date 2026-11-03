@@ -41,7 +41,7 @@ Ogni tipo di slide (campo `tipo` in `dati.js`, senza `slide_`) ha i suoi file:
 Il file `.css` c'è solo se il tipo ha stili propri. Alcuni tipi condividono un
 layout: `divisore_sezione` e `chiusura` usano `titolo.css`, `grazie` usa
 `photo()` di `landscape/foto_gruppo.js`, `prima_dopo` usa `modifiche_documento`.
-Gli stili verticali di rendiconto e patrimonio sono tutti in `portrait/finanze.css`.
+Gli stili verticali di rendiconto e patrimonio sono in `portrait/finanze.css`; quelli di cambio date, differenze e area obiettivi in `portrait/aree.css`.
 
 File comuni:
 
