@@ -120,7 +120,19 @@ const PORTRAIT = {},
       };
     }
   };
-  Object.assign(PORTRAIT_UTIL, { HEAD, norm, mkFl, mkBody, fitBox, cnum, link });
+  /* riduce in scala (--z) le dimensioni dei blocchi finche' il contenuto sta nello schermo (telefoni piccoli) */ const zfit = (box) => {
+    const run = () => {
+      box.classList.add('zf');
+      for (let z = 1; z >= 0.5; z -= 0.05) {
+        box.style.setProperty('--z', z.toFixed(2));
+        if (box.scrollHeight <= box.clientHeight + 1) break;
+      }
+      box.classList.remove('zf');
+    };
+    run();
+    if (document.fonts) document.fonts.ready.then(run);
+  };
+  Object.assign(PORTRAIT_UTIL, { HEAD, norm, mkFl, mkBody, fitBox, cnum, link, zfit });
   /* slide che mantengono la struttura originale e vengono solo adattate dal CSS */ const NATIVE = new Set([
     'slide_titolo',
     'slide_divisore_sezione',
