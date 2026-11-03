@@ -1,5 +1,5 @@
 (function () {
-  const { HEAD, norm, mkFl, mkBody, fitBox, cnum, link } = PORTRAIT_UTIL;
+  const { HEAD, norm, mkFl, mkBody, fitBox, cnum } = PORTRAIT_UTIL;
   /* ===== AVANZAMENTO ODG - C: fatti (compatti) / prossimo (grande, giallo) / da fare ===== */
   PORTRAIT.slide_avanzamento_odg = (x) => (r, D) => {
     HEAD(r, x.titolo_barra || 'ORDINE DEL GIORNO');
@@ -22,7 +22,6 @@
         html = `<b class="no">${i + 1}</b><span class="tt">${p.testo}</span>`;
       }
       const e = h(`<div class="rw ent ${cls}">${html}</div>`);
-      link(e, p);
       box.append(e);
       setTimeout(() => e.classList.add('on'), INST ? 0 : 250 + i * 160);
     });

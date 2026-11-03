@@ -51,6 +51,8 @@ In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra
 Home porta alla slide 1 (titolo), saltando la slide 0 con il QR. La barra del
 pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
 live sono grigi e disabilitati.
+Solo l'ODG iniziale contiene collegamenti: le slide di avanzamento ODG
+mostrano lo stato dei punti senza renderli cliccabili.
 
 File comuni:
 
