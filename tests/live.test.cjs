@@ -6,7 +6,7 @@ const { test } = require('node:test');
 
 const root = path.join(__dirname, '../docs/Assemblea-di-Gruppo');
 const config = fs.readFileSync(path.join(root, 'config.js'), 'utf8');
-const sync = fs.readFileSync(path.join(root, 'mobile.js'), 'utf8');
+const sync = fs.readFileSync(path.join(root, 'live.js'), 'utf8');
 
 function role(search) {
   const context = {
@@ -31,13 +31,14 @@ function viewer(isMobile) {
   const listeners = {};
   const streams = {};
   const writes = [];
+  const rotations = [];
   const element = () => ({
     style: {}, append() {}, addEventListener() {},
     contains: target => Object.values(elements).includes(target),
     querySelector: selector => elements[selector] ||= element(),
   });
   const context = {
-    window: { LIVE: role('') },
+    window: { LIVE: role(''), mobileLayout: { rotate(value) { rotations.push(value) } } },
     document: { head: element(), body: element(), createElement: element },
     scenes: [{}, {}, {}], si: 0, sk: 0, cur: {},
     st: element(), innerWidth: isMobile ? 390 : 1440, innerHeight: 900,
@@ -57,7 +58,7 @@ function viewer(isMobile) {
   context.prev = () => context.go(context.si, context.sk - 1);
   vm.runInNewContext(sync, context);
   streams.put({ data: JSON.stringify({ path: '/', data: { pos: 1001, max: 2000 } }) });
-  return { context, elements, listeners, writes };
+  return { context, elements, listeners, writes, rotations };
 }
 
 test('spectators follow regia and cannot move beyond its current position', () => {
@@ -91,4 +92,22 @@ test('viewer events stop original handlers and wait for data before navigating',
 test('rotation control is limited to mobile touch devices', () => {
   assert.equal(viewer(false).elements['#lv-r'].hidden, true);
   assert.equal(viewer(true).elements['#lv-r'].hidden, false);
+});
+
+test('mobile selectors reach their own handlers without running original navigation', () => {
+  const { listeners } = viewer(true);
+  listeners.click({
+    target: { closest: selector => selector === '[data-live-control]' },
+    stopImmediatePropagation() { throw new Error('selector was intercepted') },
+  });
+});
+
+test('rotation delegates layout and preserves the current slide position', () => {
+  const { context, elements, rotations } = viewer(true);
+  elements['#lv-r'].onclick();
+  assert.equal(rotations.at(-1), true);
+  assert.equal(context.si, 1);
+  assert.equal(context.sk, 1);
+  elements['#lv-r'].onclick();
+  assert.equal(rotations.at(-1), false);
 });

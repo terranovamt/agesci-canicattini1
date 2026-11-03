@@ -20,3 +20,14 @@ e possono tornare indietro, ma non superare la posizione consentita da `config.j
 Sui dispositivi mobili touch appare anche il pulsante per ruotare la presentazione.
 Il ruolo nell'interfaccia non sostituisce le regole Firebase, che devono impedire
 scritture senza una chiave valida.
+
+## Layout verticale
+
+`mobile.js` contiene i layout per telefoni in verticale: titolo e chiusura,
+articoli, modifiche ai documenti, ordine del giorno, composizione dell'organo
+e quorum. Le altre slide mantengono il layout orizzontale ridimensionato.
+Ruotando il telefono o usando il pulsante di rotazione si torna al layout
+orizzontale, mantenendo la posizione e i limiti dello spettatore.
+
+`live.js`, caricato dopo `mobile.js`, gestisce la sincronizzazione Firebase
+e i controlli degli spettatori. L'esportazione PDF resta orizzontale.

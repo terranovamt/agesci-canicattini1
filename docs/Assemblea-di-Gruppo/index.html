@@ -1114,11 +1114,14 @@
       return o.map(s => s.ty === 'eq' ? s : (s.d.length && s.a.length ? { ty: 'chg', d: s.d, a: s.a } : s.d.length ? { ty: 'del', d: s.d } : { ty: 'ins', a: s.a }));
     };
 
+    const modoModifiche = (x, A, B, segs) => {
+      const com = segs.filter(s => s.ty === 'eq').reduce((n, s) => n + s.q.filter(isW).length, 0), sim = com / Math.max(A.filter(isW).length, B.filter(isW).length, 1);
+      return (x.modalita === 'unico' || x.modalita === 'affiancato') ? x.modalita : (sim >= (x.soglia_somiglianza ?? .5) ? 'unico' : 'affiancato');
+    };
     const modifiche = x => (r, D) => {
       band(r, x.titolo_barra || 'MODIFICHE AL DOCUMENTO'); cnt.className = ''; r.classList.add('mod');
       const A = tok(x.prima), B = tok(x.dopo), segs = frasi(diffSegs(A, B));
-      const com = segs.filter(s => s.ty === 'eq').reduce((n, s) => n + s.q.filter(isW).length, 0), sim = com / Math.max(A.filter(isW).length, B.filter(isW).length, 1);
-      const mode = (x.modalita === 'unico' || x.modalita === 'affiancato') ? x.modalita : (sim >= (x.soglia_somiglianza ?? .5) ? 'unico' : 'affiancato');
+      const mode = modoModifiche(x, A, B, segs);
       r.append(h(`<h2 class="mt">${x.titolo || ''}</h2>`));
       const noteEl = x.nota ? h(`<div class="nt2">${x.nota}</div>`) : null;
       if (noteEl) r.append(noteEl);
@@ -1741,6 +1744,7 @@
     go = (i, k) => { _go(i, k); bP.style.display = i === scenes.length - 1 ? 'flex' : 'none' };
     addEventListener('keydown', e => { if (e.key === 'p' && !e.ctrlKey && !e.metaKey && si === scenes.length - 1) exportPdf() });  </script>
   <script src="mobile.js"></script>
+  <script src="live.js"></script>
 </body>
 
 </html>
