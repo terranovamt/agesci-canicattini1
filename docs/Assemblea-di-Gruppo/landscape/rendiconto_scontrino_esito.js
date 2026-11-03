@@ -32,14 +32,22 @@ const cmp = (r, D) => {
   pe(414, `<div style="font-size:16px;font-weight:600;color:var(--v);opacity:.8">Come si calcola</div><div style="font-size:21px;font-weight:500;color:var(--ink);margin-top:4px">${fmt(ad)} ÷ ${fmt(E)} = <b>${pctT(pct)}</b></div><div style="font-size:14px;color:var(--v);opacity:.7;margin-top:14px">Fascia attuale: ${tl} delle entrate</div>`);
   r.append(pn);
   const vE = rE.querySelector('.v'), vU = rU.querySelector('.v'), vT = rT.querySelector('.v');
+  const reveal = receiptReveal(on => {
+    stamp.style.opacity = on ? 1 : 0;
+    stamp.style.transform = on ? 'rotate(-8deg)' : 'scale(2.4) rotate(-22deg)';
+  }, on => {
+    pn.classList.toggle('on', on);
+    mk.style.left = (on ? 36 + fr * sw : 36) + 'px';
+    fill.style.width = on ? fr * 100 + '%' : '0';
+    if (on) pc(big, pct);
+    else { cancelAnimationFrame(big._r); big._v = 0; big.textContent = '0%' }
+  });
   return {
     steps: 3, show(k) {
       rc.classList.add('on'); hd.classList.add('on'); rE.classList.toggle('on', k >= 1); rU.classList.toggle('on', k >= 2);
-      rule.firstChild.style.width = k >= 3 ? '100%' : '0'; rT.classList.toggle('on', k >= 3); rK.classList.toggle('on', k >= 3); pn.classList.toggle('on', k >= 3);
-      stamp.style.opacity = k >= 3 ? 1 : 0; stamp.style.transform = k >= 3 ? 'rotate(-8deg)' : 'scale(2.4) rotate(-22deg)';
-      mk.style.left = (k >= 3 ? 36 + fr * sw : 36) + 'px';
-      fill.style.width = k >= 3 ? fr * 100 + '%' : '0';
-      if (k >= 1) counter(vE, E); else vE._v = 0; if (k >= 2) counter(vU, U); else vU._v = 0; if (k >= 3) { counter(vT, d); pc(big, pct) } else { vT._v = 0; big._v = 0 }
+      rule.firstChild.style.width = k >= 3 ? '100%' : '0'; rT.classList.toggle('on', k >= 3); rK.classList.toggle('on', k >= 3);
+      reveal(k >= 3);
+      if (k >= 1) counter(vE, E); else vE._v = 0; if (k >= 2) counter(vU, U); else vU._v = 0; if (k >= 3) counter(vT, d); else vT._v = 0;
     }
   }
 };

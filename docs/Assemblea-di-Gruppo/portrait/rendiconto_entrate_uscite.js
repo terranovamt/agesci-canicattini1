@@ -8,7 +8,6 @@
       Ap = D.anno_esercizio - 1,
       nE = En.length,
       E = sum(En.map((x) => x.importo)),
-      Uall = sum(Us.map((x) => x.importo)),
       pE = En.map((x) => x.importo_anno_precedente ?? 0),
       pU = Us.map((x) => x.importo_anno_precedente ?? 0),
       S = 440,
@@ -58,7 +57,8 @@
     rows.append(rE.lst, rU.lst);
     box.append(wrap, cd, rows);
     zfit(box);
-    let ph = null;
+    let ph = null,
+      pr = L;
     return {
       steps: nE + 1 + Us.length,
       show(k) {
@@ -83,13 +83,23 @@
         const rem = (E - Uk) / E * L,
           neg = E - Uk < 0;
         let a = 0;
+        if (!p2) {
+          pr = L;
+          cs.forEach((c) => (c.style.transition = 'stroke-dasharray .9s ease, stroke-dashoffset .9s ease'));
+          dis.style.transition = 'stroke-dasharray .9s ease';
+        }
         En.forEach((x, i) => {
           const l = p2 ? (x.importo / E) * L : tE ? (vE[i] / tE) * L : 0;
           const vis = p2 ? Math.min(l, Math.max(0, rem - a)) : l;
+          if (p2) pieTransition(pr, rem, a, a + l, cs[i]);
           cs[i].setAttribute('stroke-dasharray', `${Math.max(0, vis - 3)} ${L}`);
           cs[i].setAttribute('stroke-dashoffset', -a);
           a += l;
         });
+        if (p2) {
+          pieTransition(pr, rem, -1e9, 0, dis);
+          pr = rem;
+        }
         dis.setAttribute('stroke-dasharray', `${p2 && neg ? Math.min(L, Math.max(((Uk - E) / E) * L, 10)) : 0} ${L}`);
         ct.firstChild.textContent = !p2 ? 'Entrate' : neg ? 'Disavanzo' : 'Saldo';
         ct.classList.toggle('red', p2 && neg);

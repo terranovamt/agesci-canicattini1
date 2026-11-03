@@ -47,6 +47,9 @@
       <div class="rl2 ent"><span style="color:${totC}">TOTALE</span><b class="v" style="color:${totC}"></b></div>
       <div class="rk ent">${ad ? (neg ? 'disavanzo' : 'avanzo') + ' di esercizio' : 'esercizio in pareggio'}</div>
       <div class="rs"><span style="color:${tier.c};border-color:${tier.c}">${tier.n}</span></div></div>`);
+    const edge = ['0% 0%', '100% 0%'];
+    for (let i = 0; i <= 28; i++) edge.push(`${100 - i * 100 / 28}% ${i % 2 ? 'calc(100% - 14px)' : '100%'}`);
+    rc.prepend(h(`<div class="receipt-paper" style="clip-path:polygon(${edge.join(',')})"></div>`));
     const ls = rc.querySelectorAll('.rl1,.rl2,.rk'),
       vE = ls[0].querySelector('.v'),
       vU = ls[1].querySelector('.v'),
@@ -61,24 +64,27 @@
       fill = pn.querySelector('.pbr i');
     box.append(rc, pn);
     zfit(box);
+    const reveal = receiptReveal(on => stamp.classList.toggle('on', on), on => {
+      pn.classList.toggle('on', on);
+      mk.style.left = on ? fr * 100 + '%' : '0';
+      fill.style.width = on ? fr * 100 + '%' : '0';
+      if (on) pc(big, pct);
+      else { cancelAnimationFrame(big._r); big._v = 0; big.textContent = '0%' }
+    });
     return {
       steps: 3,
       show(k) {
         ls[0].classList.toggle('on', k >= 1);
         ls[1].classList.toggle('on', k >= 2);
         [ls[2], ls[3]].forEach((e) => e.classList.toggle('on', k >= 3));
-        pn.classList.toggle('on', k >= 3);
         rule.style.width = k >= 3 ? '100%' : '0';
-        stamp.classList.toggle('on', k >= 3);
-        mk.style.left = k >= 3 ? fr * 100 + '%' : '0';
-        fill.style.width = k >= 3 ? fr * 100 + '%' : '0';
+        reveal(k >= 3);
         if (k >= 1) counter(vE, E);
         else vE._v = 0;
         if (k >= 2) counter(vU, U);
         else vU._v = 0;
         if (k >= 3) {
           counter(vT, d);
-          pc(big, pct);
         } else {
           vT._v = 0;
           big._v = 0;

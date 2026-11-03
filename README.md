@@ -44,6 +44,10 @@ layout: `divisore_sezione` e `chiusura` usano `titolo.css`, `grazie` usa
 Gli stili verticali di rendiconto e patrimonio sono in `portrait/finanze.css`; quelli di cambio date, differenze e area obiettivi in `portrait/aree.css`.
 Articoli e ordine del giorno condividono `portrait/testo_articoli.css`: le card
 dell'ODG adattano l'altezza al testo, anche per i punti su piu' righe.
+Le animazioni comuni del rendiconto sono in `common/base.js`: gli spicchi delle
+entrate si riducono in sequenza; nell'ultimo passo dello scontrino compare il
+totale, dopo un secondo il timbro e infine la card percentuale, dopo 1,5 secondi.
+In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra.
 
 File comuni:
 

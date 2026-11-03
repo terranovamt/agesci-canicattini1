@@ -27,6 +27,25 @@ function counter(el, to, dur = 1000) {
 }
 /* la barra del titolo ora è fissa: la slide dichiara solo il suo titolo */
 const band = (r, t) => { r.dataset.hd = t };
+function pieTransition(from, to, start, end, el) {
+  const lo = Math.max(Math.min(from, to), start), hi = Math.min(Math.max(from, to), end);
+  if (INST || from === to || hi <= lo) { el.style.transition = 'none'; return }
+  const distance = Math.abs(from - to),
+    t0 = (from > to ? from - hi : lo - from) / distance,
+    t1 = (from > to ? from - lo : hi - from) / distance;
+  el.style.transition = `stroke-dasharray ${(t1 - t0) * 1.2}s linear ${t0 * 1.2}s`;
+}
+function receiptReveal(showStamp, showPanel) {
+  let stampTimer, panelTimer;
+  return final => {
+    clearTimeout(stampTimer); clearTimeout(panelTimer);
+    showStamp(final && INST); showPanel(final && INST);
+    if (final && !INST) {
+      stampTimer = setTimeout(() => showStamp(true), 1000);
+      panelTimer = setTimeout(() => showPanel(true), 1500);
+    }
+  };
+}
 function donut(r, cx, cy, rad, w, n, cols) {
   const s = document.createElementNS(NS, 'svg'); s.setAttribute('width', 1280); s.setAttribute('height', 720);
   const L = 2 * Math.PI * rad, sg = []; for (let i = 0; i < n; i++) {
