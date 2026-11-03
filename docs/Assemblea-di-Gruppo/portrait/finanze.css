@@ -374,9 +374,12 @@ body.pm .fp .fbp {
 }
 
 /* patrimonio ciambella */
+body.pm .fp .fpl {
+  min-height: auto;
+}
 body.pm .fp .fpr {
   flex: 1 1 0;
-  min-height: 0;
+  min-height: calc(76px * var(--z, 1));
   display: flex;
   align-items: center;
   gap: 20px;
@@ -387,8 +390,10 @@ body.pm .fp .fpr {
 }
 body.pm .fp .fpi {
   flex: none;
-  width: calc(84px * var(--z, 1));
-  height: calc(84px * var(--z, 1));
+  box-sizing: border-box;
+  height: min(calc(84px * var(--z, 1)), calc(100% - 10px));
+  width: auto;
+  aspect-ratio: 1;
   border: 7px solid;
   border-radius: 50%;
   display: flex;
@@ -397,8 +402,8 @@ body.pm .fp .fpi {
   background: var(--w);
 }
 body.pm .fp .fpi img {
-  width: 54px;
-  height: 54px;
+  width: 70%;
+  height: 70%;
   object-fit: contain;
 }
 body.pm .fp .fpn1 {

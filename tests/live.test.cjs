@@ -33,11 +33,13 @@ function viewer(isMobile) {
   const writes = [];
   const rotations = [];
   const navigations = [];
-  const element = () => ({
+  const element = () => { const el = ({
+    classes: new Set(),
+    classList: { toggle(name, on) { on ? this.owner.classes.add(name) : this.owner.classes.delete(name) } },
     style: {}, append() {}, addEventListener() {}, setAttribute() {},
     contains: target => Object.values(elements).includes(target),
     querySelector: selector => elements[selector] ||= element(),
-  });
+  }); el.classList.owner = el; return el; };
   const context = {
     window: { LIVE: role(''), mobileLayout: { rotate(value) { rotations.push(value) } } },
     document: { head: element(), body: element(), createElement: element, querySelectorAll: () => [] },
@@ -108,10 +110,12 @@ test('rotation delegates layout and preserves the current slide position', () =>
   const { context, elements, rotations } = viewer(true);
   elements['#lv-r'].onclick();
   assert.equal(rotations.at(-1), true);
+  assert.equal(context.document.body.classes.has('lv-rot'), true);
   assert.equal(context.si, 1);
   assert.equal(context.sk, 1);
   elements['#lv-r'].onclick();
   assert.equal(rotations.at(-1), false);
+  assert.equal(context.document.body.classes.has('lv-rot'), false);
 });
 
 test('ODG button and topic links follow the live limit', () => {
@@ -150,4 +154,20 @@ test('unchanged live updates do not replay the current slide animation', () => {
   update(1002);
   assert.equal(navigations.length, before + 1);
   assert.equal(context.sk, 2);
+});
+
+test('rotated swipe follows the vertical screen axis', () => {
+  const { context, elements, listeners } = viewer(true);
+  elements['#lv-r'].onclick();
+  context.go(1, 1);
+  const touch = (name, x, y) => listeners[name]({
+    target: {}, preventDefault() {}, stopImmediatePropagation() {},
+    touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }],
+  });
+  touch('touchstart', 200, 300);
+  touch('touchend', 50, 400);
+  assert.equal(context.sk, 0);
+  touch('touchstart', 200, 300);
+  touch('touchend', 350, 200);
+  assert.equal(context.sk, 1);
 });

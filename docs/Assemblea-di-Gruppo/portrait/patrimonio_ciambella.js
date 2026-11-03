@@ -36,11 +36,11 @@
     });
     const ct = h('<div class="fdc"><div class="k">Totale</div><div class="num"></div></div>');
     wrap.append(svg, ct);
-    const lst = h('<div class="frs"></div>');
+    const lst = h('<div class="frs fpl"></div>');
     const rows = P.voci.map((x) => {
       const i = ord.indexOf(x);
       const e = h(
-        `<div class="fpr ent"><span class="fpi" style="border-color:${cols[i]}"><img src="${x.icona}" onerror="this.style.display='none'"></span><span class="fpn1">${x.nome}</span><div><b>${fmt(x.importo_anno_corrente)}</b><small>${Math.round((x.importo_anno_corrente / T) * 1000) / 10}%</small></div></div>`,
+        `<div class="fpr ent"><span class="fpi" style="border-color:${cols[i]}"><img src="${x.icona}" onerror="this.style.display='none'"></span><span class="fpn1">${x.nome}</span><div><b>${fmt(x.importo_anno_corrente)}</b></div></div>`,
       );
       lst.append(e);
       return e;

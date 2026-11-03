@@ -42,6 +42,35 @@ const PORTRAIT = {},
   };
   addEventListener('resize', fit);
   fit();
+  /* su touch i controlli si nascondono dopo 3 s; il primo tocco li fa solo ricomparire */
+  if (matchMedia('(pointer: coarse)').matches) {
+    const css = document.createElement('style');
+    css.textContent = '#lv-bar,#nav{transition:opacity .4s}body.idle #lv-bar,body.idle #nav{opacity:0;pointer-events:none}';
+    document.head.append(css);
+    let idleTimer,
+      wasIdle = false;
+    const wake = () => {
+      if (document.body.classList.contains('idle')) {
+        wasIdle = true;
+        setTimeout(() => (wasIdle = false), 800);
+      }
+      document.body.classList.remove('idle');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => document.body.classList.add('idle'), 3000);
+    };
+    ['touchstart', 'pointerdown'].forEach((ev) => addEventListener(ev, wake, { capture: true, passive: true }));
+    addEventListener(
+      'click',
+      (e) => {
+        if (!wasIdle) return;
+        wasIdle = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      },
+      true,
+    );
+    wake();
+  }
   /* true se il testo va a capo lasciando una riga finale troppo corta (una parola o poche lettere) */ const orphan = (el) => {
     if (el.querySelector('br')) return false;
     const rg = document.createRange();

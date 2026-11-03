@@ -44,8 +44,8 @@
     #lv-bar button:active:not(:disabled){background:var(--v2)}
     #lv-m{display:flex;align-items:center;justify-content:center}
     #lv-m svg{position:static;flex:none}
-    #lv-f{display:flex;align-items:center;justify-content:center;min-width:44px!important}
-    #lv-f svg{position:static;flex:none}
+    #lv-bar button,#lv-n{transition:transform .3s}
+    body.lv-rot #lv-bar button:not(#lv-l),body.lv-rot #lv-n{transform:rotate(90deg)}
     @media(max-width:360px){#lv-bar{gap:4px;padding:0 6px}#lv-bar button{min-width:40px}}
     #lv-c{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
     #lv-l{height:26px!important;min-width:0!important;font-size:12px!important;padding:0 10px;background:var(--y)!important;color:var(--vd)!important}`;
@@ -54,13 +54,6 @@
   const bar = document.createElement('div'); bar.id = 'lv-bar';
   bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="min-width:44px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden>● Vai alla slide attuale</button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
   document.body.append(bar);
-  const fullscreen = document.createElement('button');
-  fullscreen.id = 'lv-f';
-  fullscreen.setAttribute('aria-label', 'Schermo intero');
-  fullscreen.title = 'Schermo intero';
-  fullscreen.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg>';
-  fullscreen.onclick = () => toggleFullscreen();
-  bar.append(fullscreen);
   ['click', 'touchstart', 'touchend'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
   const $ = id => bar.querySelector('#' + id);
   const bp = $('lv-p'), bx = $('lv-x'), bl = $('lv-l'), bn = $('lv-n');
@@ -106,7 +99,7 @@
   $('lv-r').onclick = () => { rot = !rot; myFit() };
 
   /* blocca i comandi originali (click, tastiera, swipe) e usa i nostri */
-  let tx = 0;
+  let tx = 0, ty = 0;
   ['click', 'keydown', 'touchstart', 'touchend'].forEach(ev => addEventListener(ev, e => {
     if (bar.contains(e.target)) return;
     if (ev === 'click' && e.target.closest?.('[data-live-control]')) return;
@@ -116,13 +109,15 @@
       if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); next() }
       if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev() }
     }
-    if (ev === 'touchstart') tx = e.touches[0].clientX;
-    if (ev === 'touchend') { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) d < 0 ? next() : prev() }
+    if (ev === 'touchstart') { tx = e.touches[0].clientX; ty = e.touches[0].clientY }
+    /* in modalita' ruotata lo swipe orizzontale per chi guarda e' verticale sullo schermo */
+    if (ev === 'touchend') { const d = rot ? e.changedTouches[0].clientY - ty : e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) d < 0 ? next() : prev() }
   }, true));
 
   /* adattamento allo schermo del telefono (con opzione "ruota") */
   function myFit() {
     if (innerWidth > innerHeight) rot = false;
+    document.body.classList.toggle('lv-rot', rot);
     window.mobileLayout.rotate(rot);
   }
   addEventListener('resize', myFit); addEventListener('orientationchange', () => setTimeout(myFit, 200)); deviceUi();
