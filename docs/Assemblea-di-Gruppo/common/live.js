@@ -39,14 +39,15 @@
       background:var(--vd);color:#fff;z-index:50;font:600 14px Montserrat,sans-serif;user-select:none}
     #lv-bar button{border:0;border-radius:12px;height:46px;min-width:52px;font:700 22px Montserrat,sans-serif;
       background:var(--v);color:#fff;cursor:pointer}
-    #lv-bar button:disabled{opacity:.3}
+    #lv-bar button:disabled{opacity:.3;cursor:not-allowed}
+    [data-slide-link][aria-disabled="true"]{filter:grayscale(1);color:var(--muted)!important;cursor:not-allowed!important}
     #lv-bar button:active:not(:disabled){background:var(--v2)}
     #lv-c{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
     #lv-l{height:26px!important;min-width:0!important;font-size:12px!important;padding:0 10px;background:var(--y)!important;color:var(--vd)!important}`;
   document.head.append(css);
 
   const bar = document.createElement('div'); bar.id = 'lv-bar';
-  bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden>● Vai alla slide attuale</button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
+  bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="font-size:12px;min-width:44px">ODG</button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden>● Vai alla slide attuale</button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
   document.body.append(bar);
   ['click', 'touchstart', 'touchend'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
   const $ = id => bar.querySelector('#' + id);
@@ -70,6 +71,11 @@
     const here = enc(si, sk);
     bn.textContent = (si + 1) + ' / ' + scenes.length;
     bp.disabled = !si && !sk; bx.disabled = here >= lim; bl.hidden = here >= lim;
+    $('lv-m').disabled = enc(odgIdx(), 0) > lim;
+    document.querySelectorAll('[data-slide-link]').forEach(el => {
+      const i = scenes.findIndex(sc => sc.id === el.dataset.slideLink);
+      el.setAttribute('aria-disabled', String(i < 0 || enc(i, 0) > lim));
+    });
   }
   function on() {
     const old = lim; lim = limOf(S);
@@ -83,6 +89,7 @@
   bp.onclick = () => { if (cur) prev() };
   bx.onclick = () => { if (cur) next() };
   bl.onclick = () => { const d = dec(lim); go(d.i, d.k) };
+  $('lv-m').onclick = () => { if (cur && !$('lv-m').disabled) menu() };
   $('lv-r').onclick = () => { rot = !rot; myFit() };
 
   /* blocca i comandi originali (click, tastiera, swipe) e usa i nostri */

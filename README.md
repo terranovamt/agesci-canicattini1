@@ -48,6 +48,9 @@ Le animazioni comuni del rendiconto sono in `common/base.js`: gli spicchi delle
 entrate si riducono in sequenza; nell'ultimo passo dello scontrino compare il
 totale, dopo un secondo il timbro e infine la card percentuale, dopo 1,5 secondi.
 In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra.
+Home porta alla slide 1 (titolo), saltando la slide 0 con il QR. La barra del
+pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
+live sono grigi e disabilitati.
 
 File comuni:
 

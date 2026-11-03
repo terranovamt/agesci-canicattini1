@@ -27,6 +27,16 @@ function counter(el, to, dur = 1000) {
 }
 /* la barra del titolo ora è fissa: la slide dichiara solo il suo titolo */
 const band = (r, t) => { r.dataset.hd = t };
+function linkSlide(el, point) {
+  if (!point.slide_collegata) return;
+  el.dataset.liveControl = '';
+  el.dataset.slideLink = point.slide_collegata;
+  el.style.cursor = 'pointer';
+  el.onclick = ev => {
+    ev.stopPropagation();
+    if (el.getAttribute('aria-disabled') !== 'true') jump(point.slide_collegata);
+  };
+}
 function pieTransition(from, to, start, end, el) {
   const lo = Math.max(Math.min(from, to), start), hi = Math.min(Math.max(from, to), end);
   if (INST || from === to || hi <= lo) { el.style.transition = 'none'; return }

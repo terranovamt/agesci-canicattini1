@@ -133,16 +133,7 @@ const PORTRAIT = {},
       if (p < 1) el._r = requestAnimationFrame(f);
     })(t0);
   };
-  const link = (e, p) => {
-    if (p.slide_collegata) {
-      e.dataset.liveControl = '';
-      e.style.cursor = 'pointer';
-      e.onclick = (ev) => {
-        ev.stopPropagation();
-        jump(p.slide_collegata);
-      };
-    }
-  };
+  const link = linkSlide;
   /* riduce in scala (--z) le dimensioni dei blocchi finche' il contenuto sta nello schermo (telefoni piccoli) */ const zfit = (box) => {
     const run = () => {
       box.classList.add('zf');
