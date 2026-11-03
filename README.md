@@ -52,7 +52,7 @@ totale, dopo un secondo il timbro e infine la card percentuale, dopo 1,5 secondi
 In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra.
 Home porta alla slide 1 (titolo), saltando la slide 0 con il QR. La barra del
 pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
-live sono grigi e disabilitati.
+live sono disabilitati, mantenendo i colori delle card.
 Solo l'ODG iniziale contiene collegamenti: le slide di avanzamento ODG
 mostrano lo stato dei punti senza renderli cliccabili.
 La slide QR verticale usa lo spazio disponibile per ingrandire l'immagine,

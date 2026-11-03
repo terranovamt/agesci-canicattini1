@@ -40,7 +40,7 @@
     #lv-bar button{border:0;border-radius:12px;height:46px;min-width:52px;font:700 22px Montserrat,sans-serif;
       background:var(--v);color:#fff;cursor:pointer}
     #lv-bar button:disabled{opacity:.3;cursor:not-allowed}
-    [data-slide-link][aria-disabled="true"]{filter:grayscale(1);color:var(--muted)!important;cursor:not-allowed!important}
+    [data-slide-link][aria-disabled="true"]{cursor:not-allowed!important}
     #lv-bar button:active:not(:disabled){background:var(--v2)}
     #lv-m{display:flex;align-items:center;justify-content:center}
     #lv-m svg{position:static;flex:none}
