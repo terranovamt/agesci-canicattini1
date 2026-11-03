@@ -25,7 +25,7 @@
       ? h(`<div class="aoc ent aopt"><ul>${P.map((p) => `<li>${p.testo}</li>`).join('')}</ul></div>`)
       : null;
     if (pe) box.append(pe);
-    fitBox(box, 46, 14, '.aoc');
+    fitBox(box, 46, 14);
     return {
       steps: L.length,
       show(k) {

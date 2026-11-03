@@ -110,9 +110,7 @@ body.pm .cdp .cda {
 
 /* differenze */
 body.pm .dfp .dfc {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
   background: var(--w);
   border-radius: 24px;
   border-left: 16px solid var(--c);
@@ -135,6 +133,9 @@ body.pm .dfp .dfh small {
   letter-spacing: 1px;
   opacity: 0.65;
   text-align: right;
+}
+body.pm .dfp .dfc[style*='flex-grow'] {
+  flex: 1 0 auto;
 }
 body.pm .dfp ul {
   margin: 0.4em 0 0;
@@ -207,16 +208,17 @@ body.pm .aop .aoq small {
   color: var(--v2);
 }
 body.pm .aop .aoc {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: hidden;
+  flex: 1 0 auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   background: var(--w);
   border-radius: 24px;
   border-left: 14px solid var(--y);
-  padding: 0 26px;
+  padding-left: 26px;
+  padding-right: 26px;
   box-shadow: 0 4px 14px rgba(33, 22, 56, 0.12);
 }
 body.pm .aop .aob {

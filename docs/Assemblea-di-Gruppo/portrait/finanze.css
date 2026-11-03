@@ -86,8 +86,9 @@ body.pm .fp .frl {
   gap: 12px;
 }
 body.pm .fp .frw {
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 1 0 auto;
+  padding-top: 8px;
+  padding-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -225,6 +226,7 @@ body.pm .fp .rk {
 }
 body.pm .fp .rs {
   text-align: center;
+  padding-top: 10px;
 }
 body.pm .fp .rs span {
   display: inline-block;

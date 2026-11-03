@@ -43,6 +43,7 @@ const PORTRAIT = {},
   addEventListener('resize', fit);
   fit();
   /* true se il testo va a capo lasciando una riga finale troppo corta (una parola o poche lettere) */ const orphan = (el) => {
+    if (el.querySelector('br')) return false;
     const rg = document.createRange();
     rg.selectNodeContents(el);
     const rs = [...rg.getClientRects()].filter((q) => q.width > 1);
@@ -55,21 +56,31 @@ const PORTRAIT = {},
   /* barra del titolo: font il piu' grande possibile su 2 righe, senza parole sole sull'ultima riga */ const fitHdP = () => {
     if (!PM) return;
     const top = Math.floor((HDH - 10) / 2.16);
+    let first = 0;
     for (let f = top; f >= 18; f--) {
       HD.style.setProperty('--ht', f + 'px');
-      if (HDs.offsetHeight <= f * 1.08 * 2 + 2 && !orphan(HDs)) break;
+      if (HDs.offsetHeight <= f * 1.08 * 2 + 2) {
+        if (!first) first = f;
+        if (!orphan(HDs)) return;
+      }
     }
+    HD.style.setProperty('--ht', (first || 18) + 'px');
   };
   new MutationObserver(fitHdP).observe(HDs, { childList: true, characterData: true, subtree: true });
   if (document.fonts) document.fonts.ready.then(fitHdP);
   /* titolo grande delle slide titolo/sezione/chiusura: fino a 4 righe */ const fitSec = () => {
     if (!PM) return;
     st.querySelectorAll('.sec h1').forEach((e) => {
+      let first = 0;
       for (let f = 92; f >= 28; f--) {
         e.style.fontSize = f + 'px';
         const lh = parseFloat(getComputedStyle(e).lineHeight) || f * 1.05;
-        if (e.offsetHeight <= 4 * lh + 2 && !orphan(e)) break;
+        if (e.offsetHeight <= 4 * lh + 2) {
+          if (!first) first = f;
+          if (!orphan(e)) return;
+        }
       }
+      e.style.fontSize = (first || 28) + 'px';
     });
   };
   new MutationObserver(fitSec).observe(st, { childList: true });

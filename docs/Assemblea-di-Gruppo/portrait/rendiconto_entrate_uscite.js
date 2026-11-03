@@ -45,7 +45,7 @@
       const lst = h(`<div class="frl ${cls}"></div>`);
       const els = A.map((x, i) => {
         const e = h(
-          `<div class="frw ent"><i style="background:${cls === 'ue' ? V('--ko') : C[i % 5]}"></i><span>${x.descrizione}</span><div><b>${fmt(x.importo)}</b><small>${Ap}: ${fmt(P[i])}</small></div></div>`,
+          `<div class="frw ent"><i style="background:${C[i % 5]}"></i><span>${x.descrizione}</span><div><b>${fmt(x.importo)}</b><small>${Ap}: ${fmt(P[i])}</small></div></div>`,
         );
         lst.append(e);
         return e;

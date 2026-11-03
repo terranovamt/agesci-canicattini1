@@ -6,10 +6,10 @@ body.pm .sec .rr {
   right: 0;
   top: 0;
   bottom: auto;
-  height: 54%;
+  height: 66%;
   align-items: flex-start;
   text-align: left;
-  padding: 40px 56px 64px;
+  padding: 34px 56px 48px;
   border-radius: 0 0 64px 64px;
   box-shadow: 0 10px 40px var(--shadow-strong);
 }
@@ -39,10 +39,10 @@ body.pm .sec .d {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 64px);
+  top: calc(100% + 22px);
   bottom: auto;
   text-align: center;
-  font-size: 44px;
+  font-size: 40px;
   font-weight: 700;
   color: var(--v);
   opacity: 1;
@@ -53,17 +53,17 @@ body.pm .sec .ck2 {
 body.pm .sec .l {
   left: 0;
   right: 0;
-  top: 54%;
+  top: 66%;
   bottom: 0;
   width: auto;
   height: auto;
-  padding-top: 120px;
-  gap: 22px;
+  padding-top: 80px;
+  gap: 10px;
   font-size: 22px;
   white-space: nowrap;
 }
 body.pm .sec .l img {
-  width: 260px;
+  width: 150px;
 }
 /* il contatore sta su bianco: scuro invece che bianco */
 body.pm:has(.slide.sec:not(.out)) #cnt.w {
