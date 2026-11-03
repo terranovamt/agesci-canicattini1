@@ -157,6 +157,18 @@
 
     <section id="firebase">
       <h2><span class="n">6</span>Firebase</h2>
+      <h3>Configurare Firebase da zero</h3>
+      <p>Basta un account Google e il piano gratuito: nessuna carta, nessuna chiave API, nessun SDK.</p>
+      <ol class="steps">
+        <li>Apri <a href="https://console.firebase.google.com">console.firebase.google.com</a> → <b>Crea un progetto</b> (Analytics non serve).</li>
+        <li><b>Build → Realtime Database → Crea database</b>: posizione <b>Belgio (europe-west1)</b>, modalità <b>blocco</b>. Firestore, Authentication e Hosting non servono.</li>
+        <li>Nella scheda <b>Dati</b> copia l'URL del database (<code>https://…firebasedatabase.app/</code>).</li>
+        <li>Scheda <b>Regole</b>: incolla <code>firebase/database.rules.json</code>, sostituisci le due <code>LA-TUA-CHIAVE</code> con la tua chiave e premi <b>Pubblica</b>. La chiave va solo nella console, mai su GitHub.</li>
+        <li>Su GitHub metti l'URL in <code>url:</code> di <code>docs/Assemblea-di-Gruppo/config.js</code> e fai Commit (~1 minuto).</li>
+        <li>Prova: regia sul PC con <code>?regia=CHIAVE</code> (pallino verde), pubblico sul telefono; poi cambia un orario dal setup e premi <b>Pubblica</b>.</li>
+      </ol>
+      <p style="font-size:14px">Per cambiare chiave modifica le regole; per disattivare il live metti <code>url: ''</code> in <code>config.js</code>.</p>
+
       <p>Realtime Database <code>assemblea-canicattini1</code> (europe-west1), indirizzo in <code>config.js</code>.</p>
       <table>
         <tr><th>Nodo</th><th>Chi scrive</th><th>Chi legge</th><th>Cosa contiene</th></tr>
