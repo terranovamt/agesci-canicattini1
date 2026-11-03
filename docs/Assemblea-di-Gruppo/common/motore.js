@@ -56,12 +56,7 @@ function start(data) {
 }
 /* carica dati.js e lo ricontrolla ogni 2 secondi: se cambia, la presentazione si ricostruisce restando dov'eri */
 let last = null;
-function load(first) {
-  /* prima carica progetto_educativo.js (opzionale), poi dati.js */
-  const p = document.createElement('script'); p.src = 'progetto_educativo.js?t=' + Date.now();
-  p.onload = p.onerror = () => { p.remove(); loadDati(first) };
-  document.head.append(p);
-}
+function load(first) { loadDati(first) }
 /* dati effettivi = dati.js + eventuali modifiche live da Firebase (common/modifiche.js) */
 function refreshDati() {
   const M = window.MODIFICHE, base = window.DATI_BASE;

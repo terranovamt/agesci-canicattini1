@@ -1,4 +1,4 @@
-/* Pagina di setup: modifica qualsiasi campo di dati.js (e progetto_educativo.js) e lo pubblica su Firebase.
+/* Pagina di setup: modifica qualsiasi campo di dati.js e lo pubblica su Firebase.
    Su Firebase va solo la differenza rispetto a dati.js (vedi common/modifiche.js). */
 (function () {
   const $ = s => document.querySelector(s);
@@ -17,18 +17,19 @@
   const open = new Set(['assemblea']);
 
   function toast(msg) {
+    document.querySelectorAll('.toast').forEach(x => x.remove());
     const t = el('div', { className: 'toast', textContent: msg });
     document.body.append(t); setTimeout(() => t.remove(), 2600);
   }
   function status(text, cls) { const s = $('#stato'); s.textContent = text; s.className = 'pill ' + (cls || '') }
 
-  /* carica dati.js "pulito" (come la presentazione: prima progetto_educativo.js, poi dati.js) */
+  /* carica dati.js "pulito", senza modifiche live */
   function script(src) {
     return new Promise(res => { const s = el('script', { src: src + '?t=' + Date.now() }); s.onload = s.onerror = () => { s.remove(); res() }; document.head.append(s) });
   }
   async function loadBase() {
-    window.DATI = undefined; window.SLIDE_PE = undefined;
-    await script('progetto_educativo.js'); await script('dati.js');
+    window.DATI = undefined;
+    await script('dati.js');
     if (!window.DATI) throw new Error('dati.js non trovato o con errori');
     return clone(window.DATI);
   }
@@ -230,6 +231,70 @@
     catch (e) { toast('⚠ ' + e.message); status('Errore', 'ko'); updateDirty() }
   }
 
+  /* ---------- GitHub: salva dati.js ---------- */
+  const GH = L.github || {};
+  const TK = 'assemblea-gh-token';
+  const b64dec = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0)));
+  const b64enc = s => { const b = new TextEncoder().encode(s); let r = ''; for (let i = 0; i < b.length; i += 0x8000) r += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(r) };
+  function token() {
+    const t = localStorage.getItem(TK);
+    if (t) return Promise.resolve(t);
+    const d = $('#gh'); $('#gh-repo').textContent = GH.repo; $('#gh-token').value = '';
+    return new Promise(res => {
+      d.onclose = () => { const v = $('#gh-token').value.trim(); if (d.returnValue === 'ok' && v) { localStorage.setItem(TK, v); $('#dimentica').hidden = false; res(v) } else res(null) };
+      d.returnValue = ''; d.showModal();
+    });
+  }
+  async function gh(file, tk, body) {
+    const url = 'https://api.github.com/repos/' + GH.repo + '/contents/' + GH.cartella + '/' + file;
+    const r = await fetch(body ? url : url + '?ref=' + encodeURIComponent(GH.ramo), {
+      method: body ? 'PUT' : 'GET', cache: 'no-store', body: body && JSON.stringify(body),
+      headers: { Authorization: 'Bearer ' + tk, Accept: 'application/vnd.github+json' }
+    });
+    if (r.status === 401) { localStorage.removeItem(TK); $('#dimentica').hidden = true; throw new Error('Token GitHub non valido o scaduto: riprova e inseriscine uno nuovo') }
+    if (r.status === 403 || (r.status === 404 && body)) throw new Error('Il token non può scrivere in ' + GH.repo + ' (serve Contents: Read and write)');
+    if (r.status === 404) return null;
+    if (r.status === 409 || r.status === 422) throw Object.assign(new Error('conflitto'), { conflict: true });
+    if (!r.ok) throw new Error('GitHub: errore ' + r.status);
+    return r.json();
+  }
+  async function salvaGitHub(tentativo = 0) {
+    if (!GH.repo) return toast('⚠ Imposta "github" in config.js');
+    const tk = await token(); if (!tk) return;
+    const btn = $('#salva-gh'); btn.disabled = true; status('Salvo su GitHub…');
+    try {
+      const fd = await gh('dati.js', tk);
+      if (!fd) throw new Error('dati.js non trovato su GitHub');
+      const testo = b64dec(fd.content);
+      /* le modifiche del setup vanno sopra l'ultima versione su GitHub (che può essere più nuova di quella online) */
+      const voluto = M.applyPatch(window.SALVA_DATI.valuta(testo), M.diffPatch(base, edit));
+      const nuovo = window.SALVA_DATI.genera(testo, voluto);
+      if (nuovo === testo) { toast('dati.js su GitHub è già aggiornato'); status(remotePatch === undefined ? 'Uguale a dati.js' : 'Modifiche live attive', remotePatch === undefined ? 'ok' : 'live'); return }
+      await gh('dati.js', tk, { message: 'Aggiorna dati.js dalla pagina di setup', content: b64enc(nuovo), sha: fd.sha, branch: GH.ramo });
+      /* intanto gli schermi vedono subito le modifiche; quando GitHub Pages pubblica il file la patch si toglie da sola */
+      if (dirty()) { await save(M.diffPatch(base, edit)); sync(base, M.diffPatch(base, edit)); edit = clone(published); render() }
+      attesa = Date.now();
+      status('Salvato su GitHub', 'live');
+      toast('Salvato su GitHub: tra circa 1 minuto è online');
+    } catch (e) {
+      if (e.conflict && tentativo < 2) return salvaGitHub(tentativo + 1);
+      toast('⚠ ' + e.message); status('Errore', 'ko');
+    } finally { btn.disabled = false; $('.more').open = false }
+  }
+  /* dopo un salvataggio controlla dati.js più spesso; se la patch non cambia più nulla la toglie */
+  let attesa = 0;
+  async function ricarica() {
+    try {
+      const b = await loadBase();
+      if (same(b, base)) return;
+      sync(b, remotePatch);
+      if (remotePatch !== undefined && M.diffPatch(b, M.applyPatch(b, remotePatch)) === undefined) {
+        await save(undefined); sync(b, undefined); attesa = 0;
+        toast('dati.js aggiornato: modifiche live non più necessarie, tolte');
+      }
+    } catch (e) { }
+  }
+
   async function init() {
     $('#app').hidden = $('#bar').hidden = false;
     go(view);
@@ -240,14 +305,20 @@
     } catch (e) { status('Errore', 'ko'); $('#campi').textContent = '⚠ ' + e.message; return }
     const es = new EventSource(U + '/modifiche/patch.json');
     es.addEventListener('put', e => { const m = JSON.parse(e.data); if (m.path === '/' && !same(parse(m.data), remotePatch)) { sync(base, parse(m.data)); if (dirty()) toast('Altre modifiche pubblicate da un altro dispositivo') } });
-    setInterval(async () => { try { const b = await loadBase(); if (!same(b, base)) sync(b, remotePatch) } catch (e) { } }, 30000);
+    let ultimo = Date.now();
+    setInterval(() => { const f = attesa && Date.now() - attesa < 600000; if (Date.now() - ultimo >= (f ? 10000 : 30000)) { ultimo = Date.now(); ricarica() } }, 2000);
   }
 
   $('#pubblica').onclick = () => publish(M.diffPatch(base, edit), 'Pubblicato: gli schermi si aggiornano ora');
+  $('#salva-gh').onclick = () => salvaGitHub();
+  $('#dimentica').hidden = !localStorage.getItem(TK);
+  $('#dimentica').onclick = () => { localStorage.removeItem(TK); $('#dimentica').hidden = true; toast('Token GitHub dimenticato') };
   $('#annulla').onclick = () => { edit = clone(published); render() };
   $('#ripristina').onclick = () => { if (confirm('Togliere tutte le modifiche live e tornare a dati.js?')) publish(undefined, 'Tornato a dati.js') };
-  $('#scarica').onclick = () => {
-    const txt = '// dati.js generato dalla pagina di setup il ' + new Date().toLocaleString('it-IT') + '\n// (i commenti del file originale non sono inclusi)\nwindow.DATI = ' + JSON.stringify(edit, null, 2) + ';\n';
+  $('#scarica').onclick = async () => {
+    let txt;
+    try { txt = window.SALVA_DATI.genera(await (await fetch('dati.js?t=' + Date.now(), { cache: 'no-store' })).text(), edit) }
+    catch (e) { txt = 'window.DATI = ' + JSON.stringify(edit, null, 2) + ';\n' }
     const a = el('a', { href: URL.createObjectURL(new Blob([txt], { type: 'text/javascript' })), download: 'dati.js' });
     a.click(); URL.revokeObjectURL(a.href);
   };

@@ -6,7 +6,9 @@ window.LIVE = {
   // 'corrente' = il pubblico non supera MAI la slide che mostri ora (anche se torni indietro)
   // 'massimo'  = il pubblico non supera la slide più avanzata che hai raggiunto
   limite: 'corrente',
-  ruolo: 'locale'
+  ruolo: 'locale',
+  // dove la pagina di setup salva dati.js con "Salva su GitHub"
+  github: { repo: 'terranovamt/agesci-canicattini1', ramo: 'main', cartella: 'docs/Assemblea-di-Gruppo' }
 };
 /* Solo chi apre index.html?regia=LA-TUA-CHIAVE è il presentatore.
    Senza il parametro, anche nello stesso browser, il ruolo è sempre "pubblico". */

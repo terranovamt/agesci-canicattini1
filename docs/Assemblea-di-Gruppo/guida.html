@@ -140,7 +140,7 @@
       <div class="cards">
         <div class="card"><b>Tutti i campi</b>Anche le slide del Progetto Educativo, il bilancio e il patrimonio. La scheda <strong>JSON</strong> permette di aggiungere slide.</div>
         <div class="card y"><b>Solo le differenze</b>Su Firebase va solo ciò che hai cambiato: le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.</div>
-        <div class="card r"><b>Renderle definitive</b><strong>⋯ → Scarica dati.js aggiornato</strong> (o riportale a mano), poi <strong>⋯ → Togli tutte le modifiche live</strong>.</div>
+        <div class="card r"><b>Renderle definitive</b>Le modifiche live non cambiano <code>dati.js</code>. <strong>⋯ → Salva su GitHub</strong> lo riscrive (commenti inclusi) e, appena è online, toglie da solo le modifiche live.</div>
       </div>
     </section>
 
@@ -153,7 +153,15 @@
       </ol>
       <p>In alto ci sono <code>assemblea</code> (data, titolo, orari delle convocazioni), poi la lista <code>slide</code> in ordine di presentazione, poi censimenti, bilancio e patrimonio. Ogni slide accetta <code>"nascosta": true</code>; nei testi <code>&lt;br&gt;</code> va a capo e <code>&lt;b&gt;…&lt;/b&gt;</code> è grassetto.</p>
       <div class="note warn">⚠️ Attenzione a virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e chi apre la pagina vede “Non trovo dati.js”. Durante l'assemblea è più sicuro il setup.</div>
-    </section>
+          <h3>Salva su GitHub dal setup</h3>
+      <p>La prima volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (<b>⋯ → Dimentica token GitHub</b> lo cancella):</p>
+      <ol class="steps">
+        <li>Apri <a href="https://github.com/settings/personal-access-tokens/new">github.com/settings/personal-access-tokens/new</a> (Fine-grained token).</li>
+        <li><b>Repository access</b> → <i>Only select repositories</i> → <code>agesci-canicattini1</code>.</li>
+        <li><b>Permissions</b> → <b>Contents: Read and write</b> → <b>Generate token</b>, copialo nel setup.</li>
+      </ol>
+      <p style="font-size:14px">Il setup cambia solo le righe modificate di <code>dati.js</code> e fa il commit con il tuo account. In alternativa: <b>⋯ → Scarica dati.js aggiornato</b> e caricalo a mano.</p>
+</section>
 
     <section id="firebase">
       <h2><span class="n">6</span>Firebase</h2>

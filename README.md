@@ -68,8 +68,20 @@ I campi diversi da `dati.js` sono evidenziati in giallo e ↺ li riporta
 all'originale; ✕ e **+ Aggiungi** tolgono o aggiungono elementi alle liste.
 Premi **Pubblica**: su Firebase va solo la differenza rispetto a `dati.js`, così
 le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.
-Per renderle definitive: **⋯ → Scarica dati.js aggiornato** (senza commenti) o
-riportale a mano in `dati.js`, poi **⋯ → Togli tutte le modifiche live**.
+Le modifiche live **non cambiano `dati.js`**: restano su Firebase, sopra il file.
+Per renderle definitive: **⋯ → Salva su GitHub (dati.js)**. Il setup riscrive
+`dati.js` cambiando solo le righe modificate (commenti e formattazione restano)
+e fa il commit; dopo ~1 minuto GitHub Pages lo pubblica e il setup toglie da
+solo le modifiche live, ormai inutili. La prima volta chiede un **token GitHub**
+(salvato solo su quel dispositivo; **⋯ → Dimentica token GitHub** lo cancella):
+
+1. <https://github.com/settings/personal-access-tokens/new> (Fine-grained token).
+2. *Repository access* → *Only select repositories* → `agesci-canicattini1`.
+3. *Permissions* → **Contents: Read and write** → *Generate token*, copialo nel setup.
+
+In alternativa **⋯ → Scarica dati.js aggiornato** e caricalo a mano su GitHub,
+poi **⋯ → Togli tutte le modifiche live**. Repository, ramo e cartella sono in
+`config.js` (`github`).
 
 Con un errore di sintassi in `dati.js` gli schermi già aperti restano alla
 versione precedente; chi apre la pagina vede "Non trovo dati.js".
@@ -172,8 +184,8 @@ con titolo e countdown compatti; il layout orizzontale resta invariato.
 File comuni:
 
 - `index.html`: pagina e ordine di caricamento di stili e script.
-- `config.js`: Firebase e limite degli spettatori; `dati.js` e
-  `progetto_educativo.js`: contenuti.
+- `config.js`: Firebase, limite degli spettatori, repository per "Salva su GitHub";
+  `dati.js`: tutti i contenuti (anche le slide del Progetto Educativo).
 - `common/base.css`: colori, barra del titolo, navigazione; `common/print.css`: PDF.
 - `common/base.js`: funzioni di supporto; `common/differenze-testo.js`:
   confronto parola per parola dei testi.
@@ -181,7 +193,8 @@ File comuni:
 - `common/pdf.js`: esportazione PDF; `common/live.js`: regia e spettatori
   (Firebase); `common/modifiche.js`: modifiche live sopra `dati.js`;
   `common/avvio.js`: avvio, caricato per ultimo.
-- `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup.
+- `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup;
+  `common/salva-dati.js`: riscrive `dati.js` mantenendo i commenti.
 - `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero
   dalla schermata Home.
 - `firebase/database.rules.json` (radice del repository): regole Firebase.

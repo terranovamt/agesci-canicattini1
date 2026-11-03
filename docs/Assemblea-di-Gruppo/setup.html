@@ -50,13 +50,31 @@
     <details class="more">
       <summary title="Altro">⋯</summary>
       <div>
+        <button id="salva-gh">Salva su GitHub (dati.js)</button>
         <button id="ripristina" class="sec">Togli tutte le modifiche live</button>
         <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
+        <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
       </div>
     </details>
   </footer>
 
+  <dialog id="gh">
+    <form method="dialog">
+      <h2>Salva su GitHub</h2>
+      <p>Per scrivere <code>dati.js</code> serve un <b>token GitHub</b>. Si crea una volta e resta solo su questo dispositivo.</p>
+      <ol>
+        <li>Apri <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Fine-grained token</a>.</li>
+        <li><b>Repository access</b> → <i>Only select repositories</i> → <code id="gh-repo"></code>.</li>
+        <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>.</li>
+        <li><b>Generate token</b>, copialo e incollalo qui.</li>
+      </ol>
+      <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…" required>
+      <div class="row"><button value="ok">Salva su GitHub</button><button value="no" class="sec" formnovalidate>Annulla</button></div>
+    </form>
+  </dialog>
+
   <script src="config.js"></script>
+  <script src="common/salva-dati.js"></script>
   <script src="common/modifiche.js"></script>
   <script src="common/setup.js"></script>
 </body>

@@ -26,6 +26,7 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .tabs .links { margin-left: auto; display: flex; gap: 12px }
 .tabs a { color: var(--v); font-weight: 700; font-size: 13px }
 .hint { font-size: 13px; opacity: .7; margin: 6px 0 }
+#doc[hidden] { display: none }
 #doc { display: block; width: 100%; min-height: 70vh; border: 0; border-radius: 16px; background: var(--bg) }
 .ord { list-style: none; margin: 0; padding: 0 }
 .ord li { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; margin: 0 0 6px; padding: 6px 8px; box-shadow: 0 1px 5px rgba(33, 22, 56, .07); border: 2px solid transparent; transition: background .3s }
@@ -75,3 +76,9 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: fle
 .more summary { list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: 10px; background: var(--bg) }
 .more > div { position: absolute; right: 0; bottom: 48px; display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 18px rgba(33, 22, 56, .2); width: max-content }
 .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--vd); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; z-index: 9 }
+dialog { max-width: 520px; width: calc(100% - 24px); border: 0; border-radius: 18px; padding: 18px 20px; color: var(--vd); box-shadow: 0 10px 40px rgba(33, 22, 56, .35) }
+dialog::backdrop { background: rgba(33, 22, 56, .55) }
+dialog h2 { margin: 0 0 8px; color: var(--v); font-size: 20px }
+dialog p, dialog li { font-size: 14px }
+dialog ol { padding-left: 20px }
+dialog a { color: var(--v); font-weight: 700 }
