@@ -25,6 +25,7 @@
 // - "titolo_barra": testo nella barra viola in alto, opzionale dove è presente la barra.
 
 // TIPI DI SLIDE E PARAMETRI:
+// - slide_qr_live: { titolo, sottotitolo, data_ora, immagine }; QR (img/qr.svg) e conto alla rovescia fino a "data_ora" (es. "2026-11-20T20:30:00"); tutti i parametri sono opzionali.
 // - slide_titolo: { titolo, sottotitolo }.
 // - slide_divisore_sezione: { titolo, sottotitolo }; se il sottotitolo manca, mostra il titolo dell'assemblea.
 // - slide_ordine_del_giorno: { punti: [ { testo, slide_collegata } ] }.
@@ -58,6 +59,9 @@ window.DATI = {
 
   // 2. SLIDE: l'ordine di questa lista determina l'ordine della presentazione.
   "slide": [
+    // Slide 0: QR code e conto alla rovescia
+    { "tipo": "slide_qr_live", "data_ora": "2026-11-20T20:30:00" },
+
     // Apertura
     {
       "tipo": "slide_titolo",

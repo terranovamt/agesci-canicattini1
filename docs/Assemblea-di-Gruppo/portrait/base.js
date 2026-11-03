@@ -156,6 +156,7 @@ const PORTRAIT = {},
   Object.assign(PORTRAIT_UTIL, { HEAD, norm, mkFl, mkBody, fitBox, cnum, link, zfit });
   /* slide che mantengono la struttura originale e vengono solo adattate dal CSS */ const NATIVE = new Set([
     'slide_titolo',
+    'slide_qr_live',
     'slide_divisore_sezione',
     'slide_chiusura',
     'slide_foto_gruppo',

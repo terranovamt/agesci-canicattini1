@@ -1,0 +1,115 @@
+/* slide QR live + conto alla rovescia (orizzontale; verticale in fondo) */
+.qrl {
+  background: var(--v) url(../img/texture.svg) center/cover;
+  color: var(--w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center
+}
+
+.qrl h1 {
+  font-size: 46px;
+  font-weight: 300;
+  line-height: 1.15;
+  margin: 0
+}
+
+.qrl h1 b {
+  font-weight: 800;
+  color: var(--y)
+}
+
+.qrl .qrs {
+  font-size: 20px;
+  opacity: .85;
+  margin-top: 8px
+}
+
+.qrl .qrq {
+  background: var(--w);
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .35)
+}
+
+.qrl .qrq img {
+  display: block;
+  width: 320px;
+  height: 320px;
+  position: static
+}
+
+.qrl .qrc {
+  min-height: 90px
+}
+
+.qrl .qrl2 {
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: .85;
+  margin-bottom: 8px;
+  min-height: 22px
+}
+
+.qrl .qrt {
+  display: flex;
+  gap: 22px;
+  justify-content: center
+}
+
+.qrl .qrt div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px
+}
+
+.qrl .qrt b {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums
+}
+
+.qrl .qrt span {
+  font-size: 14px;
+  opacity: .8;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px
+}
+
+.qrl .qrt .qrn {
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--y)
+}
+
+body.pm .qrl {
+  gap: 34px
+}
+
+body.pm .qrl h1 {
+  font-size: 54px
+}
+
+body.pm .qrl .qrq img {
+  width: 480px;
+  height: 480px
+}
+
+body.pm .qrl .qrt {
+  gap: 16px
+}
+
+body.pm .qrl .qrt div {
+  min-width: 110px
+}
+
+body.pm .qrl .qrt b {
+  font-size: 64px
+}
