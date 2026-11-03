@@ -8,14 +8,10 @@ window.LIVE = {
   limite: 'corrente',
   ruolo: 'locale'
 };
-/* Chi apre index.html?regia=LA-TUA-CHIAVE (una volta sola, poi la chiave resta salvata
-   su quel browser) è il presentatore. Tutti gli altri sono "pubblico" e non possono superarti. */
+/* Solo chi apre index.html?regia=LA-TUA-CHIAVE è il presentatore.
+   Senza il parametro, anche nello stesso browser, il ruolo è sempre "pubblico". */
 (function () {
   const L = window.LIVE; if (!L.url) return;
-  let c = new URLSearchParams(location.search).get('regia');
-  try {
-    if (c) { localStorage.setItem('regia_chiave', c); history.replaceState(null, '', location.pathname + location.hash) }
-    else c = localStorage.getItem('regia_chiave');
-  } catch (e) { }
+  const c = new URLSearchParams(location.search).get('regia');
   L.chiave = c || null; L.ruolo = c ? 'regia' : 'pubblico';
 })();

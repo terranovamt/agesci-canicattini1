@@ -1,0 +1,94 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { test } = require('node:test');
+
+const root = path.join(__dirname, '../docs/Assemblea-di-Gruppo');
+const config = fs.readFileSync(path.join(root, 'config.js'), 'utf8');
+const sync = fs.readFileSync(path.join(root, 'mobile.js'), 'utf8');
+
+function role(search) {
+  const context = {
+    window: {}, location: { search }, URLSearchParams,
+    localStorage: { getItem: () => 'old-key' },
+  };
+  vm.runInNewContext(config, context);
+  return context.window.LIVE;
+}
+
+test('only an explicit, nonempty regia parameter selects the presenter', () => {
+  for (const search of ['', '?regia=', '?foo=bar']) {
+    assert.equal(role(search).ruolo, 'pubblico');
+    assert.equal(role(search).chiave, null);
+  }
+  assert.equal(role('?regia=test-key').ruolo, 'regia');
+  assert.equal(role('?regia=test-key').chiave, 'test-key');
+});
+
+function viewer(isMobile) {
+  const elements = {};
+  const listeners = {};
+  const streams = {};
+  const writes = [];
+  const element = () => ({
+    style: {}, append() {}, addEventListener() {},
+    contains: target => Object.values(elements).includes(target),
+    querySelector: selector => elements[selector] ||= element(),
+  });
+  const context = {
+    window: { LIVE: role('') },
+    document: { head: element(), body: element(), createElement: element },
+    scenes: [{}, {}, {}], si: 0, sk: 0, cur: {},
+    st: element(), innerWidth: isMobile ? 390 : 1440, innerHeight: 900,
+    matchMedia: () => ({ matches: isMobile, addEventListener() {} }),
+    addEventListener: (name, handler) => { listeners[name] = handler },
+    setInterval() {}, setTimeout() {},
+    fetch: async (url, options) => {
+      if (options) writes.push(options);
+      return { json: async () => ({ pos: 1001, max: 2000 }) };
+    },
+    EventSource: class {
+      addEventListener(name, handler) { streams[name] = handler }
+    },
+  };
+  context.go = (i, k) => { context.si = i; context.sk = k };
+  context.next = () => context.go(context.si, context.sk + 1);
+  context.prev = () => context.go(context.si, context.sk - 1);
+  vm.runInNewContext(sync, context);
+  streams.put({ data: JSON.stringify({ path: '/', data: { pos: 1001, max: 2000 } }) });
+  return { context, elements, listeners, writes };
+}
+
+test('spectators follow regia and cannot move beyond its current position', () => {
+  const { context, writes } = viewer(false);
+  assert.equal(context.si, 1);
+  assert.equal(context.sk, 1);
+  context.go(2, 0);
+  assert.equal(context.si, 1);
+  assert.equal(context.sk, 1);
+  context.go(0, 0);
+  assert.equal(context.si, 0);
+  assert.equal(writes.length, 0);
+});
+
+test('viewer events stop original handlers and wait for data before navigating', () => {
+  const { context, listeners } = viewer(false);
+  let stopped = 0;
+  const event = {
+    target: {}, key: 'ArrowLeft', preventDefault() {},
+    stopImmediatePropagation() { stopped++ },
+  };
+  listeners.keydown(event);
+  assert.equal(context.sk, 0);
+  assert.equal(stopped, 1);
+  context.cur = null;
+  context.next = () => { throw new Error('navigation before data loaded') };
+  listeners.keydown({ ...event, key: 'ArrowRight' });
+  assert.equal(stopped, 2);
+});
+
+test('rotation control is limited to mobile touch devices', () => {
+  assert.equal(viewer(false).elements['#lv-r'].hidden, true);
+  assert.equal(viewer(true).elements['#lv-r'].hidden, false);
+});
