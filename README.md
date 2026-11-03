@@ -8,6 +8,8 @@ branch `main` e cartella `/docs`, quindi salvare.
 
 Dopo il deploy, la presentazione sara disponibile all'indirizzo
 https://terranovamt.github.io/agesci-canicattini1/Assemblea-di-Gruppo/.
+L'indirizzo principale del sito reindirizza direttamente a
+`Assemblea-di-Gruppo/index.html`, conservando parametri URL e posizione della slide.
 
 ## Regia e spettatori
 
