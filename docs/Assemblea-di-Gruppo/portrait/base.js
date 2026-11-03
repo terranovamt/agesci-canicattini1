@@ -59,7 +59,7 @@ const PORTRAIT = {},
     let first = 0;
     for (let f = top; f >= 18; f--) {
       HD.style.setProperty('--ht', f + 'px');
-      if (HDs.offsetHeight <= f * 1.08 * 2 + 2) {
+      if (HDs.offsetHeight <= f * 1.08 * 2 + 2 && HDs.scrollWidth <= HDs.clientWidth + 1) {
         if (!first) first = f;
         if (!orphan(HDs)) return;
       }
@@ -75,7 +75,7 @@ const PORTRAIT = {},
       for (let f = 92; f >= 28; f--) {
         e.style.fontSize = f + 'px';
         const lh = parseFloat(getComputedStyle(e).lineHeight) || f * 1.05;
-        if (e.offsetHeight <= 4 * lh + 2) {
+        if (e.offsetHeight <= 4 * lh + 2 && e.scrollWidth <= e.clientWidth + 1) {
           if (!first) first = f;
           if (!orphan(e)) return;
         }
@@ -107,6 +107,7 @@ const PORTRAIT = {},
     sel,
   ) => {
     const run = () => {
+      box.classList.add('fitting');
       for (let f = max; f >= min; f--) {
         box.style.setProperty('--fs', f + 'px');
         const ok = sel
@@ -114,6 +115,7 @@ const PORTRAIT = {},
           : box.scrollHeight <= box.clientHeight + 1;
         if (ok) break;
       }
+      box.classList.remove('fitting');
     };
     run();
     if (document.fonts) document.fonts.ready.then(run);

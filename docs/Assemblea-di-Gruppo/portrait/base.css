@@ -159,3 +159,16 @@ body.pm .pb {
   font-weight: 500;
   color: var(--ink);
 }
+
+/* durante il calcolo del font le schede non hanno lo scarto dell'animazione di entrata */
+body.pm .fitting .ent {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* i titoli non spezzano mai una parola: il font si riduce finché ogni parola sta in riga */
+body.pm .sec h1,
+body.pm .hd span {
+  overflow-wrap: normal !important;
+  word-break: normal;
+}

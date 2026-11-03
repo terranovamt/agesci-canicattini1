@@ -15,7 +15,7 @@
       arr = h('<div class="cda">↓</div>'),
       b = mk('new', x.etichetta_dopo || 'DOPO', x.dopo);
     box.append(pn, a, arr, b);
-    fitBox(box, 40, 18, '.cdi');
+    fitBox(box, 40, 18);
     let tm = [];
     const set = (on) => {
       [a, b, arr].forEach((e) => e.classList.toggle('on', on));
