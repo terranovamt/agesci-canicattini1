@@ -42,12 +42,22 @@ const PORTRAIT = {},
   };
   addEventListener('resize', fit);
   fit();
-  /* barra del titolo: font il piu' grande possibile su 2 righe */ const fitHdP = () => {
+  /* true se il testo va a capo lasciando una riga finale troppo corta (una parola o poche lettere) */ const orphan = (el) => {
+    const rg = document.createRange();
+    rg.selectNodeContents(el);
+    const rs = [...rg.getClientRects()].filter((q) => q.width > 1);
+    const rows = [...new Set(rs.map((q) => Math.round(q.top / 4)))];
+    if (rows.length < 2) return false;
+    const last = rs.filter((q) => Math.round(q.top / 4) === rows[rows.length - 1]),
+      w = Math.max(...last.map((q) => q.right)) - Math.min(...last.map((q) => q.left));
+    return w < el.clientWidth * 0.3;
+  };
+  /* barra del titolo: font il piu' grande possibile su 2 righe, senza parole sole sull'ultima riga */ const fitHdP = () => {
     if (!PM) return;
     const top = Math.floor((HDH - 10) / 2.16);
     for (let f = top; f >= 18; f--) {
       HD.style.setProperty('--ht', f + 'px');
-      if (HDs.offsetHeight <= f * 1.08 * 2 + 2) break;
+      if (HDs.offsetHeight <= f * 1.08 * 2 + 2 && !orphan(HDs)) break;
     }
   };
   new MutationObserver(fitHdP).observe(HDs, { childList: true, characterData: true, subtree: true });
@@ -58,7 +68,7 @@ const PORTRAIT = {},
       for (let f = 92; f >= 28; f--) {
         e.style.fontSize = f + 'px';
         const lh = parseFloat(getComputedStyle(e).lineHeight) || f * 1.05;
-        if (e.offsetHeight <= 4 * lh + 2) break;
+        if (e.offsetHeight <= 4 * lh + 2 && !orphan(e)) break;
       }
     });
   };
