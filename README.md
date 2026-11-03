@@ -53,6 +53,8 @@ pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
 live sono grigi e disabilitati.
 Solo l'ODG iniziale contiene collegamenti: le slide di avanzamento ODG
 mostrano lo stato dei punti senza renderli cliccabili.
+La slide QR verticale usa lo spazio disponibile per ingrandire l'immagine,
+con titolo e countdown compatti; il layout orizzontale resta invariato.
 
 File comuni:
 

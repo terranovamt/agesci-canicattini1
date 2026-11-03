@@ -90,16 +90,35 @@
 }
 
 body.pm .qrl {
-  gap: 34px
+  gap: 18px;
+  padding: 24px 24px var(--bt);
 }
 
 body.pm .qrl h1 {
-  font-size: 54px
+  font-size: 40px
+}
+
+body.pm .qrl .qra,
+body.pm .qrl .qrc {
+  flex: none
+}
+
+body.pm .qrl .qrs {
+  font-size: 18px
+}
+
+body.pm .qrl .qrq {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 660px;
+  padding: 10px;
 }
 
 body.pm .qrl .qrq img {
-  width: 480px;
-  height: 480px
+  width: 100%;
+  height: 100%;
+  object-fit: contain
 }
 
 body.pm .qrl .qrt {
@@ -111,5 +130,5 @@ body.pm .qrl .qrt div {
 }
 
 body.pm .qrl .qrt b {
-  font-size: 64px
+  font-size: 48px
 }
