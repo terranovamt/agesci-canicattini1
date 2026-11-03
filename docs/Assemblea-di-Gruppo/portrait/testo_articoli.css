@@ -50,7 +50,6 @@ body.pm .pb.odp {
 }
 body.pm .odp .odc {
   flex: 1 0 auto;
-  max-height: 170px;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   display: flex;
