@@ -1,0 +1,29 @@
+/* usato anche da grazie */
+
+/* foto di gruppo (sfondo delle slide "foto" e "grazie") */
+#ph {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--vd), var(--v)) center/cover no-repeat;
+  opacity: 0;
+  transition: opacity .6s
+}
+
+.slide.photo {
+  background: none !important;
+  transform: none !important;
+  opacity: 1 !important
+}
+
+.photo .gr {
+  transform: translateX(115%);
+  transition: transform .9s cubic-bezier(.2, .8, .2, 1)
+}
+
+.photo.in .gr {
+  transform: none
+}
+
+.photo.out .gr {
+  transform: translateX(-115%)
+}

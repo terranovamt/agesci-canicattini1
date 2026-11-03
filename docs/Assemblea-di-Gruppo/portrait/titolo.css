@@ -1,0 +1,61 @@
+/* usato anche da divisore_sezione e chiusura */
+
+body.pm .sec .rr {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  align-items: center;
+  text-align: center;
+  padding: 40px 44px 200px;
+}
+body.pm .sec .rr:after {
+  content: none;
+}
+body.pm .sec .rr:before {
+  content: "";
+  display: block;
+  flex: none;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--y);
+  margin: 0 auto 34px;
+}
+body.pm .sec h1 {
+  font-size: 84px;
+  font-weight: 300;
+  line-height: 1.05;
+}
+body.pm .sec h2 {
+  font-size: 30px;
+  margin-top: 22px;
+}
+body.pm .sec .d {
+  position: static;
+  margin-top: 20px;
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--y);
+}
+body.pm .sec .ck2 {
+  font-size: 120px !important;
+}
+body.pm .sec .l {
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: 40px;
+  width: auto;
+  height: auto;
+  transform: translateX(-50%);
+  z-index: 2;
+  border-radius: 22px;
+  padding: 18px 34px;
+  gap: 12px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+body.pm .sec .l img {
+  width: 170px;
+}

@@ -1,0 +1,25 @@
+body.pm .th {
+  flex: none;
+  background: var(--bg);
+  padding: 0.55em 0.8em;
+  border-bottom: 0.14em solid var(--y);
+  font-weight: 800;
+  font-size: 1.25em;
+  line-height: 1.15;
+  color: var(--vd);
+}
+
+body.pm .sb {
+  font-size: 0.85em;
+  margin-top: 0.3em;
+}
+body.pm .sb div {
+  display: flex;
+  gap: 0.5em;
+  margin-top: 0.2em;
+}
+body.pm .sb b {
+  flex: none;
+  color: var(--v);
+  font-weight: 800;
+}

@@ -1,4 +1,4 @@
-/* live.js — sincronizzazione live regia → pubblico (Firebase Realtime Database, via REST + SSE).
+/* common/live.js — sincronizzazione live regia → pubblico (Firebase Realtime Database, via REST + SSE).
    Si appoggia al motore di index.html (go, next, prev, scenes, si, sk). */
 (function () {
   const L = window.LIVE;

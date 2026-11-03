@@ -1,0 +1,64 @@
+/* testo / articoli: dimensione auto-adattiva (--fs) */
+.reg {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  top: 104px;
+  bottom: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(var(--fs, 21px)*.8)
+}
+
+.reg>.art {
+  flex: none
+}
+
+.art {
+  background: var(--w);
+  border-radius: 24px;
+  padding: calc(var(--fs, 21px)*.9) calc(var(--fs, 21px)*1.4);
+  box-shadow: 0 12px 40px var(--shadow);
+  border-left: 12px solid var(--y)
+}
+
+.art h3 {
+  margin: 0 0 calc(var(--fs, 21px)*.45);
+  font-size: calc(var(--fs, 21px)*1.35);
+  font-weight: 800;
+  color: var(--vd);
+  line-height: 1.15
+}
+
+.art ol {
+  margin: 0;
+  padding-left: calc(var(--fs, 21px)*1.5);
+  font-size: var(--fs, 21px);
+  line-height: 1.32;
+  font-weight: 500;
+  color: var(--ink)
+}
+
+.art li {
+  margin: calc(var(--fs, 21px)*.28) 0;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .6s, transform .6s
+}
+
+.art li.on {
+  opacity: 1;
+  transform: none
+}
+
+.art li::marker {
+  color: var(--v);
+  font-weight: 800
+}
+
+.art ol ol {
+  list-style: lower-alpha;
+  margin-top: calc(var(--fs, 21px)*.2);
+  font-size: .92em
+}

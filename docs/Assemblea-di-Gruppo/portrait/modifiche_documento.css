@@ -1,0 +1,130 @@
+/* usato anche da prima_dopo */
+
+body.pm .mh {
+  flex: none;
+  background: var(--bg);
+  padding: 0.55em 0.8em 0.7em;
+  border-bottom: 0.14em solid var(--y);
+}
+body.pm .mtt {
+  font-weight: 800;
+  font-size: 1.25em;
+  line-height: 1.15;
+  color: var(--vd);
+  margin-bottom: 0.5em;
+}
+body.pm .seg {
+  display: flex;
+  border: 2px solid var(--vl);
+  border-radius: 0.6em;
+  overflow: hidden;
+  font-size: 0.62em;
+  font-weight: 600;
+  text-align: center;
+  color: var(--vd);
+}
+body.pm .seg span {
+  flex: 1;
+  padding: 0.6em 0;
+  cursor: pointer;
+}
+body.pm .seg span.on {
+  background: var(--v);
+  color: #fff;
+}
+body.pm .mc .tx {
+  flex: none;
+  padding: 0.7em 0.8em;
+  line-height: 1.45;
+  font-weight: 500;
+  border-bottom: 1px solid color-mix(in srgb, var(--vl) 60%, transparent);
+}
+body.pm .mc .tx del,
+body.pm .mc .tx ins,
+body.pm .mc .tx s,
+body.pm .mc .tx b {
+  font-size: 1em;
+  opacity: 1;
+  text-decoration: none;
+  font-weight: inherit;
+  transition:
+    font-size 0.5s ease,
+    opacity 0.4s ease;
+}
+body.pm .mc .tx .w {
+  border-radius: 0.2em;
+  padding: 0 0.12em;
+  transition:
+    background-color 0.4s,
+    color 0.4s;
+}
+body.pm .mc[data-s="0"] .tx ins,
+body.pm .mc[data-s="0"] .tx b {
+  font-size: 0;
+  opacity: 0;
+}
+body.pm .mc[data-s="2"] .tx del,
+body.pm .mc[data-s="2"] .tx s {
+  font-size: 0;
+  opacity: 0;
+}
+body.pm .mc[data-s="1"] .tx del .w {
+  background: color-mix(in srgb, var(--r) 16%, transparent);
+  border-bottom: 0.1em solid color-mix(in srgb, var(--r) 50%, transparent);
+}
+body.pm .mc[data-s="1"] .tx ins .w {
+  background: color-mix(in srgb, var(--g) 22%, transparent);
+  color: var(--g);
+  font-weight: 700;
+}
+body.pm .mc[data-s="1"] .tx s .w {
+  background: color-mix(in srgb, var(--y) 55%, transparent);
+  text-decoration: line-through;
+  color: var(--v2);
+}
+body.pm .mc[data-s="1"] .tx b .w {
+  background: color-mix(in srgb, var(--y) 55%, transparent);
+  color: var(--g);
+  font-weight: 700;
+}
+body.pm .mc.nt,
+body.pm .mc.nt * {
+  transition: none !important;
+}
+body.pm .cl {
+  flex: 1 0 auto;
+  padding: 0 0.8em;
+  font-size: 0.85em;
+}
+body.pm .cn {
+  font-size: 0.65em;
+  color: var(--v2);
+  font-weight: 600;
+  padding: 0.8em 0 0.3em;
+}
+body.pm .cr {
+  display: flex;
+  gap: 0.6em;
+  align-items: baseline;
+  padding: 0.5em 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--vl) 60%, transparent);
+  line-height: 1.3;
+}
+body.pm .cr .sg {
+  flex: none;
+  width: 0.9em;
+  font-weight: 800;
+}
+body.pm .cr .sg.r {
+  color: var(--r);
+}
+body.pm .cr .sg.g {
+  color: var(--g);
+}
+body.pm .mn {
+  flex: none;
+  font-size: 0.6em;
+  color: var(--v2);
+  font-weight: 600;
+  padding: 0.6em 1.3em;
+}

@@ -1,0 +1,40 @@
+/* ordine del giorno con avanzamento */
+.os .tag {
+  flex: none;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 7px 16px;
+  border-radius: 18px;
+  white-space: nowrap
+}
+
+.os .ck {
+  animation: ospop .7s cubic-bezier(.2, 1.7, .4, 1) .9s both
+}
+
+@keyframes ospop {
+  from {
+    transform: scale(0) rotate(-40deg)
+  }
+
+  to {
+    transform: none
+  }
+}
+
+.os .nx {
+  animation: osglow 2s ease-in-out 1.2s infinite
+}
+
+@keyframes osglow {
+
+  0%,
+  100% {
+    box-shadow: 0 6px 20px var(--shadow-row), 0 0 0 0 color-mix(in srgb, var(--y) 55%, transparent)
+  }
+
+  50% {
+    box-shadow: 0 6px 20px var(--shadow-row), 0 0 0 10px color-mix(in srgb, var(--y) 0%, transparent)
+  }
+}
