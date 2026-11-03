@@ -1,0 +1,76 @@
+/* come era / come diventa in verticale: due card impilate (body.pm) */
+body.pm .pb.pdp {
+  justify-content: flex-start;
+  gap: 14px;
+  font-size: var(--fs, 28px);
+}
+body.pm .pdp .pdt {
+  flex: none;
+  font-size: 0.8em;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--vd);
+}
+body.pm .pdp .pdc {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--w);
+  border-radius: 24px;
+  border-top: 12px solid var(--ko);
+  padding: 16px 24px;
+  box-shadow: 0 6px 20px rgba(33, 22, 56, 0.14);
+}
+body.pm .pdp .pdc.new {
+  border-top-color: var(--g);
+}
+body.pm .pdp .pdg {
+  flex: none;
+  align-self: flex-start;
+  font-size: 0.5em;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 5px 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ko) 18%, transparent);
+  color: var(--ko);
+}
+body.pm .pdp .pdc.new .pdg {
+  background: color-mix(in srgb, var(--g) 18%, transparent);
+  color: var(--g);
+}
+body.pm .pdp .pdx {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  line-height: 1.35;
+  font-weight: 500;
+}
+body.pm .pdp del,
+body.pm .pdp ins {
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 0 2px;
+  transition:
+    background 0.5s,
+    color 0.5s;
+}
+body.pm .pdp.dif del {
+  background: color-mix(in srgb, var(--ko) 14%, transparent);
+  color: var(--vd);
+  border-bottom: 2px solid color-mix(in srgb, var(--ko) 45%, transparent);
+}
+body.pm .pdp.dif ins {
+  background: color-mix(in srgb, var(--g) 18%, transparent);
+  color: var(--g);
+  font-weight: 700;
+}
+body.pm .pdp .pdn {
+  flex: none;
+  font-size: 0.5em;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.75;
+}

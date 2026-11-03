@@ -39,10 +39,11 @@ function viewer(isMobile) {
   });
   const context = {
     window: { LIVE: role(''), mobileLayout: { rotate(value) { rotations.push(value) } } },
-    document: { head: element(), body: element(), createElement: element },
+    document: { head: element(), body: element(), createElement: element, querySelectorAll: () => [] },
     scenes: [{}, {}, {}], si: 0, sk: 0, cur: {},
     st: element(), innerWidth: isMobile ? 390 : 1440, innerHeight: 900,
     matchMedia: () => ({ matches: isMobile, addEventListener() {} }),
+    odgIdx: () => 0, menu() {},
     addEventListener: (name, handler) => { listeners[name] = handler },
     setInterval() {}, setTimeout() {},
     fetch: async (url, options) => {
@@ -110,4 +111,26 @@ test('rotation delegates layout and preserves the current slide position', () =>
   assert.equal(context.sk, 1);
   elements['#lv-r'].onclick();
   assert.equal(rotations.at(-1), false);
+});
+
+test('ODG button and topic links follow the live limit', () => {
+  const { context, elements } = viewer(true);
+  const link = {
+    dataset: { slideLink: 'future' },
+    setAttribute(name, value) { this[name] = value; },
+  };
+  context.scenes[2].id = 'future';
+  context.document.querySelectorAll = () => [link];
+  context.go(0, 0);
+  assert.equal(link['aria-disabled'], 'true');
+  let menus = 0;
+  context.menu = () => { menus++; };
+  elements['#lv-m'].onclick();
+  assert.equal(menus, 1);
+  context.odgIdx = () => 2;
+  context.go(0, 0);
+  assert.equal(elements['#lv-m'].disabled, true);
+  elements['#lv-m'].onclick();
+  assert.equal(menus, 1);
+  context.go(1, 0);
 });

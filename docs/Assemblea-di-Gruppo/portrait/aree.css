@@ -1,0 +1,256 @@
+/* Layout verticale di cambio date, differenze e area obiettivi (body.pm) */
+body.pm .pb.cdp,
+body.pm .pb.dfp,
+body.pm .pb.aop {
+  justify-content: flex-start;
+  gap: 16px;
+  font-size: var(--fs, 28px);
+}
+
+/* cambio date */
+body.pm .pb.cdp {
+  justify-content: center;
+  gap: 22px;
+}
+body.pm .cdp .cdi {
+  flex: none;
+  background: var(--w);
+  border-radius: 28px;
+  padding: 30px 32px;
+  box-shadow: 0 6px 20px rgba(33, 22, 56, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+body.pm .cdp .cdl1 {
+  font-size: 0.7em;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--v2);
+}
+body.pm .cdp .cdt {
+  font-size: 1.5em;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-top: 12px;
+  color: var(--vd);
+}
+body.pm .cdp .cdi i {
+  display: block;
+  width: 90px;
+  height: 6px;
+  background: var(--y);
+  border-radius: 3px;
+  margin: 22px 0;
+}
+body.pm .cdp .cdx {
+  font-size: 0.85em;
+  line-height: 1.45;
+  color: var(--v2);
+}
+body.pm .cdp .cdc {
+  flex: none;
+  background: var(--w);
+  border-radius: 28px;
+  padding: 26px 34px 30px;
+  box-shadow: 0 6px 20px rgba(33, 22, 56, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.6s,
+    transform 0.6s;
+}
+body.pm .cdp .cdc.new {
+  border-left: 14px solid var(--g);
+}
+body.pm .cdp .cdc.on,
+body.pm .cdp .cda.on {
+  opacity: 1;
+  transform: none;
+}
+body.pm .cdp .cdk {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--v2);
+}
+body.pm .cdp .new .cdk {
+  color: var(--g);
+}
+body.pm .cdp .cdy {
+  position: relative;
+  align-self: flex-start;
+  font-size: 68px;
+  font-weight: 800;
+  color: var(--vd);
+}
+body.pm .cdp .cdy u {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 52%;
+  height: 7px;
+  background: var(--ko);
+  border-radius: 4px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.7s;
+}
+body.pm .cdp .cda {
+  flex: none;
+  text-align: center;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 0.8;
+  color: var(--v2);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+/* differenze */
+body.pm .dfp .dfc {
+  flex: 0 0 auto;
+  background: var(--w);
+  border-radius: 24px;
+  border-left: 16px solid var(--c);
+  padding: 18px 26px;
+  box-shadow: 0 4px 14px rgba(33, 22, 56, 0.12);
+}
+body.pm .dfp .dfh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+body.pm .dfp .dfh b {
+  font-size: 1.15em;
+  font-weight: 800;
+}
+body.pm .dfp .dfh small {
+  font-size: 0.55em;
+  font-weight: 700;
+  letter-spacing: 1px;
+  opacity: 0.65;
+  text-align: right;
+}
+body.pm .dfp .dfc[style*='flex-grow'] {
+  flex: 1 0 auto;
+}
+body.pm .dfp ul {
+  margin: 0.4em 0 0;
+  padding-left: 1.1em;
+  font-size: 0.8em;
+  line-height: 1.25;
+}
+body.pm .dfp li {
+  margin-bottom: 0.3em;
+}
+body.pm .dfp .dfn {
+  flex: none;
+  background: var(--v);
+  color: #fff;
+  border-radius: 22px;
+  padding: 16px 24px;
+  font-size: 0.7em;
+  font-weight: 600;
+}
+body.pm .dfp .dfn b {
+  color: var(--y);
+  letter-spacing: 1.5px;
+  margin-right: 12px;
+}
+
+/* area obiettivi */
+body.pm .aop .aot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: var(--ac);
+  color: #fff;
+  border-radius: 28px 28px 8px 8px;
+  padding: 18px 28px 12px;
+}
+body.pm .aop .aon {
+  font-size: 110px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--y);
+}
+body.pm .aop .aoa {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0.75;
+}
+body.pm .aop .aoi {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+body.pm .aop .aoq {
+  flex: none;
+  margin-top: -16px;
+  background: color-mix(in srgb, var(--ac) 12%, var(--w));
+  border-radius: 8px 8px 24px 24px;
+  padding: 16px 28px;
+  font-size: 0.72em;
+  font-style: italic;
+  line-height: 1.3;
+}
+body.pm .aop .aoq small {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--v2);
+}
+body.pm .aop .aoc {
+  flex: 1 0 auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--w);
+  border-radius: 24px;
+  border-left: 14px solid var(--y);
+  padding-left: 26px;
+  padding-right: 26px;
+  box-shadow: 0 4px 14px rgba(33, 22, 56, 0.12);
+}
+body.pm .aop .aob {
+  align-self: flex-start;
+  font-size: 0.5em;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--y) 28%, transparent);
+}
+body.pm .aop .aog {
+  font-size: 1em;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 6px 0 4px;
+}
+body.pm .aop .aop2 {
+  font-size: 0.7em;
+  line-height: 1.3;
+  color: var(--v2);
+}
+body.pm .aop .aopt {
+  position: absolute;
+  left: var(--m);
+  right: var(--m);
+  bottom: 0;
+  top: 0;
+}
+body.pm .aop .aopt ul {
+  margin: 0;
+  padding-left: 1em;
+  font-size: 0.8em;
+}

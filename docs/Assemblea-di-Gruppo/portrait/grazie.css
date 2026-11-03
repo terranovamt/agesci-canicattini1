@@ -2,8 +2,9 @@ body.pm .gr {
   top: 34%;
   height: auto;
   padding: 48px 40px;
-  flex-direction: column;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 28px;
 }
 body.pm .gr h1 {
@@ -11,8 +12,12 @@ body.pm .gr h1 {
 }
 body.pm .gr .bb {
   width: 100%;
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 body.pm .gr img {
   margin: 0;
   height: 110px;
+  grid-column: 2;
+  grid-row: 1;
 }

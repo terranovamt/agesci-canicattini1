@@ -7,7 +7,7 @@ let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null; const nav 
   bB = h('<button class="nb" title="Torna alla slide da cui eri partito (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span></span></button>');
 nav.append(bH, bM, bB); st.append(nav); bH.style.display = bM.style.display = bB.style.display = 'none';
 const odgIdx = () => Math.max(0, scenes.findIndex(s => s.tipo === 'slide_ordine_del_giorno'));
-const home = () => { if (si) { saved = { i: si, k: sk }; go(0, 0) } };
+const home = () => { const i = Math.min(1, scenes.length - 1); if (scenes.length && si !== i) { saved = { i: si, k: sk }; go(i, 0) } };
 const menu = () => { const t = odgIdx(); if (si !== t) { saved = { i: si, k: sk }; go(t, 0); go(t, cur.steps) } };
 const jump = id => { const t = scenes.findIndex(s => s.id === id); if (t < 0) return; saved = { i: si, k: sk }; go(t, 0) };
 const back = () => { if (saved) { const q = saved; saved = null; go(q.i, q.k) } };
@@ -29,7 +29,7 @@ function go(i, k) {
   }
   if (saved && i === saved.i) saved = null; si = i; sk = k; cur.show(k); ph.style.opacity = scenes[i].ph ? 1 : 0;
   badge(scenes[i].b !== undefined ? scenes[i].b + k + 1 : null, BN);
-  bB.style.display = saved && i !== saved.i ? 'flex' : 'none'; if (saved) bB.lastChild.textContent = 'Slide ' + (saved.i + 1); bH.style.display = i ? 'flex' : 'none'; bM.style.display = i !== odgIdx() ? 'flex' : 'none'; prog.style.width = ((i + 1) / scenes.length * 100) + '%';
+  bB.style.display = saved && i !== saved.i ? 'flex' : 'none'; if (saved) bB.lastChild.textContent = 'Slide ' + (saved.i + 1); bH.style.display = i !== Math.min(1, scenes.length - 1) ? 'flex' : 'none'; bM.style.display = i !== odgIdx() ? 'flex' : 'none'; prog.style.width = ((i + 1) / scenes.length * 100) + '%';
   [...pm.children].forEach(e => { const j = +e.dataset.i; e.classList.toggle('nx', j === i + 1 && k >= cur.steps) }); cnt.textContent = (i + 1) + ' / ' + scenes.length; history.replaceState(null, '', '#' + i + '.' + k)
 }
 const next = () => { if (sk < cur.steps) go(si, sk + 1); else if (si < scenes.length - 1) go(si + 1, 0) };

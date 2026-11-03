@@ -20,13 +20,8 @@ const cassa = () => (r, D) => {
       const vE = En.map((x, i) => i < k ? x.importo : 0), tE = sum(vE), dis = E - Uk < 0; let a = 0;
       if (!p2) { pr = L; cs.forEach(c => c.style.transition = ''); const t = tE || 1; En.forEach((x, i) => { const l = vE[i] / t * L; cs[i].setAttribute('stroke-dasharray', `${Math.max(0, l - 3)} ${L}`); cs[i].setAttribute('stroke-dashoffset', -a); a += l }); cs[nE].setAttribute('stroke-dasharray', `0 ${L}`) }
       else {
-        const rem = (E - Uk) / E * L, D = 1.2;
-        const tr = (s, e, el) => {
-          const lo = Math.max(Math.min(pr, rem), s), hi = Math.min(Math.max(pr, rem), e);
-          if (pr === rem || hi <= lo) { el.style.transition = 'none'; return }
-          const d = Math.abs(pr - rem), t0 = (pr > rem ? pr - hi : lo - pr) / d, t1 = (pr > rem ? pr - lo : hi - pr) / d;
-          el.style.transition = `stroke-dasharray ${(t1 - t0) * D}s linear ${t0 * D}s`
-        };
+        const rem = (E - Uk) / E * L;
+        const tr = (s, e, el) => pieTransition(pr, rem, s, e, el);
         let s0 = 0; En.forEach((x, i) => { const l = x.importo / E * L, vis = Math.min(l, Math.max(0, rem - s0)); tr(s0, s0 + l, cs[i]); cs[i].setAttribute('stroke-dasharray', `${Math.max(0, vis - 3)} ${L}`); cs[i].setAttribute('stroke-dashoffset', -s0); s0 += l });
         tr(-1e9, 0, cs[nE]);
         cs[nE].setAttribute('stroke-dasharray', `${dis ? Math.min(L, Math.max((Uk - E) / E * L, 10)) : 0} ${L}`);

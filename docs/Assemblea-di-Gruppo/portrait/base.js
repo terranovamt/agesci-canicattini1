@@ -42,24 +42,45 @@ const PORTRAIT = {},
   };
   addEventListener('resize', fit);
   fit();
-  /* barra del titolo: font il piu' grande possibile su 2 righe */ const fitHdP = () => {
+  /* true se il testo va a capo lasciando una riga finale troppo corta (una parola o poche lettere) */ const orphan = (el) => {
+    if (el.querySelector('br')) return false;
+    const rg = document.createRange();
+    rg.selectNodeContents(el);
+    const rs = [...rg.getClientRects()].filter((q) => q.width > 1);
+    const rows = [...new Set(rs.map((q) => Math.round(q.top / 4)))];
+    if (rows.length < 2) return false;
+    const last = rs.filter((q) => Math.round(q.top / 4) === rows[rows.length - 1]),
+      w = Math.max(...last.map((q) => q.right)) - Math.min(...last.map((q) => q.left));
+    return w < el.clientWidth * 0.3;
+  };
+  /* barra del titolo: font il piu' grande possibile su 2 righe, senza parole sole sull'ultima riga */ const fitHdP = () => {
     if (!PM) return;
     const top = Math.floor((HDH - 10) / 2.16);
+    let first = 0;
     for (let f = top; f >= 18; f--) {
       HD.style.setProperty('--ht', f + 'px');
-      if (HDs.offsetHeight <= f * 1.08 * 2 + 2) break;
+      if (HDs.offsetHeight <= f * 1.08 * 2 + 2 && HDs.scrollWidth <= HDs.clientWidth + 1) {
+        if (!first) first = f;
+        if (!orphan(HDs)) return;
+      }
     }
+    HD.style.setProperty('--ht', (first || 18) + 'px');
   };
   new MutationObserver(fitHdP).observe(HDs, { childList: true, characterData: true, subtree: true });
   if (document.fonts) document.fonts.ready.then(fitHdP);
   /* titolo grande delle slide titolo/sezione/chiusura: fino a 4 righe */ const fitSec = () => {
     if (!PM) return;
     st.querySelectorAll('.sec h1').forEach((e) => {
+      let first = 0;
       for (let f = 92; f >= 28; f--) {
         e.style.fontSize = f + 'px';
         const lh = parseFloat(getComputedStyle(e).lineHeight) || f * 1.05;
-        if (e.offsetHeight <= 4 * lh + 2) break;
+        if (e.offsetHeight <= 4 * lh + 2 && e.scrollWidth <= e.clientWidth + 1) {
+          if (!first) first = f;
+          if (!orphan(e)) return;
+        }
       }
+      e.style.fontSize = (first || 28) + 'px';
     });
   };
   new MutationObserver(fitSec).observe(st, { childList: true });
@@ -86,6 +107,7 @@ const PORTRAIT = {},
     sel,
   ) => {
     const run = () => {
+      box.classList.add('fitting');
       for (let f = max; f >= min; f--) {
         box.style.setProperty('--fs', f + 'px');
         const ok = sel
@@ -93,6 +115,7 @@ const PORTRAIT = {},
           : box.scrollHeight <= box.clientHeight + 1;
         if (ok) break;
       }
+      box.classList.remove('fitting');
     };
     run();
     if (document.fonts) document.fonts.ready.then(run);
@@ -110,19 +133,23 @@ const PORTRAIT = {},
       if (p < 1) el._r = requestAnimationFrame(f);
     })(t0);
   };
-  const link = (e, p) => {
-    if (p.slide_collegata) {
-      e.dataset.liveControl = '';
-      e.style.cursor = 'pointer';
-      e.onclick = (ev) => {
-        ev.stopPropagation();
-        jump(p.slide_collegata);
-      };
-    }
+  const link = linkSlide;
+  /* riduce in scala (--z) le dimensioni dei blocchi finche' il contenuto sta nello schermo (telefoni piccoli) */ const zfit = (box) => {
+    const run = () => {
+      box.classList.add('zf');
+      for (let z = 1; z >= 0.5; z -= 0.05) {
+        box.style.setProperty('--z', z.toFixed(2));
+        if (box.scrollHeight <= box.clientHeight + 1) break;
+      }
+      box.classList.remove('zf');
+    };
+    run();
+    if (document.fonts) document.fonts.ready.then(run);
   };
-  Object.assign(PORTRAIT_UTIL, { HEAD, norm, mkFl, mkBody, fitBox, cnum, link });
+  Object.assign(PORTRAIT_UTIL, { HEAD, norm, mkFl, mkBody, fitBox, cnum, link, zfit });
   /* slide che mantengono la struttura originale e vengono solo adattate dal CSS */ const NATIVE = new Set([
     'slide_titolo',
+    'slide_qr_live',
     'slide_divisore_sezione',
     'slide_chiusura',
     'slide_foto_gruppo',

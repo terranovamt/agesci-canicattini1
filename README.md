@@ -41,6 +41,18 @@ Ogni tipo di slide (campo `tipo` in `dati.js`, senza `slide_`) ha i suoi file:
 Il file `.css` c'è solo se il tipo ha stili propri. Alcuni tipi condividono un
 layout: `divisore_sezione` e `chiusura` usano `titolo.css`, `grazie` usa
 `photo()` di `landscape/foto_gruppo.js`, `prima_dopo` usa `modifiche_documento`.
+Gli stili verticali di rendiconto e patrimonio sono in `portrait/finanze.css`; quelli di cambio date, differenze e area obiettivi in `portrait/aree.css`.
+Articoli e ordine del giorno condividono `portrait/testo_articoli.css`: le card
+dell'ODG adattano l'altezza al testo, anche per i punti su piu' righe.
+Le animazioni comuni del rendiconto sono in `common/base.js`: gli spicchi delle
+entrate si riducono in sequenza; nell'ultimo passo dello scontrino compare il
+totale, dopo un secondo il timbro e infine la card percentuale, dopo 1,5 secondi.
+In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra.
+Home porta alla slide 1 (titolo), saltando la slide 0 con il QR. La barra del
+pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
+live sono grigi e disabilitati.
+Solo l'ODG iniziale contiene collegamenti: le slide di avanzamento ODG
+mostrano lo stato dei punti senza renderli cliccabili.
 
 File comuni:
 
