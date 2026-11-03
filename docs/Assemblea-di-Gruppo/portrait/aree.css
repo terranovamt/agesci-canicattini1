@@ -57,7 +57,6 @@ body.pm .cdp .cdc {
   flex-direction: column;
   justify-content: center;
   opacity: 0;
-  transform: translateY(24px);
   transition:
     opacity 0.6s,
     transform 0.6s;
