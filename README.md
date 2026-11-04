@@ -79,6 +79,18 @@ Dopo il salvataggio attendi il deployment di GitHub Pages.
 
 ## Calendario Outlook
 
+La home propone quattro calendari: **Gruppo Canicattini 1** (Outlook) e tre
+Google identificati provvisoriamente dai prefissi **92f7e68e**, **5b317e01** e
+**70048520**. Le festività italiane sono escluse. I colori provvisori sono
+viola per il gruppo, verde, arancio e rosso per i tre Google. La selezione
+**Tutti i Google** sovrappone i tre calendari Google con colori distinti,
+lingua italiana e fuso Europe/Rome. Outlook resta una vista separata: nessun
+proxy o servizio esterno è stato introdotto per unificare i provider.
+I calendari Google devono essere pubblici per la consultazione anonima;
+altrimenti richiedono un account autorizzato. Ogni vista ha un link di apertura
+esterna. Nomi, autorizzazioni ed eventi Google non sono verificabili da questo
+ambiente per mancata risoluzione DNS.
+
 La home incorpora la vista pubblicata `calendar.html`; il link `calendar.ics`
 serve invece per iscriversi dagli strumenti calendario. Il feed ICS può
 essere pubblico ma non leggibile tramite JavaScript per i vincoli CORS.
