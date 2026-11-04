@@ -13,6 +13,32 @@
   const setAt = (o, p, v) => { const t = getAt(o, p.slice(0, -1)); if (v === undefined) { if (Array.isArray(t)) t.splice(p.at(-1), 1); else delete t[p.at(-1)] } else t[p.at(-1)] = v };
   const strip = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
   const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e };
+  const icon = d => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
+    return svg;
+  };
+  const icons = {
+    eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Zm10-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
+    eyeOff: 'm3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A11 11 0 0 1 12 5c6.4 0 10 7 10 7a14 14 0 0 1-3.1 3.7M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10 10 0 0 0 3.1-.5',
+    chevronRight: 'm9 18 6-6-6-6',
+    chevronDown: 'm6 9 6 6 6-6',
+    up: 'M12 19V5m-7 7 7-7 7 7',
+    down: 'M12 5v14m7-7-7 7-7-7',
+    edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z',
+    trash: 'M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 5v5m4-5v5',
+    reset: 'M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5'
+  };
 
   let base, published, edit, view = 'generale', saving = false;
   const open = new Set(['assemblea']);
@@ -74,7 +100,8 @@
     }
     const id = 'f' + path.join('_').replace(/[^\w-]/g, '');
     input.id = lab.htmlFor = id;
-    const reset = el('button', { className: 'reset', type: 'button', title: 'Ripristina il valore di dati.js', textContent: '↺' });
+    const reset = el('button', { className: 'reset', type: 'button', title: 'Ripristina il valore di dati.js' }, icon(icons.reset));
+    reset.setAttribute('aria-label', 'Ripristina il valore di dati.js');
     reset.onclick = () => { if (b === undefined) { setAt(edit, path, undefined); render() } else { commit(clone(b)); if (input.type === 'checkbox') input.checked = b; else input.value = b } };
     if (input.type === 'checkbox') wrap.append(input, lab, reset); else wrap.append(lab, input, reset);
     mark();
@@ -246,21 +273,26 @@
     visible.forEach((i, row) => {
       const x = edit.slide[i], closed = collapsed.has(x);
       const hid = !!x.nascosta, moved = org[i] !== i && org[i] >= 0;
-      const btn = (t, title, fn, dis) => { const b = el('button', { type: 'button', className: 'ic', textContent: t, title, disabled: !!dis }); b.onclick = fn; return b };
+      const btn = (glyph, title, fn, dis) => {
+        const b = el('button', { type: 'button', className: 'ic', title, disabled: !!dis }, icon(icons[glyph]));
+        b.setAttribute('aria-label', title);
+        b.onclick = fn;
+        return b;
+      };
       const li = el('li', { className: (sezione(x) ? 'sez ' : '') + (hid ? 'hid ' : ''), draggable: true },
         el('span', { className: 'grip', textContent: '⋮⋮', title: 'Trascina' }),
         el('span', { className: 'num', textContent: i + 1 }),
-        sezione(x) ? btn(closed ? '▸' : '▾', closed ? 'Espandi sezione' : 'Collassa sezione', () => {
+        sezione(x) ? btn(closed ? 'chevronRight' : 'chevronDown', closed ? 'Espandi sezione' : 'Collassa sezione', () => {
           closed ? collapsed.delete(x) : collapsed.add(x); render();
         }) : null,
         el('span', { className: 't' }, el('b', { textContent: titleOf(x) }), el('small', { textContent: tipoOf(x) })),
         sezione(x) && closed ? badge((sectionEnd(i) - i - 1) + ' slide nella sezione') : null,
         moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
-        x.tipo === 'slide_gruppo_invisibile' ? badge('Solo setup') : btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
-        btn('↑', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
-        btn('↓', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
-        btn('✎', 'Modifica i contenuti', () => modificaSlide(x)),
-        btn('✕', 'Elimina solo questa slide', () => {
+        x.tipo === 'slide_gruppo_invisibile' ? badge('Solo setup') : btn(hid ? 'eyeOff' : 'eye', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
+        btn('up', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
+        btn('down', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
+        btn('edit', 'Modifica i contenuti', () => modificaSlide(x)),
+        btn('trash', 'Elimina solo questa slide', () => {
           if (!confirm('Eliminare la slide "' + titleOf(x) + '"? Le altre slide della sezione restano.')) return;
           edit.slide.splice(i, 1);
           [...open].filter(k => k.startsWith('slide-')).forEach(k => open.delete(k));

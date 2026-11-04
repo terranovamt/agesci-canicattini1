@@ -62,7 +62,7 @@
 
 .mod.dif ins {
   background: color-mix(in srgb, var(--g) 18%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
   font-weight: 700
 }
 
@@ -91,7 +91,7 @@
 
 .mod .one ins {
   background: color-mix(in srgb, var(--g) 18%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
   font-weight: 700
 }
 
@@ -139,10 +139,10 @@
 .col.one[data-s="0"] .tx ins,.col.one[data-s="0"] .tx b{font-size:0;opacity:0}
 /* passo 1: differenze */
 .col.one[data-s="1"] .tx del{color:var(--vd);background-color:color-mix(in srgb,var(--r) 14%,transparent);border-bottom:2px solid color-mix(in srgb,var(--r) 45%,transparent)}
-.col.one[data-s="1"] .tx ins{color:var(--g);background-color:color-mix(in srgb,var(--g) 25%,transparent)}
+.col.one[data-s="1"] .tx ins{color:var(--g-strong);background-color:color-mix(in srgb,var(--g) 25%,transparent)}
 .col.one[data-s="1"] .tx .ch{background-color:color-mix(in srgb,var(--y) 55%,transparent)}
 .col.one[data-s="1"] .tx s{color:var(--vd)}
-.col.one[data-s="1"] .tx b{color:var(--g)}
+.col.one[data-s="1"] .tx b{color:var(--g-strong)}
 /* passo 2: testo proposto (le parti tolte sono nascoste) */
 .col.one[data-s="2"] .tx del,.col.one[data-s="2"] .tx s{font-size:0;opacity:0}
 /* nessuna transizione durante misura/avvio */

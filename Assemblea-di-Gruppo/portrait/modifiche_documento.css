@@ -74,7 +74,7 @@ body.pm .mc[data-s="1"] .tx del .w {
 }
 body.pm .mc[data-s="1"] .tx ins .w {
   background: color-mix(in srgb, var(--g) 22%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
   font-weight: 700;
 }
 body.pm .mc[data-s="1"] .tx s .w {
@@ -84,7 +84,7 @@ body.pm .mc[data-s="1"] .tx s .w {
 }
 body.pm .mc[data-s="1"] .tx b .w {
   background: color-mix(in srgb, var(--y) 55%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
   font-weight: 700;
 }
 body.pm .mc.nt,
@@ -116,10 +116,10 @@ body.pm .cr .sg {
   font-weight: 800;
 }
 body.pm .cr .sg.r {
-  color: var(--r);
+  color: var(--r-strong);
 }
 body.pm .cr .sg.g {
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .mn {
   flex: none;

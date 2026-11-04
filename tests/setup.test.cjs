@@ -17,9 +17,10 @@ function setup(options = {}) {
   let context, remote = serialize(options.remote || initial), writes = 0;
   const element = tag => {
     const e = { tagName: tag.toUpperCase(), style: {}, dataset: {}, value: '', children: [], hidden: false,
-      classList: { toggle() {}, add() {}, remove() {} },
+      attributes: {}, classList: { toggle() {}, add() {}, remove() {} },
       append(...children) { this.children.push(...children) },
-      remove() {}, getAttribute(name) { return this[name] },
+      remove() {}, setAttribute(name, value) { this.attributes[name] = value },
+      getAttribute(name) { return this.attributes[name] ?? this[name] },
       scrollIntoView() {},
       querySelector() { return element('legend') },
       showModal() { this.open = true; if (options.cancelToken && this === $('#gh')) { this.returnValue = 'no'; this.onclose() } },
@@ -42,6 +43,7 @@ function setup(options = {}) {
       LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'Assemblea-di-Gruppo' } } },
     document: {
       querySelector: $, querySelectorAll: s => s === '.tabs button' ? tabs : [], createElement: element,
+      createElementNS: (_namespace, tag) => element(tag),
       body: element('body'),
       head: { append(s) {
         scripts.push(s.src);
@@ -136,6 +138,21 @@ test('adding a slide creates a valid template and copies without duplicating ids
   data = t.data();
   assert.equal(data.slide.at(-1).tipo, 'slide_testo_articoli');
   assert.equal(data.slide.at(-1).articoli[0].paragrafi[0], 'Testo');
+});
+
+test('slide order controls use accessible SVG icons', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  const row = orderRows(t)[0];
+  for (const title of ['Visibile: clic per nasconderla', 'Sposta su', 'Sposta giù', 'Modifica i contenuti', 'Elimina solo questa slide']) {
+    const control = button(row, title);
+    assert.ok(control, title);
+    assert.equal(control.getAttribute('aria-label'), title);
+    assert.equal(control.children[0].tagName, 'SVG');
+    assert.equal(control.children[0].getAttribute('aria-hidden'), 'true');
+  }
 });
 
 test('editing one slide opens its own dialog and changing type replaces specific fields', async () => {
