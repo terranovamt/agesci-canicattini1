@@ -13,7 +13,7 @@ function load(verified, key = '') {
   };
   vm.runInNewContext(source, {
     document: { getElementById: get }, location: { replace() {} },
-    window: { ACCESSO: {
+    window: { AREA_DASHBOARD: { load() {} }, ACCESSO: {
       verificata: () => verified, chiave: () => key,
       async entra(k) { calls.push(k) }, esci() {}
     } }

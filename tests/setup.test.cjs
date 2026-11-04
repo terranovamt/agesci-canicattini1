@@ -17,9 +17,10 @@ function setup(options = {}) {
   let context, remote = serialize(options.remote || initial), writes = 0;
   const element = tag => {
     const e = { tagName: tag.toUpperCase(), style: {}, dataset: {}, value: '', children: [], hidden: false,
-      classList: { toggle() {}, add() {}, remove() {} },
+      attributes: {}, classList: { toggle() {}, add() {}, remove() {} },
       append(...children) { this.children.push(...children) },
-      remove() {}, getAttribute(name) { return this[name] },
+      remove() {}, setAttribute(name, value) { this.attributes[name] = value },
+      getAttribute(name) { return this.attributes[name] ?? this[name] },
       scrollIntoView() {},
       querySelector() { return element('legend') },
       showModal() { this.open = true; if (options.cancelToken && this === $('#gh')) { this.returnValue = 'no'; this.onclose() } },
@@ -42,6 +43,7 @@ function setup(options = {}) {
       LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'Assemblea-di-Gruppo' } } },
     document: {
       querySelector: $, querySelectorAll: s => s === '.tabs button' ? tabs : [], createElement: element,
+      createElementNS: (_namespace, tag) => element(tag),
       body: element('body'),
       head: { append(s) {
         scripts.push(s.src);
@@ -74,7 +76,7 @@ function setup(options = {}) {
     vm.runInContext(fs.readFileSync(path.join(root, 'common', file), 'utf8'), context);
   vm.runInContext(source, context);
   return {
-    $, requests, scripts, store, listeners, redirects,
+    $, requests, scripts, store, listeners, redirects, tabs,
     tab: name => tabs.find(t => t.dataset.tab === name).onclick(),
     setSlides(slide) {
       $('#json-text').value = JSON.stringify({ ...initial, slide });
@@ -101,6 +103,19 @@ test('setup loads without Firebase login, streams, polling or presence', async (
   assert.equal(t.$('#app').hidden, false);
   assert.equal(t.$('#fassemblea_titolo').value, 'Assemblea');
   assert.equal(t.$('#salva-gh').disabled, true);
+});
+
+test('setup section navigation keeps its title and accessible selected state in sync', async () => {
+  const t = setup();
+  await flush();
+  t.tab('ordine');
+  assert.equal(t.$('#workspace-title').textContent, 'Slide e sezioni');
+  t.tab('json');
+  assert.equal(t.$('#workspace-title').textContent, 'Editor JSON');
+  for (const tab of t.tabs) assert.equal(tab.getAttribute('aria-pressed'), String(tab.dataset.tab === 'json'));
+  assert.equal(t.$('#dirty').style.color, 'var(--g-strong)');
+  t.editTitle('Nuovo titolo');
+  assert.equal(t.$('#dirty').style.color, 'var(--r-strong)');
 });
 
 function orderRows(t) {
@@ -136,6 +151,21 @@ test('adding a slide creates a valid template and copies without duplicating ids
   data = t.data();
   assert.equal(data.slide.at(-1).tipo, 'slide_testo_articoli');
   assert.equal(data.slide.at(-1).articoli[0].paragrafi[0], 'Testo');
+});
+
+test('slide order controls use accessible SVG icons', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  const row = orderRows(t)[0];
+  for (const title of ['Visibile: clic per nasconderla', 'Sposta su', 'Sposta giù', 'Modifica i contenuti', 'Elimina solo questa slide']) {
+    const control = button(row, title);
+    assert.ok(control, title);
+    assert.equal(control.getAttribute('aria-label'), title);
+    assert.equal(control.children[0].tagName, 'SVG');
+    assert.equal(control.children[0].getAttribute('aria-hidden'), 'true');
+  }
 });
 
 test('editing one slide opens its own dialog and changing type replaces specific fields', async () => {

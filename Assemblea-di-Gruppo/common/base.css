@@ -1,27 +1,13 @@
 /* Stili comuni a tutte le slide: colori, palco, barra del titolo, righe, navigazione.
    Gli stili di ogni tipo di slide sono in landscape/<tipo>.css e portrait/<tipo>.css */
 
-/* ============ COLORI: cambia solo qui ============ */
+/* ============ Token specifici alla presentazione ============ */
 :root {
-  --y: #FDC500;
-  --vd: #211638;
-  --v: #462678;
-  --v2: #6B478D;
-  --vl: #AEB0D9;
-  --g: #21A067;
-  --r: #E74030;
-  --p: #9B66A5;
-  --b: #92B3D7;
-  --b2: #78afe9;
-  --be: #E5D6C7;
-  --bg: #ECE9E6;
-  --w: #fff;
-  --k: #000;
   /* testi e sfondi */
   --ink: var(--vd);
   --muted: var(--v2);
   --line: var(--vl);
-  --note: var(--vl);
+  --note: var(--v2);
   --track: var(--be);
   --out: var(--vd);
   --halo-a: color-mix(in srgb, var(--vl) 40%, transparent);
@@ -41,8 +27,8 @@
   --pie5: var(--y);
   --pie6: var(--vl);
   /* esito bilancio */
-  --ok: var(--g);
-  --ko: var(--r);
+  --ok: var(--g-strong);
+  --ko: var(--r-strong);
   --even: var(--v);
   --near: var(--v2);
   /* ombre e trasparenze */
@@ -81,6 +67,7 @@ body {
   height: 720px;
   transform-origin: 0 0;
   overflow: hidden;
+  --bg: #ECE9E6;
   background: var(--bg)
 }
 
@@ -199,8 +186,8 @@ body {
 }
 
 .row i {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   flex: none
 }
@@ -241,11 +228,11 @@ circle.seg {
 }
 
 .red {
-  color: var(--r) !important
+  color: var(--r-strong) !important
 }
 
 .grn {
-  color: var(--g) !important
+  color: var(--g-strong) !important
 }
 
 .bar {
@@ -320,15 +307,15 @@ circle.seg {
 }
 
 .nb {
-  height: 28px;
-  min-width: 28px;
-  padding: 0 8px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
   gap: 5px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 22px;
   background: var(--glass);
   color: var(--w);
-  font: 600 11px Montserrat, sans-serif;
+  font: 600 12px Montserrat, sans-serif;
   align-items: center;
   justify-content: center;
   cursor: pointer;

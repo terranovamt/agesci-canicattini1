@@ -96,9 +96,23 @@
     const ol = $('#slide');
     if (ol.children.length !== s.n || ol.dataset.t !== s.titoli.join('|')) {
       ol.dataset.t = s.titoli.join('|');
-      ol.replaceChildren(...s.titoli.map((t, i) => { const li = document.createElement('li'); li.textContent = cap(t); li.onclick = () => V.vai(i, 0); return li }));
+      ol.replaceChildren(...s.titoli.map((t, i) => {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = cap(t);
+        button.setAttribute('aria-label', `Vai alla slide ${i + 1}: ${cap(t)}`);
+        button.onclick = () => V.vai(i, 0);
+        li.append(button);
+        return li;
+      }));
     }
-    [...ol.children].forEach((li, i) => { li.classList.toggle('on', i === s.i); li.classList.toggle('nx', !!p && p[0] !== s.i && i === p[0]) });
+    [...ol.children].forEach((li, i) => {
+      li.classList.toggle('on', i === s.i);
+      li.classList.toggle('nx', !!p && p[0] !== s.i && i === p[0]);
+      if (i === s.i) li.querySelector('button').setAttribute('aria-current', 'step');
+      else li.querySelector('button').removeAttribute('aria-current');
+    });
     ol.children[s.i]?.scrollIntoView({ block: 'nearest' });
   }
 

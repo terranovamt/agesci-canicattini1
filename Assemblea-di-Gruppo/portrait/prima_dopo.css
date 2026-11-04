@@ -39,7 +39,7 @@ body.pm .pdp .pdg {
 }
 body.pm .pdp .pdc.new .pdg {
   background: color-mix(in srgb, var(--g) 18%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .pdp .pdx {
   flex: 1;
@@ -64,7 +64,7 @@ body.pm .pdp.dif del {
 }
 body.pm .pdp.dif ins {
   background: color-mix(in srgb, var(--g) 18%, transparent);
-  color: var(--g);
+  color: var(--g-strong);
   font-weight: 700;
 }
 body.pm .pdp .pdn {
