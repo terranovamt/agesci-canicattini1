@@ -302,6 +302,7 @@
     try {
       const [b, p] = await Promise.all([loadBase(), fetch(U + '/modifiche/patch.json').then(r => r.json())]);
       sync(b, parse(p));
+      $('#inizia').disabled = false;
     } catch (e) { status('Errore', 'ko'); $('#campi').textContent = '⚠ ' + e.message; return }
     const es = new EventSource(U + '/modifiche/patch.json');
     es.addEventListener('put', e => { const m = JSON.parse(e.data); if (m.path === '/' && !same(parse(m.data), remotePatch)) { sync(base, parse(m.data)); if (dirty()) toast('Altre modifiche pubblicate da un altro dispositivo') } });
@@ -310,6 +311,17 @@
   }
 
   $('#pubblica').onclick = () => publish(M.diffPatch(base, edit), 'Pubblicato: gli schermi si aggiornano ora');
+  $('#inizia').onclick = async () => {
+    $('#inizia').disabled = true;
+    try {
+      await window.ASSEMBLEA.salva(true, key, M.diffPatch(base, edit));
+      published = clone(edit);
+      location.assign('index.html?regia=' + encodeURIComponent(key));
+    } catch (e) {
+      toast('⚠ ' + e.message); status('Avvio non riuscito', 'ko');
+      $('#inizia').disabled = false;
+    }
+  };
   $('#salva-gh').onclick = () => salvaGitHub();
   $('#dimentica').hidden = !localStorage.getItem(TK);
   $('#dimentica').onclick = () => { localStorage.removeItem(TK); $('#dimentica').hidden = true; toast('Token GitHub dimenticato') };

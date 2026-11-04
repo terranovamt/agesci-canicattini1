@@ -70,7 +70,8 @@ fieldset > legend button { padding: 2px 8px; font-size: 12px; border-radius: 6px
 #json-text { min-height: 60vh; font: 13px/1.4 ui-monospace, Menlo, monospace }
 .row { display: flex; gap: 10px; align-items: center; margin-top: 8px }
 .err { color: var(--r); font-weight: 700; font-size: 13px }
-footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 8px; align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -3px 12px rgba(33, 22, 56, .12) }
+footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -3px 12px rgba(33, 22, 56, .12) }
+@media (max-width: 520px) { body { padding-bottom: 150px } #dirty { flex-basis: 100% } footer button { padding: 9px 10px; font-size: 13px } }
 #dirty { flex: 1; font-size: 13px; font-weight: 700; min-width: 0 }
 .more { position: relative }
 .more summary { list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: 10px; background: var(--bg) }

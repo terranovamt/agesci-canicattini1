@@ -2,6 +2,14 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "assemblea": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "stato": {
+        ".read": true,
+        ".validate": "newData.hasChildren(['attiva'])",
+        "attiva": { ".validate": "newData.isBoolean()" }
+      }
+    },
     "live": {
       ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
       "stato": {

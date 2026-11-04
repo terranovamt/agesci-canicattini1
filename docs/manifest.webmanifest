@@ -1,7 +1,7 @@
 {
-  "name": "Assemblea di Gruppo",
-  "short_name": "Assemblea",
-  "start_url": "./Assemblea-di-Gruppo/index.html",
+  "name": "AGESCI Canicattini 1",
+  "short_name": "Canicattini 1",
+  "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "background_color": "#ffffff",

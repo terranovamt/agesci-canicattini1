@@ -10,7 +10,7 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 | Chi | Indirizzo |
 | --- | --- |
-| Pubblico | https://terranovamt.github.io/agesci-canicattini1/ (reindirizza alla presentazione) |
+| Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
 | Regia | `.../Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` |
 | Setup (modifiche live) | https://terranovamt.github.io/agesci-canicattini1/setup (chiede la chiave) |
 | Guida | `.../Assemblea-di-Gruppo/guida.html` |
@@ -22,8 +22,27 @@ Non condividere mai link con `?regia=`.
 
 In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella `/docs`.
 Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
-del sito reindirizza a `Assemblea-di-Gruppo/index.html`, conservando parametri
-e posizione (`#slide.passo`).
+del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
+a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.passo`).
+
+### Aprire e chiudere l'assemblea
+
+1. Dalla home premi **Assemblea di Gruppo**: apre il setup, dove inserire la chiave.
+2. Prepara i contenuti, poi premi **Inizia assemblea**. Con una sola scrittura
+   Firebase salva le modifiche live, azzera la posizione e attiva l'assemblea;
+   se la scrittura fallisce non avvia nulla e mostra l'errore.
+   Si apre la regia; da questo momento la home manda tutti alla presentazione.
+3. Nell'ultima slide la regia ha **Termina assemblea**, accanto a **PDF**.
+   Dopo la conferma salva lo stato inattivo: home e link alla presentazione
+   tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
+   torna ad aprire il setup. I contenuti preparati non vengono cancellati.
+
+Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
+gli aggiornamenti della regia non possono riattivare un'assemblea terminata.
+Il setup resta sempre raggiungibile da `/setup`. Con rete assente viene
+mostrato un errore e il controllo riprova automaticamente.
+**Aggiorna le regole Firebase** dal file del repository: il nuovo nodo
+`assemblea` richiede la stessa chiave degli altri due nodi.
 
 ## Durante l'assemblea
 
@@ -96,6 +115,7 @@ Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
 | `live/k`, `modifiche/k` | regia / setup | nessuno | chiave inviata a ogni scrittura |
 | `modifiche/patch` | setup | tutti | differenze rispetto a `dati.js` (JSON in una stringa) |
 | `modifiche/t` | setup | tutti | ora dell'ultima pubblicazione |
+| `assemblea/stato` | setup / regia | tutti | `attiva`: home o presentazione |
 
 ### Configurare Firebase da zero
 
@@ -111,7 +131,7 @@ Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
    `https://assemblea-canicattini1-default-rtdb.europe-west1.firebasedatabase.app/`.
 4. Scheda **Regole**: cancella tutto, incolla il contenuto di
    [`firebase/database.rules.json`](firebase/database.rules.json), sostituisci
-   le due `LA-TUA-CHIAVE` con una chiave inventata da te (es. `lupo-rosso-42`;
+   tutte e tre le `LA-TUA-CHIAVE` con la stessa chiave inventata da te (es. `lupo-rosso-42`;
    solo lettere, numeri e trattini) e premi **Pubblica**.
    La chiave va **solo nella console**, mai nel repository.
 5. Su GitHub apri `docs/Assemblea-di-Gruppo/config.js` (matita ✏️) e metti
