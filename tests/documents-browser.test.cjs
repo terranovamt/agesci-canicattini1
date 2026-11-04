@@ -16,18 +16,28 @@ function fixture(file, css, scripts) {
     window.ACCESSO = { verificata: () => true };
     window.LIVE = { github: { repo: 'test/repo', ramo: 'test' } };
     window.DOCUMENTS_PREVIEW = true;
+    history.replaceState = () => {};
     let items = ${index};
-    window.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+    Object.defineProperty(window, 'localStorage', { value: { getItem: () => null, setItem() {}, removeItem() {} } });
     window.confirm = () => true;
     window.fetch = async (url, options) => {
       if (options?.method === 'POST') items = DOCUMENTS_MODEL.apply(items, JSON.parse(options.body));
       return { ok: true, json: async () => JSON.parse(JSON.stringify(items)) };
     };
+    const append = document.head.append.bind(document.head);
+    document.head.append = element => {
+      if (element.tagName === 'SCRIPT' && element.src.includes('dati.js')) {
+        window.DATI = { anno_esercizio: 2026, assemblea: { titolo: 'Assemblea del gruppo', data: '20 Novembre' },
+          slide: [{ tipo: 'slide_titolo', titolo: 'Una slide con un titolo abbastanza lungo per verificare la leggibilità' },
+            { tipo: 'slide_divisore_sezione', titolo: 'Sezione di prova' }] };
+        element.onload();
+      } else append(element);
+    };
   `;
   return read(file).replace(/<link\b[^>]*>/g, '')
-    .replace(/<iframe\b[\s\S]*?<\/iframe>/g, '')
+    .replace(/<iframe\b[\s\S]*?<\/iframe>/g, original => file === 'index.html' ? '' : original)
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
-      scripts.includes(src) ? '<script>' + read(src) + '</script>' : '')
+      scripts.includes(src) ? '<script>' + read(path.join(path.dirname(file), src)) + '</script>' : '')
     .replace('</head>', '<style>' + read('Assemblea-di-Gruppo/common/theme.css') + read(css) + '</style><script>' + mock + '</script></head>');
 }
 
@@ -35,7 +45,9 @@ test('public documents and management work in a browser at all required widths',
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [
     fixture('index.html', 'home.css', ['home-documents.js']),
-    fixture('gestione-documenti.html', 'gestione-documenti.css', ['documents-model.js', 'documents-store.js', 'gestione-documenti.js'])
+    fixture('gestione-documenti.html', 'gestione-documenti.css', ['documents-model.js', 'documents-store.js', 'gestione-documenti.js']),
+    fixture('Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/common/setup.css',
+      ['common/salva-dati.js', 'common/modifiche.js', 'common/setup.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -53,13 +65,23 @@ test('public documents and management work in a browser at all required widths',
           frame.style.width = width + 'px';
           await new Promise(resolve => setTimeout(resolve, 10));
           results.push({ page, width, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
+          if (page === 2) {
+            for (const section of ['ordine', 'json', 'generale']) {
+              doc.querySelector('[data-tab="' + section + '"]').click();
+              results.push({ page, width, section, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
+            }
+            frame.contentWindow.scrollTo(0, 100000);
+            const field = [...doc.querySelectorAll('#campi input')].at(-1).getBoundingClientRect();
+            const footer = doc.querySelector('footer').getBoundingClientRect();
+            results.push({ width, reachable: field.bottom <= footer.top });
+          }
         }
         if (page === 0) {
           const cards = [...doc.querySelectorAll('.document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
             links: cards.every(card => [...card.querySelectorAll('a')].every(link => /documents\\/pdf\\/.+\\.pdf$/i.test(link.getAttribute('href')))) });
-        } else {
+        } else if (page === 1) {
           const win = frame.contentWindow;
           const input = doc.querySelector('#document-file');
           const transfer = new win.DataTransfer();
@@ -117,5 +139,8 @@ test('public documents and management work in a browser at all required widths',
     assert.match(results.find(item => 'uploaded' in item).status, /Salvato/);
     assert.equal(results.find(item => 'edited' in item).edited, 'Titolo modificato');
     assert.equal(results.find(item => 'remaining' in item).remaining, 2);
+    for (const item of results.filter(item => 'reachable' in item)) {
+      assert.equal(item.reachable, true, 'setup fields must be reachable above the action bar at width ' + item.width);
+    }
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 });

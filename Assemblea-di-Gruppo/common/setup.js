@@ -151,10 +151,12 @@
   const GENERALE = ['anno_esercizio', 'assemblea'];
   const INTRO = {
     generale: 'Data, luogo e orari dell\'assemblea.',
-    ordine: 'Aggiungi o elimina slide; 👁 nasconde e ✎ modifica. Collassa un divisore per spostare tutta la sezione con trascinamento o ↑ ↓. Le modifiche vanno salvate su GitHub.',
+    ordine: 'Aggiungi, modifica, duplica o nascondi le slide. Collassa un divisore per spostare tutta la sezione: trascinala oppure usa i pulsanti Sposta su e Sposta giù.',
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
     json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
+  const TITOLI = { generale: 'Informazioni generali', ordine: 'Slide e sezioni', bilancio: 'Bilancio del gruppo',
+    json: 'Editor JSON', guida: 'Guida al setup', limiti: 'Limiti e accorgimenti' };
   const tipoOf = x => x.tipo === 'slide_gruppo_invisibile' ? 'gruppo invisibile (solo setup)' : String(x.tipo || '').replace(/^slide_/, '');
   const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
   const sezione = x => ['slide_divisore_sezione', 'sezione', 'slide_gruppo_invisibile'].includes(x.tipo);
@@ -332,7 +334,12 @@
 
   function go(tab) {
     const prev = view; view = tab;
-    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+    document.querySelectorAll('.tabs button').forEach(x => {
+      x.classList.toggle('on', x.dataset.tab === tab);
+      x.setAttribute('aria-pressed', String(x.dataset.tab === tab));
+    });
+    $('#workspace-title').textContent = TITOLI[tab];
+    $('#doc').title = TITOLI[tab];
     const doc = tab === 'guida' || tab === 'limiti';
     $('#campi').hidden = doc || tab === 'json'; $('#json').hidden = tab !== 'json'; $('#doc').hidden = !doc;
     $('#intro').hidden = doc; $('#intro').textContent = INTRO[tab] || '';
@@ -343,7 +350,8 @@
   function updateDirty() {
     const d = dirty();
     $('#dirty').textContent = d ? '● Modifiche non salvate su GitHub' : '✓ Nessuna modifica locale';
-    $('#dirty').style.color = d ? 'var(--r)' : 'var(--g)';
+    $('#dirty').style.color = d ? 'var(--r-strong)' : 'var(--g-strong)';
+    $('#salva-gh').textContent = saving ? 'Salvataggio in corso…' : 'Salva su GitHub (dati.js)';
     $('#salva-gh').disabled = !d || saving;
     $('#annulla').disabled = !d || saving;
   }

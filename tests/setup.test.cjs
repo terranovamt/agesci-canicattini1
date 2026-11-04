@@ -76,7 +76,7 @@ function setup(options = {}) {
     vm.runInContext(fs.readFileSync(path.join(root, 'common', file), 'utf8'), context);
   vm.runInContext(source, context);
   return {
-    $, requests, scripts, store, listeners, redirects,
+    $, requests, scripts, store, listeners, redirects, tabs,
     tab: name => tabs.find(t => t.dataset.tab === name).onclick(),
     setSlides(slide) {
       $('#json-text').value = JSON.stringify({ ...initial, slide });
@@ -103,6 +103,19 @@ test('setup loads without Firebase login, streams, polling or presence', async (
   assert.equal(t.$('#app').hidden, false);
   assert.equal(t.$('#fassemblea_titolo').value, 'Assemblea');
   assert.equal(t.$('#salva-gh').disabled, true);
+});
+
+test('setup section navigation keeps its title and accessible selected state in sync', async () => {
+  const t = setup();
+  await flush();
+  t.tab('ordine');
+  assert.equal(t.$('#workspace-title').textContent, 'Slide e sezioni');
+  t.tab('json');
+  assert.equal(t.$('#workspace-title').textContent, 'Editor JSON');
+  for (const tab of t.tabs) assert.equal(tab.getAttribute('aria-pressed'), String(tab.dataset.tab === 'json'));
+  assert.equal(t.$('#dirty').style.color, 'var(--g-strong)');
+  t.editTitle('Nuovo titolo');
+  assert.equal(t.$('#dirty').style.color, 'var(--r-strong)');
 });
 
 function orderRows(t) {

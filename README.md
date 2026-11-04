@@ -111,3 +111,8 @@ Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jek
 | `docs/` | documentazione (questi file non servono al sito) |
 | `firebase/database.rules.json` | regole da incollare nella console Firebase |
 | `tests/` | test: `node --test tests/*.test.cjs` |
+
+Nel setup le sezioni sono raccolte nella barra laterale (su telefono diventano
+una griglia). Ogni sezione ha titolo e indicazioni contestuali; la barra di
+salvataggio resta visibile, con stato delle modifiche e accesso a download e
+uscita. Il collegamento alla gestione PDF non modifica i dati dell'assemblea.
