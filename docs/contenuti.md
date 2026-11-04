@@ -42,6 +42,12 @@ trascinamento e **↑ ↓** spostano tutto il blocco, mantenendo l'ordine intern
 Quando è espansa puoi spostare le slide singolarmente. Collassare è solo una
 preferenza dell'editor: non nasconde le slide nella presentazione.
 
+Il tipo **Gruppo invisibile (solo setup)** raggruppa le slide come un divisore,
+ma non produce una slide: non compare nello slideshow, nella numerazione,
+nella navigazione della regia o nel PDF. Il titolo serve solo nell'editor.
+Le slide contenute restano visibili e il gruppo termina al divisore o gruppo
+successivo. Puoi collassarlo e spostarlo come le altre sezioni.
+
 Premi **Salva su GitHub (dati.js)**. Il setup riscrive
 `dati.js` cambiando solo le righe modificate (commenti e formattazione restano)
 e fa il commit; dopo ~1 minuto GitHub Pages lo pubblica. Il setup non usa

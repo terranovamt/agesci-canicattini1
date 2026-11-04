@@ -128,13 +128,14 @@
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
     json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
-  const tipoOf = x => String(x.tipo || '').replace(/^slide_/, '');
+  const tipoOf = x => x.tipo === 'slide_gruppo_invisibile' ? 'gruppo invisibile (solo setup)' : String(x.tipo || '').replace(/^slide_/, '');
   const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
-  const sezione = x => ['slide_divisore_sezione', 'sezione'].includes(x.tipo);
+  const sezione = x => ['slide_divisore_sezione', 'sezione', 'slide_gruppo_invisibile'].includes(x.tipo);
   const modelli = [
     { tipo: 'slide_titolo', titolo: 'Nuova slide', sottotitolo: '' },
     { tipo: 'slide_divisore_sezione', titolo: 'Nuova sezione', sottotitolo: '' },
     { tipo: 'slide_testo_articoli', titolo_barra: 'Nuovo testo', articoli: [{ titolo: 'Titolo', paragrafi: ['Testo'] }] },
+    { tipo: 'slide_gruppo_invisibile', titolo: 'Nuovo gruppo' },
     { tipo: 'slide_qr_live', titolo: 'Scansiona il QR code', sottotitolo: '', data_ora: '2026-11-20T20:30:00', immagine: 'img/qr.svg' },
     { tipo: 'slide_ordine_del_giorno', punti: [{ testo: 'Nuovo punto', slide_collegata: '' }] },
     { tipo: 'slide_avanzamento_odg', completati: 0 },
@@ -186,7 +187,9 @@
       renderEditor(); updateDirty();
     };
     c.append(el('label', { htmlFor: select.id, textContent: 'Tipo di slide' }), select);
-    c.append(field(p.concat('nascosta'), !!x.nascosta, 'Nascosta (salta questa slide)'));
+    if (x.tipo === 'slide_gruppo_invisibile')
+      c.append(el('p', { className: 'hint', textContent: 'Raggruppa le slide nel setup, senza comparire nella presentazione o nel PDF. Le slide contenute restano visibili.' }));
+    else c.append(field(p.concat('nascosta'), !!x.nascosta, 'Nascosta (salta questa slide)'));
     const fields = Object.keys(x).filter(k => k !== 'tipo' && k !== 'nascosta');
     if (!fields.length) c.append(el('p', { className: 'hint', textContent: /rendiconto|patrimonio/.test(x.tipo) ? 'I numeri sono nella scheda Bilancio.' : 'Questo tipo non richiede altri campi.' }));
     fields.forEach(k => c.append(node(p.concat(k), x[k], human(k))));
@@ -253,7 +256,7 @@
         el('span', { className: 't' }, el('b', { textContent: titleOf(x) }), el('small', { textContent: tipoOf(x) })),
         sezione(x) && closed ? badge((sectionEnd(i) - i - 1) + ' slide nella sezione') : null,
         moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
-        btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
+        x.tipo === 'slide_gruppo_invisibile' ? badge('Solo setup') : btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
         btn('↑', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
         btn('↓', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
         btn('✎', 'Modifica i contenuti', () => modificaSlide(x)),

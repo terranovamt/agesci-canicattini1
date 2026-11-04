@@ -44,7 +44,7 @@ const ALIAS = { titolo: 'slide_titolo', sezione: 'slide_divisore_sezione', regol
 const T = { ...LANDSCAPE };
 function start(data) {
   INST = started; started = true;
-  D = { ...data, slide: (data.slide || []).map(x => ({ ...x, tipo: ALIAS[x.tipo] || x.tipo })) };
+  D = { ...data, slide: (data.slide || []).filter(x => x.tipo !== 'slide_gruppo_invisibile').map(x => ({ ...x, tipo: ALIAS[x.tipo] || x.tipo })) };
   document.getElementById('msg').style.display = 'none';
   st.querySelectorAll('.slide').forEach(e => e.remove()); cur = null; saved = null;
   const ST = { slide_rendiconto_entrate_uscite: D => D.entrate.length + 1 + D.uscite.length, slide_rendiconto_scontrino_esito: () => 3, slide_rendiconto_andamento_avanzo: () => 0, slide_patrimonio_barre: D => D.patrimonio.voci.length, slide_patrimonio_ciambella: () => 0 }; let base = 0;

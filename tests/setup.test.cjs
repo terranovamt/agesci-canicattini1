@@ -202,6 +202,24 @@ test('collapsed sections move down and up as intact blocks', async () => {
   assert.deepEqual(t.data().slide.map(s => s.titolo), ['Intro', 'A', 'A1', 'A2', 'B', 'B1']);
 });
 
+test('invisible groups collapse and move like sections without hiding their contents', async () => {
+  const t = setup();
+  await flush();
+  const slides = sampleSlides();
+  slides[1] = { tipo: 'slide_gruppo_invisibile', titolo: 'Gruppo A' };
+  t.setSlides(slides);
+  t.tab('ordine');
+  const row = orderRows(t)[1];
+  assert.equal(button(row, 'Visibile: clic per nasconderla'), undefined);
+  button(row, 'Collassa sezione').onclick();
+  assert.deepEqual(orderRows(t).map(r => r.dataset.i), [0, 1, 4, 5]);
+  button(orderRows(t)[2], 'Collassa sezione').onclick();
+  button(orderRows(t)[1], 'Sposta sezione giù').onclick();
+  const result = t.data().slide;
+  assert.deepEqual(result.map(s => s.titolo), ['Intro', 'B', 'B1', 'Gruppo A', 'A1', 'A2']);
+  assert.equal(result.some(s => s.nascosta), false);
+});
+
 test('dragging a collapsed section moves all its slides and expansion restores rows', async () => {
   const t = setup();
   await flush();
