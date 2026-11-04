@@ -1,5 +1,16 @@
 (function () {
   const clone = value => JSON.parse(JSON.stringify(value));
+  function assemblyDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+    if (!match) throw new Error('Inserisci data e ora dell’assemblea');
+    const [, y, m, d, h, min] = match.map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d, h, min));
+    if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d || h > 23 || min > 59) {
+      throw new Error('Data e ora dell’assemblea non valide');
+    }
+    const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+    return d + ' ' + months[m - 1] + ' ' + y;
+  }
   const count = (value, label, nullable = false) => {
     if (nullable && value === null) return;
     if (!Number.isSafeInteger(value) || value < 0) throw new Error(label + ': inserisci un numero intero non negativo');
@@ -43,9 +54,11 @@
     }
     history[year] = value;
   }
-  function prepare(source, proposed, previousPresent) {
+  function prepare(source, proposed, previousPresent, dateTime) {
     checkSource(source);
     const next = clone(proposed), year = source.anno_esercizio;
+    next.assemblea.data = assemblyDate(dateTime);
+    next.slide.filter(row => row.tipo === 'slide_qr_live').forEach(row => { row.data_ora = dateTime });
     if (next.anno_esercizio !== year + 1) throw new Error('Il nuovo esercizio deve essere quello immediatamente successivo: ' + (year + 1));
     if (!/^\d{4}\/\d{4}$/.test(next.anno_scout) || Number(next.anno_scout.slice(5)) !== Number(next.anno_scout.slice(0, 4)) + 1) {
       throw new Error('Anno scout non valido: usa due anni consecutivi, per esempio 2027/2028');
@@ -96,7 +109,7 @@
     });
     return next;
   }
-  const model = { draft, prepare };
+  const model = { draft, prepare, assemblyDate };
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   else window.NUOVO_ANNO_MODEL = model;
 })();

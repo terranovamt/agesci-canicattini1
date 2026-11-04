@@ -4,7 +4,7 @@
   const steps = ['Anno', 'Assemblea', 'Censimenti', 'Entrate e uscite', 'Patrimonio', 'Contenuti', 'Riepilogo'];
   const strip = value => String(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const label = key => key.replaceAll('_', ' ');
-  let source, next, previousPresent, step, getData, apply, prepared;
+  let source, next, previousPresent, step, getData, apply, prepared, dateTime;
   const node = (tag, text, cls) => {
     const element = document.createElement(tag);
     if (text !== undefined) element.textContent = text;
@@ -45,7 +45,7 @@
     parent.append(line);
   }
   function review(parent) {
-    prepared = window.NUOVO_ANNO_MODEL.prepare(source, next, previousPresent);
+    prepared = window.NUOVO_ANNO_MODEL.prepare(source, next, previousPresent, dateTime);
     parent.append(node('p', 'Controlla i valori prima di applicare. Gli importi attuali passeranno nella colonna precedente; gli storici più vecchi resteranno intatti.'));
     row(parent, 'Esercizio', source.anno_esercizio, prepared.anno_esercizio);
     row(parent, 'Anno scout', source.anno_scout, prepared.anno_scout);
@@ -96,14 +96,11 @@
       field(body, 'Anno scout (es. 2027/2028)', next.anno_scout, value => { next.anno_scout = value });
     } else if (step === 1) {
       field(body, 'Titolo assemblea (aggiorna anche l’anno nel testo)', next.assemblea.titolo, value => { next.assemblea.titolo = value });
-      field(body, 'Data assemblea (es. 20 Novembre 2027)', next.assemblea.data, value => { next.assemblea.data = value });
+      field(body, 'Data e ora assemblea e conto alla rovescia', dateTime, value => { dateTime = value }, 'datetime-local');
+      body.append(node('p', 'La data scritta (es. 20 Novembre 2027) e tutte le slide con conto alla rovescia vengono ricavate da questo unico campo.', 'hint'));
       ['prima_convocazione', 'seconda_convocazione'].forEach(key =>
         field(body, label(key), next.assemblea[key], value => { next.assemblea[key] = value }, 'time'));
       if ('luogo' in next.assemblea) field(body, 'Luogo', next.assemblea.luogo, value => { next.assemblea.luogo = value });
-      next.slide.forEach((slide, i) => {
-        if (slide.tipo === 'slide_qr_live') field(body, 'Data e ora conto alla rovescia · slide ' + (i + 1), slide.data_ora,
-          value => { slide.data_ora = value }, 'datetime-local');
-      });
     } else if (step === 2) {
       body.append(node('p', 'Archivieremo ' + source.censimenti.censiti_attuali + ' censiti nell’anno ' + source.anno_esercizio + '. I presenti del nuovo anno saranno lasciati da rilevare.'));
       const old = field(body, 'Presenti del vecchio anno da archiviare (vuoto = non rilevati)', previousPresent,
@@ -149,6 +146,7 @@
         try {
           source = clone(getData());
           next = window.NUOVO_ANNO_MODEL.draft(source);
+          dateTime = '';
           previousPresent = source.censimenti.presenti_attuali;
           step = 0;
           $('year-dialog').showModal(); render();
@@ -163,7 +161,7 @@
         if (step < steps.length - 1) { step++; render(); return }
         try {
           if (JSON.stringify(getData()) !== JSON.stringify(source)) throw new Error('I dati del setup sono cambiati. Chiudi e riapri la procedura per non perderli.');
-          prepared = window.NUOVO_ANNO_MODEL.prepare(source, next, previousPresent);
+          prepared = window.NUOVO_ANNO_MODEL.prepare(source, next, previousPresent, dateTime);
           apply(prepared);
           $('year-dialog').close();
         } catch (error) { $('year-error').textContent = error.message }
