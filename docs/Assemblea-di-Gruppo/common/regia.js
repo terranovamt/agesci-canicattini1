@@ -145,8 +145,7 @@
       $('#principale').title = attiva ? 'Slide in onda' : 'Anteprima presentazione';
       if (ass.dati?.attiva) { pill('#b-assemblea', 'Assemblea attiva', 'ok'); $('#avviso').hidden = true }
       else {
-        pill('#b-assemblea', 'Assemblea non attiva', 'warn');
-        $('#avviso').innerHTML = 'Assemblea non attiva: chi apre il sito vede la home del gruppo. Avviala da <a href="setup.html">Setup → Inizia assemblea</a>.';
+        pill('#b-assemblea', 'Assemblea non iniziata', 'warn');
         $('#avviso').hidden = false;
       }
       if (!attiva) pill('#b-live', 'Non live');

@@ -82,7 +82,9 @@ mostrato un errore e il controllo riprova automaticamente.
   pubbliche del Realtime Database non espongono queste metriche.
   La dashboard non inventa consumi né mostra le dimensioni di pochi nodi
   come se fossero l'intero database. Per integrarle servirebbe un backend
-  autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito;
+  autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito,
+  oppure un login Google OAuth nel browser con i permessi di lettura sul
+  progetto. La chiave condivisa dell'assemblea non autorizza queste API;
 - **PDF** e **Termina assemblea** sull'ultima slide.
 
 **▣ Apri schermo presentazione** apre una finestra con *solo* le slide: spostala

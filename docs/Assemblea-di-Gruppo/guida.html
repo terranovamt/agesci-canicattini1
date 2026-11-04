@@ -104,10 +104,10 @@
       <h2><span class="n">2</span>Regia (dashboard)</h2>
       <p>Apri <code>regia.html</code> sul PC e inserisci la chiave. La dashboard mostra:</p>
       <div class="cards">
-        <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live.</div>
+        <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live, con un grande avviso “ASSEMBLEA NON INIZIATA”: il pubblico vede ancora la home.</div>
         <div class="card"><b>⏭ Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
         <div class="card g"><b>‹ ›</b>Due grandi pulsanti Indietro / Avanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
-        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Download mensile e spazio totale, con percentuali reali, sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Integrarli richiede un backend autorizzato a Google Cloud Monitoring, non credenziali nel sito.</div>
+        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Download mensile e spazio totale, con percentuali reali, sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
       </div>
       <table>
         <tr><th>Tasto / clicker</th><th>Azione</th></tr>

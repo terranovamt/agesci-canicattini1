@@ -20,8 +20,10 @@ input { font: inherit; width: 100%; padding: 9px 10px; border: 1.5px solid #D5D0
 #login h2 { margin: 0 0 6px }
 #login form { display: flex; gap: 8px }
 .err { color: var(--r); font-weight: 600; min-height: 1.4em }
-.avviso { max-width: 1400px; margin: 12px auto 0; padding: 10px 14px; border-radius: 12px; background: #FFF3BF; font-weight: 600 }
-.avviso a { color: var(--v) }
+.avviso { max-width: 1372px; margin: 16px auto 0; padding: 22px 24px; border: 3px solid var(--y); border-radius: 16px; background: #FFF3BF; font-weight: 600 }
+.avviso h2 { margin: 0; font-size: clamp(22px, 3vw, 32px); font-weight: 800; color: var(--vd) }
+.avviso p { margin: 8px 0 16px }
+@media (max-width: 1400px) { .avviso { margin-left: 14px; margin-right: 14px } }
 
 main { max-width: 1400px; margin: 0 auto; padding: 14px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); align-items: start }
 .lbl { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--v2); margin-bottom: 6px; display: flex; align-items: center; gap: 8px }

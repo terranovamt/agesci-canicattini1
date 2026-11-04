@@ -50,7 +50,11 @@ test('inactive or unknown assembly has no in-onda styling', async () => {
     assert.equal($('#onda-label').textContent, attiva ? 'In onda' : 'Anteprima');
     assert.equal($('#onda-frame').classes.has('big'), !!attiva);
     assert.equal($('#onda-dot').hidden, !attiva);
-    if (!attiva) assert.equal($('#b-live').textContent, 'Non live');
+    assert.equal($('#avviso').hidden, !!attiva);
+    if (!attiva) {
+      assert.equal($('#b-live').textContent, 'Non live');
+      assert.equal($('#b-assemblea').textContent, 'Assemblea non iniziata');
+    }
   }
 });
 
