@@ -17,7 +17,7 @@ body.pm .rw.dn .ck {
   flex: none;
   width: 1.4em;
   font-weight: 800;
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .rw.dn .tt {
   color: var(--v2);
@@ -25,7 +25,7 @@ body.pm .rw.dn .tt {
   opacity: 0.8;
 }
 body.pm .rw.td .no {
-  color: var(--vl);
+  color: var(--v2);
 }
 body.pm .rw.nxr {
   flex: 3.2 1 0;

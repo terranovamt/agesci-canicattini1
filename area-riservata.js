@@ -8,6 +8,7 @@
     document.getElementById('login').hidden = true;
     document.getElementById('riservata').hidden = false;
     stato.textContent = '';
+    window.AREA_DASHBOARD.load();
   }
   async function login(key) {
     form.querySelector('button').disabled = true;

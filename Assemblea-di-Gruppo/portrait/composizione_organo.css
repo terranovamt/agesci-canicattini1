@@ -13,8 +13,8 @@ body.pm .avc {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px dashed var(--vl);
-  color: var(--vl);
+  border: 3px dashed var(--v2);
+  color: var(--v2);
   transition:
     box-shadow 0.4s,
     background 0.4s;

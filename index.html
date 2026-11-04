@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AGESCI Canicattini 1</title>
+  <meta name="description" content="Eventi, documenti e strumenti del gruppo scout AGESCI Canicattini 1.">
   <meta name="theme-color" content="#462678">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -11,21 +12,128 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="Assemblea-di-Gruppo/img/logo-grande.png">
   <link rel="icon" href="Assemblea-di-Gruppo/img/logo-grande.png">
+  <link rel="stylesheet" href="Assemblea-di-Gruppo/common/theme.css">
   <link rel="stylesheet" href="home.css">
 </head>
 <body>
-  <header>AGESCI <strong>Canicattini 1</strong></header>
-  <main>
-    <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="Logo del gruppo AGESCI Canicattini 1">
-    <p class="eyebrow">Benvenuti nel sito del gruppo</p>
-    <h1>Canicattini 1</h1>
-    <p>Associazione Guide e Scouts Cattolici Italiani</p>
-    <a class="button" id="area-riservata" href="area-riservata.html">Area riservata</a>
-    <p id="stato" role="status">Controllo dello stato dell'assemblea...</p>
+  <a class="skip-link" href="#contenuto">Vai al contenuto</a>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="AGESCI Canicattini 1, home">
+      <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="">
+      <span><b>AGESCI</b><small>Canicattini 1</small></span>
+    </a>
+    <nav aria-label="Navigazione principale">
+      <a href="#eventi">Eventi</a>
+      <a href="#documenti">Documenti</a>
+      <a class="nav-access" href="area-riservata.html">Area riservata</a>
+    </nav>
+  </header>
+
+  <main id="contenuto">
+    <section class="hero" aria-labelledby="titolo-home">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> Associazione Guide e Scouts Cattolici Italiani</p>
+        <h1 id="titolo-home">Una comunità,<br>tante strade da percorrere.</h1>
+        <p class="hero-intro">Benvenuti sul sito del Gruppo Scout AGESCI Canicattini 1. Qui trovi gli appuntamenti, i documenti e gli strumenti per l’assemblea.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#eventi">Scopri gli eventi <span aria-hidden="true">→</span></a>
+          <a class="button button-quiet" href="#documenti">Consulta i documenti</a>
+        </div>
+        <p id="stato" class="assembly-status" role="status" hidden></p>
+      </div>
+      <div class="hero-art" aria-label="Logo del gruppo AGESCI Canicattini 1">
+        <div class="art-orbit orbit-one"></div>
+        <div class="art-orbit orbit-two"></div>
+        <div class="art-stamp"><img src="Assemblea-di-Gruppo/img/logo-grande.png" alt=""></div>
+        <p class="art-caption"><span>AGESCI</span><b>Canicattini 1</b></p>
+      </div>
+      <div class="hero-index" aria-hidden="true">01 <span>/</span> 04</div>
+    </section>
+
+    <section class="content-section events-section" id="eventi" aria-labelledby="titolo-eventi">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Segna la data</p>
+          <h2 id="titolo-eventi">Calendari e appuntamenti</h2>
+        </div>
+      </div>
+      <div class="calendar-card">
+        <details id="calendar-info" class="calendar-info">
+          <summary aria-label="Informazioni e stato dei calendari" title="Informazioni sui calendari">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v2"/></svg>
+            <span id="calendar-info-warning" class="calendar-info-warning" hidden aria-hidden="true">!</span>
+          </summary>
+          <div class="calendar-info-body">
+            <h3>Informazioni</h3>
+            <p id="calendar-status" class="calendar-status" role="status">Caricamento degli appuntamenti…</p>
+            <p id="assembly-connection-status" class="calendar-status" role="status" hidden></p>
+            <button id="calendar-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
+            <p class="calendar-status">Seleziona i calendari per filtrarli e un giorno per leggere gli eventi. Il simbolo ! indica dati non aggiornati o non disponibili. Aggiornamento automatico; gli orari sono Europe/Rome.</p>
+            <div class="calendar-filter-actions"><button id="calendar-all" type="button" disabled>Mostra tutti</button><span id="calendar-selection" role="status"></span></div>
+            <ul id="calendar-links"></ul>
+            <a class="text-link" href="https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.html" target="_blank" rel="noopener">Gruppo Canicattini 1 su Outlook ↗</a>
+          </div>
+        </details>
+        <div id="calendar-app" hidden>
+          <fieldset class="calendar-filter-set">
+            <legend class="visually-hidden">Filtra calendari</legend>
+            <div id="calendar-filters" class="calendar-filters"></div>
+          </fieldset>
+          <div class="calendar-layout">
+            <section aria-labelledby="calendar-month">
+              <div class="calendar-toolbar">
+                <h3 id="calendar-month" aria-live="polite"></h3>
+                <div><button id="calendar-prev" type="button" aria-label="Mese precedente">←</button><button id="calendar-today" type="button">Oggi</button><button id="calendar-next" type="button" aria-label="Mese successivo">→</button></div>
+              </div>
+              <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+              <div id="calendar-days" class="calendar-days" role="group" aria-label="Giorni del mese"></div>
+            </section>
+            <section class="calendar-agenda-panel" aria-labelledby="calendar-agenda-title">
+              <h3 id="calendar-agenda-title">Prossimi appuntamenti</h3>
+              <button id="calendar-upcoming" type="button" hidden>Torna ai prossimi eventi</button>
+              <div id="calendar-agenda" aria-live="polite"></div>
+            </section>
+          </div>
+        </div>
+        <noscript>Attiva JavaScript per consultare il calendario personalizzato, oppure apri il calendario originale.</noscript>
+      </div>
+    </section>
+
+    <section class="content-section documents-section" id="documenti" aria-labelledby="titolo-documenti">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Guide e materiali</p>
+          <h2 id="titolo-documenti">Documenti del gruppo</h2>
+        </div>
+        <p class="section-description">Consulta e scarica i PDF pubblicati dal gruppo.</p>
+      </div>
+      <p id="documents-status" role="status">Caricamento dei documenti…</p>
+      <div id="documents-list" class="document-grid" data-documents-url="documents/index.json"></div>
+      <button id="documents-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i PDF</button>
+      <noscript>Attiva JavaScript per vedere l’elenco dei documenti PDF.</noscript>
+    </section>
+
+    <section class="access-band" aria-labelledby="titolo-accesso">
+      <div>
+        <p class="eyebrow">Strumenti del gruppo</p>
+        <h2 id="titolo-accesso">Area riservata</h2>
+        <p>Gestisci i documenti del gruppo, il setup e la regia dell’assemblea.</p>
+      </div>
+      <a class="button button-primary" href="area-riservata.html">Accedi all’area riservata <span aria-hidden="true">→</span></a>
+    </section>
   </main>
-  <footer>AGESCI Canicattini 1</footer>
+
+  <footer class="site-footer">
+    <a class="footer-brand" href="./">AGESCI <b>Canicattini 1</b></a>
+    <span>Associazione Guide e Scouts Cattolici Italiani</span>
+    <a href="#contenuto">Torna all’inizio ↑</a>
+  </footer>
+
   <script src="Assemblea-di-Gruppo/config.js"></script>
   <script src="Assemblea-di-Gruppo/common/assemblea.js"></script>
   <script src="home.js"></script>
+  <script src="home-documents.js"></script>
+  <script src="calendar-model.js"></script>
+  <script src="home-calendars.js"></script>
 </body>
 </html>
