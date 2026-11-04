@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const source = fs.readFileSync(path.join(__dirname, '../docs/Assemblea-di-Gruppo/common/accesso.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/accesso.js'), 'utf8');
 function load(fetch) {
   const session = new Map(), local = new Map();
   const storage = map => ({ getItem: k => map.get(k) || null, setItem: (k, v) => map.set(k, v), removeItem: k => map.delete(k) });

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const read = file => fs.readFileSync(path.join(__dirname, '../docs', file), 'utf8');
+const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 test('home stays on the group page until the assembly is active', () => {
   for (const search of ['', '?regia=test']) {

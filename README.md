@@ -6,6 +6,15 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 > 📘 Guida illustrata (stesso stile della presentazione):
 > https://terranovamt.github.io/agesci-canicattini1/Assemblea-di-Gruppo/guida.html
 
+## Documentazione
+
+| Documento | Contenuto |
+| --- | --- |
+| [docs/assemblea.md](docs/assemblea.md) | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
+| [docs/contenuti.md](docs/contenuti.md) | setup live, `dati.js`, Salva su GitHub |
+| [docs/firebase.md](docs/firebase.md) | nodi, configurazione da zero, regole, limiti del piano gratuito |
+| [docs/sviluppo.md](docs/sviluppo.md) | struttura del codice e dei tipi di slide |
+
 ## Indirizzi
 
 | Chi | Indirizzo |
@@ -34,240 +43,20 @@ e i contenuti destinati al pubblico restano pubblici: non inserire dati riservat
 
 ## Pubblicazione (GitHub Pages)
 
-In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella `/docs`.
+In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
 Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
 del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
 a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.passo`).
+Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jekyll.
 
-### Aprire e chiudere l'assemblea
+## Struttura del repository
 
-1. Dalla home premi **Area riservata**, inserisci la chiave e poi scegli
-   **Assemblea di Gruppo** per aprire il setup.
-2. Prepara i contenuti, poi premi **Inizia assemblea**. Con una sola scrittura
-   Firebase salva le modifiche live, azzera la posizione e attiva l'assemblea;
-   se la scrittura fallisce non avvia nulla e mostra l'errore.
-   Si apre la dashboard regia; da questo momento la home manda tutti alla presentazione.
-3. Nell'ultima slide la dashboard mostra **Termina assemblea**, accanto a **PDF**.
-   Dopo la conferma salva lo stato inattivo: home e link alla presentazione
-   tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
-   torna all'area riservata. I contenuti preparati non vengono cancellati.
-
-Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
-gli aggiornamenti della regia non possono riattivare un'assemblea terminata.
-Il setup resta sempre raggiungibile da `/setup`. Con rete assente viene
-mostrato un errore e il controllo riprova automaticamente.
-**Aggiorna le regole Firebase** dal file del repository: il nodo
-`assemblea` richiede la stessa chiave degli altri due nodi; il nodo `presenza`
-(conteggio dispositivi della dashboard) non richiede chiave ma accetta solo
-`{t, r}` con l'ora del server.
-
-## Durante l'assemblea
-
-**Regia** (`regia.html`, sul PC): una dashboard con
-
-- **In onda**: la slide che vede il pubblico, con numero e passo. Quando
-  l'assemblea non è attiva diventa **Anteprima**, senza bordo rosso o spia live;
-- **Prossima**: anteprima del passo successivo (o "Fine presentazione");
-- due grandi pulsanti **‹ Indietro** / **Avanti ›**, più Inizio e Ordine del giorno;
-  tastiera e clicker: `→ ↓ spazio PagGiù` avanti, `← ↑ PagSu` indietro;
-- l'elenco delle slide: un clic ci salta sopra;
-- stato: assemblea attiva, pubblico allineato alla regia, Firebase raggiungibile;
-- pannello **Firebase**: dispositivi collegati (pubblico, setup, regia), tempo
-  di risposta e connessioni **stimate della presentazione**, su 100, con
-  percentuale. La barra diventa arancione al 70% e rossa al 90%.
-  Le presenze non misurano tutte le connessioni al database (ad esempio la
-  console Firebase o altri client), quindi non coincidono con il dato ufficiale.
-  Download mensile (su 10 GB) e spazio totale (su 1 GB), con le relative
-  percentuali, sono disponibili **solo nella console Firebase**: le API
-  pubbliche del Realtime Database non espongono queste metriche.
-  La dashboard non inventa consumi né mostra le dimensioni di pochi nodi
-  come se fossero l'intero database. Per integrarle servirebbe un backend
-  autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito,
-  oppure un login Google OAuth nel browser con i permessi di lettura sul
-  progetto. La chiave condivisa dell'assemblea non autorizza queste API;
-- **PDF** e **Termina assemblea** sull'ultima slide.
-
-**▣ Apri schermo presentazione** apre una finestra con *solo* le slide: spostala
-sul proiettore (Chrome/Edge la aprono già sul secondo schermo se gli dai il
-permesso), cliccaci per lo schermo intero, oppure condividila su Meet/Zoom/Teams.
-Segue la dashboard all'istante e accetta anche i tasti del clicker. Funziona nello
-stesso browser della dashboard; aperta da sola parte dalla posizione live.
-Se ricarichi la dashboard riparte dalla slide in onda, non dalla prima.
-Il setup si apre da `…/agesci-canicattini1/setup`.
-
-**Pubblico** (telefono): segue la regia e può tornare indietro, ma non andare
-oltre il limite di `config.js` (`limite: 'corrente'` = la slide mostrata ora,
-`'massimo'` = la più avanzata raggiunta). Barra in basso: indietro, ODG, contatore
-o **Slide attuale** (quando si è rimasti indietro), Ruota, avanti; swipe per
-cambiare slide. Su touch la slide occupa tutto lo schermo e i controlli si
-nascondono dopo 3 secondi: il primo tocco li fa solo ricomparire. Con **Ruota**
-slide, icone e swipe passano in orizzontale; la barra resta in basso.
-
-**iPhone senza barra dell'indirizzo**: Safari non permette a una pagina di
-nasconderla. Aprire il sito in Safari → Condividi → **Aggiungi alla schermata
-Home** e avviarlo dall'icona (a schermo intero).
-
-## Modificare i contenuti
-
-| Modo | Quando | Tempo | Durata |
-| --- | --- | --- | --- |
-| **Setup** (`setup.html?regia=…`) | durante l'assemblea: nomi, orari, slide nascoste, testi, numeri | ~1 s regia, ≤10 s pubblico | finché non premi "Togli tutte le modifiche live" |
-| **`dati.js` su GitHub** (matita ✏️ → Commit) | prima dell'assemblea, modifiche definitive | ~1 min (Pages) + ≤30 s | per sempre |
-
-La pagina di setup è divisa in schede:
-
-| Scheda | Cosa contiene |
+| Percorso | Contenuto |
 | --- | --- |
-| **Generale** | anno, data, luogo, orari delle convocazioni |
-| **Slide** | ordine delle slide (trascina o ↑ ↓), 👁 nascondi/mostra, ✎ apre i contenuti |
-| **Contenuti** | testi e nomi di ogni slide (anche Progetto Educativo) |
-| **Bilancio** | censimenti, soglie, entrate, uscite, storico avanzi, patrimonio |
-| **JSON** | tutti i dati in JSON, per aggiungere slide o modifiche avanzate |
-| **Guida** / **Limiti** | questa guida e i limiti del piano Firebase gratuito |
-
-I campi diversi da `dati.js` sono evidenziati in giallo e ↺ li riporta
-all'originale; ✕ e **+ Aggiungi** tolgono o aggiungono elementi alle liste.
-Premi **Pubblica**: su Firebase va solo la differenza rispetto a `dati.js`, così
-le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.
-Le modifiche live **non cambiano `dati.js`**: restano su Firebase, sopra il file.
-Per renderle definitive: **⋯ → Salva su GitHub (dati.js)**. Il setup riscrive
-`dati.js` cambiando solo le righe modificate (commenti e formattazione restano)
-e fa il commit; dopo ~1 minuto GitHub Pages lo pubblica e il setup toglie da
-solo le modifiche live, ormai inutili. La prima volta chiede un **token GitHub**
-(salvato solo su quel dispositivo; **⋯ → Dimentica token GitHub** lo cancella):
-
-1. <https://github.com/settings/personal-access-tokens/new> (Fine-grained token).
-2. *Repository access* → *Only select repositories* → `agesci-canicattini1`.
-3. *Permissions* → **Contents: Read and write** → *Generate token*, copialo nel setup.
-
-In alternativa **⋯ → Scarica dati.js aggiornato** e caricalo a mano su GitHub,
-poi **⋯ → Togli tutte le modifiche live**. Repository, ramo e cartella sono in
-`config.js` (`github`).
-
-Con un errore di sintassi in `dati.js` gli schermi già aperti restano alla
-versione precedente; chi apre la pagina vede "Non trovo dati.js".
-
-## Firebase
-
-Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
-
-| Nodo | Scrive | Legge | Contenuto |
-| --- | --- | --- | --- |
-| `live/stato` | regia | tutti | `pos`, `max` = slide × 1000 + passo |
-| `live/k`, `modifiche/k` | regia / setup | nessuno | chiave inviata a ogni scrittura |
-| `modifiche/patch` | setup | tutti | differenze rispetto a `dati.js` (JSON in una stringa) |
-| `modifiche/t` | setup | tutti | ora dell'ultima pubblicazione |
-| `assemblea/stato` | setup / regia | tutti | `attiva`: home o presentazione |
-| `presenza/{id}` | ogni dispositivo | tutti | `t` ora, `r` ruolo (p/s/r): conteggio dispositivi in regia |
-
-### Configurare Firebase da zero
-
-Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
-
-1. Vai su <https://console.firebase.google.com> → **Crea un progetto** (o
-   *Aggiungi progetto*), dagli un nome (es. `assemblea-canicattini1`).
-   Google Analytics non serve: puoi disattivarlo.
-2. Nel menu a sinistra: **Build → Realtime Database → Crea database**.
-   Posizione: **Belgio (europe-west1)**. Modalità: **blocco** (locked).
-   *Non* serve Firestore, né Authentication, né Hosting.
-3. In alto nella scheda **Dati** copia l'URL del database, es.
-   `https://assemblea-canicattini1-default-rtdb.europe-west1.firebasedatabase.app/`.
-4. Scheda **Regole**: cancella tutto, incolla il contenuto di
-   [`firebase/database.rules.json`](firebase/database.rules.json), sostituisci
-   tutte e tre le `LA-TUA-CHIAVE` con la stessa chiave inventata da te (es. `lupo-rosso-42`;
-   solo lettere, numeri e trattini) e premi **Pubblica**.
-   La chiave va **solo nella console**, mai nel repository.
-5. Su GitHub apri `docs/Assemblea-di-Gruppo/config.js` (matita ✏️) e metti
-   l'URL del punto 3 in `url:`, poi Commit. Dopo ~1 minuto è online.
-6. Prova: apri `…/Assemblea-di-Gruppo/regia.html` sul PC, inserisci la chiave,
-   e `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia il telefono segue
-   e il pannello Firebase conta 1 pubblico. Poi apri il setup, cambia un orario
-   e premi **Pubblica**.
-
-Non servono chiavi API, SDK o `npm`: la presentazione parla con Firebase via
-REST (`fetch` + `EventSource`). Per cambiare chiave basta modificarla nelle
-regole (punto 4). Per disattivare il live: `url: ''` in `config.js`.
-
-Se il setup risponde "Chiave non valida o regole Firebase non aggiornate":
-chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo
-`modifiche` (ripeti il punto 4).
-
-### Limiti del piano gratuito (Spark)
-
-| Risorsa | Limite Spark | Uso della presentazione |
-| --- | --- | --- |
-| Connessioni simultanee | **100** | 1 per spettatore (stato live), 1 regia, 1 setup → **~97 spettatori** |
-| Dati archiviati | 1 GB | pochi KB |
-| Download | 10 GB / mese | ~1 MB/ora per spettatore → 100 persone × 3 ore ≈ 300 MB |
-| Database | 1 per progetto | 1 |
-
-Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero
-non seguire la regia (possono comunque tornare indietro e ricaricare). Per
-assemblee più numerose passare al piano **Blaze** (a consumo, 200.000
-connessioni; per un'assemblea il costo resta praticamente nullo) o proiettare
-senza far collegare tutti. Il pubblico non apre una seconda connessione per le
-modifiche: controlla `modifiche/t` ogni 10 s. Limiti aggiornati:
-https://firebase.google.com/pricing.
-
-## Layout verticale
-
-Sui telefoni in verticale le slide titolo, divisore, chiusura, foto e grazie
-vengono adattate dal CSS; articoli, modifiche ai documenti, prima/dopo, ordine
-del giorno, avanzamento, composizione dell'organo, quorum, rendiconto e
-patrimonio hanno un layout dedicato. Le altre slide mantengono il layout
-orizzontale ridimensionato. L'esportazione PDF resta orizzontale.
-
-## Dove modificare cosa
-
-Ogni tipo di slide (campo `tipo` in `dati.js`, senza `slide_`) ha i suoi file:
-
-- `landscape/<tipo>.js` e `landscape/<tipo>.css`: versione orizzontale.
-- `portrait/<tipo>.js` e `portrait/<tipo>.css`: versione verticale (se esiste).
-
-Il file `.css` c'è solo se il tipo ha stili propri. Alcuni tipi condividono un
-layout: `divisore_sezione` e `chiusura` usano `titolo.css`, `grazie` usa
-`photo()` di `landscape/foto_gruppo.js`, `prima_dopo` usa `modifiche_documento`.
-Gli stili verticali di rendiconto e patrimonio sono in `portrait/finanze.css`; quelli di cambio date, differenze e area obiettivi in `portrait/aree.css`.
-Articoli e ordine del giorno condividono `portrait/testo_articoli.css`: le card
-dell'ODG adattano l'altezza al testo, anche per i punti su piu' righe.
-Le animazioni comuni del rendiconto sono in `common/base.js`: gli spicchi delle
-entrate si riducono in sequenza; nell'ultimo passo dello scontrino compare il
-totale, dopo un secondo il timbro e infine la card percentuale, dopo 1,5 secondi.
-In verticale il logo della slide Grazie e' sulla stessa riga del testo, a destra.
-Home porta alla slide 1 (titolo), saltando la slide 0 con il QR. La barra del
-pubblico include ODG: i collegamenti ai punti non ancora consentiti dal limite
-live sono disabilitati, mantenendo i colori delle card.
-Gli aggiornamenti live che confermano la stessa slide e lo stesso passo non
-riavviano le animazioni.
-Solo l'ODG iniziale contiene collegamenti: le slide di avanzamento ODG
-mostrano lo stato dei punti senza renderli cliccabili.
-La slide QR verticale usa lo spazio disponibile per ingrandire l'immagine,
-con titolo e countdown compatti; il layout orizzontale resta invariato.
-
-File comuni:
-
-- `index.html`: pagina e ordine di caricamento di stili e script.
-- `config.js`: Firebase, limite degli spettatori, repository per "Salva su GitHub";
-  `dati.js`: tutti i contenuti (anche le slide del Progetto Educativo).
-- `common/base.css`: colori, barra del titolo, navigazione; `common/print.css`: PDF.
-- `common/base.js`: funzioni di supporto; `common/differenze-testo.js`:
-  confronto parola per parola dei testi.
-- `common/motore.js`: navigazione, caricamento di `dati.js`, alias dei tipi.
-- `common/pdf.js`: esportazione PDF; `common/live.js`: regia e spettatori
-  (Firebase); `common/modifiche.js`: modifiche live sopra `dati.js`;
-  `common/avvio.js`: avvio, caricato per ultimo.
-- `regia.html`, `common/regia.js`, `common/regia.css`: dashboard regia;
-  `common/vista.js`: modalità in onda / anteprima / schermo usate dalla dashboard;
-  `common/presenza.js`: conteggio dei dispositivi collegati.
-- `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup;
-  `common/salva-dati.js`: riscrive `dati.js` mantenendo i commenti.
-- `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero
-  dalla schermata Home.
-- `firebase/database.rules.json` (radice del repository): regole Firebase.
-- `tests/`: `node --test tests/*.test.cjs`.
-- `portrait/base.js` e `portrait/base.css`: rilevamento del verticale, palco,
-  funzioni comuni e ripiego orizzontale per i tipi senza layout verticale.
-
-Per aggiungere un tipo nuovo: creare `landscape/<tipo>.js` che registra
-`LANDSCAPE.slide_<tipo>`, ed eventualmente `portrait/<tipo>.js` che registra
-`PORTRAIT.slide_<tipo>`, poi aggiungere i file in `index.html`.
+| `index.html`, `home.css`, `home.js`, `manifest.webmanifest` | home del gruppo |
+| `area-riservata.html`, `area-riservata.js` | accesso con chiave |
+| `setup.html` | scorciatoia `/setup` verso il setup dell'assemblea |
+| `Assemblea-di-Gruppo/` | presentazione, regia, setup, guida, `dati.js`, `config.js` |
+| `docs/` | documentazione (questi file non servono al sito) |
+| `firebase/database.rules.json` | regole da incollare nella console Firebase |
+| `tests/` | test: `node --test tests/*.test.cjs` |

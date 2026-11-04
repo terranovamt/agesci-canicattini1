@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 
 function animations() {
-  const source = fs.readFileSync(path.join(__dirname, '../docs/Assemblea-di-Gruppo/common/base.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/base.js'), 'utf8');
   const timers = new Map();
   let id = 0, now = 0;
   const context = {

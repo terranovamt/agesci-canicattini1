@@ -4,7 +4,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 
 test('all site pages use the home favicon', () => {
-  const docs = path.join(__dirname, '../docs');
+  const docs = path.join(__dirname, '..');
   const pages = ['index.html', 'setup.html', 'area-riservata.html',
     'Assemblea-di-Gruppo/index.html', 'Assemblea-di-Gruppo/setup.html',
     'Assemblea-di-Gruppo/regia.html', 'Assemblea-di-Gruppo/guida.html'];

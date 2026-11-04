@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const root = path.join(__dirname, '../docs/Assemblea-di-Gruppo');
+const root = path.join(__dirname, '../Assemblea-di-Gruppo');
 const config = fs.readFileSync(path.join(root, 'config.js'), 'utf8');
 const sync = fs.readFileSync(path.join(root, 'common', 'live.js'), 'utf8');
 

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const source = fs.readFileSync(path.join(__dirname, '../docs/Assemblea-di-Gruppo/common/modifiche.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/modifiche.js'), 'utf8');
 const load = () => { const context = { window: {} }; vm.runInNewContext(source, context); return context.window.MODIFICHE };
 
 const base = {

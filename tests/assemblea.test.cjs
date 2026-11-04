@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const source = fs.readFileSync(path.join(__dirname, '../docs/Assemblea-di-Gruppo/common/assemblea.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/assemblea.js'), 'utf8');
 function load(fetch) {
   const c = { window: { LIVE: { url: 'https://firebase.test/' } }, fetch, setInterval, clearInterval };
   vm.runInNewContext(source, c);

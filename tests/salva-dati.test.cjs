@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const dir = path.join(__dirname, '../docs/Assemblea-di-Gruppo');
+const dir = path.join(__dirname, '../Assemblea-di-Gruppo');
 const load = () => { const context = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(dir, 'common/salva-dati.js'), 'utf8'), context); return context.window.SALVA_DATI };
 const testo = fs.readFileSync(path.join(dir, 'dati.js'), 'utf8');
 const lines = t => t.split('\n');
