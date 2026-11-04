@@ -54,6 +54,23 @@ mostrato un errore e il controllo riprova automaticamente.
   progetto. La chiave condivisa dell'assemblea non autorizza queste API;
 - **PDF** e **Termina assemblea** sull'ultima slide.
 
+Il pannello **Presenti e ufficio di presidenza** permette di inserire il
+numero dei presenti nella slide quorum e i nomi del presidente e degli
+scrutatori nelle slide di composizione, senza aprire il setup.
+**Pubblica live** salva i campi modificati nella stessa patch Firebase del
+setup: regia e proiettore si aggiornano subito, i telefoni entro circa
+10 secondi. Il numero deve essere un intero non negativo; lasciare il campo
+vuoto indica che non è ancora noto. Il segretario e gli altri contenuti
+restano invariati. I nomi sono testo semplice, non HTML.
+
+**Ricarica valori** recupera i dati pubblicati e chiede conferma prima di
+scartare modifiche non salvate. Se un campo modificato è stato cambiato anche
+nel setup, la pubblicazione viene fermata e occorre ricaricare. Evitare
+pubblicazioni simultanee da setup e regia: lettura e scrittura della patch
+sono richieste distinte, come nel setup. In caso di errore i campi restano
+compilati e il pannello non dichiara l'avvenuta pubblicazione.
+I dati inseriti diventano pubblici nelle slide, non sono informazioni riservate.
+
 **▣ Apri schermo presentazione** apre una finestra con *solo* le slide: spostala
 sul proiettore (Chrome/Edge la aprono già sul secondo schermo se gli dai il
 permesso), cliccaci per lo schermo intero, oppure condividila su Meet/Zoom/Teams.
@@ -69,6 +86,9 @@ o **Slide attuale** (quando si è rimasti indietro), Ruota, avanti; swipe per
 cambiare slide. Su touch la slide occupa tutto lo schermo e i controlli si
 nascondono dopo 3 secondi: il primo tocco li fa solo ricomparire. Con **Ruota**
 slide, icone e swipe passano in orizzontale; la barra resta in basso.
+In verticale il QR mantiene un fondo bianco quadrato, adattato allo spazio
+disponibile. Nella composizione dell'organo le note, come «Proposto dai Capi
+Gruppo», compaiono insieme alla rispettiva card e si nascondono tornando indietro.
 
 **iPhone senza barra dell'indirizzo**: Safari non permette a una pagina di
 nasconderla. Aprire il sito in Safari → Condividi → **Aggiungi alla schermata

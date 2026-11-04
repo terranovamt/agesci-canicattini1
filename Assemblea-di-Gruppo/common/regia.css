@@ -62,6 +62,10 @@ kbd { background: #fff; border: 1px solid #D5D0E0; border-bottom-width: 2px; bor
 .meter u.warn { background: var(--o) } .meter u.ko { background: var(--r) }
 .note { font-size: 12px; opacity: .75; margin: 6px 0 0 }
 .note a { color: var(--v); font-weight: 700 }
+.dati-live { grid-column: 1/-1 }
+#dati-live-campi { border: 0; padding: 0; margin: 12px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px }
+#dati-live-campi label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600 }
+#dati-live-stato { margin: 10px 0 0; font-size: 13px }
 
 .lista ol { margin: 0; padding: 0; list-style: none; max-height: 360px; overflow: auto; counter-reset: s }
 .lista li { counter-increment: s; display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px }

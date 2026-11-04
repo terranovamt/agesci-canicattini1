@@ -50,6 +50,7 @@
     const v = w && w.VISTA;
     if (!v || !v.stato().n) { setTimeout(aggancia, 200); return }
     V = v; V.onchange = disegna; disegna(V.stato()); setTimeout(controlla, 800);
+    window.REGIA_DATI.avvia(w, key);
   }
   const prossima = s => s.k < s.steps ? [s.i, s.k + 1] : s.i < s.n - 1 ? [s.i + 1, 0] : null;
   function anteprima(p) {

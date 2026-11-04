@@ -62,6 +62,19 @@
       <p class="tasti">Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd> <kbd>PagSu</kbd> indietro</p>
     </section>
 
+    <section class="dati-live card">
+      <h3>Presenti e ufficio di presidenza</h3>
+      <p class="note">Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si aggiornano entro circa 10 secondi. Questi dati sono pubblici.</p>
+      <form id="dati-live-form">
+        <fieldset id="dati-live-campi" disabled></fieldset>
+        <div class="mini">
+          <button id="dati-live-pubblica" type="submit" disabled>Pubblica live</button>
+          <button id="dati-live-ricarica" type="button" class="sec" disabled>Ricarica valori</button>
+        </div>
+      </form>
+      <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
+    </section>
+
     <section class="fb card">
       <h3>Firebase <small>piano gratuito Spark</small></h3>
       <div class="kpi">
@@ -85,6 +98,8 @@
   <script src="common/accesso.js"></script>
   <script src="common/assemblea.js"></script>
   <script src="common/presenza.js"></script>
+  <script src="common/modifiche.js"></script>
+  <script src="common/regia-dati.js"></script>
   <script src="common/regia.js"></script>
 </body>
 
