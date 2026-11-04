@@ -1,0 +1,48 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "assemblea": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "stato": {
+        ".read": true,
+        ".validate": "newData.hasChildren(['attiva'])",
+        "attiva": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "live": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "stato": {
+        ".read": true
+      }
+    },
+    "modifiche": {
+      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
+      "patch": {
+        ".read": true,
+        ".validate": "newData.isString() && newData.val().length < 1000000"
+      },
+      "t": {
+        ".read": true
+      }
+    },
+    "presenza": {
+      ".read": true,
+      "$id": {
+        ".write": "$id.length <= 24",
+        ".validate": "newData.hasChildren(['t','r']) && newData.child('t').val() === now && newData.child('r').isString() && newData.child('r').val().length < 12",
+        "t": {
+          ".validate": true
+        },
+        "r": {
+          ".validate": true
+        },
+        "$altro": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

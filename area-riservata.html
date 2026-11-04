@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Area riservata · AGESCI Canicattini 1</title>
+  <link rel="icon" href="Assemblea-di-Gruppo/img/logo-grande.png">
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <header>AGESCI <strong>Canicattini 1</strong></header>
+  <main>
+    <p class="eyebrow">Gestione del gruppo</p>
+    <h1>Area riservata</h1>
+    <section id="login">
+      <p>Inserisci la chiave per accedere agli strumenti di gestione.</p>
+      <form id="login-form" class="accesso">
+        <label for="chiave">Chiave di accesso</label>
+        <input id="chiave" type="password" autocomplete="current-password" required>
+        <button class="button" type="submit">Accedi</button>
+      </form>
+    </section>
+    <p id="accesso-stato" role="status" aria-live="polite"></p>
+    <section id="riservata" hidden>
+      <p>Accesso effettuato. Scegli cosa gestire.</p>
+      <a class="button" href="Assemblea-di-Gruppo/setup.html">Setup presentazione</a>
+      <a class="button" href="Assemblea-di-Gruppo/regia.html">Regia live</a>
+      <p><button id="esci" class="text-button">Esci dall'area riservata</button></p>
+    </section>
+    <p><a href="./">Torna al sito del gruppo</a></p>
+  </main>
+  <footer>AGESCI Canicattini 1</footer>
+  <script src="Assemblea-di-Gruppo/config.js"></script>
+  <script src="Assemblea-di-Gruppo/common/accesso.js"></script>
+  <script src="area-riservata.js"></script>
+</body>
+</html>

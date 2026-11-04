@@ -1,0 +1,90 @@
+/* Pagina di setup: modifica live dei dati della presentazione */
+:root { --y: #FDC500; --vd: #211638; --v: #462678; --v2: #6B478D; --vl: #AEB0D9; --g: #21A067; --r: #E74030; --bg: #F4F1EA }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { margin: 0; font: 15px/1.4 Montserrat, system-ui, sans-serif; background: var(--bg); color: var(--vd); padding-bottom: 90px }
+header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--v); color: #fff }
+header h1 { margin: 0; font-size: 18px; flex: 1 }
+.pill { padding: 4px 10px; border-radius: 99px; background: var(--v2); font-size: 12px; font-weight: 700; white-space: nowrap }
+.pill.ok { background: var(--g) } .pill.ko { background: var(--r) } .pill.live { background: var(--y); color: var(--vd) }
+main, #login { max-width: 860px; margin: 0 auto; padding: 12px 14px }
+.intro { font-size: 13px; opacity: .8 }
+mark { background: #FFF3BF; padding: 0 3px }
+code { background: #fff; padding: 0 4px; border-radius: 4px }
+button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 9px 14px; background: var(--v); color: #fff; cursor: pointer }
+button.sec { background: #fff; color: var(--v); box-shadow: inset 0 0 0 2px var(--v) }
+button:disabled { opacity: .35; cursor: not-allowed }
+input, textarea, select { font: inherit; width: 100%; padding: 8px 10px; border: 1.5px solid #D5D0E0; border-radius: 8px; background: #fff; color: inherit }
+input:focus, textarea:focus { outline: 2px solid var(--y); border-color: var(--v) }
+input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
+#login form { display: flex; gap: 8px }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 14px }
+.tabs button { background: #fff; color: var(--v) }
+.tabs button.on { background: var(--v); color: #fff }
+.tabs .sep { width: 2px; height: 26px; background: #D5D0E0; margin: 0 4px }
+.tabs button.doc { background: none; color: var(--v2); box-shadow: inset 0 0 0 2px var(--vl) }
+.tabs button.doc.on { background: var(--y); color: var(--vd); box-shadow: none }
+.tabs .links { margin-left: auto; display: flex; gap: 12px }
+.tabs a { color: var(--v); font-weight: 700; font-size: 13px }
+.hint { font-size: 13px; opacity: .7; margin: 6px 0 }
+#doc[hidden] { display: none }
+#doc { display: block; width: 100%; min-height: 70vh; border: 0; border-radius: 16px; background: var(--bg) }
+.ord { list-style: none; margin: 0; padding: 0 }
+.slide-add { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px }
+.slide-add select { flex: 1; min-width: 180px; font: inherit; padding: 8px; border: 1px solid var(--vl); border-radius: 8px; max-width: 100% }
+.ord li { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; margin: 0 0 6px; padding: 6px 8px; box-shadow: 0 1px 5px rgba(33, 22, 56, .07); border: 2px solid transparent; transition: background .3s }
+.ord li.sez { background: var(--v); color: #fff; margin-top: 14px }
+.ord li.sez small, .ord li.sez .grip { color: var(--vl) }
+.ord li.sez .ic { color: #fff }
+.ord li.hid { opacity: .5 }
+.ord li.hid .t b { text-decoration: line-through }
+.ord li.drag { opacity: .3 }
+.ord li.over { border-color: var(--y) }
+.ord li.flash { background: #FFF3BF }
+.ord li.sez.flash { background: var(--v2) }
+.ord .grip { cursor: grab; color: var(--vl); font-weight: 800; letter-spacing: -2px; user-select: none }
+.ord .num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--y); color: var(--vd); display: grid; place-items: center; font-size: 12px; font-weight: 800 }
+.ord .t { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.ord .t b, .ord .t small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.ord .t small { font-size: 11px; opacity: .6 }
+.ord .ic { flex: none; background: none; color: var(--v); padding: 6px 8px; font-size: 16px; line-height: 1; border-radius: 8px }
+.ord .ic:hover:not(:disabled) { background: rgba(253, 197, 0, .35) }
+@media (max-width: 520px) { .ord .grip { display: none } .ord .ic { padding: 6px 5px } .ord li { flex-wrap: wrap } .ord .t { min-width: 120px } .tabs .sep { display: none } }
+details.box { background: #fff; border-radius: 14px; margin: 0 0 10px; box-shadow: 0 2px 8px rgba(33, 22, 56, .08) }
+details.box > summary { padding: 12px 14px; cursor: pointer; font-weight: 700; display: flex; gap: 8px; align-items: center; list-style: none }
+details.box > summary::before { content: '▸'; transition: transform .2s }
+details.box[open] > summary::before { transform: rotate(90deg) }
+details.box > summary .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+details.box > summary small { font-weight: 600; opacity: .55 }
+details.box > .body { padding: 0 14px 14px }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--y); color: var(--vd) }
+.badge.hid { background: #ddd }
+.field { display: grid; grid-template-columns: 1fr auto; gap: 4px 6px; align-items: center; margin: 8px 0; padding-left: 8px; border-left: 4px solid transparent }
+.field > label { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--v2) }
+.field.chk { grid-template-columns: auto 1fr auto }
+.field.chk > label { grid-column: auto; font-size: 14px; color: inherit }
+.field.mod { border-left-color: var(--y); background: #FFFBEA }
+.field .reset { visibility: hidden; padding: 6px 9px; background: none; color: var(--v); font-size: 18px; line-height: 1 }
+.field.mod .reset { visibility: visible }
+fieldset { border: 1.5px solid #E6E1EE; border-radius: 12px; margin: 10px 0; padding: 4px 10px 8px; min-width: 0 }
+fieldset > legend { font-size: 12px; font-weight: 800; color: var(--v); padding: 0 6px; display: flex; gap: 6px; align-items: center }
+fieldset > legend button { padding: 2px 8px; font-size: 12px; border-radius: 6px }
+.add { margin: 4px 0; font-size: 13px; padding: 6px 12px }
+#json-text { min-height: 60vh; font: 13px/1.4 ui-monospace, Menlo, monospace }
+.row { display: flex; gap: 10px; align-items: center; margin-top: 8px }
+.err { color: var(--r); font-weight: 700; font-size: 13px }
+footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -3px 12px rgba(33, 22, 56, .12) }
+@media (max-width: 520px) { body { padding-bottom: 150px } #dirty { flex-basis: 100% } footer button { padding: 9px 10px; font-size: 13px } }
+#dirty { flex: 1; font-size: 13px; font-weight: 700; min-width: 0 }
+.more { position: relative }
+.more summary { list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: 10px; background: var(--bg) }
+.more > div { position: absolute; right: 0; bottom: 48px; display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 18px rgba(33, 22, 56, .2); width: max-content }
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--vd); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; z-index: 9 }
+dialog { max-width: 520px; width: calc(100% - 24px); border: 0; border-radius: 18px; padding: 18px 20px; color: var(--vd); box-shadow: 0 10px 40px rgba(33, 22, 56, .35) }
+dialog::backdrop { background: rgba(33, 22, 56, .55) }
+dialog h2 { margin: 0 0 8px; color: var(--v); font-size: 20px }
+dialog p, dialog li { font-size: 14px }
+dialog ol { padding-left: 20px }
+dialog a { color: var(--v); font-weight: 700 }
+#slide-editor { max-width: 850px; max-height: 85vh; overflow-y: auto }
+#slide-editor-tipo { width: 100%; font: inherit; padding: 9px; margin: 6px 0 12px; border: 1px solid var(--vl); border-radius: 8px }

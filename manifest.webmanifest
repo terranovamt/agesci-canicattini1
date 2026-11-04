@@ -1,0 +1,9 @@
+{
+  "name": "AGESCI Canicattini 1",
+  "short_name": "Canicattini 1",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "icons": [{ "src": "Assemblea-di-Gruppo/img/logo-grande.png", "sizes": "512x512", "type": "image/png" }]
+}

@@ -1,0 +1,21 @@
+:root { color-scheme: light; --v: #462678; --vd: #211638; --y: #FDC500 }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { margin: 0; min-height: 100svh; display: flex; flex-direction: column; background: #F4F1EA; color: var(--vd); font: 16px/1.6 system-ui, sans-serif }
+header { background: var(--v); color: white; padding: 18px 24px; font-size: 20px }
+main { flex: 1; width: min(100%, 900px); margin: auto; padding: 40px 20px; text-align: center }
+main img { width: min(200px, 55vw); height: 200px; object-fit: contain }
+.eyebrow { color: var(--v); text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: 700; margin-top: 24px }
+h1 { margin: 0; font: bold clamp(36px, 8vw, 64px)/1.2 Georgia, serif }
+.button { display: inline-block; margin: 24px 0 0; padding: 14px 24px; border-radius: 14px; background: var(--y); color: var(--vd); text-decoration: none; font-weight: 800 }
+.button:focus-visible { outline: 3px solid var(--v); outline-offset: 4px }
+.accesso { max-width: 360px; margin: 24px auto; text-align: left }
+.accesso label { display: block; font-weight: 700; margin-bottom: 6px }
+.accesso input { width: 100%; padding: 12px; font: inherit; border: 2px solid #AEB0D9; border-radius: 12px }
+button { font: inherit; cursor: pointer; border: 0 }
+button:disabled { opacity: .5; cursor: wait }
+.accesso .button { width: 100%; margin-top: 12px }
+.text-button { padding: 8px; background: none; color: var(--v); text-decoration: underline }
+#accesso-stato { color: #8b2400 }
+#stato { font-size: 13px; color: var(--v); max-width: 560px; margin: 20px auto }
+footer { text-align: center; padding: 20px; background: var(--v); color: white; font-size: 13px }

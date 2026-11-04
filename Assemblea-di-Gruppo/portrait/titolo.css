@@ -1,0 +1,71 @@
+/* usato anche da divisore_sezione e chiusura
+   Verticale: fascia viola in alto con il titolo, sotto data e logo su bianco */
+
+body.pm .sec .rr {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: auto;
+  height: 66%;
+  align-items: flex-start;
+  text-align: left;
+  padding: 34px 56px 48px;
+  border-radius: 0 0 64px 64px;
+  box-shadow: 0 10px 40px var(--shadow-strong);
+}
+body.pm .sec .rr:after {
+  content: none;
+}
+body.pm .sec .rr:before {
+  content: "";
+  display: block;
+  flex: none;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--y);
+  margin: 0 0 34px;
+}
+body.pm .sec h1 {
+  font-size: 84px;
+  font-weight: 300;
+  line-height: 1.05;
+}
+body.pm .sec h2 {
+  font-size: 32px;
+  margin-top: 22px;
+}
+body.pm .sec .d {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 22px);
+  bottom: auto;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--v);
+  opacity: 1;
+}
+body.pm .sec .ck2 {
+  font-size: 120px !important;
+}
+body.pm .sec .l {
+  left: 0;
+  right: 0;
+  top: 66%;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  padding-top: 80px;
+  gap: 10px;
+  font-size: 22px;
+  white-space: nowrap;
+}
+body.pm .sec .l img {
+  width: 150px;
+}
+/* il contatore sta su bianco: scuro invece che bianco */
+body.pm:has(.slide.sec:not(.out)) #cnt.w {
+  color: var(--v);
+}

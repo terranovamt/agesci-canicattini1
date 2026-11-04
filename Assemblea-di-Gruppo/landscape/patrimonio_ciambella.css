@@ -1,0 +1,77 @@
+/* esplosione a raggiera */
+
+.lb {
+  position: absolute;
+  width: 250px;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity .5s, transform .6s cubic-bezier(.2, 1.4, .4, 1)
+}
+
+.lb.on {
+  opacity: 1;
+  transform: none
+}
+
+.lb .bv,
+.zb .bv {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--vd);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap
+}
+
+.lb .bn,
+.zb .bn {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: .8;
+  line-height: 1.15
+}
+
+.md {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--w);
+  border: 5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px var(--shadow-strong);
+  transform: scale(0);
+  transition: transform .6s cubic-bezier(.2, 1.6, .4, 1)
+}
+
+.md.on {
+  transform: scale(1)
+}
+
+.md img {
+  height: 28px
+}
+
+.zbox {
+  position: absolute;
+  right: 56px;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none
+}
+
+.zb {
+  display: flex;
+  align-items: center;
+  gap: 14px
+}
+
+.zb .md {
+  position: static;
+  flex: none;
+  transform: none
+}

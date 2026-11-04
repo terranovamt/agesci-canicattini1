@@ -1,0 +1,174 @@
+/* Stili comuni del layout verticale (body.pm) */
+
+body.pm {
+  --hd: 92px;
+  --bt: 76px;
+  --m: 24px;
+  --gap: 12px;
+  --r: 20px;
+}
+body.pm .hd {
+  height: var(--hd);
+  padding: 0 26px;
+}
+body.pm .hd span {
+  font-size: var(--ht, 36px) !important;
+  line-height: 1.08;
+}
+body.pm .hd img {
+  height: 62px;
+}
+body.pm #nav {
+  left: 14px;
+  bottom: 16px;
+  gap: 10px;
+}
+body.pm .nb {
+  height: 48px;
+  min-width: 48px;
+  padding: 0 14px;
+  border-radius: 24px;
+  font-size: 16px;
+  opacity: 0.6;
+}
+body.pm .nb svg {
+  width: 24px;
+  height: 24px;
+}
+body.pm #cnt {
+  font-size: 22px;
+  right: 24px;
+  bottom: 26px;
+}
+body.pm #prog,
+body.pm #pm,
+body.pm .pmk {
+  height: 8px;
+}
+body.pm .pmk:before {
+  height: 8px;
+  width: 5px;
+}
+body.pm .pmk b {
+  font-size: 15px;
+  padding: 3px 9px;
+  bottom: 12px;
+  min-width: 22px;
+}
+
+body.pm .ls {
+  position: absolute;
+  left: 0;
+  width: 1280px;
+  height: 720px;
+  transform: scale(0.5625);
+  transform-origin: 0 0;
+}
+body.pm .fl {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--hd);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--w);
+  padding-bottom: var(--bt);
+  overflow: hidden;
+  font-size: var(--fs, 28px);
+  color: var(--ink);
+}
+body.pm .pbar {
+  flex: none;
+  height: 8px;
+  background: var(--track);
+}
+body.pm .pbar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--y);
+  transition: width 0.6s;
+}
+body.pm .pbar.gr2 i {
+  background: var(--g);
+}
+
+body.pm .rw {
+  flex: 1 0 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.45em 0.8em;
+  border-bottom: 1px solid color-mix(in srgb, var(--vl) 60%, transparent);
+  line-height: 1.25;
+  font-weight: 500;
+}
+body.pm .rw:last-child {
+  border-bottom: 0;
+}
+body.pm .rw .no {
+  flex: none;
+  min-width: 1.2em;
+  font-weight: 800;
+  color: var(--v);
+}
+body.pm .rw .tt {
+  flex: 1;
+  min-width: 0;
+}
+
+body.pm .rw.rv {
+  flex: 1 1 0;
+}
+body.pm .rv > * {
+  opacity: 0;
+  transition: opacity 0.45s;
+}
+body.pm .rv.on > * {
+  opacity: 1;
+}
+body.pm .rw.hl {
+  background: color-mix(in srgb, var(--y) 22%, var(--w));
+  box-shadow: inset 8px 0 0 var(--y);
+}
+body.pm .pt {
+  display: inline-block;
+  font-size: 0.55em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.35em 0.9em;
+  border-radius: 1em;
+  background: color-mix(in srgb, var(--y) 28%, transparent);
+  color: var(--vd);
+  white-space: nowrap;
+}
+
+body.pm .pb {
+  position: absolute;
+  left: var(--m);
+  right: var(--m);
+  top: calc(var(--hd) + 18px);
+  bottom: var(--bt);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap);
+  font-size: var(--fs, 26px);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* durante il calcolo del font le schede non hanno lo scarto dell'animazione di entrata */
+body.pm .fitting .ent {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* i titoli non spezzano mai una parola: il font si riduce finché ogni parola sta in riga */
+body.pm .sec h1,
+body.pm .hd span {
+  overflow-wrap: normal !important;
+  word-break: normal;
+}
