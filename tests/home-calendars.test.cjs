@@ -43,3 +43,20 @@ test('bad snapshots fail explicitly instead of rendering an empty success state'
   assert.throws(() => M.validate({ ...data, events: [{ ...event, calendar: 'unknown' }] }), /non valido/);
   assert.throws(() => M.validate({ ...data, events: [{ ...event, end: 'invalid' }] }), /non valido/);
 });
+
+test('assembly notice is limited to a fresh group event strictly within 30 days', () => {
+  const now = new Date('2027-06-01T10:00:00Z');
+  const assembly = { ...event, calendar: 'gruppo', title: 'Assemblea di Gruppo',
+    start: '2027-06-20T18:00:00Z', end: '2027-06-20T20:00:00Z' };
+  const data = { generatedAt: now.toISOString(), calendars: [{ id: 'gruppo', status: 'ok' }], events: [assembly] };
+  assert.equal(M.nextAssembly(data, now).event, assembly);
+  for (const start of ['2027-06-01T09:00:00Z', '2027-07-01T10:00:00Z', '2027-07-02T10:00:00Z']) {
+    assert.equal(M.nextAssembly({ ...data, events: [{ ...assembly, start }] }, now), null);
+  }
+  assert.ok(M.nextAssembly({ ...data, events: [{ ...assembly, start: '2027-07-01T09:59:59Z' }] }, now));
+  assert.equal(M.nextAssembly({ ...data, events: [{ ...assembly, calendar: 'zona' }] }, now), null);
+  assert.equal(M.nextAssembly({ ...data, events: [{ ...assembly, title: 'Riunione' }] }, now), null);
+  assert.equal(M.nextAssembly({ ...data, calendars: [{ id: 'gruppo', status: 'error' }] }, now), null);
+  assert.equal(M.nextAssembly({ ...data, generatedAt: '2027-05-30T00:00:00Z' }, now), null);
+  assert.ok(M.nextAssembly({ ...data, events: [{ ...assembly, allDay: true, start: '2027-06-01', end: '2027-06-02' }] }, now));
+});

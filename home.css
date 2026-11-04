@@ -64,12 +64,30 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .calendar-yellow { --event-color: var(--y); --event-ink: var(--vd) }
 .calendar-red { --event-color: var(--r-strong); --event-ink: var(--w) }
 .calendar-violet { --event-color: var(--v); --event-ink: var(--w) }
-.calendar-filter-set { border: 0; padding: 0; margin: 24px 0 0; min-width: 0 }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0 }
+.calendar-card { position: relative }
+.calendar-info { margin-bottom: 8px; color: var(--v2) }
+.calendar-info > summary { position: relative; display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; list-style: none; border-radius: 50%; background: var(--bg) }
+.calendar-info > summary::-webkit-details-marker { display: none }
+.calendar-info-warning { position: absolute; top: 0; right: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--v2); color: var(--w); text-align: center; font: 800 11px/16px system-ui, sans-serif }
+.calendar-info-body { padding: 20px; margin: 12px 0 20px; border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--bg); font-size: 13px }
+.calendar-info-body h3 { margin: 0; color: var(--v) }
+.calendar-info-body ul { padding-left: 18px }
+.calendar-info-body a { display: inline-flex; align-items: center; min-height: 44px; color: var(--v); overflow-wrap: anywhere; white-space: normal }
+.calendar-filter-set { border: 0; padding: 0; margin: -52px 56px 24px 0; min-width: 0 }
 .calendar-filter-set legend { color: var(--v); font-weight: 800; font-size: 14px; margin-bottom: 12px }
-.calendar-filters { display: flex; flex-wrap: wrap; gap: 10px }
-.calendar-filter { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; min-height: 48px; border: 1px solid var(--v2); border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--vd); font-weight: 700 }
-.calendar-filter input { width: 20px; height: 20px; accent-color: var(--v); flex: none }
-.calendar-filter span { border-bottom: 5px solid var(--event-color); overflow-wrap: anywhere }
+.calendar-filters { display: flex; flex-wrap: wrap; gap: 4px 12px }
+.calendar-filter { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 8px 2px; min-height: 44px; cursor: pointer; font-size: 12px; color: var(--vd); font-weight: 650 }
+.calendar-filter input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.calendar-filter-name { display: inline-flex; align-items: center; gap: 7px; overflow-wrap: anywhere }
+.calendar-filter-name::before { content: ''; width: 10px; height: 10px; border: 1px solid var(--v2); border-radius: 50%; background: transparent; flex: none }
+.calendar-filter input:checked + .calendar-filter-name::before { background: var(--event-color) }
+.calendar-filter input:focus-visible + .calendar-filter-name { outline: 3px solid var(--v); outline-offset: 5px; border-radius: 2px }
+.calendar-filter input:not(:checked) + .calendar-filter-name { text-decoration: line-through; color: var(--v2) }
+.calendar-filter.is-unavailable { color: var(--v2) }
+.calendar-filter.is-unavailable input:checked + .calendar-filter-name::before { background: var(--vl) }
+.calendar-filter-warning { font-size: 10px; font-weight: 800; border: 1px solid var(--v2); border-radius: 50%; width: 13px; height: 13px; text-align: center; line-height: 11px }
+.calendar-info[open] + #calendar-app .calendar-filter-set { margin-top: 0 }
 .calendar-filter-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0 28px; color: var(--v2); font-size: 12px }
 .calendar-card button:not(.button) { padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg); color: var(--v); font-weight: 700; font-size: 13px }
 .calendar-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: start }
@@ -92,9 +110,6 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .agenda-event h4 { margin: 10px 0 6px; font-size: 16px; overflow-wrap: anywhere }
 .agenda-event time, .agenda-event p { display: block; font-size: 12px; color: var(--v2); overflow-wrap: anywhere }
 .agenda-event p { margin: 8px 0 0 }
-.calendar-originals { margin-top: 24px; color: var(--v); font-size: 13px }
-.calendar-originals summary, .calendar-originals a { min-height: 44px; padding: 10px 0 }
-.calendar-originals a { display: inline-block; color: var(--v); overflow-wrap: anywhere }
 @media (max-width: 900px) { .calendar-layout { grid-template-columns: 1fr } }
 @media (max-width: 400px) {
   .calendar-weekdays, .calendar-days { gap: 2px }

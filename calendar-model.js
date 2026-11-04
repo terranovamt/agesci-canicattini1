@@ -38,7 +38,20 @@
     });
     return data;
   }
-  const model = { dateKey, onDay, upcoming, validate };
+  function nextAssembly(data, now) {
+    const group = data.calendars.find(calendar => calendar.id === 'gruppo');
+    if (group?.status !== 'ok' || now - new Date(data.generatedAt) > 3 * 60 * 60 * 1000) return null;
+    const day = 86400000;
+    return data.events.filter(event => event.calendar === 'gruppo' && /\bassemblea\b/i.test(event.title))
+      .map(event => {
+        const remaining = event.allDay
+          ? (Date.parse(event.start) - Date.parse(dateKey(now))) / day
+          : (Date.parse(event.start) - now.getTime()) / day;
+        return { event, remaining };
+      }).filter(item => item.remaining >= 0 && item.remaining < 30)
+      .sort((a, b) => a.remaining - b.remaining)[0] || null;
+  }
+  const model = { dateKey, onDay, upcoming, validate, nextAssembly };
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   else window.CALENDAR_MODEL = model;
 })();

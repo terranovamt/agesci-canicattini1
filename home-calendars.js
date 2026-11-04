@@ -12,17 +12,38 @@
     return node;
   };
   const filtered = () => data.events.filter(event => selected.has(event.calendar));
+  const stale = () => Date.now() - Date.parse(data.generatedAt) > 3 * 60 * 60 * 1000;
+  function warning(visible) {
+    $('calendar-info-warning').hidden = !visible;
+    $('calendar-info').querySelector('summary').setAttribute('aria-label',
+      visible ? 'Informazioni calendari: dati non aggiornati o non disponibili' : 'Informazioni e stato dei calendari');
+  }
+  function renderAssembly() {
+    const banner = $('stato');
+    if (!banner) return;
+    const upcoming = M.nextAssembly(data, new Date());
+    banner.hidden = !upcoming;
+    banner.textContent = '';
+    if (upcoming) {
+      const { event, remaining } = upcoming;
+      const date = event.allDay ? new Date(event.start + 'T12:00:00Z') : new Date(event.start);
+      const days = Math.ceil(remaining);
+      banner.textContent = event.title + ' · ' + format(date, { day: 'numeric', month: 'long', year: 'numeric' })
+        + (M.dateKey(date) === M.dateKey(new Date()) ? ' · Oggi' : ' · Tra ' + days + (days === 1 ? ' giorno' : ' giorni'));
+    }
+  }
   function renderStatus() {
     const messages = data.calendars.filter(calendar => calendar.status !== 'ok').map(calendar =>
       calendar.name + ': sincronizzazione non riuscita.' + (calendar.lastSuccess
         ? ' Ultimi dati disponibili del ' + format(new Date(calendar.lastSuccess), { dateStyle: 'short', timeStyle: 'short' }) + '.'
         : ' Nessun evento ancora scaricato.'));
-    if (Date.now() - Date.parse(data.generatedAt) > 3 * 60 * 60 * 1000) messages.push('Aggiornamento in ritardo: gli eventi potrebbero essere cambiati.');
+    if (stale()) messages.push('Aggiornamento in ritardo: gli eventi potrebbero essere cambiati.');
     messages.push('Ultimo tentativo: ' + format(new Date(data.generatedAt), { dateStyle: 'short', timeStyle: 'short' }) + '. Orari Europe/Rome.');
     messages.push('Periodo sincronizzato: ' + format(new Date(data.rangeStart), { dateStyle: 'short' }) + ' – '
       + format(new Date(data.rangeEnd), { dateStyle: 'short' }) + ' (fine esclusa).');
     $('calendar-status').textContent = messages.join(' ');
     $('calendar-retry').hidden = !data.calendars.some(calendar => calendar.status !== 'ok');
+    warning(stale() || data.calendars.some(calendar => calendar.status !== 'ok'));
   }
   function renderList() {
     const list = $('calendar-agenda');
@@ -36,7 +57,7 @@
     if (!events.length) {
       const failed = data.calendars.some(calendar => selected.has(calendar.id) && calendar.status !== 'ok');
       list.append(element('p', !selected.size ? 'Seleziona almeno un calendario.'
-        : failed ? 'Nessun evento disponibile nei dati scaricati. Alcuni calendari non sono stati sincronizzati: consulta lo stato qui sopra.'
+        : failed ? 'Eventi non disponibili. Dettagli in ⓘ.'
           : chosenDay ? 'Nessun appuntamento in questo giorno.' : 'Nessun prossimo appuntamento nel periodo sincronizzato.'));
     }
     events.forEach(event => {
@@ -107,14 +128,23 @@
     $('calendar-filters').replaceChildren();
     $('calendar-links').replaceChildren();
     data.calendars.forEach(calendar => {
-      const label = element('label', undefined, 'calendar-filter calendar-' + calendar.color);
+      const unavailable = calendar.status !== 'ok' || stale();
+      const label = element('label', undefined, 'calendar-filter calendar-' + calendar.color + (unavailable ? ' is-unavailable' : ''));
       const input = document.createElement('input');
       input.type = 'checkbox'; input.checked = selected.has(calendar.id);
+      input.setAttribute('aria-label', calendar.name + (unavailable ? ' · dati non aggiornati o non disponibili' : ''));
+      label.title = calendar.name + (unavailable ? ' · dati non aggiornati o non disponibili' : '');
       input.onchange = () => {
         if (input.checked) selected.add(calendar.id); else selected.delete(calendar.id);
         refresh();
       };
-      label.append(input, element('span', calendar.name));
+      const shortNames = { gruppo: 'Canicattini 1', eg: 'E/G', lc: 'L/C', rs: 'R/S', zona: 'Zona' };
+      label.append(input, element('span', shortNames[calendar.id] || calendar.name, 'calendar-filter-name'));
+      if (unavailable) {
+        const mark = element('span', '!', 'calendar-filter-warning');
+        mark.setAttribute('aria-hidden', 'true');
+        label.append(mark);
+      }
       $('calendar-filters').append(label);
       const li = element('li');
       const link = element('a', 'Apri ' + calendar.name + ' ↗');
@@ -126,6 +156,7 @@
     });
   }
   async function load() {
+    $('calendar-all').disabled = true;
     $('calendar-retry').hidden = true;
     $('calendar-status').textContent = 'Caricamento degli appuntamenti…';
     $('calendar-app').hidden = true;
@@ -134,11 +165,14 @@
       if (!response.ok) throw new Error('Calendari non disponibili (HTTP ' + response.status + ')');
       data = M.validate(await response.json());
       selected = new Set(data.calendars.map(calendar => calendar.id));
-      renderFilters(); renderStatus(); refresh();
+      renderFilters(); renderStatus(); refresh(); renderAssembly();
       $('calendar-app').hidden = false;
+      $('calendar-all').disabled = false;
     } catch (error) {
       $('calendar-status').textContent = error.message + '. Riprova oppure usa il calendario Outlook.';
       $('calendar-retry').hidden = false;
+      warning(true);
+      if ($('stato')) { $('stato').hidden = true; $('stato').textContent = '' }
       console.error('Caricamento calendari', error);
     }
   }

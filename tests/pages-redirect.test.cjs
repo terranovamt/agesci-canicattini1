@@ -8,7 +8,7 @@ const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 test('home stays on the group page until the assembly is active', () => {
   for (const search of ['', '?regia=test']) {
     let destination, state, error;
-    const elements = { stato: {} };
+    const elements = { 'assembly-connection-status': {} };
     vm.runInNewContext(read('home.js'), {
       document: { getElementById: id => elements[id] },
       location: { search, hash: '#3.2', replace: url => { destination = url } },
@@ -17,9 +17,11 @@ test('home stays on the group page until the assembly is active', () => {
     });
     state(null);
     state({ attiva: false });
+    assert.equal(elements['assembly-connection-status'].hidden, true);
     assert.equal(destination, undefined);
     error(new Error('Offline'));
-    assert.match(elements.stato.textContent, /Offline/);
+    assert.match(elements['assembly-connection-status'].textContent, /Offline/);
+    assert.equal(elements['assembly-connection-status'].hidden, false);
     state({ attiva: true });
     assert.equal(destination, 'Assemblea-di-Gruppo/index.html' + search + '#3.2');
   }

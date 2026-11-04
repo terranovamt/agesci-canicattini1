@@ -78,6 +78,11 @@ test('public documents and management work in a browser at all required widths',
           frame.style.height = (width === 375 ? 740 : 1000) + 'px';
           await new Promise(resolve => setTimeout(resolve, 10));
           results.push({ page, width, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
+          if (page === 0) {
+            doc.querySelector('#calendar-info').open = true;
+            results.push({ page, width, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
+            doc.querySelector('#calendar-info').open = false;
+          }
           if (page === 2) {
             for (const section of ['ordine', 'json', 'generale']) {
               doc.querySelector('[data-tab="' + section + '"]').click();
@@ -132,6 +137,12 @@ test('public documents and management work in a browser at all required widths',
           }
         }
         if (page === 0) {
+          results.push({ infoClosed: !doc.querySelector('#calendar-info').open,
+            bannerHidden: doc.querySelector('#stato').hidden,
+            compactLabels: [...doc.querySelectorAll('.calendar-filter-name')].map(e => e.textContent).join(',') });
+          doc.querySelector('#calendar-info').open = true;
+          results.push({ infoFits: doc.documentElement.scrollWidth <= doc.documentElement.clientWidth });
+          doc.querySelector('#calendar-info').open = false;
           results.push({ calendarFilters: doc.querySelectorAll('#calendar-filters input').length,
             agendaCount: doc.querySelectorAll('.agenda-event').length,
             safeText: doc.querySelector('.agenda-event h4').textContent.startsWith('<img'),
@@ -156,7 +167,23 @@ test('public documents and management work in a browser at all required widths',
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#calendar-retry').onclick();
           results.push({ calendarFailure: !doc.querySelector('#calendar-retry').hidden,
-            calendarFailureText: doc.querySelector('#calendar-status').textContent });
+            calendarFailureText: doc.querySelector('#calendar-status').textContent,
+            warningVisible: !doc.querySelector('#calendar-info-warning').hidden });
+          const errorSnapshot = ${JSON.stringify(JSON.parse(read('calendars/events.json'))).replace(/</g, '\\u003c')};
+          errorSnapshot.calendars.forEach(calendar => { calendar.status = 'error' });
+          frame.contentWindow.fetch = async () => ({ ok: true, json: async () => errorSnapshot });
+          await doc.querySelector('#calendar-retry').onclick();
+          results.push({ unavailableFilters: doc.querySelectorAll('.calendar-filter.is-unavailable').length,
+            errorBannerHidden: doc.querySelector('#stato').hidden });
+          errorSnapshot.generatedAt = new Date().toISOString();
+          errorSnapshot.calendars.forEach(calendar => { calendar.status = 'ok' });
+          const soon = new Date(Date.now() + 5 * 86400000);
+          errorSnapshot.events = [{ id: 'assembly', calendar: 'gruppo', title: 'Assemblea di Gruppo',
+            start: soon.toISOString(), end: new Date(soon.getTime() + 3600000).toISOString(),
+            allDay: false, location: '' }];
+          await doc.querySelector('#calendar-retry').onclick();
+          results.push({ upcomingAssemblyVisible: !doc.querySelector('#stato').hidden,
+            upcomingAssemblyText: doc.querySelector('#stato').textContent });
           const cards = [...doc.querySelectorAll('.document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
@@ -290,6 +317,15 @@ test('public documents and management work in a browser at all required widths',
     assert.equal(results.find(item => 'changedMonth' in item).changedMonth, true);
     assert.equal(results.find(item => 'calendarFailure' in item).calendarFailure, true);
     assert.match(results.find(item => 'calendarFailureText' in item).calendarFailureText, /503/);
+    assert.equal(results.find(item => 'infoClosed' in item).infoClosed, true);
+    assert.equal(results.find(item => 'bannerHidden' in item).bannerHidden, true);
+    assert.equal(results.find(item => 'infoFits' in item).infoFits, true);
+    assert.equal(results.find(item => 'compactLabels' in item).compactLabels, 'Canicattini 1,E/G,L/C,R/S,Zona');
+    assert.equal(results.find(item => 'warningVisible' in item).warningVisible, true);
+    assert.equal(results.find(item => 'unavailableFilters' in item).unavailableFilters, 5);
+    assert.equal(results.find(item => 'errorBannerHidden' in item).errorBannerHidden, true);
+    assert.equal(results.find(item => 'upcomingAssemblyVisible' in item).upcomingAssemblyVisible, true);
+    assert.match(results.find(item => 'upcomingAssemblyText' in item).upcomingAssemblyText, /Assemblea di Gruppo.*Tra 5 giorni/);
     for (const item of results.filter(item => 'dateTimeFields' in item)) {
       assert.equal(item.dateTimeFields, 1);
       assert.equal(item.duplicateDate, false);

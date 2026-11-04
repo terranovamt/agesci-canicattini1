@@ -87,6 +87,17 @@ giorno vengono mostrati gli eventi di quel giorno, inclusi quelli di più giorni
 **Mostra tutti** riattiva tutti i calendari. Le etichette testuali accompagnano
 sempre i colori. Tutti gli orari sono mostrati in Europe/Rome.
 
+La selezione usa etichette compatte: Canicattini 1, E/G, L/C, R/S e Zona.
+I calendari non aggiornati sono grigi con un simbolo **!**, ma restano
+selezionabili per consultare gli ultimi dati noti. Stato dettagliato, collegamenti
+originali, conteggio selezioni e **Mostra tutti** sono nel pannello
+**Informazioni** (icona **i** in alto), normalmente chiuso.
+La home non mostra un messaggio quando l'assemblea è inattiva: evidenzia
+soltanto il prossimo evento con “assemblea” nel titolo del calendario del gruppo,
+se futuro e a meno di 30 giorni. L'avviso non dipende dai filtri; viene omesso
+se i dati del gruppo non sono aggiornati. L'accesso alla diretta quando attiva
+resta invariato; gli errori di connessione sono nel pannello Informazioni.
+
 I feed e i nomi sono configurati in `calendars/sources.json`. Il browser legge
 soltanto `calendars/events.json`, evitando CORS, token e API key nel sito.
 Il workflow **Sync public calendars** legge i cinque feed ogni ora al minuto
