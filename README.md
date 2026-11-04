@@ -12,7 +12,7 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | --- | --- |
 | Pubblico | https://terranovamt.github.io/agesci-canicattini1/ (reindirizza alla presentazione) |
 | Regia | `.../Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` |
-| Setup (modifiche live) | `.../Assemblea-di-Gruppo/setup.html?regia=LA-TUA-CHIAVE` |
+| Setup (modifiche live) | https://terranovamt.github.io/agesci-canicattini1/setup (chiede la chiave) |
 | Guida | `.../Assemblea-di-Gruppo/guida.html` |
 
 La chiave non viene salvata nel browser: deve restare nell'URL (anche ricaricando).
@@ -32,7 +32,7 @@ sinistro = indietro). Tasti: `→ ↓ spazio Invio PagGiù` avanti, `← ↑ Pag
 Backspace` indietro, `H` slide 1, `M` ordine del giorno, `R` torna alla slide di
 partenza, `F` schermo intero, `P` PDF (sull'ultima slide). Il pallino in alto a
 destra è verde se Firebase riceve la posizione, rosso se c'è un problema. Il
-pulsante ⚙ apre la pagina di setup.
+setup si apre da `…/agesci-canicattini1/setup`.
 
 **Pubblico** (telefono): segue la regia e può tornare indietro, ma non andare
 oltre il limite di `config.js` (`limite: 'corrente'` = la slide mostrata ora,
