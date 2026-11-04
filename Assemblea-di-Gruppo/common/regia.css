@@ -26,6 +26,10 @@ input { font: inherit; width: 100%; padding: 9px 10px; border: 1.5px solid #D5D0
 @media (max-width: 1400px) { .avviso { margin-left: 14px; margin-right: 14px } }
 
 main { max-width: 1400px; margin: 0 auto; padding: 14px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); align-items: start }
+.avvio-live { grid-column: 1/-1 }
+#inizia { width: 100%; min-height: 76px; padding: 18px 24px; font-size: clamp(24px, 4vw, 34px); background: var(--g); box-shadow: 0 4px 14px rgba(33, 22, 56, .15) }
+#avvio-stato { margin: 8px 0 0; font-weight: 600 }
+#avvio-stato:empty { display: none }
 .lbl { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--v2); margin-bottom: 6px; display: flex; align-items: center; gap: 8px }
 .lbl span { letter-spacing: 0; text-transform: none; font-weight: 700; color: var(--vd) }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--r); box-shadow: 0 0 0 3px rgba(231, 64, 48, .25); animation: pulse 1.6s infinite }

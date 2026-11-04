@@ -27,13 +27,18 @@ function dashboard(attiva, count = 4, failed = false, options = {}) {
     document: { querySelector: $ }, addEventListener() {}, URL, Date,
     confirm: () => options.confirm !== false, alert: s => alerts.push(s), setTimeout() {},
     performance: { now: () => 0 },
-    fetch: async url => ({ ok: !failed, status: failed ? 403 : 200,
-      text: async () => JSON.stringify(url.includes('assemblea') ? options.empty ? null : { attiva }
-        : url.includes('modifiche') ? options.patch === undefined ? null : options.patch : {}) })
+    fetch: async url => {
+      const body = JSON.stringify(url.includes('assemblea') ? options.empty ? null : { attiva }
+        : url.includes('modifiche') ? options.patch === undefined ? null : options.patch : {});
+      return { ok: !failed, status: failed ? 403 : 200, text: async () => {
+        if (url.includes('presenza') && options.waitPresence) await options.waitPresence;
+        return body;
+      } };
+    }
   };
   vm.runInNewContext(source.replace(
     'if (key) accedi(key); else mostraLogin();',
-    'V = {}; window.TEST = { controlla, meter, avviaLive };'
+    'V = { avviaLive: salva => salva() }; window.TEST = { controlla, meter, avviaLive };'
   ), context);
   return { api: context.window.TEST, $, saves, alerts };
 }
@@ -85,15 +90,39 @@ test('lifecycle controls follow Firebase state, independent of slide number', as
   }
 });
 
-test('starting in regia preserves the patch and reloads the publisher at the QR slide', async () => {
+test('starting in regia preserves the patch and updates immediately without reloading the publisher', async () => {
   const patch = { censimenti: { presenti_attuali: 42 } };
   const t = dashboard(false, 4, false, { patch: JSON.stringify(patch) });
   await t.api.controlla();
   await t.$('#inizia').onclick();
   assert.deepEqual(JSON.parse(JSON.stringify(t.saves)), [[true, '', patch]]);
-  assert.match(t.$('#principale').src, /vista=principale.*&avvio=\d+#0\.0$/);
+  assert.equal(t.$('#principale').src, undefined, 'no iframe reload');
+  assert.equal(t.$('#onda-label').textContent, 'In onda');
+  assert.equal(t.$('#avviso').hidden, true);
+  assert.match(t.$('#avvio-stato').textContent, /Live avviato/);
   assert.equal(t.$('#inizia').hidden, true);
   assert.equal(t.$('#termina').disabled, false);
+});
+
+test('the large start control sits before the slide previews', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/regia.html'), 'utf8');
+  assert.equal((html.match(/id="inizia"/g) || []).length, 1);
+  assert.ok(html.indexOf('id="inizia"') < html.indexOf('class="onda"'));
+});
+
+test('a stale dashboard check cannot undo a confirmed live activation', async () => {
+  const options = {};
+  const t = dashboard(false, 4, false, options);
+  await t.api.controlla();
+  let release;
+  options.waitPresence = new Promise(resolve => { release = resolve });
+  const stale = t.api.controlla();
+  await t.api.avviaLive();
+  assert.equal(t.$('#onda-label').textContent, 'In onda');
+  release();
+  await stale;
+  assert.equal(t.$('#onda-label').textContent, 'In onda');
+  assert.equal(t.$('#inizia').hidden, true);
 });
 
 test('a new empty database can be started without a patch', async () => {

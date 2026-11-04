@@ -7,12 +7,23 @@
   const enc = (i, k) => i * 1000 + k;
   const LIMITI = { conn: 100 };
   let key = A.chiave(), V = null, ultimo = null, finestra = null;
-  let statoAttivo = null, cambioStato = false;
+  let statoAttivo = null, cambioStato = false, versioneStato = 0;
   function pulsantiStato() {
     $('#inizia').hidden = statoAttivo === true;
     $('#inizia').disabled = cambioStato || statoAttivo !== false || !V;
+    $('#inizia').textContent = cambioStato ? 'Avvio in corso…' : 'Avvia live';
     $('#termina').hidden = statoAttivo !== true;
     $('#termina').disabled = cambioStato || statoAttivo !== true;
+  }
+  function mostraStato(attiva) {
+    statoAttivo = attiva;
+    pulsantiStato();
+    $('#onda-frame').classList.toggle('big', attiva === true);
+    $('#onda-dot').hidden = attiva !== true;
+    $('#onda-label').textContent = attiva ? 'In onda' : 'Anteprima';
+    $('#principale').title = attiva ? 'Slide in onda' : 'Anteprima presentazione';
+    pill('#b-assemblea', attiva ? 'Assemblea attiva' : 'Assemblea non iniziata', attiva ? 'ok' : 'warn');
+    $('#avviso').hidden = attiva === true;
   }
 
   const pill = (sel, testo, cls) => { const p = $(sel); p.textContent = testo; p.className = 'pill ' + (cls || '') };
@@ -105,15 +116,19 @@
     if (!V || cambioStato || statoAttivo !== false) return;
     if (!confirm('Avviare il live con dati.js già pubblicato? La presentazione riparte dalla prima slide; le modifiche live esistenti vengono mantenute.')) return;
     cambioStato = true; pulsantiStato();
+    $('#avvio-stato').textContent = 'Avvio live in corso…';
     try {
       const p = (await leggi('/modifiche/patch.json')).dati;
       const patch = p === null ? undefined : JSON.parse(p);
-      await window.ASSEMBLEA.salva(true, key, patch);
-      V = null; ultimo = null;
-      $('#principale').src = 'index.html?vista=principale&regia=' + encodeURIComponent(key) + '&avvio=' + Date.now() + '#0.0';
-      aggancia();
-      await controlla();
-    } catch (e) { alert('Avvio non riuscito: ' + e.message) }
+      await V.avviaLive(() => window.ASSEMBLEA.salva(true, key, patch));
+      versioneStato++;
+      mostraStato(true);
+      pill('#b-live', 'Live avviato', 'live');
+      $('#avvio-stato').textContent = 'Live avviato. I telefoni sulla home entrano entro circa 10 secondi.';
+    } catch (e) {
+      $('#avvio-stato').textContent = 'Avvio non riuscito: ' + e.message;
+      alert('Avvio non riuscito: ' + e.message);
+    }
     finally { cambioStato = false; pulsantiStato() }
   }
   $('#inizia').onclick = avviaLive;
@@ -149,6 +164,7 @@
   }
   async function controlla() {
     const t0 = performance.now();
+    const versione = versioneStato;
     try {
       const [pres, live, ass] = await Promise.all([leggi('/presenza.json'), leggi('/live/stato.json'), leggi('/assemblea/stato.json')]);
       const ms = Math.round(performance.now() - t0);
@@ -165,24 +181,16 @@
       const conn = spettatori + setup + (c.ruoli.r || 0);
       meter('m-conn', conn, LIMITI.conn, '≈ ' + conn + ' / 100');
 
+      if (versione !== versioneStato || cambioStato) return;
       const attiva = ass.dati?.attiva === true;
-      statoAttivo = typeof ass.dati?.attiva === 'boolean' ? ass.dati.attiva : ass.dati === null ? false : null;
-      pulsantiStato();
-      $('#onda-frame').classList.toggle('big', attiva);
-      $('#onda-dot').hidden = !attiva;
-      $('#onda-label').textContent = attiva ? 'In onda' : 'Anteprima';
-      $('#principale').title = attiva ? 'Slide in onda' : 'Anteprima presentazione';
-      if (ass.dati?.attiva) { pill('#b-assemblea', 'Assemblea attiva', 'ok'); $('#avviso').hidden = true }
-      else {
-        pill('#b-assemblea', 'Assemblea non iniziata', 'warn');
-        $('#avviso').hidden = false;
-      }
+      mostraStato(typeof ass.dati?.attiva === 'boolean' ? ass.dati.attiva : ass.dati === null ? false : null);
       if (!attiva) pill('#b-live', 'Non live');
       else if (ultimo) {
         const ok = live.dati && live.dati.pos === enc(ultimo.i, ultimo.k);
         pill('#b-live', ok ? 'Pubblico allineato' : 'Pubblico in aggiornamento…', ok ? 'live' : 'warn');
       }
     } catch (e) {
+      if (versione !== versioneStato || cambioStato) return;
       statoAttivo = null; pulsantiStato();
       pill('#b-fb', 'Firebase non raggiungibile', 'ko');
       pill('#b-live', 'Stato live non verificato', 'warn');

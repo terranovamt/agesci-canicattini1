@@ -11,11 +11,16 @@ Come si apre e chiude l'assemblea e come si usano dashboard regia, schermo e tel
    controlla la sessione localmente senza richieste Firebase.
    Prepara i contenuti e premi **Salva su GitHub (dati.js)** con un token GitHub.
    Attendi la pubblicazione su GitHub Pages.
-2. Apri la regia dall'area riservata con la chiave e premi **Avvia live**.
+2. Apri la regia dall'area riservata con la chiave e premi il grande
+   **Avvia live** in alto, sopra le anteprime.
    Con una sola scrittura Firebase mantiene le modifiche live esistenti,
    azzera la posizione e attiva l'assemblea;
    se la scrittura fallisce non avvia nulla e mostra l'errore.
-   la regia riparte dalla slide QR. Da questo momento la home manda tutti alla presentazione.
+   la regia riparte dalla slide QR senza ricaricare la presentazione.
+   Il pulsante indica subito l'avvio in corso; alla conferma Firebase la
+   dashboard passa in onda senza attendere il controllo periodico.
+   La home manda tutti alla presentazione entro circa 10 secondi, senza
+   aumentare la frequenza delle richieste Firebase.
 3. Durante il live la dashboard mostra **Termina assemblea**, anche prima dell'ultima slide.
    Dopo la conferma salva lo stato inattivo: home e link alla presentazione
    tornano alla pagina del gruppo entro 10 secondi. Il bottone della home

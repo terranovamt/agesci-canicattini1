@@ -40,6 +40,10 @@
   </section>
 
   <main id="app" hidden>
+    <section class="avvio-live">
+      <button id="inizia" disabled>Avvia live</button>
+      <p id="avvio-stato" role="status" aria-live="polite"></p>
+    </section>
     <section class="onda">
       <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
       <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
@@ -57,7 +61,6 @@
       <div class="mini">
         <button id="home" class="sec">Inizio</button>
         <button id="odg" class="sec">Ordine del giorno</button>
-        <button id="inizia" disabled>Avvia live</button>
         <button id="pdf" class="sec" hidden>PDF</button>
         <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
       </div>

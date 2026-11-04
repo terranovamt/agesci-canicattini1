@@ -15,12 +15,15 @@
     dot.style.cssText = 'position:fixed;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#888;z-index:99;opacity:.7;pointer-events:none';
     document.body.append(dot);
     let t, maxP = 0, inviato = null, invio = false;
+    let sospeso = false, fineInvio = Promise.resolve();
     const pub = async () => {
-      if (!scenes.length) return;
+      if (!scenes.length || sospeso) return;
       const p = enc(si, sk); maxP = Math.max(maxP, p);
       const body = JSON.stringify({ stato: { pos: p, max: maxP }, k: L.chiave });
       if (invio || body === inviato) return;
       invio = true;
+      let completa;
+      fineInvio = new Promise(resolve => { completa = resolve });
       try {
         const r = await fetch(U + '/live.json', { method: 'PUT', body });
         if (!r.ok) throw new Error('Pubblicazione live non riuscita (Firebase ' + r.status + ')');
@@ -29,10 +32,22 @@
       } catch (e) {
         dot.style.background = '#E74030';
         console.warn('Errore sincronizzazione live', e);
-      } finally { invio = false }
+      } finally { invio = false; completa() }
       if (inviato === body && enc(si, sk) !== p) pub();
     };
     go = (i, k) => { __go(i, k); clearTimeout(t); t = setTimeout(pub, 150) };
+    L.avviaLive = async salva => {
+      if (sospeso) throw new Error('Avvio live già in corso');
+      sospeso = true;
+      clearTimeout(t);
+      try {
+        await fineInvio;
+        await salva();
+        maxP = 0;
+        inviato = JSON.stringify({ stato: { pos: 0, max: 0 }, k: L.chiave });
+        go(0, 0);
+      } finally { sospeso = false }
+    };
     setInterval(pub, 10000);   /* ritenta solo le scritture fallite o ancora da inviare */
     return;
   }

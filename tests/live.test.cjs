@@ -183,6 +183,50 @@ test('presenter serializes writes and publishes navigation made during an in-fli
   assert.equal(p.requests.length, 2);
 });
 
+test('live activation resets position and max without reloading or a redundant write', async () => {
+  const p = presenter();
+  p.c.go(2, 0);
+  await p.timeouts.at(-1)();
+  let commits = 0;
+  await p.c.window.LIVE.avviaLive(async () => { commits++ });
+  assert.equal(commits, 1);
+  assert.equal(p.c.si, 0);
+  assert.equal(p.c.sk, 0);
+  await p.timeouts.at(-1)();
+  assert.equal(p.requests.length, 1, 'the activation commit already saved the zero position');
+  p.c.go(1, 0);
+  await p.timeouts.at(-1)();
+  assert.deepEqual(p.requests.at(-1).stato, { pos: 1000, max: 1000 });
+});
+
+test('activation waits for the old write before committing and suspends periodic publishing', async () => {
+  let resolve;
+  const p = presenter(() => new Promise(r => { resolve = r }));
+  p.c.go(2, 0);
+  const pendingWrite = p.timeouts.at(-1)();
+  let commits = 0;
+  const activation = p.c.window.LIVE.avviaLive(async () => { commits++ });
+  await p.intervals[0]();
+  assert.equal(commits, 0);
+  assert.equal(p.requests.length, 1);
+  resolve({ ok: true });
+  await pendingWrite;
+  await activation;
+  assert.equal(commits, 1);
+  assert.equal(p.c.si, 0);
+});
+
+test('failed activation keeps the current slide and resumes normal publishing', async () => {
+  const p = presenter();
+  p.c.go(2, 0);
+  await p.timeouts.at(-1)();
+  await assert.rejects(p.c.window.LIVE.avviaLive(async () => { throw new Error('Firebase 403') }), /403/);
+  assert.equal(p.c.si, 2);
+  p.c.go(1, 0);
+  await p.timeouts.at(-1)();
+  assert.deepEqual(p.requests.at(-1).stato, { pos: 1000, max: 2000 });
+});
+
 test('spectators follow regia and cannot move beyond its current position', () => {
   const { context, writes } = viewer(false);
   assert.equal(context.si, 1);

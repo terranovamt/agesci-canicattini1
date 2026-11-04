@@ -74,6 +74,7 @@
       if (m.tipo === 'cmd' && cur) { if (m.c === 'next') next(); if (m.c === 'prev') prev() }
     };
     Object.assign(API, {
+      avviaLive: salva => L.avviaLive(salva),
       next: () => cur && next(), prev: () => cur && prev(), home: () => cur && home(), menu: () => cur && menu(),
       pdf: () => typeof exportPdf === 'function' && exportPdf()
     });
