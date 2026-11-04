@@ -22,7 +22,6 @@
     <nav class="tabs">
       <button data-tab="generale" class="on">Generale</button>
       <button data-tab="ordine">Slide</button>
-      <button data-tab="contenuti">Contenuti</button>
       <button data-tab="bilancio">Bilancio</button>
       <button data-tab="json">JSON</button>
       <span class="sep"></span>
@@ -53,6 +52,13 @@
       </div>
     </details>
   </footer>
+
+  <dialog id="slide-editor">
+    <h2 id="slide-editor-titolo">Modifica slide</h2>
+    <div id="slide-editor-campi"></div>
+    <button id="slide-editor-chiudi" type="button">Fine modifica</button>
+    <p>Le modifiche restano locali: premi Salva su GitHub per pubblicarle.</p>
+  </dialog>
 
   <dialog id="gh">
     <form method="dialog">

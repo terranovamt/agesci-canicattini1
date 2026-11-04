@@ -16,16 +16,22 @@ La pagina di setup è divisa in schede:
 | --- | --- |
 | **Generale** | anno, data, luogo, orari delle convocazioni |
 | **Slide** | aggiunta, eliminazione, ordine (trascina o ↑ ↓), sezioni collassabili, 👁 nascondi/mostra, ✎ contenuti |
-| **Contenuti** | testi e nomi di ogni slide (anche Progetto Educativo) |
 | **Bilancio** | censimenti, soglie, entrate, uscite, storico avanzi, patrimonio |
 | **JSON** | tutti i dati in JSON, per aggiungere slide o modifiche avanzate |
 | **Guida** / **Limiti** | questa guida e i limiti del piano Firebase gratuito |
 
 I campi diversi da `dati.js` sono evidenziati in giallo e ↺ li riporta
 all'originale; ✕ e **+ Aggiungi** tolgono o aggiungono elementi alle liste.
-Nella scheda **Slide**, scegli un modello (titolo, divisore, testo oppure
-copia di una slide esistente) e premi **+ Aggiungi slide**: la nuova slide
-viene aggiunta in fondo, senza duplicare l'identificativo dei collegamenti.
+Nella scheda **Slide**, scegli il tipo tra tutti quelli supportati oppure
+una copia di una slide esistente e premi **+ Aggiungi slide**: la nuova slide
+viene aggiunta in fondo, senza duplicare l'identificativo dei collegamenti,
+e si apre il suo editor.
+**✎** apre un dialogo dedicato alla sola slide selezionata: non esiste più
+una scheda Contenuti separata. Il selettore **Tipo di slide** cambia i campi
+mostrati e, dopo conferma, sostituisce quelli specifici con i valori iniziali
+del nuovo tipo; conserva identificativo, visibilità ed eventuale titolo barra.
+**Fine modifica** chiude il dialogo mantenendo le modifiche locali; il
+salvataggio definitivo richiede sempre **Salva su GitHub**.
 **✕** elimina una singola slide dopo conferma; eliminare un divisore non
 elimina le slide della sua sezione. L'ultima slide non può essere eliminata.
 I collegamenti verso una slide eliminata vanno aggiornati nei contenuti.

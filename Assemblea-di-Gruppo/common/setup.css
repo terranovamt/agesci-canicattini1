@@ -86,3 +86,5 @@ dialog h2 { margin: 0 0 8px; color: var(--v); font-size: 20px }
 dialog p, dialog li { font-size: 14px }
 dialog ol { padding-left: 20px }
 dialog a { color: var(--v); font-weight: 700 }
+#slide-editor { max-width: 850px; max-height: 85vh; overflow-y: auto }
+#slide-editor-tipo { width: 100%; font: inherit; padding: 9px; margin: 6px 0 12px; border: 1px solid var(--vl); border-radius: 8px }

@@ -22,7 +22,8 @@ function setup(options = {}) {
       remove() {}, getAttribute(name) { return this[name] },
       scrollIntoView() {},
       querySelector() { return element('legend') },
-      showModal() { if (options.cancelToken) { this.returnValue = 'no'; this.onclose() } },
+      showModal() { this.open = true; if (options.cancelToken && this === $('#gh')) { this.returnValue = 'no'; this.onclose() } },
+      close() { this.open = false; if (this.onclose) this.onclose() },
     };
     created.push(e);
     return e;
@@ -123,7 +124,7 @@ test('adding a slide creates a valid template and copies without duplicating ids
   t.setSlides(sampleSlides());
   t.tab('ordine');
   let toolbar = t.$('#campi').children.at(-2);
-  toolbar.children[0].value = '5'; // copia A1: tre modelli, poi le slide
+  toolbar.children[0].value = toolbar.children[0].children.find(o => o.textContent === 'Copia slide 3: A1').value;
   toolbar.children[1].onclick();
   let data = t.data();
   assert.equal(data.slide.at(-1).titolo, 'A1');
@@ -135,6 +136,55 @@ test('adding a slide creates a valid template and copies without duplicating ids
   data = t.data();
   assert.equal(data.slide.at(-1).tipo, 'slide_testo_articoli');
   assert.equal(data.slide.at(-1).articoli[0].paragrafi[0], 'Testo');
+});
+
+test('editing one slide opens its own dialog and changing type replaces specific fields', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  button(orderRows(t)[2], 'Modifica i contenuti').onclick();
+  assert.equal(t.$('#slide-editor').open, true);
+  assert.equal(t.$('#slide-editor-titolo').textContent, 'Modifica slide 3');
+  const type = t.$('#slide-editor-tipo');
+  type.value = 'slide_testo_articoli';
+  type.onchange();
+  const input = t.$('#fslide_2_articoli_0_titolo');
+  assert.equal(input.value, 'Titolo');
+  input.value = 'Articolo nuovo'; input.oninput();
+  t.$('#slide-editor-chiudi').onclick();
+  const data = t.data();
+  assert.equal(data.slide[2].tipo, 'slide_testo_articoli');
+  assert.equal(data.slide[2].articoli[0].titolo, 'Articolo nuovo');
+  assert.equal(data.slide[2].id, 'a1');
+  assert.equal('sottotitolo' in data.slide[2], false);
+  assert.equal(data.slide[0].titolo, 'Intro');
+});
+
+test('cancelling type change keeps the original slide and selection', async () => {
+  const t = setup({ confirm: false });
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  button(orderRows(t)[0], 'Modifica i contenuti').onclick();
+  const type = t.$('#slide-editor-tipo');
+  type.value = 'slide_quorum_convocazioni'; type.onchange();
+  assert.equal(type.value, 'slide_titolo');
+  assert.equal(t.data().slide[0].tipo, 'slide_titolo');
+});
+
+test('new slide type selector covers every supported renderer', async () => {
+  const t = setup();
+  await flush();
+  t.tab('ordine');
+  const select = t.$('#campi').children.at(-2).children[0];
+  const files = fs.readdirSync(path.join(root, 'landscape')).filter(f => f.endsWith('.js'));
+  const types = files.flatMap(file => {
+    const text = fs.readFileSync(path.join(root, 'landscape', file), 'utf8');
+    return [...text.matchAll(/LANDSCAPE\.(slide_\w+)\s*=/g)].map(m => m[1].slice(6).replace(/_/g, ' '));
+  });
+  for (const type of types) assert.ok(select.children.some(o => o.textContent === type), type);
+  assert.equal(html.includes('data-tab="contenuti"'), false);
 });
 
 test('collapsed sections move down and up as intact blocks', async () => {

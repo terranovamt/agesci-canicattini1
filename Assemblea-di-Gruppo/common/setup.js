@@ -125,13 +125,72 @@
   const INTRO = {
     generale: 'Data, luogo e orari dell\'assemblea.',
     ordine: 'Aggiungi o elimina slide; 👁 nasconde e ✎ modifica. Collassa un divisore per spostare tutta la sezione con trascinamento o ↑ ↓. Le modifiche vanno salvate su GitHub.',
-    contenuti: 'Testi e nomi di ogni slide. Le slide del bilancio prendono i numeri dalla scheda Bilancio.',
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
     json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
   const tipoOf = x => String(x.tipo || '').replace(/^slide_/, '');
   const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
   const sezione = x => ['slide_divisore_sezione', 'sezione'].includes(x.tipo);
+  const modelli = [
+    { tipo: 'slide_titolo', titolo: 'Nuova slide', sottotitolo: '' },
+    { tipo: 'slide_divisore_sezione', titolo: 'Nuova sezione', sottotitolo: '' },
+    { tipo: 'slide_testo_articoli', titolo_barra: 'Nuovo testo', articoli: [{ titolo: 'Titolo', paragrafi: ['Testo'] }] },
+    { tipo: 'slide_qr_live', titolo: 'Scansiona il QR code', sottotitolo: '', data_ora: '2026-11-20T20:30:00', immagine: 'img/qr.svg' },
+    { tipo: 'slide_ordine_del_giorno', punti: [{ testo: 'Nuovo punto', slide_collegata: '' }] },
+    { tipo: 'slide_avanzamento_odg', completati: 0 },
+    { tipo: 'slide_quorum_convocazioni', convocazioni: [
+      { nome: 'Prima convocazione', orario: '20:30', regola: '50% + 1 degli aventi diritto', riferimento_articolo: '' },
+      { nome: 'Seconda convocazione', orario: '21:00', regola: 'Qualsiasi numero di presenti', riferimento_articolo: '' }
+    ] },
+    { tipo: 'slide_composizione_organo', persone: [{ ruolo: 'Presidente', icona: '🎙️', nome: 'Nome', nota: '' }], nota_generale: '' },
+    { tipo: 'slide_modifiche_documento', titolo: 'Modifiche', prima: 'Testo attuale', dopo: 'Testo proposto', nota: '', etichetta_prima: 'PRIMA', etichetta_dopo: 'DOPO' },
+    { tipo: 'slide_prima_dopo', titolo_barra: 'Prima e dopo', prima: 'Testo attuale', dopo: 'Testo proposto' },
+    { tipo: 'slide_cambio_date', prima: 'Data attuale', dopo: 'Data proposta', pannello: { etichetta: '', titolo: 'Nuovo periodo', testo: '' } },
+    { tipo: 'slide_area_obiettivi', numero: '1', titolo: 'Nuova area', citazione: '', autore: '', colore: 'var(--v)', obiettivi: [{ titolo: 'Nuovo obiettivo', percorso: 'Percorso educativo' }], punti: ['Nuovo punto'] },
+    { tipo: 'slide_differenze', colonne: [{ titolo: 'Titolo', sottotitolo: '', colore: 'var(--v)', simbolo: '●', voci: ['Nuova voce'] }], nota: { etichetta: 'Nota', testo: '' } },
+    ...['rendiconto_entrate_uscite', 'rendiconto_scontrino_esito', 'rendiconto_andamento_avanzo', 'patrimonio_barre', 'patrimonio_ciambella', 'foto_gruppo'].map(t => ({ tipo: 'slide_' + t })),
+    { tipo: 'slide_chiusura', titolo: 'Assemblea conclusa', sottotitolo: '' },
+    { tipo: 'slide_grazie', testo: 'Grazie' }
+  ];
+  const modelliDisponibili = () => {
+    const out = modelli.map(clone);
+    [...(base.slide || []), ...edit.slide].forEach(s => {
+      if (!out.some(m => m.tipo === s.tipo)) out.push(clone(s));
+    });
+    return out;
+  };
+  let slideEditor = null;
+  function modificaSlide(slide) {
+    slideEditor = slide;
+    renderEditor();
+    $('#slide-editor').showModal();
+  }
+  function renderEditor() {
+    const i = edit.slide.indexOf(slideEditor);
+    if (i < 0) return;
+    const x = slideEditor, p = ['slide', i], c = $('#slide-editor-campi');
+    c.innerHTML = '';
+    $('#slide-editor-titolo').textContent = 'Modifica slide ' + (i + 1);
+    const select = el('select', { id: 'slide-editor-tipo', ariaLabel: 'Tipo di slide' });
+    modelliDisponibili().forEach(m => select.append(el('option', { value: m.tipo, textContent: human(tipoOf(m)) })));
+    select.value = x.tipo;
+    select.onchange = () => {
+      const tipo = select.value;
+      if (tipo === x.tipo) return;
+      if (!confirm('Cambiare tipo di slide? I campi specifici attuali saranno sostituiti con quelli del nuovo tipo.')) { select.value = x.tipo; return }
+      const modello = clone(modelliDisponibili().find(m => m.tipo === tipo));
+      for (const k of ['id', 'nascosta', 'titolo_barra']) if (k in x) modello[k] = x[k];
+      collapsed.delete(x);
+      edit.slide[i] = modello;
+      slideEditor = modello;
+      renderEditor(); updateDirty();
+    };
+    c.append(el('label', { htmlFor: select.id, textContent: 'Tipo di slide' }), select);
+    c.append(field(p.concat('nascosta'), !!x.nascosta, 'Nascosta (salta questa slide)'));
+    const fields = Object.keys(x).filter(k => k !== 'tipo' && k !== 'nascosta');
+    if (!fields.length) c.append(el('p', { className: 'hint', textContent: /rendiconto|patrimonio/.test(x.tipo) ? 'I numeri sono nella scheda Bilancio.' : 'Questo tipo non richiede altri campi.' }));
+    fields.forEach(k => c.append(node(p.concat(k), x[k], human(k))));
+  }
   const sectionEnd = i => {
     let end = i + 1;
     while (end < edit.slide.length && !sezione(edit.slide[end])) end++;
@@ -164,15 +223,10 @@
 
   function renderOrdine(c) {
     const org = origins(), ol = el('ol', { className: 'ord' });
-    const templates = [
-      { tipo: 'slide_titolo', titolo: 'Nuova slide', sottotitolo: '' },
-      { tipo: 'slide_divisore_sezione', titolo: 'Nuova sezione', sottotitolo: '' },
-      { tipo: 'slide_testo_articoli', titolo_barra: 'Nuovo testo', articoli: [{ titolo: 'Titolo', paragrafi: ['Testo'] }] },
-      ...edit.slide
-    ];
+    const tipi = modelliDisponibili(), templates = [...tipi, ...edit.slide];
     const select = el('select', { id: 'nuova-slide-modello', 'ariaLabel': 'Modello nuova slide' });
     templates.forEach((s, i) => select.append(el('option', {
-      value: String(i), textContent: i < 3 ? titleOf(s) : 'Copia slide ' + (i - 2) + ': ' + titleOf(s)
+      value: String(i), textContent: i < tipi.length ? human(tipoOf(s)) : 'Copia slide ' + (i - tipi.length + 1) + ': ' + titleOf(s)
     })));
     select.value = '0';
     const add = el('button', { type: 'button', textContent: '+ Aggiungi slide' });
@@ -181,7 +235,7 @@
       delete slide.id; delete slide.nascosta;
       edit.slide.push(slide);
       render();
-      toast('Slide aggiunta in fondo. Usa ✎ per modificarla e ↑ ↓ per spostarla.');
+      modificaSlide(slide);
     };
     c.append(el('div', { className: 'slide-add' }, select, add));
     const visible = visibleSlides();
@@ -202,7 +256,7 @@
         btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
         btn('↑', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
         btn('↓', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
-        btn('✎', 'Modifica i contenuti', () => { open.add('slide-' + i); go('contenuti'); setTimeout(() => document.querySelector(`details[data-id="slide-${i}"]`)?.scrollIntoView({ block: 'start' }), 0) }),
+        btn('✎', 'Modifica i contenuti', () => modificaSlide(x)),
         btn('✕', 'Elimina solo questa slide', () => {
           if (!confirm('Eliminare la slide "' + titleOf(x) + '"? Le altre slide della sezione restano.')) return;
           edit.slide.splice(i, 1);
@@ -217,20 +271,6 @@
       ol.append(li);
     });
     c.append(ol);
-  }
-
-  function renderContenuti(c) {
-    edit.slide.forEach((x, i) => {
-      const p = ['slide', i], b = [];
-      if (x.nascosta) b.push(badge('nascosta', 'hid'));
-      const fields = Object.keys(x).filter(k => k !== 'tipo' && k !== 'nascosta');
-      if (getAt(base, p) && !same(x, getAt(base, p))) b.push(badge('modificata'));
-      c.append(box('slide-' + i, (i + 1) + '. ' + titleOf(x), tipoOf(x), b, body => {
-        body.append(field(p.concat('nascosta'), !!x.nascosta, 'Nascosta (salta questa slide)'));
-        if (!fields.length) body.append(el('p', { className: 'hint', textContent: /rendiconto|patrimonio/.test(x.tipo) ? 'I numeri di questa slide sono nella scheda Bilancio.' : 'Questa slide non ha testi da modificare.' }));
-        fields.forEach(kk => body.append(node(p.concat(kk), x[kk], human(kk))));
-      }));
-    });
   }
 
   function renderSezioni(c, keys) {
@@ -249,10 +289,10 @@
     if (view === 'generale') renderSezioni(c, GENERALE);
     else if (view === 'bilancio') renderSezioni(c, Object.keys(edit).filter(k => k !== 'slide' && !GENERALE.includes(k)));
     else if (view === 'ordine' && Array.isArray(edit.slide)) renderOrdine(c);
-    else if (view === 'contenuti' && Array.isArray(edit.slide)) renderContenuti(c);
     if (view === 'json') $('#json-text').value = JSON.stringify(edit, null, 2);
     scrollTo(0, y);
     updateDirty();
+    if ($('#slide-editor').open) renderEditor();
   }
 
   function go(tab) {
@@ -342,6 +382,8 @@
   }
 
   $('#salva-gh').onclick = () => salvaGitHub();
+  $('#slide-editor-chiudi').onclick = () => $('#slide-editor').close();
+  $('#slide-editor').onclose = () => { slideEditor = null; render() };
   $('#dimentica').hidden = !localStorage.getItem(TK);
   $('#dimentica').onclick = () => { localStorage.removeItem(TK); $('#dimentica').hidden = true; toast('Token GitHub dimenticato') };
   $('#esci-area').onclick = () => {
