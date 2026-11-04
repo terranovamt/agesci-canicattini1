@@ -3,20 +3,10 @@
 
 /* ============ COLORI: cambia solo qui ============ */
 :root {
-  --y: #FDC500;
-  --vd: #211638;
-  --v: #462678;
-  --v2: #6B478D;
-  --vl: #AEB0D9;
-  --g: #21A067;
-  --r: #E74030;
   --p: #9B66A5;
   --b: #92B3D7;
   --b2: #78afe9;
   --be: #E5D6C7;
-  --bg: #ECE9E6;
-  --w: #fff;
-  --k: #000;
   /* testi e sfondi */
   --ink: var(--vd);
   --muted: var(--v2);
@@ -81,6 +71,7 @@ body {
   height: 720px;
   transform-origin: 0 0;
   overflow: hidden;
+  --bg: #ECE9E6;
   background: var(--bg)
 }
 

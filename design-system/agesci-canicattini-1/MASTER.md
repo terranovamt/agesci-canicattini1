@@ -67,6 +67,11 @@ and 10.65:1 for `--vd` on `--y`. Existing `--g`, `--r`, and `--vl` are not
 automatically suitable for small white text or essential boundaries; adjust
 their component treatment while retaining the brand hue.
 
+For compact status badges and action buttons, use the existing contrast-checked
+variants `--g-strong` (`#176B46`) and `--r-strong` (`#B02A1F`) with white text;
+use `--vd` text on `--o` or `--o-strong` for an indicator. Keep the original
+status colors for charts and decorative uses.
+
 ### Typography
 
 - **Interface Font:** Montserrat (already loaded by assembly tools)
