@@ -88,3 +88,11 @@ Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jek
 | `docs/` | documentazione (questi file non servono al sito) |
 | `firebase/database.rules.json` | regole da incollare nella console Firebase |
 | `tests/` | test: `node --test tests/*.test.cjs` |
+
+Gli strumenti condividono navigazione, focus da tastiera e colori di stato
+in `Assemblea-di-Gruppo/common/interfaccia.css`; `interfaccia.js` gestisce
+il pulsante Mostra/Nascondi delle chiavi. Il setup indica il ramo di destinazione
+prima del salvataggio e distingue i dati statici dai dati live della regia.
+La guida funziona anche incorporata nel setup. Lo stile delle slide e le
+animazioni sono separati: `common/controlli.css` riguarda soltanto i comandi
+della presentazione.

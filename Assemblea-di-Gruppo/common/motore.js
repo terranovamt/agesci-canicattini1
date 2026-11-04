@@ -1,10 +1,10 @@
 /* Motore della presentazione: navigazione, caricamento di dati.js, adattamento dei titoli. */
 
 /* ---- motore ---- */
-let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null; const nav = h('<div id="nav"></div>'),
-  bH = h('<button class="nb" title="Prima slide (H)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></button>'),
-  bM = h('<button class="nb" title="Ordine del giorno (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>'),
-  bB = h('<button class="nb" title="Torna alla slide da cui eri partito (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span></span></button>');
+let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null; const nav = h('<div id="nav" role="navigation" aria-label="Comandi della presentazione"></div>'),
+  bH = h('<button class="nb" title="Prima slide (H)" aria-label="Prima slide"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></button>'),
+  bM = h('<button class="nb" title="Ordine del giorno (M)" aria-label="Ordine del giorno"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>'),
+  bB = h('<button class="nb" title="Torna alla slide da cui eri partito (R)" aria-label="Torna alla slide precedente al salto"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span></span></button>');
 nav.append(bH, bM, bB); st.append(nav); bH.style.display = bM.style.display = bB.style.display = 'none';
 const odgIdx = () => Math.max(0, scenes.findIndex(s => s.tipo === 'slide_ordine_del_giorno'));
 const home = () => { const i = Math.min(1, scenes.length - 1); if (scenes.length && si !== i) { saved = { i: si, k: sk }; go(i, 0) } };
@@ -18,7 +18,7 @@ function go(i, k) {
     cur = { i, r, ...scenes[i].f(r, D) };
     if (INST) { r.classList.add('nt', 'in'); requestAnimationFrame(() => requestAnimationFrame(() => r.classList.remove('nt'))) }
     else requestAnimationFrame(() => requestAnimationFrame(() => r.classList.add('in')));
-    if (old) { old.r.classList.remove('in'); old.r.classList.add('out'); setTimeout(() => old.r.remove(), 1000) }
+    if (old) { old.r.inert = true; old.r.classList.remove('in'); old.r.classList.add('out'); setTimeout(() => old.r.remove(), 1000) }
     /* barra fissa: appare/scompare, e il testo cambia solo se è diverso */
     const t = r.dataset.hd, was = !HD.classList.contains('off');
     HD.classList.toggle('off', t === undefined);
@@ -34,7 +34,15 @@ function go(i, k) {
 }
 const next = () => { if (sk < cur.steps) go(si, sk + 1); else if (si < scenes.length - 1) go(si + 1, 0) };
 const prev = () => { if (sk > 0) go(si, sk - 1); else if (si > 0) { const n = si - 1; go(n, 0); go(n, cur.steps) } };
-addEventListener('keydown', e => { if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() } if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) prev(); if (e.key === 'h') home(); if (e.key === 'm') menu(); if (e.key === 'r') back(); if (e.key === 'f') toggleFullscreen() });
+addEventListener('keydown', e => {
+  if (!cur || e.altKey || e.ctrlKey || e.metaKey || e.target.closest?.('button,a,input,textarea,select,[contenteditable],[data-slide-link]')) return;
+  if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev() }
+  if (e.key === 'h') home();
+  if (e.key === 'm') menu();
+  if (e.key === 'r') back();
+  if (e.key === 'f') toggleFullscreen();
+});
 addEventListener('click', e => e.clientX < innerWidth * .2 ? prev() : next());
 let tx; addEventListener('touchstart', e => tx = e.touches[0].clientX); addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) { e.preventDefault(); d < 0 ? next() : prev() } });
 

@@ -31,7 +31,7 @@
     $('#chiave').focus();
   }
   async function accedi(k) {
-    const b = $('#login-form button'); b.disabled = true;
+    const b = $('#login-form button[type=submit]'); b.disabled = true;
     try { await A.entra(k); key = k; $('#login').hidden = true; avvia() }
     catch (e) { mostraLogin(e.message) }
     finally { b.disabled = false }
@@ -85,10 +85,28 @@
     const ol = $('#slide');
     if (ol.children.length !== s.n || ol.dataset.t !== s.titoli.join('|')) {
       ol.dataset.t = s.titoli.join('|');
-      ol.replaceChildren(...s.titoli.map((t, i) => { const li = document.createElement('li'); li.textContent = cap(t); li.onclick = () => V.vai(i, 0); return li }));
+      ol.replaceChildren(...s.titoli.map((t, i) => {
+        const li = document.createElement('li'), button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = cap(t);
+        button.onclick = () => V.vai(i, 0);
+        li.append(button);
+        return li;
+      }));
     }
-    [...ol.children].forEach((li, i) => { li.classList.toggle('on', i === s.i); li.classList.toggle('nx', !!p && p[0] !== s.i && i === p[0]) });
-    ol.children[s.i]?.scrollIntoView({ block: 'nearest' });
+    [...ol.children].forEach((li, i) => {
+      li.classList.toggle('on', i === s.i);
+      li.classList.toggle('nx', !!p && p[0] !== s.i && i === p[0]);
+      if (i === s.i) li.firstElementChild.setAttribute('aria-current', 'step');
+      else li.firstElementChild.removeAttribute('aria-current');
+    });
+    const selected = ol.children[s.i];
+    if (selected) {
+      const top = selected.offsetTop - ol.offsetTop;
+      if (top < ol.scrollTop) ol.scrollTop = top;
+      else if (top + selected.offsetHeight > ol.scrollTop + ol.clientHeight)
+        ol.scrollTop = top + selected.offsetHeight - ol.clientHeight;
+    }
   }
 
   $('#next').onclick = () => V && V.next();
@@ -97,7 +115,7 @@
   $('#odg').onclick = () => V && V.menu();
   $('#pdf').onclick = () => V && V.pdf();
   addEventListener('keydown', e => {
-    if (!V || e.target.closest('input,textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!V || e.target.closest('input,textarea,select,button,a,summary,[contenteditable]') || e.altKey || e.ctrlKey || e.metaKey) return;
     if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); V.next() }
     if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); V.prev() }
   });

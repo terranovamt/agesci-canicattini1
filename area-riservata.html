@@ -10,29 +10,34 @@
   <link rel="stylesheet" href="home.css">
 </head>
 <body>
+  <a class="skip-link" href="#contenuti">Vai ai contenuti</a>
   <header class="site-header">
     <a class="brand" href="./" aria-label="AGESCI Canicattini 1, home">
       <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="">
       <span><strong>AGESCI</strong><span>Canicattini 1</span></span>
     </a>
-    <span class="header-note">Associazione Guide e Scouts Cattolici Italiani</span>
+    <nav class="home-nav" aria-label="Navigazione principale"><a href="Assemblea-di-Gruppo/guida.html">Guida all'assemblea</a></nav>
   </header>
-  <main class="access-main">
+  <main class="access-main" id="contenuti" tabindex="-1">
     <p class="eyebrow">Gestione del gruppo</p>
     <h1>Area riservata</h1>
     <section id="login" class="access-card">
       <p>Inserisci la chiave per accedere agli strumenti di gestione.</p>
       <form id="login-form" class="accesso">
         <label for="chiave">Chiave di accesso</label>
-        <input id="chiave" type="password" autocomplete="current-password" required>
+        <div class="password-control">
+          <input id="chiave" type="password" autocomplete="current-password" required aria-describedby="accesso-stato">
+          <button type="button" class="password-toggle" data-password-toggle="chiave" aria-controls="chiave" aria-pressed="false">Mostra</button>
+        </div>
         <button class="button" type="submit">Accedi</button>
       </form>
     </section>
     <p id="accesso-stato" role="status" aria-live="polite"></p>
     <section id="riservata" class="access-card" hidden>
-      <p>Accesso effettuato. Scegli cosa gestire.</p>
-      <a class="button" href="Assemblea-di-Gruppo/setup.html">Setup presentazione</a>
-      <a class="button" href="Assemblea-di-Gruppo/regia.html">Regia live</a>
+      <h2 tabindex="-1" id="strumenti-titolo">Gli strumenti del gruppo</h2>
+      <p>Accesso effettuato. Prepara i contenuti o guida l'assemblea.</p>
+      <a class="tool-choice" href="Assemblea-di-Gruppo/setup.html"><strong>Setup presentazione <span aria-hidden="true">→</span></strong><span>Prima dell'assemblea: contenuti, ordine delle slide e bilancio. Salvataggio su GitHub.</span></a>
+      <a class="tool-choice" href="Assemblea-di-Gruppo/regia.html"><strong>Regia live <span aria-hidden="true">→</span></strong><span>Durante l'assemblea: slide, presenti e aggiornamenti live per il pubblico.</span></a>
       <p><button id="esci" class="text-button">Esci dall'area riservata</button></p>
     </section>
     <p class="back-link"><a href="./">Torna al sito del gruppo</a></p>
@@ -44,5 +49,6 @@
   <script src="Assemblea-di-Gruppo/config.js"></script>
   <script src="Assemblea-di-Gruppo/common/accesso.js"></script>
   <script src="area-riservata.js"></script>
+  <script src="Assemblea-di-Gruppo/common/interfaccia.js"></script>
 </body>
 </html>

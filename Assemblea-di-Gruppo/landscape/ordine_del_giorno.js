@@ -7,7 +7,7 @@ const odg = x => (r, D) => {
     linkSlide(e, p);
     r.append(e); return e
   });
-  return { steps: L.length, show(k) { els.forEach((e, i) => { e.classList.toggle('on', i < k); e.style.background = i === k - 1 ? 'var(--w)' : 'var(--w72)' }) } }
+  return { steps: L.length, show(k) { els.forEach((e, i) => { e.inert = i >= k; e.classList.toggle('on', i < k); e.style.background = i === k - 1 ? 'var(--w)' : 'var(--w72)' }) } }
 };
 
 LANDSCAPE.slide_ordine_del_giorno = odg;

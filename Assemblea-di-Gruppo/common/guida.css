@@ -1,0 +1,33 @@
+.guide-page .hd { box-shadow: none }
+.guide-page .hd .tool-brand p { color: #e6dff0 }
+.guide-page .hero { padding: 48px 24px 72px; background: var(--v); text-align: left }
+.guide-page .hero > * { max-width: 1032px; margin-inline: auto }
+.guide-page .hero h1 { font-weight: 700; font-size: clamp(32px, 5vw, 52px); line-height: 1.15; text-wrap: balance }
+.guide-page .hero p { margin-top: 16px; max-width: 1032px; font-size: 16px; line-height: 1.7; opacity: 1; color: #e6dff0 }
+.guide-page .hero .bar { width: 64px; height: 4px; margin: 24px auto 0 max(0px, calc((100% - 1032px) / 2)) }
+.guide-page main { max-width: 1080px; margin-top: -28px; padding-inline: 24px }
+.guide-page nav.toc { position: relative; justify-content: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--ui-shadow) }
+.guide-page nav.toc a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border-radius: 8px; box-shadow: none; background: #f3edf9; font-size: 13px }
+.guide-page section { border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--ui-shadow); scroll-margin-top: 150px; padding-block: 28px }
+.guide-page h2 { font-size: clamp(20px, 3vw, 26px); line-height: 1.3 }
+.guide-page .cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px }
+.guide-page .card { font-size: 14px; line-height: 1.7; border-left-width: 3px; border-radius: 10px; padding: 18px }
+.guide-page .card code { word-break: normal; overflow-wrap: anywhere }
+.guide-page .table-scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 10px }
+.guide-page table { margin: 0; border-radius: 0 }
+.guide-page td { overflow-wrap: anywhere }
+.guide-page th { font-size: 13px; line-height: 1.5 }
+.guide-page pre { white-space: pre-wrap; overflow-wrap: anywhere }
+.guide-page .btn { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px }
+.guide-page footer { opacity: 1; color: var(--text-secondary); line-height: 2 }
+.guide-page footer a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 12px }
+html.emb .guide-page main { margin: 0 auto; padding: 0 }
+html.emb .guide-page .skip-link { display: none }
+html.emb .guide-page section { scroll-margin-top: 12px }
+@media (max-width: 600px) {
+  .guide-page .hero { padding: 32px 16px 56px }
+  .guide-page main { padding-inline: 16px }
+  .guide-page section { scroll-margin-top: 16px; padding: 22px 18px }
+  .guide-page h2 .n { width: 32px; height: 32px }
+  .guide-page td, .guide-page th { padding: 10px; font-size: 12px }
+}

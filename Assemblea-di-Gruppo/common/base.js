@@ -42,8 +42,16 @@ function linkSlide(el, point) {
   if (!point.slide_collegata) return;
   el.dataset.liveControl = '';
   el.dataset.slideLink = point.slide_collegata;
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
   el.style.cursor = 'pointer';
   el.onclick = ev => {
+    ev.stopPropagation();
+    if (el.getAttribute('aria-disabled') !== 'true') jump(point.slide_collegata);
+  };
+  el.onkeydown = ev => {
+    if (!['Enter', ' '].includes(ev.key)) return;
+    ev.preventDefault();
     ev.stopPropagation();
     if (el.getAttribute('aria-disabled') !== 'true') jump(point.slide_collegata);
   };

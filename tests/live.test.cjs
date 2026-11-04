@@ -44,6 +44,22 @@ test('only an explicit, nonempty regia parameter selects the presenter', () => {
   assert.equal(role('?regia=test-key').chiave, 'test-key');
 });
 
+test('keyboard agenda activation respects disabled links', () => {
+  const v = viewer(false);
+  const jumps = [];
+  v.context.jump = id => jumps.push(id);
+  for (const disabled of [true, false]) {
+    const link = { dataset: { slideLink: 'agenda-target' }, getAttribute: () => String(disabled) };
+    let prevented = false;
+    v.listeners.keydown({
+      key: 'Enter', target: { closest: () => link },
+      stopImmediatePropagation() {}, preventDefault() { prevented = true }
+    });
+    assert.equal(prevented, true);
+  }
+  assert.deepEqual(jumps, ['agenda-target']);
+});
+
 function viewer(isMobile, read) {
   const elements = {};
   const listeners = {};

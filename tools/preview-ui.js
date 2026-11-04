@@ -18,6 +18,8 @@
         alert('Anteprima grafica: la pubblicazione su GitHub è disattivata. Puoi usare Scarica dati.js.');
       }, true);
     }
+    const destination = document.getElementById('destinazione');
+    if (destination) destination.textContent = 'Anteprima: nessun ramo GitHub viene modificato.';
     const consoleLink = document.getElementById('console');
     if (consoleLink) {
       consoleLink.removeAttribute('href');

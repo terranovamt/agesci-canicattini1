@@ -48,15 +48,19 @@ e fa il commit; dopo ~1 minuto GitHub Pages lo pubblica. Il setup non usa
 Firebase: controlla solo la sessione già verificata nell'area riservata,
 senza ripetere il login Firebase, né aprire ascoltatori, presenze o letture periodiche.
 La prima volta chiede un **token GitHub**
-(salvato solo su quel dispositivo; **⋯ → Dimentica token GitHub** lo cancella):
+(salvato solo su quel dispositivo; **Altre azioni → Dimentica token GitHub** lo cancella):
 
 1. <https://github.com/settings/personal-access-tokens/new> (Fine-grained token).
 2. *Repository access* → *Only select repositories* → `agesci-canicattini1`.
-3. *Permissions* → **Contents: Read and write** → *Generate token*, copialo nel setup.
+3. *Permissions* → **Add permissions** → cerca e seleziona **Contents** →
+   **Read and write**. Scegli una scadenza, premi *Generate token* e copialo solo nel setup.
 
-In alternativa **⋯ → Scarica dati.js aggiornato** e caricalo a mano su GitHub.
+In alternativa **Altre azioni → Scarica dati.js aggiornato** e caricalo a mano su GitHub.
 Repository, ramo e cartella sono in
 `config.js` (`github`).
+Il ramo di destinazione è indicato nel setup: salvare su `main` aggiorna il
+sito pubblicato. Per le sole prove grafiche usa `node tools/preview.cjs`:
+non serve un token e la pubblicazione è bloccata.
 
 Il setup legge solo il file statico pubblicato, non le modifiche live della
 regia; non le importa, non le salva e non le cancella. Una patch live su

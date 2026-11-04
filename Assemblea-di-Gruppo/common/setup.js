@@ -20,7 +20,7 @@
 
   function toast(msg) {
     document.querySelectorAll('.toast').forEach(x => x.remove());
-    const t = el('div', { className: 'toast', textContent: msg });
+    const t = el('div', { className: 'toast', textContent: msg, role: 'status' });
     document.body.append(t); setTimeout(() => t.remove(), 2600);
   }
   function status(text, cls) { const s = $('#stato'); s.textContent = text; s.className = 'pill ' + (cls || '') }
@@ -124,7 +124,7 @@
   const GENERALE = ['anno_esercizio', 'assemblea'];
   const INTRO = {
     generale: 'Data, luogo e orari dell\'assemblea.',
-    ordine: 'Aggiungi o elimina slide; 👁 nasconde e ✎ modifica. Collassa un divisore per spostare tutta la sezione con trascinamento o ↑ ↓. Le modifiche vanno salvate su GitHub.',
+    ordine: 'Aggiungi slide, modifica i contenuti o cambia la visibilità. Usa le frecce per riordinarle anche senza trascinamento. Collassa una sezione per spostarla insieme alle sue slide.',
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
     json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
@@ -243,7 +243,24 @@
     visible.forEach((i, row) => {
       const x = edit.slide[i], closed = collapsed.has(x);
       const hid = !!x.nascosta, moved = org[i] !== i && org[i] >= 0;
-      const btn = (t, title, fn, dis) => { const b = el('button', { type: 'button', className: 'ic', textContent: t, title, disabled: !!dis }); b.onclick = fn; return b };
+      const btn = (t, title, fn, dis) => {
+        const b = el('button', { type: 'button', className: 'ic', textContent: t, title, ariaLabel: title, disabled: !!dis });
+        const paths = {
+          eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+          hidden: '<path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9 5.5A12 12 0 0 1 12 5c6 0 10 7 10 7a21 21 0 0 1-3 3.8M6 6.5A22 22 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5-1.2"/>'
+        };
+        if (paths[t]) b.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + paths[t] + '</svg>';
+        b.onclick = () => {
+          const hadFocus = document.activeElement === b;
+          fn();
+          if (hadFocus && document.activeElement === document.body) {
+            const index = edit.slide.indexOf(x);
+            const row = document.querySelector('.ord li[data-i="' + (index < 0 ? Math.min(i, edit.slide.length - 1) : index) + '"]');
+            (row?.querySelector('button[title="' + title + '"]') || row?.querySelector('button'))?.focus();
+          }
+        };
+        return b;
+      };
       const li = el('li', { className: (sezione(x) ? 'sez ' : '') + (hid ? 'hid ' : ''), draggable: true },
         el('span', { className: 'grip', textContent: '⋮⋮', title: 'Trascina' }),
         el('span', { className: 'num', textContent: i + 1 }),
@@ -252,8 +269,8 @@
         }) : null,
         el('span', { className: 't' }, el('b', { textContent: titleOf(x) }), el('small', { textContent: tipoOf(x) })),
         sezione(x) && closed ? badge((sectionEnd(i) - i - 1) + ' slide nella sezione') : null,
-        moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
-        btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
+        hid ? badge('nascosta') : null, moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
+        btn(hid ? 'hidden' : 'eye', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
         btn('↑', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
         btn('↓', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
         btn('✎', 'Modifica i contenuti', () => modificaSlide(x)),
@@ -297,7 +314,10 @@
 
   function go(tab) {
     const prev = view; view = tab;
-    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+    document.querySelectorAll('.tabs button').forEach(x => {
+      x.classList.toggle('on', x.dataset.tab === tab);
+      x.ariaPressed = String(x.dataset.tab === tab);
+    });
     const doc = tab === 'guida' || tab === 'limiti';
     $('#campi').hidden = doc || tab === 'json'; $('#json').hidden = tab !== 'json'; $('#doc').hidden = !doc;
     $('#intro').hidden = doc; $('#intro').textContent = INTRO[tab] || '';
@@ -376,6 +396,7 @@
     $('#app').hidden = $('#bar').hidden = false;
     go(view);
     $('#apri-regia').href = 'regia.html';
+    $('#destinazione').textContent = 'Destinazione del salvataggio: ramo ' + GH.ramo + '.';
     try {
       sync(await loadBase());
     } catch (e) { status('Errore', 'ko'); $('#campi').textContent = '⚠ ' + e.message; return }

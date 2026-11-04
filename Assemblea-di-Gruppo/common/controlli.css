@@ -1,0 +1,17 @@
+/* Solo i comandi: impaginazione e animazioni delle slide restano invariate. */
+#nav { gap: 8px }
+#nav .nb { height: 44px; min-width: 44px; padding: 0 12px; opacity: .9; font-size: 13px; border-radius: 10px }
+#nav .nb svg { width: 18px; height: 18px }
+#nav .nb:hover, #nav .nb:focus-visible { opacity: 1 }
+#nav .nb:focus-visible, #lv-bar button:focus-visible, [data-slide-link]:focus-visible {
+  outline: 3px solid var(--y);
+  outline-offset: 3px;
+}
+#lv-bar { padding-bottom: env(safe-area-inset-bottom) !important; height: calc(64px + env(safe-area-inset-bottom)) !important }
+#lv-bar button { border-radius: 10px !important }
+#lv-bar button:disabled { opacity: .5 !important }
+body.idle #lv-bar:focus-within, body.idle #nav:focus-within { opacity: 1 !important; pointer-events: auto !important }
+#lv-f svg { position: static; width: 21px; height: 21px; vertical-align: middle }
+@media (prefers-reduced-motion: reduce) {
+  #nav, #nav *, #lv-bar, #lv-bar * { transition: none !important }
+}

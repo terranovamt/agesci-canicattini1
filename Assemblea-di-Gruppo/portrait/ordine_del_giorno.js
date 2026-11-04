@@ -19,6 +19,7 @@
       steps: L.length,
       show(k) {
         els.forEach((e, i) => {
+          e.inert = i >= k;
           e.classList.toggle('on', i < k);
           e.classList.toggle('hl', i === k - 1);
         });

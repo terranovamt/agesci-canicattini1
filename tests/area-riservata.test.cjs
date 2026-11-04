@@ -5,17 +5,17 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const source = fs.readFileSync(path.join(__dirname, '../area-riservata.js'), 'utf8');
 
-function load(verified, key = '') {
+function load(verified, key = '', error) {
   const elements = new Map(), calls = [];
   const get = id => {
-    if (!elements.has(id)) elements.set(id, { value: '', hidden: id === 'riservata', querySelector() { return {} } });
+    if (!elements.has(id)) elements.set(id, { value: '', hidden: id === 'riservata', focus() { this.focused = true }, querySelector() { return {} } });
     return elements.get(id);
   };
   vm.runInNewContext(source, {
     document: { getElementById: get }, location: { replace() {} },
     window: { ACCESSO: {
       verificata: () => verified, chiave: () => key,
-      async entra(k) { calls.push(k) }, esci() {}
+      async entra(k) { calls.push(k); if (error) throw new Error(error) }, esci() {}
     } }
   });
   return { get, calls };
@@ -37,6 +37,7 @@ test('a new session requires login before showing setup and regia', async () => 
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(t.calls, ['key']);
   assert.equal(t.get('riservata').hidden, false);
+  assert.equal(t.get('strumenti-titolo').focused, true);
 });
 
 test('an unverified legacy key is verified before showing tools', async () => {
@@ -44,4 +45,15 @@ test('an unverified legacy key is verified before showing tools', async () => {
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(t.calls, ['legacy-key']);
   assert.equal(t.get('riservata').hidden, false);
+});
+
+test('failed login explains the error and returns focus to the invalid key', async () => {
+  const t = load(false, '', 'Chiave non valida');
+  t.get('chiave').value = 'wrong';
+  t.get('login-form').onsubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(t.get('riservata').hidden, true);
+  assert.equal(t.get('chiave').ariaInvalid, 'true');
+  assert.equal(t.get('chiave').focused, true);
+  assert.equal(t.get('accesso-stato').textContent, 'Chiave non valida');
 });

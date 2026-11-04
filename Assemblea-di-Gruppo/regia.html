@@ -5,41 +5,66 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#462678">
   <title>Regia — Assemblea di Gruppo</title>
   <link rel="icon" href="img/logo-grande.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="common/regia.css">
+  <link rel="stylesheet" href="common/interfaccia.css">
 </head>
 
-<body>
-  <header>
-    <img src="img/logo.png" alt="">
-    <h1>Regia</h1>
-    <span id="b-assemblea" class="pill">Assemblea…</span>
-    <span id="b-live" class="pill">Live…</span>
-    <span id="b-fb" class="pill">Firebase…</span>
-    <span class="sp"></span>
+<body class="ui-page">
+  <a class="skip-link" href="#app">Vai alla regia</a>
+  <header class="tool-header">
+    <div class="tool-brand">
+      <a href="../" aria-label="Home AGESCI Canicattini 1"><img src="img/logo-grande.png" alt=""></a>
+      <div><h1>Regia</h1><p>AGESCI Canicattini 1</p></div>
+    </div>
+    <nav class="tool-nav" aria-label="Strumenti del gruppo">
+      <a href="../area-riservata.html">Area riservata</a>
+      <a id="setup" href="setup.html" target="assemblea-setup">Setup ↗</a>
+      <a href="regia.html" aria-current="page">Regia</a>
+      <a href="guida.html">Guida</a>
+    </nav>
+    <div class="regia-status" role="status" aria-live="polite">
+      <span id="b-assemblea" class="pill">Assemblea…</span>
+      <span id="b-live" class="pill">Live…</span>
+      <span id="b-fb" class="pill">Firebase…</span>
+    </div>
     <button id="schermo" hidden title="Finestra con sole slide: mettila a schermo intero sul secondo schermo o condividila">▣ Apri schermo presentazione</button>
-    <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
     <button id="esci" class="sec" hidden>Esci</button>
   </header>
 
   <section id="login" hidden>
     <h2>Area riservata</h2>
     <p>Inserisci la chiave di accesso per aprire la regia.</p>
-    <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
+    <form id="login-form">
+      <label for="chiave">Chiave di accesso</label>
+      <div class="password-control">
+        <input id="chiave" type="password" autocomplete="current-password" required aria-describedby="login-err">
+        <button type="button" data-password-toggle="chiave" aria-controls="chiave" aria-pressed="false">Mostra</button>
+      </div>
+      <button type="submit">Entra nella regia</button>
+    </form>
     <p id="login-err" class="err" role="alert"></p>
   </section>
 
   <section id="avviso" class="avviso" role="status" hidden>
-    <h2>ASSEMBLEA NON INIZIATA</h2>
-    <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
-    <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
-    <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
+    <h2>Assemblea non iniziata</h2>
+    <p>Il pubblico vede la home del gruppo. Controlla le slide in anteprima, poi premi <strong>Avvia live</strong>.</p>
+    <details>
+      <summary>Prima di avviare</summary>
+      <p>Prepara e salva dati.js dal setup e attendi la pubblicazione prima di avviare il live qui in regia.</p>
+      <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
+    </details>
   </section>
 
-  <main id="app" hidden>
+  <main id="app" tabindex="-1" hidden>
+    <div class="page-heading regia-heading">
+      <h2>Controlla la presentazione</h2>
+      <p>Controlla la slide attuale e prepara la prossima. Il pubblico segue solo quando avvii il live.</p>
+    </div>
     <section class="onda">
       <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
       <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
@@ -91,10 +116,12 @@
     </section>
 
     <section class="lista card">
-      <h3>Slide</h3>
+      <h3>Vai a una slide</h3>
+      <p class="note">Scegli una slide per mostrarla nella presentazione. Durante il live il pubblico segue la selezione.</p>
       <ol id="slide"></ol>
     </section>
   </main>
+  <footer class="tool-footer"><a href="../area-riservata.html">Area riservata</a> · <a href="guida.html#regia">Guida alla regia</a> · AGESCI Canicattini 1</footer>
 
   <script src="config.js"></script>
   <script src="common/accesso.js"></script>
@@ -103,6 +130,7 @@
   <script src="common/modifiche.js"></script>
   <script src="common/regia-dati.js"></script>
   <script src="common/regia.js"></script>
+  <script src="common/interfaccia.js"></script>
 </body>
 
 </html>

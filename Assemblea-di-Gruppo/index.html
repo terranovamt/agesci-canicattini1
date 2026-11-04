@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#462678">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,17 +39,18 @@
   <link rel="stylesheet" href="portrait/finanze.css">
   <link rel="stylesheet" href="portrait/aree.css">
   <link rel="stylesheet" href="portrait/prima_dopo.css">
+  <link rel="stylesheet" href="common/controlli.css">
 </head>
 
 <body>
-  <div id="stage">
+  <div id="stage" role="region" aria-label="Presentazione dell'assemblea di gruppo">
     <div id="ph"></div>
-    <div id="hdr" class="hd off"><span></span><img src="img/logo.png"></div>
+    <div id="hdr" class="hd off"><span></span><img src="img/logo.png" alt="AGESCI"></div>
     <div id="prog"></div>
     <div id="cnt"></div>
     <div id="pm"></div>
   </div>
-  <div id="msg">
+  <div id="msg" role="alert">
     <div>Non trovo <b>dati.js</b> nella stessa cartella di questa pagina.</div>
   </div>
   <!-- script: comuni, tipi di slide orizzontali, motore, layout verticale, regia/spettatori, avvio -->

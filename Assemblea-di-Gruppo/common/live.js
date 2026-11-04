@@ -67,8 +67,23 @@
   document.head.append(css);
 
   const bar = document.createElement('div'); bar.id = 'lv-bar';
+  bar.setAttribute('role', 'navigation');
+  bar.setAttribute('aria-label', 'Comandi per seguire l’assemblea');
   bar.innerHTML = '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="min-width:44px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden aria-label="Vai alla slide attuale"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg><span>Slide attuale</span></button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
   document.body.append(bar);
+  const fullscreen = document.createElement('button');
+  fullscreen.id = 'lv-f';
+  fullscreen.setAttribute('aria-label', 'Schermo intero');
+  fullscreen.title = 'Schermo intero; su iPhone usa Aggiungi alla schermata Home';
+  fullscreen.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></svg>';
+  fullscreen.onclick = () => toggleFullscreen();
+  fullscreen.setAttribute('aria-pressed', 'false');
+  addEventListener('fullscreenchange', () => {
+    const active = !!document.fullscreenElement;
+    fullscreen.setAttribute('aria-pressed', String(active));
+    fullscreen.setAttribute('aria-label', active ? 'Esci dallo schermo intero' : 'Schermo intero');
+  });
+  bar.append(fullscreen);
   ['click', 'touchstart', 'touchend'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
   const $ = id => bar.querySelector('#' + id);
   const bp = $('lv-p'), bx = $('lv-x'), bl = $('lv-l'), bn = $('lv-n');
@@ -121,6 +136,12 @@
     e.stopImmediatePropagation();
     if (!cur) return;
     if (ev === 'keydown') {
+      if (e.target.closest?.('[data-slide-link]') && ['Enter', ' '].includes(e.key)) {
+        e.preventDefault();
+        const link = e.target.closest('[data-slide-link]');
+        if (link.getAttribute('aria-disabled') !== 'true') jump(link.dataset.slideLink);
+        return;
+      }
       if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); next() }
       if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev() }
     }
