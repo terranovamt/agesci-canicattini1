@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T17:15:45.126870+00:00",
+  "generatedAt": "2026-11-04T17:40:50.398242+00:00",
   "rangeStart": "2025-10-31T00:00:00+01:00",
   "rangeEnd": "2028-11-01T00:00:00+01:00",
   "calendars": [
@@ -9,9 +9,9 @@
       "color": "sky",
       "feed": "https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.ics",
       "url": "https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.html",
-      "lastSuccess": null,
-      "status": "error",
-      "error": "Sincronizzazione non riuscita: <urlopen error [Errno -5] No address associated with hostname>"
+      "lastSuccess": "2026-11-04T17:40:50.398242+00:00",
+      "status": "ok",
+      "error": null
     },
     {
       "id": "eg",
@@ -19,9 +19,9 @@
       "color": "green",
       "feed": "https://calendar.google.com/calendar/ical/4801ea6da35ff7140dec4fcc1f7b3e377a344bc6a504ba80a6b5064d1b076991%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=4801ea6da35ff7140dec4fcc1f7b3e377a344bc6a504ba80a6b5064d1b076991%40group.calendar.google.com",
-      "lastSuccess": null,
-      "status": "error",
-      "error": "Sincronizzazione non riuscita: <urlopen error [Errno -5] No address associated with hostname>"
+      "lastSuccess": "2026-11-04T17:40:50.398242+00:00",
+      "status": "ok",
+      "error": null
     },
     {
       "id": "lc",
@@ -29,9 +29,9 @@
       "color": "yellow",
       "feed": "https://calendar.google.com/calendar/ical/92f7e68e280fb41aefbf65c2d02e8ed0f51d7b33c331e0fdba746d7892ffa586%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=92f7e68e280fb41aefbf65c2d02e8ed0f51d7b33c331e0fdba746d7892ffa586%40group.calendar.google.com",
-      "lastSuccess": null,
-      "status": "error",
-      "error": "Sincronizzazione non riuscita: <urlopen error [Errno -5] No address associated with hostname>"
+      "lastSuccess": "2026-11-04T17:40:50.398242+00:00",
+      "status": "ok",
+      "error": null
     },
     {
       "id": "rs",
@@ -39,9 +39,9 @@
       "color": "red",
       "feed": "https://calendar.google.com/calendar/ical/5b317e0106e0517891d95fa2b1fa3007d4a577db103764e2ac396f083fe68c04%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=5b317e0106e0517891d95fa2b1fa3007d4a577db103764e2ac396f083fe68c04%40group.calendar.google.com",
-      "lastSuccess": null,
-      "status": "error",
-      "error": "Sincronizzazione non riuscita: <urlopen error [Errno -5] No address associated with hostname>"
+      "lastSuccess": "2026-11-04T17:40:50.398242+00:00",
+      "status": "ok",
+      "error": null
     },
     {
       "id": "zona",
@@ -49,10 +49,1307 @@
       "color": "violet",
       "feed": "https://calendar.google.com/calendar/ical/700485200aca9eeaf5b28d44a59e4969ad9a2683af866b4de32e7454a141c05c%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=700485200aca9eeaf5b28d44a59e4969ad9a2683af866b4de32e7454a141c05c%40group.calendar.google.com",
-      "lastSuccess": null,
-      "status": "error",
-      "error": "Sincronizzazione non riuscita: <urlopen error [Errno -5] No address associated with hostname>"
+      "lastSuccess": "2026-11-04T17:40:50.398242+00:00",
+      "status": "ok",
+      "error": null
     }
   ],
-  "events": []
+  "events": [
+    {
+      "id": "56eb8b5c963a0b08e87b2e2f",
+      "calendar": "gruppo",
+      "title": "Interbranca",
+      "location": "",
+      "start": "2025-11-07",
+      "end": "2025-11-08",
+      "allDay": true
+    },
+    {
+      "id": "935b2cdfe224dc2d7252ec77",
+      "calendar": "gruppo",
+      "title": "Co.ca.",
+      "location": "",
+      "start": "2025-11-13T20:00:00+00:00",
+      "end": "2025-11-13T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "a1c13f544f7aba205e55ba4a",
+      "calendar": "gruppo",
+      "title": "Assemblea di gruppo",
+      "location": "",
+      "start": "2025-11-14T19:30:00+00:00",
+      "end": "2025-11-14T22:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "648f54b9c93ae96ad4f4f16c",
+      "calendar": "gruppo",
+      "title": "Modulo Formativo Jamboree",
+      "location": "",
+      "start": "2025-11-17",
+      "end": "2025-11-18",
+      "allDay": true
+    },
+    {
+      "id": "536350239c9f728fc45fbfad",
+      "calendar": "gruppo",
+      "title": "Consiglio di Zona",
+      "location": "",
+      "start": "2025-11-20",
+      "end": "2025-11-21",
+      "allDay": true
+    },
+    {
+      "id": "e51b1faa5db6295f836664b3",
+      "calendar": "gruppo",
+      "title": "Comunita Parrocchiale",
+      "location": "",
+      "start": "2025-11-23",
+      "end": "2025-11-24",
+      "allDay": true
+    },
+    {
+      "id": "13443d1125dddac77cc5833a",
+      "calendar": "gruppo",
+      "title": "Apertura iscrizioni AR",
+      "location": "",
+      "start": "2025-11-24T08:00:00+00:00",
+      "end": "2025-11-24T09:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "4fbf923b27007651c734067a",
+      "calendar": "gruppo",
+      "title": "Assemblea Regionale",
+      "location": "",
+      "start": "2025-11-30T08:00:00+00:00",
+      "end": "2025-11-30T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "3257b4a4928c8e23c5405aa4",
+      "calendar": "gruppo",
+      "title": "Modulo Formativo Jamboree",
+      "location": "",
+      "start": "2025-12-01",
+      "end": "2025-12-02",
+      "allDay": true
+    },
+    {
+      "id": "758e8da291fe2639b52a64b3",
+      "calendar": "gruppo",
+      "title": "Branca LC/RS ??",
+      "location": "",
+      "start": "2025-12-01",
+      "end": "2025-12-02",
+      "allDay": true
+    },
+    {
+      "id": "d4a2795f2120ee92122ca940",
+      "calendar": "gruppo",
+      "title": "Coca formazione Daniele  ",
+      "location": "",
+      "start": "2025-12-03T20:00:00+00:00",
+      "end": "2025-12-03T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "1bfd2dc855966d9c3f8b58e3",
+      "calendar": "gruppo",
+      "title": "Cooperativa SR7",
+      "location": "",
+      "start": "2025-12-07",
+      "end": "2025-12-08",
+      "allDay": true
+    },
+    {
+      "id": "e852f8a550686a0efcc7fb9c",
+      "calendar": "gruppo",
+      "title": "Branca EG",
+      "location": "",
+      "start": "2025-12-12",
+      "end": "2025-12-13",
+      "allDay": true
+    },
+    {
+      "id": "424f9bcda3c649b3b46590c2",
+      "calendar": "gruppo",
+      "title": "Luce Della Pace",
+      "location": "",
+      "start": "2025-12-13",
+      "end": "2025-12-15",
+      "allDay": true
+    },
+    {
+      "id": "9456667b5b746878a201c365",
+      "calendar": "gruppo",
+      "title": "Messa di Zona",
+      "location": "San Sebastiano, Melilli (Via Concerie 2, 96010 Melilli (Sicilia), Italia)",
+      "start": "2025-12-17",
+      "end": "2025-12-18",
+      "allDay": true
+    },
+    {
+      "id": "0de7ea549a511b0ad59be41c",
+      "calendar": "gruppo",
+      "title": "Compleanno DON",
+      "location": "",
+      "start": "2025-12-24",
+      "end": "2025-12-25",
+      "allDay": true
+    },
+    {
+      "id": "91eb365a812ad9ef186506a5",
+      "calendar": "gruppo",
+      "title": "Veglia Co.Ca. ",
+      "location": "",
+      "start": "2025-12-24T22:30:00+00:00",
+      "end": "2025-12-24T23:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "211660ceb3b0ae9171ce1ffe",
+      "calendar": "gruppo",
+      "title": "Campo LC",
+      "location": "",
+      "start": "2025-12-27",
+      "end": "2025-12-30",
+      "allDay": true
+    },
+    {
+      "id": "6847c8187d0838505d48be28",
+      "calendar": "gruppo",
+      "title": "Tombolone RS",
+      "location": "",
+      "start": "2025-12-30",
+      "end": "2025-12-31",
+      "allDay": true
+    },
+    {
+      "id": "245a45737ff55a587e4db332",
+      "calendar": "gruppo",
+      "title": "Campo EG RS",
+      "location": "",
+      "start": "2026-01-02",
+      "end": "2026-01-05",
+      "allDay": true
+    },
+    {
+      "id": "f24fcb56b81d311f8b60488b",
+      "calendar": "gruppo",
+      "title": "Modulo LC/EG",
+      "location": "",
+      "start": "2026-01-09",
+      "end": "2026-01-10",
+      "allDay": true
+    },
+    {
+      "id": "be8080e022cadacf2fc124db",
+      "calendar": "gruppo",
+      "title": "Assemblea di Zona",
+      "location": "",
+      "start": "2026-01-11",
+      "end": "2026-01-12",
+      "allDay": true
+    },
+    {
+      "id": "da1059d68d912f72ddbea247",
+      "calendar": "gruppo",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-01-12",
+      "end": "2026-01-13",
+      "allDay": true
+    },
+    {
+      "id": "70771b2dc36cc07f1c910d4f",
+      "calendar": "gruppo",
+      "title": "Co.Ca. ??",
+      "location": "",
+      "start": "2026-01-16",
+      "end": "2026-01-17",
+      "allDay": true
+    },
+    {
+      "id": "27807c9abe12b5e0262c5beb",
+      "calendar": "gruppo",
+      "title": "Uscita Co.Ca. ??",
+      "location": "",
+      "start": "2026-01-18",
+      "end": "2026-01-19",
+      "allDay": true
+    },
+    {
+      "id": "4193023d1c6d24594619310b",
+      "calendar": "gruppo",
+      "title": "Co.ca.",
+      "location": "",
+      "start": "2026-01-23T20:00:00+00:00",
+      "end": "2026-01-23T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "1323c9d00677047508928d22",
+      "calendar": "gruppo",
+      "title": "San Paolo di Zona",
+      "location": "",
+      "start": "2026-01-24",
+      "end": "2026-01-26",
+      "allDay": true
+    },
+    {
+      "id": "c33847ded64f08a2977beaeb",
+      "calendar": "gruppo",
+      "title": "CFM RS DON",
+      "location": "",
+      "start": "2026-01-24",
+      "end": "2026-02-01",
+      "allDay": true
+    },
+    {
+      "id": "6b082149929c81b0f2e67711",
+      "calendar": "gruppo",
+      "title": "Comitato Allargato",
+      "location": "",
+      "start": "2026-01-28",
+      "end": "2026-01-29",
+      "allDay": true
+    },
+    {
+      "id": "0c03d784cac4960bf59bf8e6",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-01-30",
+      "end": "2026-01-31",
+      "allDay": true
+    },
+    {
+      "id": "78a83ef6c1fdfbf591d951e2",
+      "calendar": "gruppo",
+      "title": "Formazione Diocesana",
+      "location": "",
+      "start": "2026-02-01",
+      "end": "2026-02-02",
+      "allDay": true
+    },
+    {
+      "id": "6351600b89ce50e5b8034083",
+      "calendar": "gruppo",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-02-02",
+      "end": "2026-02-03",
+      "allDay": true
+    },
+    {
+      "id": "3b72963ace21ea3d8a96f6f5",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-02-04T20:00:00+00:00",
+      "end": "2026-02-04T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "16f9b9ceb9580ddb88ae7491",
+      "calendar": "gruppo",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-02-06",
+      "end": "2026-02-07",
+      "allDay": true
+    },
+    {
+      "id": "1b080e995fad76332acc505b",
+      "calendar": "gruppo",
+      "title": "Caccia KAA",
+      "location": "",
+      "start": "2026-02-07",
+      "end": "2026-02-08",
+      "allDay": true
+    },
+    {
+      "id": "91516d33d3923d3948ea4ae0",
+      "calendar": "gruppo",
+      "title": "Campo per CapiSquadriglia",
+      "location": "",
+      "start": "2026-02-07",
+      "end": "2026-02-09",
+      "allDay": true
+    },
+    {
+      "id": "7d225cc1138e7199a59f7df6",
+      "calendar": "gruppo",
+      "title": "Modulo Tirocinanti",
+      "location": "",
+      "start": "2026-02-08",
+      "end": "2026-02-09",
+      "allDay": true
+    },
+    {
+      "id": "38938b83008623461f4e3205",
+      "calendar": "gruppo",
+      "title": "Modulo affettivita",
+      "location": "",
+      "start": "2026-02-12",
+      "end": "2026-02-13",
+      "allDay": true
+    },
+    {
+      "id": "f26f56fa22da3ca5a1e398d3",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-02-13",
+      "end": "2026-02-14",
+      "allDay": true
+    },
+    {
+      "id": "13e3535c0900bb0e56857c88",
+      "calendar": "gruppo",
+      "title": "Festa Carnevale",
+      "location": "",
+      "start": "2026-02-14",
+      "end": "2026-02-15",
+      "allDay": true
+    },
+    {
+      "id": "6157940030090ecd80496f55",
+      "calendar": "gruppo",
+      "title": "Messa Ceneri",
+      "location": "",
+      "start": "2026-02-18",
+      "end": "2026-02-19",
+      "allDay": true
+    },
+    {
+      "id": "24021518567f78e6c7637174",
+      "calendar": "gruppo",
+      "title": "Consiglio di Zona",
+      "location": "",
+      "start": "2026-02-19",
+      "end": "2026-02-20",
+      "allDay": true
+    },
+    {
+      "id": "8e0606eb562b8e89b0205eac",
+      "calendar": "gruppo",
+      "title": "TKD",
+      "location": "",
+      "start": "2026-02-21",
+      "end": "2026-02-23",
+      "allDay": true
+    },
+    {
+      "id": "ccb5741103f062b239e43a7e",
+      "calendar": "gruppo",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-03-02",
+      "end": "2026-03-03",
+      "allDay": true
+    },
+    {
+      "id": "991c4856d511c566d3505146",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-03-05",
+      "end": "2026-03-06",
+      "allDay": true
+    },
+    {
+      "id": "8289ad28d266664cb5487f2f",
+      "calendar": "gruppo",
+      "title": "EPPPI",
+      "location": "",
+      "start": "2026-03-06",
+      "end": "2026-03-09",
+      "allDay": true
+    },
+    {
+      "id": "83afa37d2a97e17580411a0a",
+      "calendar": "gruppo",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-03-06",
+      "end": "2026-03-07",
+      "allDay": true
+    },
+    {
+      "id": "33770ded675c245a40046b22",
+      "calendar": "gruppo",
+      "title": "Piccole Tracce",
+      "location": "",
+      "start": "2026-03-14",
+      "end": "2026-03-16",
+      "allDay": true
+    },
+    {
+      "id": "b2f33ff615cabe5ff0d6492b",
+      "calendar": "gruppo",
+      "title": "Modulo EG",
+      "location": "",
+      "start": "2026-03-15",
+      "end": "2026-03-16",
+      "allDay": true
+    },
+    {
+      "id": "3901c3aa3a263230f2285fa1",
+      "calendar": "gruppo",
+      "title": "Palme",
+      "location": "",
+      "start": "2026-03-29",
+      "end": "2026-03-30",
+      "allDay": true
+    },
+    {
+      "id": "23d81009cc58823fb6a00325",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-03-31",
+      "end": "2026-04-01",
+      "allDay": true
+    },
+    {
+      "id": "73d9514192ba7e9b174b5d7c",
+      "calendar": "gruppo",
+      "title": "Via Crucis",
+      "location": "",
+      "start": "2026-04-01",
+      "end": "2026-04-02",
+      "allDay": true
+    },
+    {
+      "id": "13524c2cd3b0795062f65b62",
+      "calendar": "gruppo",
+      "title": "Coena Domini",
+      "location": "",
+      "start": "2026-04-02",
+      "end": "2026-04-03",
+      "allDay": true
+    },
+    {
+      "id": "e1f96a7578e6509a7d1d85ff",
+      "calendar": "gruppo",
+      "title": "Veglia",
+      "location": "",
+      "start": "2026-04-04",
+      "end": "2026-04-05",
+      "allDay": true
+    },
+    {
+      "id": "a835095d5ae6765d4457c3de",
+      "calendar": "gruppo",
+      "title": "Pasqua",
+      "location": "",
+      "start": "2026-04-05",
+      "end": "2026-04-06",
+      "allDay": true
+    },
+    {
+      "id": "e3a6d054d18f3d909c2dc6dc",
+      "calendar": "gruppo",
+      "title": "Branca LC/EG",
+      "location": "",
+      "start": "2026-04-10T18:00:00+00:00",
+      "end": "2026-04-10T20:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "b9f18e63db8f53699b974fc3",
+      "calendar": "gruppo",
+      "title": "Campetti di specialita'",
+      "location": "",
+      "start": "2026-04-11",
+      "end": "2026-04-13",
+      "allDay": true
+    },
+    {
+      "id": "5f45af3f1042587b6e8e409f",
+      "calendar": "gruppo",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-04-13",
+      "end": "2026-04-14",
+      "allDay": true
+    },
+    {
+      "id": "c88069ce02968b1604cba6e9",
+      "calendar": "gruppo",
+      "title": "San Giorgio",
+      "location": "",
+      "start": "2026-04-18",
+      "end": "2026-04-20",
+      "allDay": true
+    },
+    {
+      "id": "2b541df3bf2e92c1db9c50dd",
+      "calendar": "gruppo",
+      "title": "Comitato Allargato",
+      "location": "",
+      "start": "2026-04-22",
+      "end": "2026-04-23",
+      "allDay": true
+    },
+    {
+      "id": "a0fd6e91c4a0171aff752edf",
+      "calendar": "gruppo",
+      "title": "CFM LC MATTEO",
+      "location": "",
+      "start": "2026-04-24",
+      "end": "2026-05-03",
+      "allDay": true
+    },
+    {
+      "id": "a5a8a509695d90f5e36e8375",
+      "calendar": "gruppo",
+      "title": "Modulo 2",
+      "location": "",
+      "start": "2026-04-29",
+      "end": "2026-04-30",
+      "allDay": true
+    },
+    {
+      "id": "5c113020c2df5c2f511a3f74",
+      "calendar": "gruppo",
+      "title": "Consiglio di Zona",
+      "location": "",
+      "start": "2026-05-07",
+      "end": "2026-05-08",
+      "allDay": true
+    },
+    {
+      "id": "a0b4e72b18c1f001ff0bcf0e",
+      "calendar": "gruppo",
+      "title": "Campetti di specialita'",
+      "location": "",
+      "start": "2026-05-09",
+      "end": "2026-05-11",
+      "allDay": true
+    },
+    {
+      "id": "b4eedf1e6f261a4b9991f1a3",
+      "calendar": "gruppo",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-05-11",
+      "end": "2026-05-12",
+      "allDay": true
+    },
+    {
+      "id": "d8d1001e95adab9953e7cbce",
+      "calendar": "gruppo",
+      "title": "Branca LC/EG",
+      "location": "",
+      "start": "2026-05-15",
+      "end": "2026-05-16",
+      "allDay": true
+    },
+    {
+      "id": "0104d6c0748a8f3ed3ecb6fd",
+      "calendar": "gruppo",
+      "title": "Fiera delle specialità ",
+      "location": "",
+      "start": "2026-05-17T06:30:00+00:00",
+      "end": "2026-05-17T14:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "5ac1840504d5e006eeb5e1da",
+      "calendar": "gruppo",
+      "title": "50+1 Evento Nazionale per Regioni",
+      "location": "",
+      "start": "2026-05-22",
+      "end": "2026-05-25",
+      "allDay": true
+    },
+    {
+      "id": "122006adceabfa2878e2fcce",
+      "calendar": "gruppo",
+      "title": "Maria Ausiliatrice ",
+      "location": "",
+      "start": "2026-05-24T16:00:00+00:00",
+      "end": "2026-05-24T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "4a166c38127532f61b05fdd7",
+      "calendar": "gruppo",
+      "title": "CFM Maria",
+      "location": "",
+      "start": "2026-05-30",
+      "end": "2026-06-07",
+      "allDay": true
+    },
+    {
+      "id": "9a95f0928268b6737539a4f9",
+      "calendar": "gruppo",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-06-05",
+      "end": "2026-06-06",
+      "allDay": true
+    },
+    {
+      "id": "c5771045c1e95ea5bcdad7c4",
+      "calendar": "gruppo",
+      "title": "Piccole Orme MATTEO",
+      "location": "",
+      "start": "2026-06-11",
+      "end": "2026-06-15",
+      "allDay": true
+    },
+    {
+      "id": "d43d247bd4ebeb19a207b11e",
+      "calendar": "gruppo",
+      "title": "Cresime",
+      "location": "",
+      "start": "2026-06-19T16:30:00+00:00",
+      "end": "2026-06-19T17:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "d4e3993d059b6b8b8ceb0caa",
+      "calendar": "gruppo",
+      "title": "Vdb ",
+      "location": "",
+      "start": "2026-06-24",
+      "end": "2026-06-29",
+      "allDay": true
+    },
+    {
+      "id": "9df27792e2a7d96609cba3b5",
+      "calendar": "gruppo",
+      "title": "CFA MATTEO",
+      "location": "",
+      "start": "2026-08-22T07:00:00+00:00",
+      "end": "2026-08-29T14:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "803fc879c2de2d23b71bd447",
+      "calendar": "gruppo",
+      "title": "Evento Regionale EG",
+      "location": "",
+      "start": "2026-09-05",
+      "end": "2026-09-06",
+      "allDay": true
+    },
+    {
+      "id": "9973528bb81ab99737dd5864",
+      "calendar": "gruppo",
+      "title": "Coca",
+      "location": "",
+      "start": "2026-09-25T19:15:00+00:00",
+      "end": "2026-09-25T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "dca2cd9017ace4f1f8bb2dc6",
+      "calendar": "gruppo",
+      "title": "San Michele",
+      "location": "",
+      "start": "2026-09-29T16:30:00+00:00",
+      "end": "2026-09-29T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "fd32e33c08f0f782fcda5189",
+      "calendar": "gruppo",
+      "title": "Area Metodo",
+      "location": "",
+      "start": "2026-10-03",
+      "end": "2026-10-04",
+      "allDay": true
+    },
+    {
+      "id": "a6d9e7a60da2b4238b968015",
+      "calendar": "gruppo",
+      "title": "JotaJoti",
+      "location": "",
+      "start": "2026-10-17",
+      "end": "2026-10-19",
+      "allDay": true
+    },
+    {
+      "id": "21ab4d562ee7fc7dfee2827c",
+      "calendar": "gruppo",
+      "title": "Assemblea di Zona",
+      "location": "",
+      "start": "2026-10-25T08:00:00+00:00",
+      "end": "2026-10-25T13:59:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "6e1d20fab9157820afa8fd06",
+      "calendar": "gruppo",
+      "title": "Co.Ca",
+      "location": "",
+      "start": "2026-11-13T20:00:00+00:00",
+      "end": "2026-11-13T22:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "3cb0becb8669dc41e2d1e5d7",
+      "calendar": "gruppo",
+      "title": "Assemblea di gruppo",
+      "location": "",
+      "start": "2026-11-20T19:30:00+00:00",
+      "end": "2026-11-20T21:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "ed3ab39d7979588e25ebcc0b",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-11-28T14:00:00+00:00",
+      "end": "2026-11-28T16:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "8f94294dfd3767cd2a7a5197",
+      "calendar": "gruppo",
+      "title": "Assemblea Regionale",
+      "location": "",
+      "start": "2026-12-05",
+      "end": "2026-12-07",
+      "allDay": true
+    },
+    {
+      "id": "295762ee777953e84a91e216",
+      "calendar": "gruppo",
+      "title": "Co.Ca.",
+      "location": "",
+      "start": "2026-12-10T15:00:00+00:00",
+      "end": "2026-12-10T16:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "5e4d01927e000698cba9de9a",
+      "calendar": "gruppo",
+      "title": "CAMPO EG/LC",
+      "location": "",
+      "start": "2027-01-02",
+      "end": "2027-01-05",
+      "allDay": true
+    },
+    {
+      "id": "ebefe4b7d25641b65850c424",
+      "calendar": "gruppo",
+      "title": "ROUTE RS",
+      "location": "",
+      "start": "2027-01-07",
+      "end": "2027-01-10",
+      "allDay": true
+    },
+    {
+      "id": "bc9596c4902314a6b7de8115",
+      "calendar": "gruppo",
+      "title": "CFM MATTEO",
+      "location": "",
+      "start": "2027-04-23T06:00:00+00:00",
+      "end": "2027-04-30T16:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "f92793a3737c226c71c4c478",
+      "calendar": "eg",
+      "title": "Patruglino Branca E/G",
+      "location": "",
+      "start": "2025-11-26T19:30:00+00:00",
+      "end": "2025-11-26T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "a6e7f6dec57273d2b7e1633f",
+      "calendar": "eg",
+      "title": "Branca EG",
+      "location": "",
+      "start": "2025-12-12T20:30:00+00:00",
+      "end": "2025-12-12T22:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "7b7b042343a94f50a364da94",
+      "calendar": "eg",
+      "title": "Riunione di branca E/G",
+      "location": "",
+      "start": "2026-01-09T19:30:00+00:00",
+      "end": "2026-01-09T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "298d3797daca837c951ebdab",
+      "calendar": "eg",
+      "title": "Organizzazione MF E/G",
+      "location": "",
+      "start": "2026-01-13T20:15:00+00:00",
+      "end": "2026-01-13T21:15:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "d6192edb3c0b18293819698d",
+      "calendar": "eg",
+      "title": "Staff CCSq",
+      "location": "",
+      "start": "2026-02-02T18:00:00+00:00",
+      "end": "2026-02-02T19:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "1ad425cb820671eb54d7a121",
+      "calendar": "eg",
+      "title": "Campo per capi squadriglia",
+      "location": "Villa Del Seminario San Metodio, 96010 Canicattini Bagni SR, Italia",
+      "start": "2026-02-07T09:00:00+00:00",
+      "end": "2026-02-08T10:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "6c4e97a8842b7055f8b5dfc7",
+      "calendar": "eg",
+      "title": "Modulo EG",
+      "location": "",
+      "start": "2026-03-22T08:00:00+00:00",
+      "end": "2026-03-22T09:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "e21d0992b1ef7dcc78b83c66",
+      "calendar": "eg",
+      "title": "Campetti di specialità",
+      "location": "",
+      "start": "2026-04-10T09:00:00+00:00",
+      "end": "2026-04-11T10:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "aa8545a6ddf12bc831a94f36",
+      "calendar": "eg",
+      "title": "Riunione di branca",
+      "location": "",
+      "start": "2026-04-10T18:30:00+00:00",
+      "end": "2026-04-10T19:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "04c9cd1caa2476377f263991",
+      "calendar": "eg",
+      "title": "San Giorgio",
+      "location": "",
+      "start": "2026-04-18T09:00:00+00:00",
+      "end": "2026-04-19T10:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "cf0a73ba261c668b815895c7",
+      "calendar": "eg",
+      "title": "Campetti di specialità",
+      "location": "",
+      "start": "2026-05-09T14:00:00+00:00",
+      "end": "2026-05-10T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "f667388f6f90df5718ee837d",
+      "calendar": "eg",
+      "title": "Riunione di branca E/G",
+      "location": "",
+      "start": "2026-05-15T18:30:00+00:00",
+      "end": "2026-05-15T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "1819d3b53b6a31bdb398b927",
+      "calendar": "eg",
+      "title": "Evento regionale EG",
+      "location": "",
+      "start": "2026-09-05T14:00:00+00:00",
+      "end": "2026-09-05T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "31e2c280f449771dbe91688d",
+      "calendar": "lc",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2025-12-01T20:30:00+00:00",
+      "end": "2025-12-01T22:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "93c1ad127c0ad27085ee3ccf",
+      "calendar": "lc",
+      "title": "Riunione di branca L/C",
+      "location": "",
+      "start": "2026-01-09T19:30:00+00:00",
+      "end": "2026-01-09T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "ed05b25587e4b194d84a3cf8",
+      "calendar": "lc",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-02-06T19:30:00+00:00",
+      "end": "2026-02-06T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "8be20e93684fd1954ddce7eb",
+      "calendar": "lc",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-03-06T19:00:00+00:00",
+      "end": "2026-03-06T20:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "13a7a32e12995873e6f011db",
+      "calendar": "lc",
+      "title": "Piccole tracce",
+      "location": "",
+      "start": "2026-03-14T10:00:00+00:00",
+      "end": "2026-03-15T11:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "ef077dd210bb7dde7af202a2",
+      "calendar": "lc",
+      "title": "Branca LC",
+      "location": "",
+      "start": "2026-06-05T18:00:00+00:00",
+      "end": "2026-06-05T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "c7ff814c618abf718d5c0261",
+      "calendar": "lc",
+      "title": "Piccole orme",
+      "location": "",
+      "start": "2026-06-11T14:00:00+00:00",
+      "end": "2026-06-14T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "f87de84b26d1c22a71f2cb2e",
+      "calendar": "rs",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2025-12-01T20:30:00+00:00",
+      "end": "2025-12-01T22:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "38a862e570a5f0e2679b201e",
+      "calendar": "rs",
+      "title": "Delegati San Paolo",
+      "location": "",
+      "start": "2025-12-20T08:30:00+00:00",
+      "end": "2025-12-20T11:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "6c9ec01c65a7ea2da5e6ad79",
+      "calendar": "rs",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-01-12T19:30:00+00:00",
+      "end": "2026-01-12T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "f7382c462af5e5659c5976b3",
+      "calendar": "rs",
+      "title": "San Paolo",
+      "location": "",
+      "start": "2026-01-24T09:00:00+00:00",
+      "end": "2026-01-25T10:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "ab0d9770c9bb228fdf89c5eb",
+      "calendar": "rs",
+      "title": "Modulo Formativo Branca RS",
+      "location": "",
+      "start": "2026-02-02T19:30:00+00:00",
+      "end": "2026-02-02T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "20e876c99923b6ab2ab58c9c",
+      "calendar": "rs",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-03-02T19:30:00+00:00",
+      "end": "2026-03-02T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "50002c3778fc1ea01c4cba6f",
+      "calendar": "rs",
+      "title": "EPPPI",
+      "location": "",
+      "start": "2026-03-06T10:00:00+00:00",
+      "end": "2026-03-08T11:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "6a041c3b6e3c8a99dce1a0b7",
+      "calendar": "rs",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-04-13T09:00:00+00:00",
+      "end": "2026-04-13T10:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "f4a4078b161131fe1fd6e4ad",
+      "calendar": "rs",
+      "title": "Branca RS",
+      "location": "",
+      "start": "2026-05-11T18:00:00+00:00",
+      "end": "2026-05-11T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "23b09ec962a3a98e1c576510",
+      "calendar": "zona",
+      "title": "Consiglio di zona",
+      "location": "",
+      "start": "2025-11-01T19:30:00+00:00",
+      "end": "2025-11-01T20:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "b1fea2df923ed43c37caa394",
+      "calendar": "zona",
+      "title": "Assemblea di zona",
+      "location": "",
+      "start": "2025-11-07T19:30:00+00:00",
+      "end": "2025-11-07T22:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "a53d30ec6ea8adf08b4e5909",
+      "calendar": "zona",
+      "title": "Messa per i defunti",
+      "location": "",
+      "start": "2025-11-16T07:00:00+00:00",
+      "end": "2025-11-16T08:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "d5c89712a0f1018569c1acfb",
+      "calendar": "zona",
+      "title": "Giubileo Adolescenti",
+      "location": "",
+      "start": "2025-11-22T10:00:00+00:00",
+      "end": "2025-11-22T11:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "4b42f59c4f3ea0460fd5b017",
+      "calendar": "zona",
+      "title": "Assemblea regionale",
+      "location": "",
+      "start": "2025-11-30T08:00:00+00:00",
+      "end": "2025-11-30T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "ac565da88645ef9d522e45fc",
+      "calendar": "zona",
+      "title": "Distribuzione luce della pace",
+      "location": "",
+      "start": "2025-12-14T08:00:00+00:00",
+      "end": "2025-12-14T09:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "c89db5d85da6fbe64d02fde5",
+      "calendar": "zona",
+      "title": "Messa di Natale con Zona Megarese",
+      "location": "",
+      "start": "2025-12-17T18:30:00+00:00",
+      "end": "2025-12-17T19:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "2e0d88ce8fa0070da4b82418",
+      "calendar": "zona",
+      "title": "Marcia della Pace",
+      "location": "",
+      "start": "2025-12-31T14:30:00+00:00",
+      "end": "2025-12-31T15:30:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "d4829081930e3dcd36907e08",
+      "calendar": "zona",
+      "title": "Assemblea di zona",
+      "location": "",
+      "start": "2026-01-11T07:30:00+00:00",
+      "end": "2026-01-11T16:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "387ef7052e0f00776fbe0c30",
+      "calendar": "zona",
+      "title": "Comitato allargato",
+      "location": "",
+      "start": "2026-01-28T19:00:00+00:00",
+      "end": "2026-01-28T20:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "3469bedf4c180ddaa2521a3c",
+      "calendar": "zona",
+      "title": "Modulo tirocinio",
+      "location": "",
+      "start": "2026-02-08T10:00:00+00:00",
+      "end": "2026-02-08T11:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "527457269a7da18efab3996f",
+      "calendar": "zona",
+      "title": "Modulo Formativo ",
+      "location": "Chiesa parrocchiale Sacro Cuore di Gesù, Via Francesco Laurana, 2, 96100 Siracusa SR, Italia",
+      "start": "2026-02-12T10:00:00+00:00",
+      "end": "2026-02-12T11:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "cc1ffc759090697a0809d48e",
+      "calendar": "zona",
+      "title": "Consiglio di zona",
+      "location": "",
+      "start": "2026-02-19T19:00:00+00:00",
+      "end": "2026-02-19T20:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "7d12f2957b5bed5fe2785fec",
+      "calendar": "zona",
+      "title": "Adorazione Eucaristica Vocazionale",
+      "location": "",
+      "start": "2026-03-05T19:00:00+00:00",
+      "end": "2026-03-05T20:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "0165a13fd74929778f6f5c2e",
+      "calendar": "zona",
+      "title": "“La riforma della giustizia” - prepararsi al referendum",
+      "location": "",
+      "start": "2026-03-14T10:00:00+00:00",
+      "end": "2026-03-14T12:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "75a09ef5af47a4a197882a4b",
+      "calendar": "zona",
+      "title": "Via Crucis Cittadina - Siracusa",
+      "location": "",
+      "start": "2026-03-27",
+      "end": "2026-03-28",
+      "allDay": true
+    },
+    {
+      "id": "c5a4bc786a8637bbdc474a1c",
+      "calendar": "zona",
+      "title": "Branca LC/EG",
+      "location": "",
+      "start": "2026-04-10T18:00:00+00:00",
+      "end": "2026-04-10T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "50c70decab7c29ebc8560ff5",
+      "calendar": "zona",
+      "title": "Comitato allargato",
+      "location": "",
+      "start": "2026-04-22T18:00:00+00:00",
+      "end": "2026-04-22T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "a6b4c768dec7ceb260649f96",
+      "calendar": "zona",
+      "title": "Modulo 2",
+      "location": "",
+      "start": "2026-04-29T18:00:00+00:00",
+      "end": "2026-04-29T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "84d02347cc728e50abfce2cf",
+      "calendar": "zona",
+      "title": "Consiglio di zona",
+      "location": "",
+      "start": "2026-05-07T18:00:00+00:00",
+      "end": "2026-05-07T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "d1e8f44b6d30dacaaa49575f",
+      "calendar": "zona",
+      "title": "CFT - Zona Aretusea",
+      "location": "",
+      "start": "2026-05-08",
+      "end": "2026-05-11",
+      "allDay": true
+    },
+    {
+      "id": "712d011ca6b281bdf037d281",
+      "calendar": "zona",
+      "title": "Branca LC/EG",
+      "location": "",
+      "start": "2026-05-15T18:00:00+00:00",
+      "end": "2026-05-15T19:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "aea9243b3d4a7effa6691cb6",
+      "calendar": "zona",
+      "title": "Area metodo",
+      "location": "",
+      "start": "2026-10-03T14:00:00+00:00",
+      "end": "2026-10-03T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "9169616109f46322e38d39e2",
+      "calendar": "zona",
+      "title": "Jota Joti",
+      "location": "",
+      "start": "2026-10-17T14:00:00+00:00",
+      "end": "2026-10-18T15:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "dd7ebe26f42b50074949b1eb",
+      "calendar": "zona",
+      "title": "Convegno capi",
+      "location": "",
+      "start": "2026-11-14T15:00:00+00:00",
+      "end": "2026-11-15T16:00:00+00:00",
+      "allDay": false
+    },
+    {
+      "id": "3b409ab0488686eeec4fde3e",
+      "calendar": "zona",
+      "title": "Assemblea regionale",
+      "location": "",
+      "start": "2026-12-05T16:00:00+00:00",
+      "end": "2026-12-06T17:00:00+00:00",
+      "allDay": false
+    }
+  ]
 }
