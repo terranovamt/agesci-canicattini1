@@ -1,28 +1,176 @@
 :root { color-scheme: light }
 * { box-sizing: border-box }
 [hidden] { display: none !important }
+html { scroll-behavior: smooth; scroll-padding-top: 24px }
 body { margin: 0; min-height: 100svh; display: flex; flex-direction: column; background: var(--bg); color: var(--vd); font: 16px/1.6 system-ui, sans-serif }
-header { background: var(--v); color: white; padding: 14px 24px; font-size: 20px; font-weight: 500 }
-main { flex: 1; width: min(calc(100% - 32px), 860px); margin: auto; padding: clamp(32px, 6vw, 56px) clamp(20px, 5vw, 48px); text-align: center; background: var(--w); border-radius: var(--radius-xl); box-shadow: var(--shadow-card) }
-main img { display: block; width: min(200px, 55vw); height: clamp(160px, 24vw, 200px); margin: 0 auto 20px; object-fit: contain }
-.eyebrow { color: var(--v); text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: 700; margin: 0 0 8px }
-h1 { margin: 0; font: bold clamp(36px, 8vw, 64px)/1.2 Georgia, serif }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin: 24px 0 0; padding: 12px 24px; border-radius: var(--radius-md); background: var(--y); color: var(--vd); text-decoration: none; font-weight: 800 }
-.button:focus-visible { outline: 3px solid var(--v); outline-offset: 4px }
+.skip-link { position: fixed; top: 8px; left: 8px; z-index: 20; padding: 10px 14px; transform: translateY(-160%); background: var(--y); color: var(--vd); font-weight: 700 }
+.skip-link:focus { transform: translateY(0) }
+.site-header { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 78px; padding: 10px max(24px, calc((100vw - 1200px) / 2)); background: var(--w); border-bottom: 1px solid color-mix(in srgb, var(--vl) 35%, var(--w)) }
+.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--vd); text-decoration: none; line-height: 1.15 }
+.brand img { width: 48px; height: 48px; object-fit: contain }
+.brand span { display: grid; gap: 4px }
+.brand b { color: var(--v); font-size: 13px; letter-spacing: .14em }
+.brand small { font-size: 14px; font-weight: 700 }
+.site-header nav { display: flex; align-items: center; justify-content: flex-end; gap: clamp(12px, 2.2vw, 30px) }
+.site-header nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--vd); text-decoration: none; font-size: 14px; font-weight: 650; white-space: nowrap }
+.site-header nav a:hover, .text-link:hover, .document-actions a:hover { color: var(--v2) }
+.site-header nav .nav-access { padding: 0 17px; border: 1px solid var(--v); border-radius: 999px; color: var(--v) }
+.site-header nav .nav-access:hover { background: var(--v); color: var(--w) }
+main#contenuto { flex: 1; width: min(100% - 48px, 1200px); margin: 0 auto; padding: 34px 0 80px; text-align: left; background: transparent; border-radius: 0; box-shadow: none }
+.hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); align-items: center; gap: 40px; min-height: 550px; overflow: hidden; padding: clamp(38px, 7vw, 82px) clamp(28px, 6vw, 76px); border-radius: var(--radius-xl); background: var(--v); color: var(--w) }
+.hero::before { position: absolute; inset: 0; background: url("Assemblea-di-Gruppo/img/texture.svg") center/cover no-repeat; content: ""; opacity: .14; pointer-events: none }
+.hero-copy, .hero-art, .hero-index { position: relative; z-index: 1 }
+.hero-copy { max-width: 650px }
+.eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: var(--v2); font-size: 12px; font-weight: 800; letter-spacing: .13em; line-height: 1.4; text-transform: uppercase }
+.hero .eyebrow { color: var(--y) }
+.eyebrow span { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--y) }
+h1, h2, h3, p { overflow-wrap: anywhere }
+.hero h1 { margin: 0; color: var(--w); font: 700 clamp(42px, 6vw, 74px)/1.04 Georgia, 'Times New Roman', serif; letter-spacing: -.035em }
+.hero-intro { max-width: 550px; margin: 22px 0 0; color: color-mix(in srgb, var(--w) 88%, var(--y)); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.7 }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 11px 18px; border: 1px solid transparent; border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 800; transition: background-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard) }
+.button:hover { transform: translateY(-2px) }
+.button-primary { background: var(--y); color: var(--vd) }
+.button-primary:hover { background: color-mix(in srgb, var(--y) 88%, var(--w)) }
+.button-quiet { border-color: color-mix(in srgb, var(--w) 55%, transparent); color: var(--w) }
+.button-quiet:hover { background: color-mix(in srgb, var(--w) 12%, transparent) }
+.button-secondary { border-color: var(--vl); background: var(--w); color: var(--v) }
+.button-secondary:hover { border-color: var(--v); background: var(--bg) }
+.assembly-status { display: flex; align-items: center; gap: 9px; max-width: 560px; min-height: 40px; margin: 22px 0 0; color: color-mix(in srgb, var(--w) 84%, var(--y)); font-size: 13px }
+.assembly-status::before { width: 8px; height: 8px; flex: none; border: 2px solid var(--y); border-radius: 50%; content: "" }
+.hero-art { display: grid; place-items: center; min-height: 360px }
+.art-orbit { position: absolute; width: min(31vw, 350px); aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--w) 25%, transparent); border-radius: 50% }
+.orbit-one { transform: rotate(-24deg) scaleX(.72) }
+.orbit-two { transform: rotate(38deg) scaleX(.72) }
+.art-stamp { display: grid; place-items: center; width: clamp(205px, 24vw, 280px); aspect-ratio: 1; border: 10px solid color-mix(in srgb, var(--w) 18%, transparent); border-radius: 50%; background: var(--w); box-shadow: 0 18px 48px rgba(20, 10, 40, .25) }
+.art-stamp img { width: 78%; height: 78%; object-fit: contain }
+.art-caption { position: absolute; right: 3%; bottom: 0; display: grid; gap: 2px; margin: 0; text-align: right }
+.art-caption span { color: var(--y); font-size: 11px; font-weight: 800; letter-spacing: .2em }
+.art-caption b { color: var(--w); font: 700 24px/1.2 Georgia, serif }
+.hero-index { position: absolute; right: 28px; top: 24px; color: color-mix(in srgb, var(--w) 78%, transparent); font-size: 11px; font-weight: 700; letter-spacing: .12em }
+.hero-index span { margin: 0 5px; color: var(--y) }
+.welcome-band { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 18px 0 84px; padding: 23px 28px; border-left: 5px solid var(--y); background: var(--w); box-shadow: var(--shadow-card) }
+.welcome-band p { margin: 0; color: var(--v2); font-size: 14px }
+.welcome-band p b { margin-right: 7px; color: var(--vd) }
+.welcome-band a, .text-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--v); font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap }
+.content-section { margin: 0 0 88px; scroll-margin-top: 28px }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 25px }
+.section-heading .eyebrow { margin-bottom: 8px }
+.section-heading h2, .access-band h2 { margin: 0; color: var(--vd); font: 700 clamp(32px, 4vw, 46px)/1.12 Georgia, 'Times New Roman', serif; letter-spacing: -.025em }
+.section-description { max-width: 330px; margin: 0; color: var(--v2); font-size: 14px }
+.events-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); gap: 20px }
+.calendar-card, .event-detail { border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card) }
+.calendar-card { padding: clamp(18px, 3vw, 28px) }
+.calendar-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px }
+.calendar-top h3 { margin: 0; color: var(--vd); font-size: 19px }
+.calendar-controls { display: flex; gap: 8px }
+.calendar-controls button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--vl); border-radius: 50%; background: var(--w); color: var(--v); font-size: 20px }
+.calendar-controls button:hover { border-color: var(--v); background: var(--bg) }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px }
+.calendar-weekdays { margin-bottom: 8px; color: var(--v2); text-align: center; font-size: 11px; font-weight: 800; text-transform: uppercase }
+.calendar-days button, .calendar-days span { position: relative; display: grid; place-items: center; min-width: 0; min-height: 44px; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--vd); font: inherit; font-size: 13px }
+.calendar-days button:hover { background: var(--bg) }
+.calendar-days button.today { border-color: var(--vl); font-weight: 800 }
+.calendar-days button.selected { border-color: var(--v); background: var(--v); color: var(--w) }
+.calendar-days button.has-event::after { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--v); content: "" }
+.calendar-days button.selected.has-event::after { background: var(--y) }
+.calendar-days span.outside { color: color-mix(in srgb, var(--v2) 45%, var(--w)) }
+.calendar-status { min-height: 20px; margin: 16px 0 0; color: var(--v2); font-size: 12px }
+.event-detail { display: flex; flex-direction: column; align-items: flex-start; padding: 26px; border-top: 5px solid var(--y) }
+.event-detail .eyebrow { margin-bottom: 20px }
+#event-list { width: 100%; flex: 1 }
+.event-item { padding: 0 0 17px; margin-bottom: 17px; border-bottom: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)) }
+.event-item:last-child { margin-bottom: 20px }
+.event-item time { display: block; margin-bottom: 5px; color: var(--v2); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase }
+.event-item h3 { margin: 0; color: var(--vd); font-size: 16px; line-height: 1.35 }
+.event-item > a { display: block; color: var(--v); font-size: 16px; font-weight: 800; line-height: 1.35; text-decoration-thickness: 1px; text-underline-offset: 3px }
+.event-item p { margin: 6px 0 0; color: var(--v2); font-size: 13px; line-height: 1.5 }
+.empty-events { margin: 0 0 20px; color: var(--v2); font-size: 14px }
+.event-detail .button { width: 100%; margin-top: 14px }
+.documents-section { padding-top: 4px }
+.document-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px }
+.document-card { position: relative; display: flex; flex-direction: column; min-height: 250px; padding: 22px; border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card); transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard) }
+.document-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-raised) }
+.document-number { color: var(--v2); font-size: 11px; font-weight: 800; letter-spacing: .13em }
+.document-card h3 { margin: 18px 0 8px; color: var(--vd); font: 700 23px/1.1 Georgia, serif }
+.document-card p { flex: 1; margin: 0; color: var(--v2); font-size: 13px; line-height: 1.55 }
+.document-actions { display: flex; flex-wrap: wrap; gap: 18px; padding-top: 20px; border-top: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); margin-top: 20px }
+.document-actions a { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; color: var(--v); font-size: 12px; font-weight: 800; text-decoration: none }
+.access-band { display: flex; align-items: center; justify-content: space-between; gap: 26px; padding: clamp(24px, 5vw, 50px); border-radius: var(--radius-xl); background: var(--y) }
+.access-band .eyebrow { color: var(--vd) }
+.access-band h2 { color: var(--vd) }
+.access-band p:not(.eyebrow) { max-width: 550px; margin: 10px 0 0; color: color-mix(in srgb, var(--vd) 82%, var(--y)); font-size: 14px }
+.access-band .button { flex: none; background: var(--v); color: var(--w) }
+.access-band .button:hover { background: var(--vd) }
+.site-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 25px max(24px, calc((100vw - 1200px) / 2)); background: var(--vd); color: color-mix(in srgb, var(--w) 76%, var(--vd)); font-size: 12px }
+.site-footer a { min-height: 44px; display: inline-flex; align-items: center; color: var(--w); text-decoration: none }
+.site-footer .footer-brand { gap: 6px; font-size: 13px; letter-spacing: .08em }
+.site-footer .footer-brand b { color: var(--y) }
+
+/* Area riservata */
+body.reserved-page { align-items: stretch }
+body.reserved-page > header { background: var(--v); color: var(--w); padding: 14px 24px; font-size: 20px; font-weight: 500 }
+body.reserved-page > main { flex: 1; width: min(calc(100% - 32px), 860px); margin: auto; padding: clamp(32px, 6vw, 56px) clamp(20px, 5vw, 48px); text-align: center; background: var(--w); border-radius: var(--radius-xl); box-shadow: var(--shadow-card) }
+body.reserved-page > main img { display: block; width: min(200px, 55vw); height: clamp(160px, 24vw, 200px); margin: 0 auto 20px; object-fit: contain }
+body.reserved-page .eyebrow { display: block; color: var(--v); letter-spacing: 2px }
+body.reserved-page h1 { margin: 0; color: var(--vd); font: bold clamp(36px, 8vw, 64px)/1.2 Georgia, serif; letter-spacing: normal }
 .accesso { max-width: 360px; margin: 24px auto; text-align: left }
-.accesso label { display: block; font-weight: 700; margin-bottom: 6px }
-.accesso input { width: 100%; min-height: 48px; padding: 12px; font: inherit; border: 2px solid var(--vl); border-radius: var(--radius-md) }
+.accesso label { display: block; margin-bottom: 6px; font-weight: 700 }
+.accesso input { width: 100%; min-height: 48px; padding: 12px; border: 2px solid var(--vl); border-radius: var(--radius-md); font: inherit }
 button { font: inherit; cursor: pointer; border: 0 }
 button:disabled { opacity: .5; cursor: wait }
 .accesso .button { width: 100%; margin-top: 12px }
 .text-button { padding: 8px; background: none; color: var(--v); text-decoration: underline }
 #riservata .button { margin: 8px }
-#accesso-stato { color: #8b2400 }
-#stato { font-size: 13px; color: var(--v); max-width: 560px; margin: 20px auto }
-footer { text-align: center; padding: 20px; background: var(--v); color: white; font-size: 13px }
+#accesso-stato { color: var(--r-strong) }
+#stato { max-width: 560px; margin: 18px 0 0; font-size: 13px }
+body.reserved-page > footer { padding: 20px; background: var(--v); color: var(--w); text-align: center; font-size: 13px }
+:where(a[href], button, input):focus-visible { outline: 3px solid var(--v); outline-offset: 3px }
 
-@media (max-width: 480px) {
-  header { padding: 12px 18px; font-size: 18px }
-  main { width: calc(100% - 24px); padding: 28px 18px; }
-  main img { width: min(170px, 50vw); }
+@media (max-width: 900px) {
+  .site-header { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 24px }
+  .site-header nav { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 4px 20px }
+  .site-header nav a { font-size: 13px }
+  .hero { grid-template-columns: minmax(0, 1.1fr) minmax(230px, .9fr); gap: 18px; min-height: 480px; padding: 48px 34px }
+  .hero-art { min-height: 300px }
+  .document-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+}
+@media (max-width: 640px) {
+  html { scroll-padding-top: 12px }
+  .site-header { padding: 10px 16px }
+  .site-header nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px }
+  .site-header nav a { white-space: normal; font-size: 12px }
+  .site-header nav .nav-access { justify-content: center; padding: 0 10px }
+  main#contenuto { width: min(100% - 24px, 1200px); padding: 12px 0 48px }
+  .hero { grid-template-columns: 1fr; gap: 8px; min-height: auto; padding: 42px 24px 56px }
+  .hero h1 { font-size: clamp(42px, 13vw, 60px) }
+  .hero-intro { font-size: 16px }
+  .hero-art { min-height: 285px; margin-top: 4px }
+  .art-orbit { width: min(72vw, 300px) }
+  .art-stamp { width: min(62vw, 250px) }
+  .art-caption { right: 3%; bottom: 0 }
+  .art-caption b { font-size: 20px }
+  .hero-index { right: 18px; top: 15px }
+  .hero-actions { align-items: stretch; flex-direction: column }
+  .hero-actions .button { width: 100% }
+  .welcome-band, .section-heading, .access-band { align-items: flex-start; flex-direction: column }
+  .welcome-band { gap: 8px; margin-bottom: 58px; padding: 18px }
+  .content-section { margin-bottom: 58px }
+  .section-heading { gap: 10px; margin-bottom: 18px }
+  .section-heading h2, .access-band h2 { font-size: 36px }
+  .events-layout { grid-template-columns: 1fr }
+  .calendar-card { padding: 16px 12px }
+  .calendar-days { gap: 2px }
+  .calendar-days button, .calendar-days span { min-height: 40px; font-size: 12px }
+  .calendar-weekdays { font-size: 10px }
+  .event-detail { padding: 20px }
+  .document-grid { grid-template-columns: 1fr }
+  .document-card { min-height: 220px }
+  .access-band { gap: 20px; padding: 25px 20px }
+  .access-band .button { width: 100% }
+  .site-footer { align-items: flex-start; flex-direction: column; gap: 4px; padding: 20px 18px }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important }
 }
