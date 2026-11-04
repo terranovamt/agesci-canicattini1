@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const documents = require('../documents-model.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const IGNORED_DIRS = new Set(['.git', '.github', 'node_modules']);
@@ -16,10 +17,10 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.png': 'image/png',
+  '.pdf': 'application/pdf',
   '.svg': 'image/svg+xml',
   '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
-const CALENDAR_URL = 'https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.ics';
 
 function createLocalDatabase() {
   const data = {
@@ -91,7 +92,7 @@ function transformHtml(source) {
       window.fetch = (input, options) => {
         const address = typeof input === 'string' || input instanceof URL ? input : input.url;
         const url = new URL(address, location.href);
-        if (url.origin !== location.origin && url.href !== ${JSON.stringify(CALENDAR_URL)}) {
+        if (url.origin !== location.origin) {
           return Promise.reject(new Error('Richieste esterne disattivate nell’anteprima locale.'));
         }
         return fetchLocale(input, options);
@@ -105,6 +106,7 @@ function transformHtml(source) {
           super(url.href, options);
         }
       };
+      window.DOCUMENTS_PREVIEW = true;
     })();
   </script>`;
   html = html.replace(/<\/head\s*>/i, `${networkGuard}</head>`);
@@ -151,10 +153,50 @@ function readBody(request, limit = 1024 * 1024) {
 
 function createPreviewServer({ watch = true } = {}) {
   const database = createLocalDatabase();
+  let documentIndex = null;
+  const documentFiles = new Map();
   const streams = new Set();
   const firebaseStreams = new Set();
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if (url.pathname === '/__preview/documents' || url.pathname === '/documents/index.json') {
+      try {
+        if (!documentIndex) documentIndex = documents.validate(JSON.parse(await fs.promises.readFile(path.join(ROOT, 'documents/index.json'), 'utf8')));
+        if (url.pathname === '/__preview/documents' && request.method === 'POST') {
+          if (request.headers.origin && request.headers.origin !== `http://${request.headers.host}`) throw new Error('Origine non consentita');
+          const change = await readBody(request, 140 * 1024 * 1024);
+          const next = documents.apply(documentIndex, change);
+          if (change.operation === 'delete') documentFiles.set(change.previous.file, null);
+          else if (change.content) {
+            const pdf = Buffer.from(change.content, 'base64');
+            if (pdf.length >= 100 * 1024 * 1024 || pdf.subarray(0, 5).toString() !== '%PDF-') throw new Error('PDF non valido o troppo grande');
+            documentFiles.set(change.document.file, pdf);
+          } else if (!change.previous) throw new Error('File PDF mancante');
+          documentIndex = next;
+        } else if (request.method !== 'GET' && request.method !== 'HEAD') {
+          response.writeHead(405, { Allow: 'GET, HEAD' });
+          response.end();
+          return;
+        }
+        response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' });
+        response.end(request.method === 'HEAD' ? undefined : JSON.stringify(documentIndex));
+      } catch (error) {
+        response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        response.end(error.message);
+      }
+      return;
+    }
+    if (url.pathname.startsWith('/documents/pdf/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      let name;
+      try { name = decodeURIComponent(url.pathname.slice('/documents/pdf/'.length)) }
+      catch { response.writeHead(400); response.end('Percorso non valido'); return }
+      if (documentFiles.has(name)) {
+        const pdf = documentFiles.get(name);
+        response.writeHead(pdf ? 200 : 404, { 'Cache-Control': 'no-store', 'Content-Type': 'application/pdf' });
+        response.end(request.method === 'HEAD' ? undefined : pdf);
+        return;
+      }
+    }
     if (url.pathname === '/__preview/events') {
       response.writeHead(200, {
         'Cache-Control': 'no-cache, no-transform',
@@ -251,11 +293,6 @@ function createPreviewServer({ watch = true } = {}) {
     }
   });
 
-  database.subscribe(state => {
-    const event = `event: put\ndata: ${JSON.stringify({ path: '/', data: state || {} })}\n\n`;
-    firebaseStreams.forEach(stream => stream.write(event));
-  });
-
   let watchers = [];
   let reloadTimer;
   function watchTree() {
@@ -299,6 +336,11 @@ function createPreviewServer({ watch = true } = {}) {
     firebaseStreams.clear();
   });
   server.database = database;
+  server.stop = callback => {
+    streams.forEach(stream => stream.end());
+    firebaseStreams.forEach(stream => stream.end());
+    server.close(callback);
+  };
   return server;
 }
 
@@ -313,12 +355,10 @@ if (require.main === module) {
       const address = server.address();
       console.log(`Anteprima locale: http://127.0.0.1:${address.port}`);
       console.log('Firebase è simulato in memoria; login aperto solo in questa anteprima.');
-      console.log('Le scritture Firebase/GitHub sono disattivate; può essere letto solo il feed pubblico degli eventi.');
+      console.log('Firebase e gestione PDF sono simulati in memoria; nessuna scrittura sui servizi reali.');
     });
     const close = () => {
-      server.close(() => process.exit(0));
-      streams.forEach(stream => stream.end());
-      firebaseStreams.forEach(stream => stream.end());
+      server.stop(() => process.exit(0));
     };
     process.on('SIGINT', close);
     process.on('SIGTERM', close);

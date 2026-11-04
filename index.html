@@ -23,7 +23,6 @@
       <span><b>AGESCI</b><small>Canicattini 1</small></span>
     </a>
     <nav aria-label="Navigazione principale">
-      <a href="https://www.zonaaretusea.it/" target="_blank" rel="noopener">La Zona e i Settori</a>
       <a href="#eventi">Eventi</a>
       <a href="#documenti">Documenti</a>
       <a class="nav-access" href="area-riservata.html">Area riservata</a>
@@ -51,11 +50,6 @@
       <div class="hero-index" aria-hidden="true">01 <span>/</span> 04</div>
     </section>
 
-    <section class="welcome-band" aria-label="Il gruppo">
-      <p><b>Scoutismo, comunità, servizio.</b> Un punto di riferimento per le informazioni e le attività del gruppo.</p>
-      <a href="https://www.zonaaretusea.it/" target="_blank" rel="noopener">Scopri la Zona Aretusea <span aria-hidden="true">↗</span></a>
-    </section>
-
     <section class="content-section events-section" id="eventi" aria-labelledby="titolo-eventi">
       <div class="section-heading">
         <div>
@@ -64,28 +58,9 @@
         </div>
         <a class="text-link" href="webcal://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.ics">Aggiungi il calendario <span aria-hidden="true">↗</span></a>
       </div>
-      <div class="events-layout">
-        <div class="calendar-card">
-          <div class="calendar-top">
-            <h3 id="calendar-month" aria-live="polite">Caricamento calendario…</h3>
-            <div class="calendar-controls" aria-label="Cambia mese">
-              <button id="calendar-prev" type="button" aria-label="Mese precedente">←</button>
-              <button id="calendar-next" type="button" aria-label="Mese successivo">→</button>
-            </div>
-          </div>
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-          </div>
-          <div id="calendar-days" class="calendar-days" role="group" aria-label="Giorni del mese"></div>
-          <p id="calendar-status" class="calendar-status" role="status">Carico gli appuntamenti del gruppo…</p>
-        </div>
-        <aside class="event-detail" aria-live="polite">
-          <p class="eyebrow">In programma</p>
-          <div id="event-list">
-            <p class="empty-events">Il calendario si sta aggiornando.</p>
-          </div>
-          <a class="button button-secondary" href="https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.ics" target="_blank" rel="noopener">Apri il calendario completo <span aria-hidden="true">↗</span></a>
-        </aside>
+      <div class="calendar-card">
+        <iframe class="group-calendar" title="Eventi del gruppo: calendario Outlook" src="https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.html" loading="lazy"></iframe>
+        <p class="calendar-status">Non vedi gli eventi? <a href="https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.html" target="_blank" rel="noopener">Apri il calendario in una nuova scheda</a>. Il calendario deve essere pubblicato in Outlook con i dettagli degli eventi visibili.</p>
       </div>
     </section>
 
@@ -95,53 +70,19 @@
           <p class="eyebrow">Guide e materiali</p>
           <h2 id="titolo-documenti">Documenti del gruppo</h2>
         </div>
-        <p class="section-description">Leggi le guide su GitHub oppure scarica una copia in formato Markdown.</p>
+        <p class="section-description">Consulta e scarica i PDF pubblicati dal gruppo.</p>
       </div>
-      <div class="document-grid">
-        <article class="document-card">
-          <span class="document-number">01</span>
-          <h3>Assemblea</h3>
-          <p>Guida per aprire e chiudere l’assemblea, usare la regia e condividere la presentazione.</p>
-          <div class="document-actions">
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/docs/assemblea.md" target="_blank" rel="noopener">Leggi <span aria-hidden="true">↗</span></a>
-            <a href="docs/assemblea.md" download>Scarica <span aria-hidden="true">↓</span></a>
-          </div>
-        </article>
-        <article class="document-card">
-          <span class="document-number">02</span>
-          <h3>Contenuti</h3>
-          <p>Istruzioni per aggiornare i dati dell’assemblea tramite il setup o il file dati.js.</p>
-          <div class="document-actions">
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/docs/contenuti.md" target="_blank" rel="noopener">Leggi <span aria-hidden="true">↗</span></a>
-            <a href="docs/contenuti.md" download>Scarica <span aria-hidden="true">↓</span></a>
-          </div>
-        </article>
-        <article class="document-card">
-          <span class="document-number">03</span>
-          <h3>Firebase</h3>
-          <p>Configurazione, regole e informazioni tecniche del servizio usato dalla regia live.</p>
-          <div class="document-actions">
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/docs/firebase.md" target="_blank" rel="noopener">Leggi <span aria-hidden="true">↗</span></a>
-            <a href="docs/firebase.md" download>Scarica <span aria-hidden="true">↓</span></a>
-          </div>
-        </article>
-        <article class="document-card">
-          <span class="document-number">04</span>
-          <h3>Sviluppo</h3>
-          <p>Struttura del progetto, strumenti e indicazioni per contribuire al sito.</p>
-          <div class="document-actions">
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/docs/sviluppo.md" target="_blank" rel="noopener">Leggi <span aria-hidden="true">↗</span></a>
-            <a href="docs/sviluppo.md" download>Scarica <span aria-hidden="true">↓</span></a>
-          </div>
-        </article>
-      </div>
+      <p id="documents-status" role="status">Caricamento dei documenti…</p>
+      <div id="documents-list" class="document-grid" data-documents-url="documents/index.json"></div>
+      <button id="documents-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i PDF</button>
+      <noscript>Attiva JavaScript per vedere l’elenco dei documenti PDF.</noscript>
     </section>
 
     <section class="access-band" aria-labelledby="titolo-accesso">
       <div>
         <p class="eyebrow">Strumenti del gruppo</p>
         <h2 id="titolo-accesso">Area riservata</h2>
-        <p>Accedi agli strumenti per la gestione del setup e della regia dell’assemblea.</p>
+        <p>Gestisci i documenti del gruppo, il setup e la regia dell’assemblea.</p>
       </div>
       <a class="button button-primary" href="area-riservata.html">Accedi all’area riservata <span aria-hidden="true">→</span></a>
     </section>
@@ -156,5 +97,6 @@
   <script src="Assemblea-di-Gruppo/config.js"></script>
   <script src="Assemblea-di-Gruppo/common/assemblea.js"></script>
   <script src="home.js"></script>
+  <script src="home-documents.js"></script>
 </body>
 </html>

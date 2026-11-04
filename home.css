@@ -49,44 +49,17 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .art-caption b { color: var(--w); font: 700 24px/1.2 Georgia, serif }
 .hero-index { position: absolute; right: 28px; top: 24px; color: color-mix(in srgb, var(--w) 78%, transparent); font-size: 11px; font-weight: 700; letter-spacing: .12em }
 .hero-index span { margin: 0 5px; color: var(--y) }
-.welcome-band { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 18px 0 84px; padding: 23px 28px; border-left: 5px solid var(--y); background: var(--w); box-shadow: var(--shadow-card) }
-.welcome-band p { margin: 0; color: var(--v2); font-size: 14px }
-.welcome-band p b { margin-right: 7px; color: var(--vd) }
-.welcome-band a, .text-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--v); font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap }
-.content-section { margin: 0 0 88px; scroll-margin-top: 28px }
+.text-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--v); font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap }
+.content-section { margin: 64px 0 88px; scroll-margin-top: 28px }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 25px }
 .section-heading .eyebrow { margin-bottom: 8px }
 .section-heading h2, .access-band h2 { margin: 0; color: var(--vd); font: 700 clamp(32px, 4vw, 46px)/1.12 Georgia, 'Times New Roman', serif; letter-spacing: -.025em }
 .section-description { max-width: 330px; margin: 0; color: var(--v2); font-size: 14px }
-.events-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); gap: 20px }
-.calendar-card, .event-detail { border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card) }
+.calendar-card { border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card) }
 .calendar-card { padding: clamp(18px, 3vw, 28px) }
-.calendar-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px }
-.calendar-top h3 { margin: 0; color: var(--vd); font-size: 19px }
-.calendar-controls { display: flex; gap: 8px }
-.calendar-controls button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--vl); border-radius: 50%; background: var(--w); color: var(--v); font-size: 20px }
-.calendar-controls button:hover { border-color: var(--v); background: var(--bg) }
-.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px }
-.calendar-weekdays { margin-bottom: 8px; color: var(--v2); text-align: center; font-size: 11px; font-weight: 800; text-transform: uppercase }
-.calendar-days button, .calendar-days span { position: relative; display: grid; place-items: center; min-width: 0; min-height: 44px; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--vd); font: inherit; font-size: 13px }
-.calendar-days button:hover { background: var(--bg) }
-.calendar-days button.today { border-color: var(--vl); font-weight: 800 }
-.calendar-days button.selected { border-color: var(--v); background: var(--v); color: var(--w) }
-.calendar-days button.has-event::after { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--v); content: "" }
-.calendar-days button.selected.has-event::after { background: var(--y) }
-.calendar-days span.outside { color: color-mix(in srgb, var(--v2) 45%, var(--w)) }
+.group-calendar { display: block; width: 100%; height: 600px; border: 0; border-radius: var(--radius-md); background: var(--w) }
 .calendar-status { min-height: 20px; margin: 16px 0 0; color: var(--v2); font-size: 12px }
-.event-detail { display: flex; flex-direction: column; align-items: flex-start; padding: 26px; border-top: 5px solid var(--y) }
-.event-detail .eyebrow { margin-bottom: 20px }
-#event-list { width: 100%; flex: 1 }
-.event-item { padding: 0 0 17px; margin-bottom: 17px; border-bottom: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)) }
-.event-item:last-child { margin-bottom: 20px }
-.event-item time { display: block; margin-bottom: 5px; color: var(--v2); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase }
-.event-item h3 { margin: 0; color: var(--vd); font-size: 16px; line-height: 1.35 }
-.event-item > a { display: block; color: var(--v); font-size: 16px; font-weight: 800; line-height: 1.35; text-decoration-thickness: 1px; text-underline-offset: 3px }
-.event-item p { margin: 6px 0 0; color: var(--v2); font-size: 13px; line-height: 1.5 }
-.empty-events { margin: 0 0 20px; color: var(--v2); font-size: 14px }
-.event-detail .button { width: 100%; margin-top: 14px }
+.calendar-status a { color: var(--v); text-underline-offset: 3px }
 .documents-section { padding-top: 4px }
 .document-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px }
 .document-card { position: relative; display: flex; flex-direction: column; min-height: 250px; padding: 22px; border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card); transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard) }
@@ -153,17 +126,11 @@ body.reserved-page > footer { padding: 20px; background: var(--v); color: var(--
   .hero-index { right: 18px; top: 15px }
   .hero-actions { align-items: stretch; flex-direction: column }
   .hero-actions .button { width: 100% }
-  .welcome-band, .section-heading, .access-band { align-items: flex-start; flex-direction: column }
-  .welcome-band { gap: 8px; margin-bottom: 58px; padding: 18px }
+  .section-heading, .access-band { align-items: flex-start; flex-direction: column }
   .content-section { margin-bottom: 58px }
   .section-heading { gap: 10px; margin-bottom: 18px }
   .section-heading h2, .access-band h2 { font-size: 36px }
-  .events-layout { grid-template-columns: 1fr }
   .calendar-card { padding: 16px 12px }
-  .calendar-days { gap: 2px }
-  .calendar-days button, .calendar-days span { min-height: 40px; font-size: 12px }
-  .calendar-weekdays { font-size: 10px }
-  .event-detail { padding: 20px }
   .document-grid { grid-template-columns: 1fr }
   .document-card { min-height: 220px }
   .access-band { gap: 20px; padding: 25px 20px }

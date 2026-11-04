@@ -54,12 +54,41 @@ node tools/preview.cjs
 ```
 
 Apri `http://127.0.0.1:4173`. Nell’anteprima l’area riservata si apre senza
-chiave, Firebase è simulato in memoria e i salvataggi su GitHub sono bloccati;
+chiave, Firebase e gestione documenti sono simulati in memoria e i salvataggi su GitHub sono bloccati;
 nessuna modifica viene inviata ai servizi reali. Il server ascolta solo su
 `127.0.0.1` e ricarica la pagina quando cambiano i file del progetto.
-Il feed pubblico degli eventi viene caricato dalla home quando il browser lo
-consente; se il servizio blocca la richiesta cross-origin, resta disponibile
-il link per aprire o aggiungere il calendario.
+Le modifiche ai PDF della simulazione sono visibili ricaricando la home e si
+perdono al riavvio del server: i file del repository non vengono modificati.
+
+## Documenti pubblici
+
+Nell'area riservata apri **Gestisci documenti PDF**. Inserisci il token GitHub
+(lo stesso del setup, con permesso **Contents: Read and write**) e premi
+**Ricarica da GitHub**. Puoi caricare un PDF con titolo e descrizione, modificare
+i testi o sostituire il PDF, ed eliminare un documento con conferma.
+File e indice vengono pubblicati insieme in un unico commit sul ramo
+`LIVE.github.ramo` di `config.js` (in produzione `main`).
+Non vengono modificate le impostazioni del setup o i dati dell'assemblea.
+
+La home legge `documents/index.json` e mostra solo i PDF elencati, con apertura
+e download. I file sono in `documents/pdf/`; per aggiungerli manualmente,
+aggiorna anche l'indice con `file`, `title` e `description`. Sono inclusi i due
+PDF forniti: PEG 2026-2028 e Rendiconto per cassa - Modello D.
+Non caricare informazioni riservate: repository e documenti sono pubblici.
+Dopo il salvataggio attendi il deployment di GitHub Pages.
+
+## Calendario Outlook
+
+La home incorpora la vista pubblicata `calendar.html`; il link `calendar.ics`
+serve invece per iscriversi dagli strumenti calendario. Il feed ICS può
+essere pubblico ma non leggibile tramite JavaScript per i vincoli CORS.
+In Outlook verifica **Impostazioni > Calendario > Calendari condivisi >
+Pubblica un calendario**, scegli il calendario del gruppo e rendi visibili i
+dettagli degli eventi. Confronta il link HTML pubblicato con quello nella home.
+Se l'incorporamento è bloccato, usa il link per aprire il calendario in una
+nuova scheda. L'URL HTML è stato derivato dal link ICS: la sua disponibilità
+non è stata verificata perché l'ambiente di lavoro non risolve il dominio
+Outlook; non possiamo quindi confermare la condivisione né la presenza di eventi.
 
 ## Pubblicazione (GitHub Pages)
 
@@ -75,6 +104,8 @@ Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jek
 | --- | --- |
 | `index.html`, `home.css`, `home.js`, `manifest.webmanifest` | home del gruppo |
 | `area-riservata.html`, `area-riservata.js` | accesso con chiave |
+| `gestione-documenti.html`, `gestione-documenti.js`, `documents-store.js` | gestione PDF con pubblicazione GitHub |
+| `documents/index.json`, `documents/pdf/`, `home-documents.js` | indice, PDF pubblici e lista della home |
 | `setup.html` | scorciatoia `/setup` verso il setup dell'assemblea |
 | `Assemblea-di-Gruppo/` | presentazione, regia, setup, guida, `dati.js`, `config.js` |
 | `docs/` | documentazione (questi file non servono al sito) |

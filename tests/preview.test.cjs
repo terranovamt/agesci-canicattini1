@@ -21,9 +21,11 @@ test('local preview serves the redesigned home with local access and hot reload'
     const response = await fetch(origin);
     const html = await response.text();
     assert.equal(response.status, 200);
-    assert.match(html, /La Zona e i Settori/);
+    assert.doesNotMatch(html, /La Zona e i Settori/);
     assert.match(html, /id="eventi"/);
     assert.match(html, /id="documenti"/);
+    assert.match(html, /calendar\.html/);
+    assert.match(html, /data-documents-url="documents\/index.json"/);
     assert.match(html, /ANTEPRIMA LOCALE/);
     assert.match(html, /__preview\/events/);
     assert.ok(html.indexOf('window.fetch') < html.indexOf('src="Assemblea-di-Gruppo/config.js"'));
@@ -32,6 +34,39 @@ test('local preview serves the redesigned home with local access and hot reload'
     const doc = await fetch(origin + '/docs/assemblea.md');
     assert.match(await doc.text(), /assemblea/i);
     assert.equal((await fetch(origin + '/index.html', { method: 'POST' })).status, 405);
+  });
+});
+
+test('preview uploads, edits and deletes PDFs only in its in-memory document library', async () => {
+  await withServer(async origin => {
+    const read = async () => (await fetch(origin + '/documents/index.json')).json();
+    const initial = await read();
+    assert.equal(initial.length, 2);
+    const existing = await fetch(origin + '/documents/pdf/PEG26-28.pdf');
+    assert.equal(existing.headers.get('content-type'), 'application/pdf');
+    assert.ok((await existing.arrayBuffer()).byteLength > 1000);
+    const original = await fs.readFile(path.join(__dirname, '../documents/index.json'), 'utf8');
+    const document = { file: 'prova.pdf', title: 'Un PDF di prova', description: 'Solo locale' };
+    const post = change => fetch(origin + '/__preview/documents', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change)
+    });
+    const content = Buffer.from('%PDF-1.7\nanteprima').toString('base64');
+    let response = await post({ operation: 'save', document, content });
+    assert.equal(response.status, 200);
+    assert.equal((await read()).length, 3);
+    assert.equal(await (await fetch(origin + '/documents/pdf/prova.pdf')).text(), '%PDF-1.7\nanteprima');
+    const edited = { ...document, title: 'Titolo aggiornato' };
+    response = await post({ operation: 'save', previous: document, document: edited });
+    assert.equal(response.status, 200);
+    assert.equal((await read()).at(-1).title, edited.title);
+    response = await post({ operation: 'delete', previous: document });
+    assert.equal(response.status, 400, 'stale changes must not overwrite remote edits');
+    response = await post({ operation: 'delete', previous: edited });
+    assert.equal(response.status, 200);
+    assert.equal((await read()).length, 2);
+    assert.equal((await fetch(origin + '/documents/pdf/prova.pdf')).status, 404);
+    assert.equal(await fs.readFile(path.join(__dirname, '../documents/index.json'), 'utf8'), original);
+    assert.equal(await fs.stat(path.join(__dirname, '../documents/pdf/prova.pdf')).then(() => true, () => false), false);
   });
 });
 
