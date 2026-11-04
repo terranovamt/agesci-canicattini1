@@ -45,6 +45,22 @@ contenuti, orario di pubblicazione o stato dell'assemblea. Le regole Firebase
 proteggono le scritture anche se qualcuno aggira l'interfaccia. Il repository
 e i contenuti destinati al pubblico restano pubblici: non inserire dati riservati.
 
+## Anteprima locale
+
+Avvia il sito con hot reload senza installare dipendenze:
+
+```sh
+node tools/preview.cjs
+```
+
+Apri `http://127.0.0.1:4173`. Nell’anteprima l’area riservata si apre senza
+chiave, Firebase è simulato in memoria e i salvataggi su GitHub sono bloccati;
+nessuna modifica viene inviata ai servizi reali. Il server ascolta solo su
+`127.0.0.1` e ricarica la pagina quando cambiano i file del progetto.
+Il feed pubblico degli eventi viene caricato dalla home quando il browser lo
+consente; se il servizio blocca la richiesta cross-origin, resta disponibile
+il link per aprire o aggiungere il calendario.
+
 ## Pubblicazione (GitHub Pages)
 
 In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
