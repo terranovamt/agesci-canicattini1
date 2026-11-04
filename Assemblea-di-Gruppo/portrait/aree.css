@@ -77,7 +77,7 @@ body.pm .cdp .cdk {
   color: var(--v2);
 }
 body.pm .cdp .new .cdk {
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .cdp .cdy {
   position: relative;

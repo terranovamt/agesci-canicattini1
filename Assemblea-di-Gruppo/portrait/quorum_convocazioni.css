@@ -74,7 +74,7 @@ body.pm .qn {
   font-variant-numeric: tabular-nums;
 }
 body.pm .qn.g {
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .qn.v {
   color: var(--v);

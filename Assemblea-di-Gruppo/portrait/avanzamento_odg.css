@@ -17,7 +17,7 @@ body.pm .rw.dn .ck {
   flex: none;
   width: 1.4em;
   font-weight: 800;
-  color: var(--g);
+  color: var(--g-strong);
 }
 body.pm .rw.dn .tt {
   color: var(--v2);

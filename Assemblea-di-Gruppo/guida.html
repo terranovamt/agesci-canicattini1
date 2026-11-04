@@ -12,44 +12,45 @@
   <style>
     * { box-sizing: border-box }
     body { margin: 0; font: 16px/1.55 Montserrat, system-ui, sans-serif; color: var(--vd); background: var(--bg) }
-    .hd { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--v); color: #fff; box-shadow: 0 3px 12px rgba(33, 22, 56, .25) }
+    .hd { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--v); color: var(--w); box-shadow: var(--shadow-raised) }
     .hd b { flex: 1; font: 800 clamp(16px, 3.6vw, 24px)/1.1 Georgia, 'Times New Roman', serif; letter-spacing: .5px; text-transform: uppercase }
     .hd img { height: 44px }
-    .hero { background: linear-gradient(135deg, var(--v), var(--vd)); color: #fff; padding: 46px 20px 70px; text-align: center }
+    .hero { background: linear-gradient(135deg, var(--v), var(--vd)); color: var(--w); padding: 46px 20px 70px; text-align: center }
     .hero h1 { margin: 0 0 8px; font: 800 clamp(30px, 7vw, 54px)/1.05 Georgia, serif }
     .hero p { margin: 0 auto; max-width: 620px; opacity: .85 }
     .hero .bar { width: 90px; height: 6px; border-radius: 3px; background: var(--y); margin: 18px auto 0 }
     main { max-width: 920px; margin: -44px auto 0; padding: 0 14px 60px }
     nav.toc { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 18px }
-    nav.toc a { background: #fff; color: var(--v); text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 99px; box-shadow: 0 2px 8px rgba(33, 22, 56, .12) }
+    nav.toc a { display: inline-flex; align-items: center; min-height: 44px; background: var(--w); color: var(--v); text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 99px; box-shadow: var(--shadow-card) }
     nav.toc a:hover { background: var(--y); color: var(--vd) }
-    section { scroll-margin-top: 76px; background: #fff; border-radius: 22px; padding: 22px clamp(16px, 4vw, 30px); margin: 0 0 18px; box-shadow: 0 4px 16px rgba(33, 22, 56, .08) }
+    section { scroll-margin-top: 76px; background: var(--w); border-radius: var(--radius-xl); padding: 22px clamp(16px, 4vw, 30px); margin: 0 0 18px; box-shadow: var(--shadow-card) }
     h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font: 800 22px/1.2 Montserrat, sans-serif; color: var(--v) }
     h2 .n { flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--y); color: var(--vd); display: grid; place-items: center; font-size: 18px }
     h3 { margin: 18px 0 6px; font-size: 16px; color: var(--v2) }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0 }
-    .card { border-radius: 16px; padding: 14px 16px; background: var(--bg); border-left: 6px solid var(--v) }
+    .card { border-radius: var(--radius-lg); padding: 14px 16px; background: var(--bg); border-left: 6px solid var(--v) }
     .card.y { border-color: var(--y) } .card.g { border-color: var(--g) } .card.r { border-color: var(--r) }
     .card b { display: block; margin-bottom: 4px }
     .card code { word-break: break-all }
-    code { background: #EFEAF7; padding: 1px 6px; border-radius: 6px; font-size: .9em }
-    kbd { display: inline-block; min-width: 26px; text-align: center; padding: 1px 7px; border-radius: 7px; background: #fff; border: 1.5px solid var(--vl); border-bottom-width: 3px; font: 700 13px Montserrat, sans-serif }
+    mark { background: color-mix(in srgb, var(--y) 36%, var(--w)); color: var(--vd); padding: 0 3px; border-radius: 3px }
+    code { background: color-mix(in srgb, var(--v) 8%, var(--w)); padding: 1px 6px; border-radius: 6px; font-size: .9em }
+    kbd { display: inline-block; min-width: 26px; text-align: center; padding: 1px 7px; border-radius: 7px; background: var(--w); border: 1.5px solid var(--v2); border-bottom-width: 3px; font: 700 13px Montserrat, sans-serif }
     table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0; font-size: 14px; overflow: hidden; border-radius: 14px }
-    th { background: var(--v); color: #fff; text-align: left; padding: 10px 12px }
-    td { padding: 10px 12px; border-bottom: 1px solid #EEE9F5; vertical-align: top }
-    tr:nth-child(even) td { background: #FAF8FD }
+    th { background: var(--v); color: var(--w); text-align: left; padding: 10px 12px }
+    td { padding: 10px 12px; border-bottom: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); vertical-align: top }
+    tr:nth-child(even) td { background: var(--bg) }
     .big { font-size: 22px; font-weight: 800; color: var(--v) }
     ol.steps { counter-reset: s; list-style: none; padding: 0 }
     ol.steps li { counter-increment: s; position: relative; padding: 4px 0 10px 44px }
-    ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 30px; height: 30px; border-radius: 50%; background: var(--v); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px }
-    .note { background: #FFF6CC; border-radius: 14px; padding: 12px 16px; margin: 12px 0; font-size: 14px }
-    .warn { background: #FDE3DF }
-    pre { background: var(--vd); color: #F3EEFF; padding: 14px; border-radius: 14px; overflow: auto; font-size: 13px }
+    ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 30px; height: 30px; border-radius: 50%; background: var(--v); color: var(--w); display: grid; place-items: center; font-weight: 800; font-size: 14px }
+    .note { background: color-mix(in srgb, var(--y) 24%, var(--w)); border-radius: var(--radius-md); padding: 12px 16px; margin: 12px 0; font-size: 14px }
+    .warn { background: color-mix(in srgb, var(--r) 16%, var(--w)) }
+    pre { background: var(--vd); color: var(--w); padding: 14px; border-radius: var(--radius-md); overflow: auto; font-size: 13px }
     a { color: var(--v) }
-    .btn { display: inline-block; background: var(--v); color: #fff; text-decoration: none; font-weight: 700; padding: 10px 16px; border-radius: 12px; margin: 4px 6px 4px 0 }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; background: var(--v); color: var(--w); text-decoration: none; font-weight: 700; padding: 10px 16px; border-radius: var(--radius-md); margin: 4px 6px 4px 0 }
     .btn.y { background: var(--y); color: var(--vd) }
-    footer { text-align: center; font-size: 13px; opacity: .6; padding: 0 0 30px }
-    @media (max-width: 600px) { table { font-size: 13px } td, th { padding: 8px } }
+    footer { text-align: center; font-size: 13px; color: var(--v2); padding: 0 0 30px }
+    @media (max-width: 600px) { table { display: block; max-width: 100%; overflow-x: auto; font-size: 13px } td, th { padding: 8px } }
     html.emb .hd, html.emb .hero, html.emb footer { display: none }
     html.emb body { background: transparent }
     html.emb main { margin: 0 auto; padding: 0 0 10px }
@@ -80,12 +81,12 @@
     <section id="link">
       <h2><span class="n">1</span>I link</h2>
       <div class="cards">
-        <div class="card g"><b>👥 Pubblico</b>Da condividere (anche col QR della slide 0):<br><code>terranovamt.github.io/agesci-canicattini1</code></div>
-        <div class="card"><b>🎬 Regia</b>Dashboard sul PC (chiede la chiave):<br><code>…/Assemblea-di-Gruppo/regia.html</code></div>
-        <div class="card y"><b>⚙️ Setup</b>Modifica dati.js e salva su GitHub, senza Firebase:<br><code>terranovamt.github.io/agesci-canicattini1/setup</code></div>
+        <div class="card g"><b>Pubblico</b>Da condividere (anche col QR della slide 0):<br><code>terranovamt.github.io/agesci-canicattini1</code></div>
+        <div class="card"><b>Regia</b>Dashboard sul PC (chiede la chiave):<br><code>…/Assemblea-di-Gruppo/regia.html</code></div>
+        <div class="card y"><b>Setup</b>Modifica dati.js e salva su GitHub, senza Firebase:<br><code>terranovamt.github.io/agesci-canicattini1/setup</code></div>
       </div>
       <p><a class="btn y" href="./">Apri la presentazione</a><a class="btn" href="regia.html">Apri la regia</a><a class="btn" href="setup.html">Apri il setup</a></p>
-      <div class="note warn">🔒 Non condividere mai la chiave né un vecchio link con <code>?regia=</code>: chi ha la chiave può guidare la presentazione e cambiare i dati. La chiave resta solo nella scheda del browser.</div>
+      <div class="note warn"><b>Sicurezza.</b> Non condividere mai la chiave né un vecchio link con <code>?regia=</code>: chi ha la chiave può guidare la presentazione e cambiare i dati. La chiave resta solo nella scheda del browser.</div>
     </section>
 
     <section id="ciclo">
@@ -104,11 +105,11 @@
       <h2><span class="n">2</span>Regia (dashboard)</h2>
       <p>Apri <code>regia.html</code> sul PC e inserisci la chiave. La dashboard mostra:</p>
       <div class="cards">
-        <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live, con un grande avviso “ASSEMBLEA NON INIZIATA”: il pubblico vede ancora la home.</div>
-        <div class="card"><b>⏭ Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
-        <div class="card g"><b>‹ ›</b>Due grandi pulsanti Indietro / Avanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
+        <div class="card r"><b>In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live, con un grande avviso “ASSEMBLEA NON INIZIATA”: il pubblico vede ancora la home.</div>
+        <div class="card"><b>Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
+        <div class="card g"><b>Indietro / Avanti</b>Due grandi pulsanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
         <div class="card"><b>Presenti e ufficio di presidenza</b>Inserisci il numero dei presenti, il nome del presidente e i nomi degli scrutatori, poi premi <strong>Pubblica live</strong>. Regia e proiettore si aggiornano subito, i telefoni entro circa 10 secondi. Il numero deve essere un intero non negativo; lascialo vuoto se non è ancora noto. Ricarica valori recupera i dati pubblicati. Evita di pubblicare contemporaneamente da più regie. Il setup non legge né cancella questi dati live, che restano pubblici nelle slide.</div>
-        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Il budget operativo di download è 360 MB/giorno; verifica la quota vigente del servizio nella console. Consumo reale e spazio totale sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
+        <div class="card y"><b>Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Il budget operativo di download è 360 MB/giorno; verifica la quota vigente del servizio nella console. Consumo reale e spazio totale sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
       </div>
       <table>
         <tr><th>Tasto / clicker</th><th>Azione</th></tr>
@@ -116,7 +117,7 @@
         <tr><td><kbd>←</kbd> <kbd>↑</kbd> <kbd>PagSu</kbd></td><td>Indietro</td></tr>
       </table>
       <h3>Schermo per proiettore o videochiamata</h3>
-      <p><b>▣ Apri schermo presentazione</b> apre una finestra con <em>solo</em> le slide. Spostala sul proiettore (Chrome ed Edge la aprono già sul secondo schermo se dai il permesso) e cliccaci per lo schermo intero, oppure condividi quella finestra su Meet, Zoom o Teams. Segue la dashboard all'istante e accetta i tasti del clicker. Deve essere aperta nello stesso browser della dashboard.</p>
+      <p><b>Apri schermo presentazione</b> apre una finestra con <em>solo</em> le slide. Spostala sul proiettore (Chrome ed Edge la aprono già sul secondo schermo se dai il permesso) e cliccaci per lo schermo intero, oppure condividi quella finestra su Meet, Zoom o Teams. Segue la dashboard all'istante e accetta i tasti del clicker. Deve essere aperta nello stesso browser della dashboard.</p>
       <p>In alto i badge dicono se l'assemblea è attiva, se il pubblico è allineato alla regia e se Firebase risponde. <b>Avvia live</b> è disponibile quando l'assemblea è inattiva; durante il live compare <b>Termina assemblea</b>. Sull'ultima slide compare anche <b>PDF</b>. Se ricarichi la dashboard riparte dalla slide in onda. Il setup si apre dal pulsante <b>Setup</b> o scrivendo <code>/setup</code> nell'indirizzo.</p>
     </section>
 
@@ -126,9 +127,9 @@
         <div class="card"><b>Segue la regia</b>Può tornare indietro ma non andare oltre: in <code>config.js</code>, <code>limite: 'corrente'</code> (la slide mostrata ora) o <code>'massimo'</code> (la più avanzata raggiunta).</div>
         <div class="card y"><b>Slide attuale</b>Se è rimasto indietro, al posto del contatore compare il pulsante giallo per tornare dove è la regia.</div>
         <div class="card g"><b>Schermo pieno</b>La slide occupa tutto lo schermo; i pulsanti si nascondono dopo 3 s e il primo tocco li fa solo ricomparire.</div>
-        <div class="card"><b>Ruota ⟳</b>Mostra la versione orizzontale: slide, icone e swipe ruotano, la barra resta in basso.</div>
+        <div class="card"><b>Ruota</b>Mostra la versione orizzontale: slide, icone e swipe ruotano, la barra resta in basso.</div>
       </div>
-      <h3>📱 iPhone senza barra dell'indirizzo</h3>
+      <h3>iPhone senza barra dell'indirizzo</h3>
       <ol class="steps">
         <li>Apri il link del pubblico in <b>Safari</b>.</li>
         <li>Tocca <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>.</li>
@@ -143,14 +144,14 @@
       <table>
         <tr><th>Scheda</th><th>Cosa contiene</th></tr>
         <tr><td><b>Generale</b></td><td>Anno, data, luogo, orari delle convocazioni.</td></tr>
-        <tr><td><b>Slide</b></td><td>Scegli il tipo tra tutti quelli supportati o una copia e premi + Aggiungi slide: si apre l'editor della nuova slide. ✕ elimina la singola slide dopo conferma; 👁 nasconde/mostra; ✎ apre solo la slide selezionata. Nell'editor puoi cambiare tipo: dopo conferma i campi specifici vengono sostituiti con quelli del nuovo tipo. Fine modifica mantiene le modifiche locali; salva poi su GitHub. Collassa un divisore con ▾: trascinamento e ↑ ↓ spostano tutta la sezione fino al divisore successivo, mantenendo l'ordine interno. Espandi con ▸ per spostare le singole slide. Collassare non nasconde le slide al pubblico.</td></tr>
+        <tr><td><b>Slide</b></td><td>Scegli il tipo tra tutti quelli supportati o una copia e premi + Aggiungi slide: si apre l'editor della nuova slide. Elimina la singola slide dopo conferma, nascondi/mostra una slide o apri quella selezionata. Nell'editor puoi cambiare tipo: dopo conferma i campi specifici vengono sostituiti con quelli del nuovo tipo. Fine modifica mantiene le modifiche locali; salva poi su GitHub. Collassa un divisore per spostare tutta la sezione fino al divisore successivo, mantenendo l'ordine interno. Espandi la sezione per spostare le singole slide. Collassare non nasconde le slide al pubblico.</td></tr>
         <tr><td><b>Bilancio</b></td><td>Censimenti, soglie, entrate, uscite, storico avanzi, patrimonio.</td></tr>
         <tr><td><b>JSON</b></td><td>Tutti i dati in JSON, per aggiungere slide o modifiche avanzate.</td></tr>
         <tr><td><b>Guida</b> · <b>Limiti</b></td><td>Questa guida e i limiti del piano gratuito.</td></tr>
       </table>
       <ol class="steps">
         <li>Entra nell'area riservata con la chiave e scegli Setup. Il link diretto <code>…/agesci-canicattini1/setup</code> rimanda al login se non hai una sessione già verificata.</li>
-        <li>Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano <mark style="background:#FFF3BF">gialli</mark>, ↺ li riporta all'originale. ✕ e <b>+ Aggiungi</b> tolgono o aggiungono persone, punti, righe.</li>
+        <li>Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano <mark>gialli</mark>; Ripristina riporta un campo all'originale. Elimina e <b>+ Aggiungi</b> tolgono o aggiungono persone, punti e righe.</li>
         <li>Premi <b>Salva su GitHub (dati.js)</b>: serve un token con permesso di scrittura. Attendi GitHub Pages (circa un minuto) prima di avviare il live dalla regia.</li>
       </ol>
       <div class="cards">
@@ -163,14 +164,14 @@
     <section id="dati">
       <h2><span class="n">5</span>Modificare dati.js (definitivo)</h2>
       <ol class="steps">
-        <li>Apri <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/Assemblea-di-Gruppo/dati.js">dati.js su GitHub</a> e tocca la matita ✏️.</li>
+        <li>Apri <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/Assemblea-di-Gruppo/dati.js">dati.js su GitHub</a> e seleziona Modifica.</li>
         <li>Modifica e premi <b>Commit changes</b>.</li>
         <li>Dopo circa 1 minuto (pubblicazione di GitHub Pages) gli schermi si aggiornano da soli.</li>
       </ol>
       <p>In alto ci sono <code>assemblea</code> (data, titolo, orari delle convocazioni), poi la lista <code>slide</code> in ordine di presentazione, poi censimenti, bilancio e patrimonio. Ogni slide accetta <code>"nascosta": true</code>; nei testi <code>&lt;br&gt;</code> va a capo e <code>&lt;b&gt;…&lt;/b&gt;</code> è grassetto.</p>
-      <div class="note warn">⚠️ Attenzione a virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e chi apre la pagina vede “Non trovo dati.js”. Durante l'assemblea è più sicuro il setup.</div>
+      <div class="note warn"><b>Attenzione.</b> A virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e chi apre la pagina vede “Non trovo dati.js”. Durante l'assemblea è più sicuro il setup.</div>
           <h3>Salva su GitHub dal setup</h3>
-      <p>La prima volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (<b>⋯ → Dimentica token GitHub</b> lo cancella):</p>
+      <p>La prima volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (dal menu, <b>Dimentica token GitHub</b> lo cancella):</p>
       <ol class="steps">
         <li>Apri <a href="https://github.com/settings/personal-access-tokens/new">github.com/settings/personal-access-tokens/new</a> (Fine-grained token).</li>
         <li><b>Repository access</b> → <i>Only select repositories</i> → <code>agesci-canicattini1</code>.</li>
