@@ -59,6 +59,12 @@ window.DATI = {
 
   // 2. SLIDE: l'ordine di questa lista determina l'ordine della presentazione.
   "slide": [
+    {
+      "tipo": "slide_divisore_sezione",
+      "titolo": "Inizio",
+      "sottotitolo": "",
+      "nascosta": true
+    },
     // Slide 0: QR code e conto alla rovescia
     { "tipo": "slide_qr_live", "data_ora": "2026-11-20T20:30:00" },
 
@@ -431,10 +437,7 @@ window.DATI = {
       "id": "contributo",
       "titolo": "Contributo Economico<br>Integrativo di Gruppo"
     },
-    {
-      "tipo": "slide_divisore_sezione",
-      "titolo": "Votazione<br>Contributo Economico"
-    },
+    { "tipo": "slide_divisore_sezione", "titolo": "Votazione<br>Contributo Economico" },
     { "tipo": "slide_avanzamento_odg", "completati": 5 }, // Punto 5 fatto: tutto completato
 
     // Chiusura
