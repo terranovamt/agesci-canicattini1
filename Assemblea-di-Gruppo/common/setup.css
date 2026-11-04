@@ -23,8 +23,8 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .tabs .sep { width: 2px; height: 26px; background: #D5D0E0; margin: 0 4px }
 .tabs button.doc { background: none; color: var(--v2); box-shadow: inset 0 0 0 2px var(--vl) }
 .tabs button.doc.on { background: var(--y); color: var(--vd); box-shadow: none }
-.tabs .links { margin-left: auto; display: flex; gap: 12px }
-.tabs a { color: var(--v); font-weight: 700; font-size: 13px }
+.tabs .links { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 12px }
+.tabs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--v); font-weight: 700; font-size: 13px }
 .hint { font-size: 13px; opacity: .7; margin: 6px 0 }
 #doc[hidden] { display: none }
 #doc { display: block; width: 100%; min-height: 70vh; border: 0; border-radius: 16px; background: var(--bg) }
@@ -44,16 +44,16 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .ord .grip { cursor: grab; color: var(--vl); font-weight: 800; letter-spacing: -2px; user-select: none }
 .ord .num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--y); color: var(--vd); display: grid; place-items: center; font-size: 12px; font-weight: 800 }
 .ord .t { flex: 1; min-width: 0; display: flex; flex-direction: column }
-.ord .t b, .ord .t small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.ord .t b, .ord .t small { overflow-wrap: anywhere }
 .ord .t small { font-size: 11px; opacity: .6 }
-.ord .ic { flex: none; background: none; color: var(--v); padding: 6px 8px; font-size: 16px; line-height: 1; border-radius: 8px }
+.ord .ic { flex: none; min-width: 44px; background: none; color: var(--v); padding: 6px 8px; font-size: 16px; line-height: 1; border-radius: var(--radius-sm) }
 .ord .ic:hover:not(:disabled) { background: rgba(253, 197, 0, .35) }
 @media (max-width: 520px) { .ord .grip { display: none } .ord .ic { padding: 6px 5px } .ord li { flex-wrap: wrap } .ord .t { min-width: 120px } .tabs .sep { display: none } }
 details.box { background: #fff; border-radius: var(--radius-lg); margin: 0 0 10px; box-shadow: var(--shadow-card) }
-details.box > summary { padding: 12px 14px; cursor: pointer; font-weight: 700; display: flex; gap: 8px; align-items: center; list-style: none }
+details.box > summary { min-height: 44px; padding: 12px 14px; cursor: pointer; font-weight: 700; display: flex; gap: 8px; align-items: center; list-style: none }
 details.box > summary::before { content: '▸'; transition: transform .2s }
 details.box[open] > summary::before { transform: rotate(90deg) }
-details.box > summary .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+details.box > summary .t { flex: 1; min-width: 0; overflow-wrap: anywhere }
 details.box > summary small { font-weight: 600; opacity: .55 }
 details.box > .body { padding: 0 14px 14px }
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--y); color: var(--vd) }
@@ -76,8 +76,8 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: fle
 @media (max-width: 520px) { body { padding-bottom: 150px } #dirty { flex-basis: 100% } footer button { padding: 9px 10px; font-size: 13px } }
 #dirty { flex: 1; font-size: 13px; font-weight: 700; min-width: 0 }
 .more { position: relative }
-.more summary { list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: 10px; background: var(--bg) }
-.more > div { position: absolute; right: 0; bottom: 48px; display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-raised); width: max-content }
+.more summary { display: grid; place-items: center; min-width: 44px; min-height: 44px; list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: var(--radius-md); background: var(--bg) }
+.more > div { position: absolute; right: 0; bottom: 48px; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 24px); background: #fff; padding: 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-raised); width: max-content }
 .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--vd); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; z-index: 9 }
 dialog { max-width: 520px; width: calc(100% - 24px); border: 0; border-radius: var(--radius-xl); padding: 18px 20px; color: var(--vd); box-shadow: var(--shadow-overlay) }
 dialog::backdrop { background: rgba(33, 22, 56, .55) }
