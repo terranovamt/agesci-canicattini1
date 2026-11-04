@@ -16,6 +16,7 @@
 
   let base, published, edit, view = 'generale', saving = false;
   const open = new Set(['assemblea']);
+  const collapsed = new WeakSet();
 
   function toast(msg) {
     document.querySelectorAll('.toast').forEach(x => x.remove());
@@ -123,14 +124,25 @@
   const GENERALE = ['anno_esercizio', 'assemblea'];
   const INTRO = {
     generale: 'Data, luogo e orari dell\'assemblea.',
-    ordine: 'Trascina le slide (o usa ↑ ↓) per cambiare l\'ordine; 👁 le nasconde senza cancellarle. ✎ apre i contenuti della slide.',
+    ordine: 'Aggiungi o elimina slide; 👁 nasconde e ✎ modifica. Collassa un divisore per spostare tutta la sezione con trascinamento o ↑ ↓. Le modifiche vanno salvate su GitHub.',
     contenuti: 'Testi e nomi di ogni slide. Le slide del bilancio prendono i numeri dalla scheda Bilancio.',
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
     json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
   const tipoOf = x => String(x.tipo || '').replace(/^slide_/, '');
   const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
-  const sezione = x => x.tipo === 'slide_divisore_sezione';
+  const sezione = x => ['slide_divisore_sezione', 'sezione'].includes(x.tipo);
+  const sectionEnd = i => {
+    let end = i + 1;
+    while (end < edit.slide.length && !sezione(edit.slide[end])) end++;
+    return end;
+  };
+  const blockEnd = i => sezione(edit.slide[i]) && collapsed.has(edit.slide[i]) ? sectionEnd(i) : i + 1;
+  const visibleSlides = () => {
+    const out = [];
+    for (let i = 0; i < edit.slide.length; i = blockEnd(i)) out.push(i);
+    return out;
+  };
 
   /* posizione originale (in dati.js) di ogni slide, per segnalare quelle spostate */
   function origins() {
@@ -139,28 +151,64 @@
     return edit.slide.map(find);
   }
   function move(from, to) {
-    if (to < 0 || to >= edit.slide.length || from === to) return;
-    const [x] = edit.slide.splice(from, 1); edit.slide.splice(to, 0, x);
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from >= edit.slide.length || to < 0 || to >= edit.slide.length) return;
+    const end = blockEnd(from), targetEnd = blockEnd(to);
+    if (to >= from && to < end) return;
+    const items = edit.slide.splice(from, end - from);
+    const dest = to < from ? to : targetEnd - items.length;
+    edit.slide.splice(dest, 0, ...items);
     [...open].filter(k => k.startsWith('slide-')).forEach(k => open.delete(k));
     render();
-    const r = document.querySelector(`.ord li[data-i="${to}"]`); if (r) { r.classList.add('flash'); r.scrollIntoView({ block: 'nearest' }) }
+    const r = document.querySelector(`.ord li[data-i="${dest}"]`); if (r) { r.classList.add('flash'); r.scrollIntoView({ block: 'nearest' }) }
   }
 
   function renderOrdine(c) {
     const org = origins(), ol = el('ol', { className: 'ord' });
+    const templates = [
+      { tipo: 'slide_titolo', titolo: 'Nuova slide', sottotitolo: '' },
+      { tipo: 'slide_divisore_sezione', titolo: 'Nuova sezione', sottotitolo: '' },
+      { tipo: 'slide_testo_articoli', titolo_barra: 'Nuovo testo', articoli: [{ titolo: 'Titolo', paragrafi: ['Testo'] }] },
+      ...edit.slide
+    ];
+    const select = el('select', { id: 'nuova-slide-modello', 'ariaLabel': 'Modello nuova slide' });
+    templates.forEach((s, i) => select.append(el('option', {
+      value: String(i), textContent: i < 3 ? titleOf(s) : 'Copia slide ' + (i - 2) + ': ' + titleOf(s)
+    })));
+    select.value = '0';
+    const add = el('button', { type: 'button', textContent: '+ Aggiungi slide' });
+    add.onclick = () => {
+      const slide = clone(templates[Number(select.value)]);
+      delete slide.id; delete slide.nascosta;
+      edit.slide.push(slide);
+      render();
+      toast('Slide aggiunta in fondo. Usa ✎ per modificarla e ↑ ↓ per spostarla.');
+    };
+    c.append(el('div', { className: 'slide-add' }, select, add));
+    const visible = visibleSlides();
     let drag = -1;
-    edit.slide.forEach((x, i) => {
+    visible.forEach((i, row) => {
+      const x = edit.slide[i], closed = collapsed.has(x);
       const hid = !!x.nascosta, moved = org[i] !== i && org[i] >= 0;
       const btn = (t, title, fn, dis) => { const b = el('button', { type: 'button', className: 'ic', textContent: t, title, disabled: !!dis }); b.onclick = fn; return b };
       const li = el('li', { className: (sezione(x) ? 'sez ' : '') + (hid ? 'hid ' : ''), draggable: true },
         el('span', { className: 'grip', textContent: '⋮⋮', title: 'Trascina' }),
         el('span', { className: 'num', textContent: i + 1 }),
+        sezione(x) ? btn(closed ? '▸' : '▾', closed ? 'Espandi sezione' : 'Collassa sezione', () => {
+          closed ? collapsed.delete(x) : collapsed.add(x); render();
+        }) : null,
         el('span', { className: 't' }, el('b', { textContent: titleOf(x) }), el('small', { textContent: tipoOf(x) })),
+        sezione(x) && closed ? badge((sectionEnd(i) - i - 1) + ' slide nella sezione') : null,
         moved ? badge('spostata') : null, org[i] < 0 ? badge('modificata') : null,
         btn(hid ? '🚫' : '👁', hid ? 'Nascosta: clic per mostrarla' : 'Visibile: clic per nasconderla', () => { if (hid && getAt(base, ['slide', i, 'nascosta']) === undefined) delete x.nascosta; else x.nascosta = !hid; render() }),
-        btn('↑', 'Sposta su', () => move(i, i - 1), i === 0),
-        btn('↓', 'Sposta giù', () => move(i, i + 1), i === edit.slide.length - 1),
-        btn('✎', 'Modifica i contenuti', () => { open.add('slide-' + i); go('contenuti'); setTimeout(() => document.querySelector(`details[data-id="slide-${i}"]`)?.scrollIntoView({ block: 'start' }), 0) }));
+        btn('↑', closed ? 'Sposta sezione su' : 'Sposta su', () => move(i, visible[row - 1]), row === 0),
+        btn('↓', closed ? 'Sposta sezione giù' : 'Sposta giù', () => move(i, visible[row + 1]), row === visible.length - 1),
+        btn('✎', 'Modifica i contenuti', () => { open.add('slide-' + i); go('contenuti'); setTimeout(() => document.querySelector(`details[data-id="slide-${i}"]`)?.scrollIntoView({ block: 'start' }), 0) }),
+        btn('✕', 'Elimina solo questa slide', () => {
+          if (!confirm('Eliminare la slide "' + titleOf(x) + '"? Le altre slide della sezione restano.')) return;
+          edit.slide.splice(i, 1);
+          [...open].filter(k => k.startsWith('slide-')).forEach(k => open.delete(k));
+          render();
+        }, edit.slide.length <= 1));
       li.dataset.i = i;
       li.ondragstart = e => { drag = i; li.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i) };
       li.ondragend = () => li.classList.remove('drag');

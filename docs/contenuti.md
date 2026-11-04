@@ -15,7 +15,7 @@ La pagina di setup è divisa in schede:
 | Scheda | Cosa contiene |
 | --- | --- |
 | **Generale** | anno, data, luogo, orari delle convocazioni |
-| **Slide** | ordine delle slide (trascina o ↑ ↓), 👁 nascondi/mostra, ✎ apre i contenuti |
+| **Slide** | aggiunta, eliminazione, ordine (trascina o ↑ ↓), sezioni collassabili, 👁 nascondi/mostra, ✎ contenuti |
 | **Contenuti** | testi e nomi di ogni slide (anche Progetto Educativo) |
 | **Bilancio** | censimenti, soglie, entrate, uscite, storico avanzi, patrimonio |
 | **JSON** | tutti i dati in JSON, per aggiungere slide o modifiche avanzate |
@@ -23,6 +23,19 @@ La pagina di setup è divisa in schede:
 
 I campi diversi da `dati.js` sono evidenziati in giallo e ↺ li riporta
 all'originale; ✕ e **+ Aggiungi** tolgono o aggiungono elementi alle liste.
+Nella scheda **Slide**, scegli un modello (titolo, divisore, testo oppure
+copia di una slide esistente) e premi **+ Aggiungi slide**: la nuova slide
+viene aggiunta in fondo, senza duplicare l'identificativo dei collegamenti.
+**✕** elimina una singola slide dopo conferma; eliminare un divisore non
+elimina le slide della sua sezione. L'ultima slide non può essere eliminata.
+I collegamenti verso una slide eliminata vanno aggiornati nei contenuti.
+
+**▾ / ▸** collassa o espande un divisore. Una sezione comprende il divisore
+e le slide fino al divisore successivo (escluso). Quando è collassata,
+trascinamento e **↑ ↓** spostano tutto il blocco, mantenendo l'ordine interno.
+Quando è espansa puoi spostare le slide singolarmente. Collassare è solo una
+preferenza dell'editor: non nasconde le slide nella presentazione.
+
 Premi **Salva su GitHub (dati.js)**. Il setup riscrive
 `dati.js` cambiando solo le righe modificate (commenti e formattazione restano)
 e fa il commit; dopo ~1 minuto GitHub Pages lo pubblica. Il setup non usa

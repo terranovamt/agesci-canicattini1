@@ -12,6 +12,7 @@ const serialize = data => '// commento da conservare\nwindow.DATI = ' + JSON.str
 
 function setup(options = {}) {
   const elements = new Map(), created = [], requests = [], listeners = {}, scripts = [], redirects = [];
+  const tabs = [];
   const store = new Map(options.noToken ? [] : [['assemblea-gh-token', 'test-token']]);
   let context, remote = serialize(options.remote || initial), writes = 0;
   const element = tag => {
@@ -19,6 +20,7 @@ function setup(options = {}) {
       classList: { toggle() {}, add() {}, remove() {} },
       append(...children) { this.children.push(...children) },
       remove() {}, getAttribute(name) { return this[name] },
+      scrollIntoView() {},
       querySelector() { return element('legend') },
       showModal() { if (options.cancelToken) { this.returnValue = 'no'; this.onclose() } },
     };
@@ -31,11 +33,14 @@ function setup(options = {}) {
     if (!elements.has(s)) elements.set(s, element('div'));
     return elements.get(s);
   };
+  for (const name of ['generale', 'ordine', 'json']) {
+    const tab = element('button'); tab.dataset.tab = name; tabs.push(tab);
+  }
   context = {
     window: { ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
       LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'Assemblea-di-Gruppo' } } },
     document: {
-      querySelector: $, querySelectorAll: () => [], createElement: element,
+      querySelector: $, querySelectorAll: s => s === '.tabs button' ? tabs : [], createElement: element,
       body: element('body'),
       head: { append(s) {
         scripts.push(s.src);
@@ -46,7 +51,7 @@ function setup(options = {}) {
     history: { replaceState() {} }, location: { pathname: '/setup', hash: '', replace(url) { redirects.push(url) } },
     localStorage: { getItem: k => store.get(k), setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k) },
     TextDecoder, TextEncoder, Uint8Array, atob, btoa,
-    scrollY: 0, scrollTo() {}, setTimeout() {}, confirm: () => true,
+    scrollY: 0, scrollTo() {}, setTimeout() {}, confirm: () => options.confirm !== false,
     setInterval() { throw new Error('setup must not poll in the background') },
     EventSource: class { constructor() { throw new Error('setup must not open streams') } },
     addEventListener(name, fn) { listeners[name] = fn },
@@ -69,6 +74,15 @@ function setup(options = {}) {
   vm.runInContext(source, context);
   return {
     $, requests, scripts, store, listeners, redirects,
+    tab: name => tabs.find(t => t.dataset.tab === name).onclick(),
+    setSlides(slide) {
+      $('#json-text').value = JSON.stringify({ ...initial, slide });
+      $('#json-apply').onclick();
+    },
+    data() {
+      tabs.find(t => t.dataset.tab === 'json').onclick();
+      return JSON.parse($('#json-text').value);
+    },
     saved: () => context.window.SALVA_DATI.valuta(remote),
     editTitle(value) { const input = $('#fassemblea_titolo'); input.value = value; input.oninput() },
     save: () => $('#salva-gh').onclick()
@@ -86,6 +100,87 @@ test('setup loads without Firebase login, streams, polling or presence', async (
   assert.equal(t.$('#app').hidden, false);
   assert.equal(t.$('#fassemblea_titolo').value, 'Assemblea');
   assert.equal(t.$('#salva-gh').disabled, true);
+});
+
+function orderRows(t) {
+  return t.$('#campi').children.at(-1).children;
+}
+function button(row, title) {
+  return row.children.find(c => c.title === title);
+}
+const sampleSlides = () => [
+  { tipo: 'slide_titolo', titolo: 'Intro' },
+  { tipo: 'slide_divisore_sezione', titolo: 'A' },
+  { tipo: 'slide_titolo', titolo: 'A1', id: 'a1' },
+  { tipo: 'slide_titolo', titolo: 'A2' },
+  { tipo: 'slide_divisore_sezione', titolo: 'B' },
+  { tipo: 'slide_titolo', titolo: 'B1' }
+];
+
+test('adding a slide creates a valid template and copies without duplicating ids', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  let toolbar = t.$('#campi').children.at(-2);
+  toolbar.children[0].value = '5'; // copia A1: tre modelli, poi le slide
+  toolbar.children[1].onclick();
+  let data = t.data();
+  assert.equal(data.slide.at(-1).titolo, 'A1');
+  assert.equal('id' in data.slide.at(-1), false);
+  t.tab('ordine');
+  toolbar = t.$('#campi').children.at(-2);
+  toolbar.children[0].value = '2';
+  toolbar.children[1].onclick();
+  data = t.data();
+  assert.equal(data.slide.at(-1).tipo, 'slide_testo_articoli');
+  assert.equal(data.slide.at(-1).articoli[0].paragrafi[0], 'Testo');
+});
+
+test('collapsed sections move down and up as intact blocks', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  button(orderRows(t)[1], 'Collassa sezione').onclick();
+  assert.deepEqual(orderRows(t).map(r => r.dataset.i), [0, 1, 4, 5]);
+  button(orderRows(t)[2], 'Collassa sezione').onclick();
+  button(orderRows(t)[1], 'Sposta sezione giù').onclick();
+  assert.deepEqual(t.data().slide.map(s => s.titolo), ['Intro', 'B', 'B1', 'A', 'A1', 'A2']);
+  t.tab('ordine');
+  button(orderRows(t)[2], 'Sposta sezione su').onclick();
+  assert.deepEqual(t.data().slide.map(s => s.titolo), ['Intro', 'A', 'A1', 'A2', 'B', 'B1']);
+});
+
+test('dragging a collapsed section moves all its slides and expansion restores rows', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  button(orderRows(t)[1], 'Collassa sezione').onclick();
+  const rows = orderRows(t);
+  rows[1].ondragstart({ dataTransfer: { setData() {} } });
+  rows.at(-1).ondrop({ preventDefault() {} });
+  assert.deepEqual(t.data().slide.map(s => s.titolo), ['Intro', 'B', 'B1', 'A', 'A1', 'A2']);
+  t.tab('ordine');
+  button(orderRows(t).at(-1), 'Espandi sezione').onclick();
+  assert.equal(orderRows(t).length, 6);
+});
+
+test('deleting a collapsed divider retains its slides and requires confirmation', async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab('ordine');
+  button(orderRows(t)[1], 'Collassa sezione').onclick();
+  button(orderRows(t)[1], 'Elimina solo questa slide').onclick();
+  assert.deepEqual(t.data().slide.map(s => s.titolo), ['Intro', 'A1', 'A2', 'B', 'B1']);
+  const cancelled = setup({ confirm: false });
+  await flush();
+  cancelled.setSlides(sampleSlides());
+  cancelled.tab('ordine');
+  button(orderRows(cancelled)[0], 'Elimina solo questa slide').onclick();
+  assert.equal(cancelled.data().slide.length, 6);
 });
 
 test('setup requires an already verified session before loading any data', async () => {

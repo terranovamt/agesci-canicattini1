@@ -30,6 +30,8 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 #doc[hidden] { display: none }
 #doc { display: block; width: 100%; min-height: 70vh; border: 0; border-radius: 16px; background: var(--bg) }
 .ord { list-style: none; margin: 0; padding: 0 }
+.slide-add { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px }
+.slide-add select { flex: 1; min-width: 180px; font: inherit; padding: 8px; border: 1px solid var(--vl); border-radius: 8px; max-width: 100% }
 .ord li { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; margin: 0 0 6px; padding: 6px 8px; box-shadow: 0 1px 5px rgba(33, 22, 56, .07); border: 2px solid transparent; transition: background .3s }
 .ord li.sez { background: var(--v); color: #fff; margin-top: 14px }
 .ord li.sez small, .ord li.sez .grip { color: var(--vl) }
@@ -47,7 +49,7 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .ord .t small { font-size: 11px; opacity: .6 }
 .ord .ic { flex: none; background: none; color: var(--v); padding: 6px 8px; font-size: 16px; line-height: 1; border-radius: 8px }
 .ord .ic:hover:not(:disabled) { background: rgba(253, 197, 0, .35) }
-@media (max-width: 520px) { .ord .grip { display: none } .ord .ic { padding: 6px 5px } .tabs .sep { display: none } }
+@media (max-width: 520px) { .ord .grip { display: none } .ord .ic { padding: 6px 5px } .ord li { flex-wrap: wrap } .ord .t { min-width: 120px } .tabs .sep { display: none } }
 details.box { background: #fff; border-radius: 14px; margin: 0 0 10px; box-shadow: 0 2px 8px rgba(33, 22, 56, .08) }
 details.box > summary { padding: 12px 14px; cursor: pointer; font-weight: 700; display: flex; gap: 8px; align-items: center; list-style: none }
 details.box > summary::before { content: '▸'; transition: transform .2s }
