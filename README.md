@@ -12,7 +12,7 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | --- | --- |
 | Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
 | Area riservata | `.../area-riservata.html` (accesso con chiave) |
-| Regia | `.../Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` |
+| Regia (dashboard) | `.../Assemblea-di-Gruppo/regia.html` (chiede la chiave) |
 | Setup (modifiche live) | https://terranovamt.github.io/agesci-canicattini1/setup (chiede la chiave) |
 | Guida | `.../Assemblea-di-Gruppo/guida.html` |
 
@@ -23,7 +23,8 @@ campi e pulsanti. Una chiave sbagliata non apre il pannello.
 La sessione dura nella scheda del browser (`sessionStorage`); **Esci**
 cancella la chiave e il token GitHub eventualmente memorizzato. Nel setup la
 chiave viene rimossa dall'URL dopo la verifica.
-La regia usa ancora `?regia=`: non condividere mai questi link.
+Anche la regia chiede la chiave; il vecchio link `?regia=LA-TUA-CHIAVE`
+funziona ancora e apre la dashboard: non condividerlo mai.
 
 Il login usa la stessa chiave condivisa della regia, non account personali:
 Firebase verifica il permesso scrivendo soltanto `modifiche/k`, senza toccare
@@ -45,8 +46,8 @@ a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.p
 2. Prepara i contenuti, poi premi **Inizia assemblea**. Con una sola scrittura
    Firebase salva le modifiche live, azzera la posizione e attiva l'assemblea;
    se la scrittura fallisce non avvia nulla e mostra l'errore.
-   Si apre la regia; da questo momento la home manda tutti alla presentazione.
-3. Nell'ultima slide la regia ha **Termina assemblea**, accanto a **PDF**.
+   Si apre la dashboard regia; da questo momento la home manda tutti alla presentazione.
+3. Nell'ultima slide la dashboard mostra **Termina assemblea**, accanto a **PDF**.
    Dopo la conferma salva lo stato inattivo: home e link alla presentazione
    tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
    torna all'area riservata. I contenuti preparati non vengono cancellati.
@@ -55,17 +56,34 @@ Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
 gli aggiornamenti della regia non possono riattivare un'assemblea terminata.
 Il setup resta sempre raggiungibile da `/setup`. Con rete assente viene
 mostrato un errore e il controllo riprova automaticamente.
-**Aggiorna le regole Firebase** dal file del repository: il nuovo nodo
-`assemblea` richiede la stessa chiave degli altri due nodi.
+**Aggiorna le regole Firebase** dal file del repository: il nodo
+`assemblea` richiede la stessa chiave degli altri due nodi; il nodo `presenza`
+(conteggio dispositivi della dashboard) non richiede chiave ma accetta solo
+`{t, r}` con l'ora del server.
 
 ## Durante l'assemblea
 
-**Regia** (PC collegato al proiettore): clic o frecce per avanzare (clic nel 20%
-sinistro = indietro). Tasti: `→ ↓ spazio Invio PagGiù` avanti, `← ↑ PagSu
-Backspace` indietro, `H` slide 1, `M` ordine del giorno, `R` torna alla slide di
-partenza, `F` schermo intero, `P` PDF (sull'ultima slide). Il pallino in alto a
-destra è verde se Firebase riceve la posizione, rosso se c'è un problema. Il
-setup si apre da `…/agesci-canicattini1/setup`.
+**Regia** (`regia.html`, sul PC): una dashboard con
+
+- **In onda**: la slide che vede il pubblico, con numero e passo;
+- **Prossima**: anteprima del passo successivo (o "Fine presentazione");
+- due grandi pulsanti **‹ Indietro** / **Avanti ›**, più Inizio e Ordine del giorno;
+  tastiera e clicker: `→ ↓ spazio PagGiù` avanti, `← ↑ PagSu` indietro;
+- l'elenco delle slide: un clic ci salta sopra;
+- stato: assemblea attiva, pubblico allineato alla regia, Firebase raggiungibile;
+- pannello **Firebase**: dispositivi collegati (pubblico, setup, regia), tempo
+  di risposta e barre per connessioni (su 100), download stimato (su 10 GB/mese)
+  e spazio usato (su 1 GB). Le barre diventano arancioni al 70% e rosse al 90%.
+  Sono stime: i numeri ufficiali sono nella console Firebase (link nel pannello);
+- **PDF** e **Termina assemblea** sull'ultima slide.
+
+**▣ Apri schermo presentazione** apre una finestra con *solo* le slide: spostala
+sul proiettore (Chrome/Edge la aprono già sul secondo schermo se gli dai il
+permesso), cliccaci per lo schermo intero, oppure condividila su Meet/Zoom/Teams.
+Segue la dashboard all'istante e accetta anche i tasti del clicker. Funziona nello
+stesso browser della dashboard; aperta da sola parte dalla posizione live.
+Se ricarichi la dashboard riparte dalla slide in onda, non dalla prima.
+Il setup si apre da `…/agesci-canicattini1/setup`.
 
 **Pubblico** (telefono): segue la regia e può tornare indietro, ma non andare
 oltre il limite di `config.js` (`limite: 'corrente'` = la slide mostrata ora,
@@ -130,6 +148,7 @@ Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
 | `modifiche/patch` | setup | tutti | differenze rispetto a `dati.js` (JSON in una stringa) |
 | `modifiche/t` | setup | tutti | ora dell'ultima pubblicazione |
 | `assemblea/stato` | setup / regia | tutti | `attiva`: home o presentazione |
+| `presenza/{id}` | ogni dispositivo | tutti | `t` ora, `r` ruolo (p/s/r): conteggio dispositivi in regia |
 
 ### Configurare Firebase da zero
 
@@ -150,10 +169,10 @@ Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
    La chiave va **solo nella console**, mai nel repository.
 5. Su GitHub apri `docs/Assemblea-di-Gruppo/config.js` (matita ✏️) e metti
    l'URL del punto 3 in `url:`, poi Commit. Dopo ~1 minuto è online.
-6. Prova: apri `…/Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` sul PC (pallino
-   verde in basso) e `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia
-   il telefono segue. Poi apri `setup.html?regia=LA-TUA-CHIAVE`, cambia un
-   orario e premi **Pubblica**.
+6. Prova: apri `…/Assemblea-di-Gruppo/regia.html` sul PC, inserisci la chiave,
+   e `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia il telefono segue
+   e il pannello Firebase conta 1 pubblico. Poi apri il setup, cambia un orario
+   e premi **Pubblica**.
 
 Non servono chiavi API, SDK o `npm`: la presentazione parla con Firebase via
 REST (`fetch` + `EventSource`). Per cambiare chiave basta modificarla nelle
@@ -169,7 +188,7 @@ chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo
 | --- | --- | --- |
 | Connessioni simultanee | **100** | 1 per spettatore (stato live), 1 regia, 1 setup → **~97 spettatori** |
 | Dati archiviati | 1 GB | pochi KB |
-| Download | 10 GB / mese | ~0,5 MB/ora per spettatore → 100 persone × 3 ore ≈ 150 MB |
+| Download | 10 GB / mese | ~1 MB/ora per spettatore → 100 persone × 3 ore ≈ 300 MB |
 | Database | 1 per progetto | 1 |
 
 Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero
@@ -227,6 +246,9 @@ File comuni:
 - `common/pdf.js`: esportazione PDF; `common/live.js`: regia e spettatori
   (Firebase); `common/modifiche.js`: modifiche live sopra `dati.js`;
   `common/avvio.js`: avvio, caricato per ultimo.
+- `regia.html`, `common/regia.js`, `common/regia.css`: dashboard regia;
+  `common/vista.js`: modalità in onda / anteprima / schermo usate dalla dashboard;
+  `common/presenza.js`: conteggio dei dispositivi collegati.
 - `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup;
   `common/salva-dati.js`: riscrive `dati.js` mantenendo i commenti.
 - `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero

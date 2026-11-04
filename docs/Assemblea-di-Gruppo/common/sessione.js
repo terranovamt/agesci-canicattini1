@@ -1,6 +1,6 @@
 (function () {
   const A = window.ASSEMBLEA, L = window.LIVE;
-  if (!L?.url) return;
+  if (!L?.url || L.vista === 'principale' || L.vista === 'anteprima') return;
   const errore = document.createElement('p');
   errore.setAttribute('role', 'alert');
   errore.style.cssText = 'position:fixed;top:20px;left:5%;right:5%;z-index:100;background:#fff0e8;color:#8b2400;padding:14px;border-radius:12px;font:14px system-ui';

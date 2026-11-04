@@ -298,7 +298,8 @@
   async function init() {
     $('#app').hidden = $('#bar').hidden = false;
     go(view);
-    $('#apri-regia').href = 'index.html?regia=' + encodeURIComponent(key);
+    $('#apri-regia').href = 'regia.html';
+    window.PRESENZA?.avvia('s');
     try {
       const [b, p] = await Promise.all([loadBase(), fetch(U + '/modifiche/patch.json').then(r => r.json())]);
       sync(b, parse(p));
@@ -316,7 +317,7 @@
     try {
       await window.ASSEMBLEA.salva(true, key, M.diffPatch(base, edit));
       published = clone(edit);
-      location.assign('index.html?regia=' + encodeURIComponent(key));
+      location.assign('regia.html');
     } catch (e) {
       toast('⚠ ' + e.message); status('Avvio non riuscito', 'ko');
       $('#inizia').disabled = false;

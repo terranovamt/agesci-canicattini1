@@ -7,7 +7,9 @@
       "stato": {
         ".read": true,
         ".validate": "newData.hasChildren(['attiva'])",
-        "attiva": { ".validate": "newData.isBoolean()" }
+        "attiva": {
+          ".validate": "newData.isBoolean()"
+        }
       }
     },
     "live": {
@@ -24,6 +26,22 @@
       },
       "t": {
         ".read": true
+      }
+    },
+    "presenza": {
+      ".read": true,
+      "$id": {
+        ".write": "$id.length <= 24",
+        ".validate": "newData.hasChildren(['t','r']) && newData.child('t').val() === now && newData.child('r').isString() && newData.child('r').val().length < 12",
+        "t": {
+          ".validate": true
+        },
+        "r": {
+          ".validate": true
+        },
+        "$altro": {
+          ".validate": false
+        }
       }
     }
   }

@@ -8,14 +8,32 @@ const root = path.join(__dirname, '../docs/Assemblea-di-Gruppo');
 const config = fs.readFileSync(path.join(root, 'config.js'), 'utf8');
 const sync = fs.readFileSync(path.join(root, 'common', 'live.js'), 'utf8');
 
-function role(search) {
+function role(search, page = 'setup') {
+  const session = new Map(), replaced = [];
   const context = {
-    window: {}, location: { search }, URLSearchParams,
+    window: {}, location: { search, replace: u => replaced.push(u) }, URLSearchParams,
     localStorage: { getItem: () => 'old-key' },
+    sessionStorage: { setItem: (k, v) => session.set(k, v) },
+    document: { getElementById: id => id === 'stage' && page === 'presentazione' ? {} : null },
   };
   vm.runInNewContext(config, context);
-  return context.window.LIVE;
+  return Object.assign(context.window.LIVE, { replaced, session });
 }
+
+test('dashboard views: preview and screen never publish, old regia link opens the dashboard', () => {
+  const p = role('?vista=principale&regia=k', 'presentazione');
+  assert.equal(p.ruolo, 'regia'); assert.equal(p.chiave, 'k'); assert.deepEqual(p.replaced, []);
+  for (const v of ['anteprima', 'schermo']) {
+    const r = role('?vista=' + v + '&regia=k', 'presentazione');
+    assert.equal(r.ruolo, 'locale'); assert.equal(r.chiave, null); assert.equal(r.vista, v);
+  }
+  assert.equal(role('?vista=altro').vista, null);
+  const old = role('?regia=k', 'presentazione');
+  assert.deepEqual(old.replaced, ['regia.html']);
+  assert.equal(old.session.get('canicattini-area-chiave'), 'k');
+  assert.equal(old.ruolo, 'locale', 'non pubblica mentre reindirizza');
+  assert.deepEqual(role('?regia=k').replaced, [], 'setup e regia.html non reindirizzano');
+});
 
 test('only an explicit, nonempty regia parameter selects the presenter', () => {
   for (const search of ['', '?regia=', '?foo=bar']) {
