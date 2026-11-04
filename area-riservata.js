@@ -3,15 +3,18 @@
   const form = document.getElementById('login-form');
   const input = document.getElementById('chiave');
   const stato = document.getElementById('accesso-stato');
+  function mostraStrumenti() {
+    input.value = '';
+    document.getElementById('login').hidden = true;
+    document.getElementById('riservata').hidden = false;
+    stato.textContent = '';
+  }
   async function login(key) {
     form.querySelector('button').disabled = true;
     stato.textContent = 'Verifica della chiave...';
     try {
       await A.entra(key);
-      input.value = '';
-      document.getElementById('login').hidden = true;
-      document.getElementById('riservata').hidden = false;
-      stato.textContent = '';
+      mostraStrumenti();
     } catch (e) {
       stato.textContent = e.message;
       document.getElementById('login').hidden = false;
@@ -23,5 +26,6 @@
     A.esci();
     location.replace('./');
   };
-  if (A.chiave()) login(A.chiave());
+  if (A.verificata()) mostraStrumenti();
+  else if (A.chiave()) login(A.chiave());
 })();

@@ -35,7 +35,8 @@
   <section id="avviso" class="avviso" role="status" hidden>
     <h2>ASSEMBLEA NON INIZIATA</h2>
     <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
-    <a class="btn" href="setup.html">Vai al setup → Inizia assemblea</a>
+    <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
+    <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
   </section>
 
   <main id="app" hidden>
@@ -56,8 +57,9 @@
       <div class="mini">
         <button id="home" class="sec">Inizio</button>
         <button id="odg" class="sec">Ordine del giorno</button>
+        <button id="inizia" disabled>Avvia live</button>
         <button id="pdf" class="sec" hidden>PDF</button>
-        <button id="termina" class="ko" hidden>Termina assemblea</button>
+        <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
       </div>
       <p class="tasti">Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd> <kbd>PagSu</kbd> indietro</p>
     </section>

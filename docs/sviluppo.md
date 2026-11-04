@@ -56,7 +56,12 @@ File comuni:
   `common/vista.js`: modalità in onda / anteprima / schermo usate dalla dashboard;
   `common/presenza.js`: conteggio dei dispositivi collegati.
 - `setup.html`, `common/setup.js`, `common/setup.css`: pagina di setup;
-  `common/salva-dati.js`: riscrive `dati.js` mantenendo i commenti.
+  nessuna richiesta Firebase o polling; il login avviene nell'area riservata
+  e `ACCESSO.verificata()` controlla localmente la sessione della scheda.
+  Questo controllo UI non protegge i dati pubblici: i commit richiedono un
+  token GitHub autorizzato. Usa solo gli helper puri di
+  `common/modifiche.js` per unire le modifiche locali al file GitHub;
+  `common/salva-dati.js` riscrive `dati.js` mantenendo i commenti.
 - `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero
   dalla schermata Home.
 - `portrait/base.js` e `portrait/base.css`: rilevamento del verticale, palco,

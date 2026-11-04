@@ -11,7 +11,7 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Documento | Contenuto |
 | --- | --- |
 | [docs/assemblea.md](docs/assemblea.md) | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
-| [docs/contenuti.md](docs/contenuti.md) | setup live, `dati.js`, Salva su GitHub |
+| [docs/contenuti.md](docs/contenuti.md) | setup solo GitHub, `dati.js`, Salva su GitHub |
 | [docs/firebase.md](docs/firebase.md) | nodi, configurazione da zero, regole, limiti del piano gratuito |
 | [docs/sviluppo.md](docs/sviluppo.md) | struttura del codice e dei tipi di slide |
 
@@ -22,16 +22,20 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
 | Area riservata | `.../area-riservata.html` (accesso con chiave) |
 | Regia (dashboard) | `.../Assemblea-di-Gruppo/regia.html` (chiede la chiave) |
-| Setup (modifiche live) | https://terranovamt.github.io/agesci-canicattini1/setup (chiede la chiave) |
+| Setup (solo GitHub) | https://terranovamt.github.io/agesci-canicattini1/setup (nessun accesso Firebase) |
 | Guida | `.../Assemblea-di-Gruppo/guida.html` |
 
-La home propone **Area riservata**, non il setup: dopo la verifica della chiave
-su Firebase compare **Assemblea di Gruppo**, che apre il pannello.
-Anche aprendo direttamente `/setup` la chiave viene verificata prima di mostrare
-campi e pulsanti. Una chiave sbagliata non apre il pannello.
+La home propone **Area riservata**: dopo la verifica della chiave
+su Firebase compare **Regia Assemblea di Gruppo**, con **Avvia live** e
+**Termina assemblea**. Dall'area riservata si apre anche il setup: richiede
+un accesso già verificato nella sessione della scheda, senza ripetere
+richieste Firebase. Il link diretto `/setup` rimanda al login se manca la sessione.
+Modifica solo `dati.js` e richiede un token GitHub autorizzato per
+fare il commit. Non legge né scrive Firebase, non conta presenze e non legge
+le modifiche live pubblicate dalla regia.
 La sessione dura nella scheda del browser (`sessionStorage`); **Esci**
-cancella la chiave e il token GitHub eventualmente memorizzato. Nel setup la
-chiave viene rimossa dall'URL dopo la verifica.
+cancella la chiave e il token GitHub eventualmente memorizzato. Nel setup i
+parametri dell'URL vengono rimossi e **Dimentica token GitHub** cancella il token.
 Anche la regia chiede la chiave; il vecchio link `?regia=LA-TUA-CHIAVE`
 funziona ancora e apre la dashboard: non condividerlo mai.
 

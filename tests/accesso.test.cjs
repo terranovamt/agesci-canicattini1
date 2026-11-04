@@ -16,9 +16,11 @@ test('access is confirmed by Firebase without changing content or lifecycle', as
   const { a } = load((url, opts) => { request = [url, opts]; return new Promise(r => { release = r }) });
   const pending = a.entra('test-key');
   assert.equal(a.chiave(), '');
+  assert.equal(a.verificata(), false);
   release({ ok: true });
   await pending;
   assert.equal(a.chiave(), 'test-key');
+  assert.equal(a.verificata(), true);
   assert.equal(request[0], 'https://firebase.test/modifiche/k.json');
   assert.equal(request[1].method, 'PUT');
   assert.equal(request[1].body, '"test-key"');
@@ -30,6 +32,7 @@ test('wrong or revoked keys are rejected and forgotten', async () => {
   ok = false;
   await assert.rejects(a.entra('bad-key'), /Chiave non valida/);
   assert.equal(a.chiave(), '');
+  assert.equal(a.verificata(), false);
 });
 test('offline login does not authenticate and logout also forgets the GitHub token', async () => {
   const { a, local } = load(async () => { throw new Error('Offline') });
@@ -38,4 +41,11 @@ test('offline login does not authenticate and logout also forgets the GitHub tok
   local.set('assemblea-gh-token', 'token');
   a.esci();
   assert.equal(local.size, 0);
+  assert.equal(a.verificata(), false);
+});
+
+test('a key stored by an old regia URL is not a verified session', () => {
+  const { a, session } = load(async () => { throw new Error('must not fetch') });
+  session.set('canicattini-area-chiave', 'unverified');
+  assert.equal(a.verificata(), false);
 });

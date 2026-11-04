@@ -7,6 +7,13 @@
   const enc = (i, k) => i * 1000 + k;
   const LIMITI = { conn: 100 };
   let key = A.chiave(), V = null, ultimo = null, finestra = null;
+  let statoAttivo = null, cambioStato = false;
+  function pulsantiStato() {
+    $('#inizia').hidden = statoAttivo === true;
+    $('#inizia').disabled = cambioStato || statoAttivo !== false || !V;
+    $('#termina').hidden = statoAttivo !== true;
+    $('#termina').disabled = cambioStato || statoAttivo !== true;
+  }
 
   const pill = (sel, testo, cls) => { const p = $(sel); p.textContent = testo; p.className = 'pill ' + (cls || '') };
   const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
@@ -51,6 +58,7 @@
     if (!v || !v.stato().n) { setTimeout(aggancia, 200); return }
     V = v; V.onchange = disegna; disegna(V.stato()); setTimeout(controlla, 800);
     window.REGIA_DATI.avvia(w, key);
+    pulsantiStato();
   }
   const prossima = s => s.k < s.steps ? [s.i, s.k + 1] : s.i < s.n - 1 ? [s.i + 1, 0] : null;
   function anteprima(p) {
@@ -73,7 +81,7 @@
     $('#prev').disabled = !s.i && !s.k;
     $('#next').disabled = !p;
     const last = s.i === s.n - 1;
-    $('#pdf').hidden = $('#termina').hidden = !last;
+    $('#pdf').hidden = !last;
     const ol = $('#slide');
     if (ol.children.length !== s.n || ol.dataset.t !== s.titoli.join('|')) {
       ol.dataset.t = s.titoli.join('|');
@@ -93,11 +101,29 @@
     if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); V.next() }
     if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); V.prev() }
   });
+  async function avviaLive() {
+    if (!V || cambioStato || statoAttivo !== false) return;
+    if (!confirm('Avviare il live con dati.js già pubblicato? La presentazione riparte dalla prima slide; le modifiche live esistenti vengono mantenute.')) return;
+    cambioStato = true; pulsantiStato();
+    try {
+      const p = (await leggi('/modifiche/patch.json')).dati;
+      const patch = p === null ? undefined : JSON.parse(p);
+      await window.ASSEMBLEA.salva(true, key, patch);
+      V = null; ultimo = null;
+      $('#principale').src = 'index.html?vista=principale&regia=' + encodeURIComponent(key) + '&avvio=' + Date.now() + '#0.0';
+      aggancia();
+      await controlla();
+    } catch (e) { alert('Avvio non riuscito: ' + e.message) }
+    finally { cambioStato = false; pulsantiStato() }
+  }
+  $('#inizia').onclick = avviaLive;
   $('#termina').onclick = async () => {
+    if (cambioStato || statoAttivo !== true) return;
     if (!confirm('Terminare l’assemblea e riportare il sito alla home del gruppo?')) return;
-    $('#termina').disabled = true;
+    cambioStato = true; pulsantiStato();
     try { await window.ASSEMBLEA.salva(false, key); finestra?.close(); location.replace('../index.html') }
-    catch (e) { $('#termina').disabled = false; alert(e.message) }
+    catch (e) { alert(e.message) }
+    finally { cambioStato = false; pulsantiStato() }
   };
 
   /* finestra solo slide: se il browser lo permette si apre già sul secondo schermo */
@@ -135,11 +161,13 @@
       const spettatori = c.ruoli.p || 0, setup = c.ruoli.s || 0;
       $('#k-disp').textContent = c.totale;
       $('#k-ruoli').textContent = [spettatori + ' pubblico', setup && setup + ' setup', c.ruoli.r && c.ruoli.r + ' regia'].filter(Boolean).join(' · ');
-      /* connessioni permanenti: 1 per spettatore (live) + 1 regia + 1 per setup aperto */
+      /* Include eventuali setup legacy ancora aperti; il setup attuale non usa Firebase. */
       const conn = spettatori + setup + (c.ruoli.r || 0);
       meter('m-conn', conn, LIMITI.conn, '≈ ' + conn + ' / 100');
 
       const attiva = ass.dati?.attiva === true;
+      statoAttivo = typeof ass.dati?.attiva === 'boolean' ? ass.dati.attiva : ass.dati === null ? false : null;
+      pulsantiStato();
       $('#onda-frame').classList.toggle('big', attiva);
       $('#onda-dot').hidden = !attiva;
       $('#onda-label').textContent = attiva ? 'In onda' : 'Anteprima';
@@ -155,6 +183,7 @@
         pill('#b-live', ok ? 'Pubblico allineato' : 'Pubblico in aggiornamento…', ok ? 'live' : 'warn');
       }
     } catch (e) {
+      statoAttivo = null; pulsantiStato();
       pill('#b-fb', 'Firebase non raggiungibile', 'ko');
       pill('#b-live', 'Stato live non verificato', 'warn');
       $('#m-conn-t').textContent = 'Non disponibile';

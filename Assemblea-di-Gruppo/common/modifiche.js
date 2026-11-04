@@ -1,5 +1,5 @@
 /* common/modifiche.js — modifiche live ai dati (Firebase, nodo "modifiche").
-   La pagina setup.html salva una "patch" (solo i campi cambiati rispetto a dati.js);
+   La regia salva una "patch" (solo i campi cambiati rispetto a dati.js);
    regia e pubblico la applicano sopra dati.js e si aggiornano in tempo reale.
    Formato patch: oggetti = campi cambiati; null = campo cancellato;
    { "$i": { "3": ... } } = modifiche a singoli elementi di una lista; altri valori = sostituzione. */
@@ -46,7 +46,7 @@
   const parse = s => { try { return s ? JSON.parse(s) : undefined } catch (e) { console.warn('Patch modifiche non valida', e); return undefined } };
   const set = s => { M.patch = parse(s); M.ready = true; if (typeof refreshDati === 'function') refreshDati() };
 
-  /* solo dentro la presentazione (setup.html usa le funzioni sopra) */
+  /* Solo dentro la presentazione; setup e dashboard usano gli helper puri sopra. */
   if (typeof start !== 'function') return;
   if (!U) { M.ready = true; return }
   const get = () => fetch(U + '/modifiche/patch.json').then(r => r.json()).then(set).catch(() => { if (!M.ready) set(null) });

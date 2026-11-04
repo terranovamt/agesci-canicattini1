@@ -73,7 +73,7 @@
   </div>
   <main>
     <nav class="toc">
-      <a href="#link">Link</a><a href="#regia">Regia</a><a href="#pubblico">Pubblico</a><a href="#setup">Modifiche live</a>
+      <a href="#link">Link</a><a href="#regia">Regia</a><a href="#pubblico">Pubblico</a><a href="#setup">Setup GitHub</a>
       <a href="#dati">dati.js</a><a href="#firebase">Firebase</a><a href="#limiti">Limiti gratuiti</a><a href="#problemi">Problemi</a>
     </nav>
 
@@ -82,7 +82,7 @@
       <div class="cards">
         <div class="card g"><b>👥 Pubblico</b>Da condividere (anche col QR della slide 0):<br><code>terranovamt.github.io/agesci-canicattini1</code></div>
         <div class="card"><b>🎬 Regia</b>Dashboard sul PC (chiede la chiave):<br><code>…/Assemblea-di-Gruppo/regia.html</code></div>
-        <div class="card y"><b>⚙️ Setup</b>Modifiche live, da telefono o PC:<br><code>terranovamt.github.io/agesci-canicattini1/setup</code></div>
+        <div class="card y"><b>⚙️ Setup</b>Modifica dati.js e salva su GitHub, senza Firebase:<br><code>terranovamt.github.io/agesci-canicattini1/setup</code></div>
       </div>
       <p><a class="btn y" href="./">Apri la presentazione</a><a class="btn" href="regia.html">Apri la regia</a><a class="btn" href="setup.html">Apri il setup</a></p>
       <div class="note warn">🔒 Non condividere mai la chiave né un vecchio link con <code>?regia=</code>: chi ha la chiave può guidare la presentazione e cambiare i dati. La chiave resta solo nella scheda del browser.</div>
@@ -90,14 +90,14 @@
 
     <section id="ciclo">
       <h2>Home e assemblea</h2>
-      <p>Di norma il sito mostra la home del gruppo. Premi <b>Area riservata</b> e inserisci la chiave: viene verificata su Firebase, poi compare <b>Assemblea di Gruppo</b> per aprire il setup. Anche il link diretto al setup richiede una chiave valida.</p>
+      <p>Di norma il sito mostra la home del gruppo. Premi <b>Area riservata</b> e inserisci la chiave: viene verificata una volta per sessione della scheda. Poi scegli Setup o Regia. Il setup controlla solo la sessione già verificata, senza richieste Firebase; per salvare serve un token GitHub. La regia continua a usare Firebase.</p>
       <ol class="steps">
-        <li>Inserisci la chiave, prepara i contenuti e premi <b>Inizia assemblea</b>: salva le modifiche live, riparte dalla prima slide e apre la dashboard regia.</li>
+        <li>Prepara i contenuti nel setup, premi <b>Salva su GitHub (dati.js)</b> e attendi la pubblicazione. Poi entra nella regia con la chiave e premi <b>Avvia live</b>: mantiene le modifiche live esistenti e riparte dalla slide QR.</li>
         <li>Durante l'assemblea chi apre la home viene portato alla presentazione.</li>
-        <li>Nell'ultima slide, nella dashboard regia, premi <b>Termina assemblea</b> accanto a <b>PDF</b> e conferma: entro 10 secondi il pubblico torna alla home; il bottone apre di nuovo l'area riservata.</li>
+        <li>Nella dashboard regia premi <b>Termina assemblea</b>, disponibile durante tutto il live, e conferma: entro 10 secondi il pubblico torna alla home.</li>
       </ol>
       <p>Il setup resta accessibile da <code>/setup</code>. La chiusura non cancella i contenuti. Per usare avvio e chiusura aggiorna le regole Firebase, includendo il nodo <code>assemblea</code> con la stessa chiave.</p>
-      <p>La sessione resta nella scheda del browser; <b>Esci dall'area riservata</b> cancella chiave e token GitHub. I contenuti della presentazione restano pubblici, ma senza chiave Firebase impedisce di cambiarli.</p>
+      <p>La sessione della regia resta nella scheda del browser; <b>Esci dall'area riservata</b> cancella chiave e token GitHub. I contenuti restano pubblici: le scritture live richiedono la chiave Firebase, mentre i commit del setup richiedono un token GitHub autorizzato.</p>
     </section>
 
     <section id="regia">
@@ -107,7 +107,7 @@
         <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live, con un grande avviso “ASSEMBLEA NON INIZIATA”: il pubblico vede ancora la home.</div>
         <div class="card"><b>⏭ Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
         <div class="card g"><b>‹ ›</b>Due grandi pulsanti Indietro / Avanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
-        <div class="card"><b>Presenti e ufficio di presidenza</b>Inserisci il numero dei presenti, il nome del presidente e i nomi degli scrutatori, poi premi <strong>Pubblica live</strong>. Regia e proiettore si aggiornano subito, i telefoni entro circa 10 secondi. Il numero deve essere un intero non negativo; lascialo vuoto se non è ancora noto. Ricarica valori recupera i dati pubblicati. Evita di pubblicare contemporaneamente dal setup e dalla regia. Questi dati sono pubblici nelle slide.</div>
+        <div class="card"><b>Presenti e ufficio di presidenza</b>Inserisci il numero dei presenti, il nome del presidente e i nomi degli scrutatori, poi premi <strong>Pubblica live</strong>. Regia e proiettore si aggiornano subito, i telefoni entro circa 10 secondi. Il numero deve essere un intero non negativo; lascialo vuoto se non è ancora noto. Ricarica valori recupera i dati pubblicati. Evita di pubblicare contemporaneamente da più regie. Il setup non legge né cancella questi dati live, che restano pubblici nelle slide.</div>
         <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Il budget operativo di download è 360 MB/giorno; verifica la quota vigente del servizio nella console. Consumo reale e spazio totale sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
       </div>
       <table>
@@ -117,7 +117,7 @@
       </table>
       <h3>Schermo per proiettore o videochiamata</h3>
       <p><b>▣ Apri schermo presentazione</b> apre una finestra con <em>solo</em> le slide. Spostala sul proiettore (Chrome ed Edge la aprono già sul secondo schermo se dai il permesso) e cliccaci per lo schermo intero, oppure condividi quella finestra su Meet, Zoom o Teams. Segue la dashboard all'istante e accetta i tasti del clicker. Deve essere aperta nello stesso browser della dashboard.</p>
-      <p>In alto i badge dicono se l'assemblea è attiva, se il pubblico è allineato alla regia e se Firebase risponde. Sull'ultima slide compaiono <b>PDF</b> e <b>Termina assemblea</b>. Se ricarichi la dashboard riparte dalla slide in onda. Il setup si apre dal pulsante <b>Setup</b> o scrivendo <code>/setup</code> nell'indirizzo.</p>
+      <p>In alto i badge dicono se l'assemblea è attiva, se il pubblico è allineato alla regia e se Firebase risponde. <b>Avvia live</b> è disponibile quando l'assemblea è inattiva; durante il live compare <b>Termina assemblea</b>. Sull'ultima slide compare anche <b>PDF</b>. Se ricarichi la dashboard riparte dalla slide in onda. Il setup si apre dal pulsante <b>Setup</b> o scrivendo <code>/setup</code> nell'indirizzo.</p>
     </section>
 
     <section id="pubblico">
@@ -137,8 +137,8 @@
     </section>
 
     <section id="setup">
-      <h2><span class="n">4</span>Modifiche live (setup)</h2>
-      <p>Per cambiare <b>nomi, orari, date, testi, numeri</b>, l'<b>ordine delle slide</b> o nasconderne una <b>durante l'assemblea</b>, senza toccare GitHub.</p>
+      <h2><span class="n">4</span>Setup solo GitHub</h2>
+      <p>Per preparare <b>nomi, orari, date, testi, numeri</b>, l'<b>ordine delle slide</b> o nasconderne una, salvando direttamente <code>dati.js</code> su GitHub. Nessun accesso Firebase.</p>
       <table>
         <tr><th>Scheda</th><th>Cosa contiene</th></tr>
         <tr><td><b>Generale</b></td><td>Anno, data, luogo, orari delle convocazioni.</td></tr>
@@ -149,14 +149,14 @@
         <tr><td><b>Guida</b> · <b>Limiti</b></td><td>Questa guida e i limiti del piano gratuito.</td></tr>
       </table>
       <ol class="steps">
-        <li>Apri <code>…/agesci-canicattini1/setup</code> e inserisci la chiave (o <code>setup?regia=CHIAVE</code>).</li>
+        <li>Entra nell'area riservata con la chiave e scegli Setup. Il link diretto <code>…/agesci-canicattini1/setup</code> rimanda al login se non hai una sessione già verificata.</li>
         <li>Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano <mark style="background:#FFF3BF">gialli</mark>, ↺ li riporta all'originale. ✕ e <b>+ Aggiungi</b> tolgono o aggiungono persone, punti, righe.</li>
-        <li>Premi <b>Pubblica</b>: la regia si aggiorna in circa 1 secondo, il pubblico entro 10 secondi, restando sulla slide in cui si trova.</li>
+        <li>Premi <b>Salva su GitHub (dati.js)</b>: serve un token con permesso di scrittura. Attendi GitHub Pages (circa un minuto) prima di avviare il live dalla regia.</li>
       </ol>
       <div class="cards">
         <div class="card"><b>Tutti i campi</b>Anche le slide del Progetto Educativo, il bilancio e il patrimonio. La scheda <strong>JSON</strong> permette di aggiungere slide.</div>
-        <div class="card y"><b>Solo le differenze</b>Su Firebase va solo ciò che hai cambiato: le modifiche fatte poi su GitHub agli altri campi continuano ad arrivare.</div>
-        <div class="card r"><b>Renderle definitive</b>Le modifiche live non cambiano <code>dati.js</code>. <strong>⋯ → Salva su GitHub</strong> lo riscrive (commenti inclusi) e, appena è online, toglie da solo le modifiche live.</div>
+        <div class="card y"><b>Solo GitHub</b>Il setup legge il file statico, non apre connessioni Firebase e non invia presenze. Il salvataggio unisce le modifiche locali all'ultima versione su GitHub.</div>
+        <div class="card r"><b>Modifiche live separate</b>I dati pubblicati dalla regia non vengono letti o cancellati dal setup e continuano a prevalere sugli stessi campi di dati.js.</div>
       </div>
     </section>
 
@@ -189,7 +189,7 @@
         <li>Nella scheda <b>Dati</b> copia l'URL del database (<code>https://…firebasedatabase.app/</code>).</li>
         <li>Scheda <b>Regole</b>: incolla <code>firebase/database.rules.json</code>, sostituisci tutte e tre le <code>LA-TUA-CHIAVE</code> con la stessa chiave e premi <b>Pubblica</b>. La chiave va solo nella console, mai su GitHub.</li>
         <li>Su GitHub metti l'URL in <code>url:</code> di <code>Assemblea-di-Gruppo/config.js</code> e fai Commit (~1 minuto).</li>
-        <li>Prova: apri <code>regia.html</code> sul PC e il pubblico sul telefono: il telefono segue e la dashboard conta 1 dispositivo; poi cambia un orario dal setup e premi <b>Pubblica</b>.</li>
+        <li>Prova: apri <code>regia.html</code> sul PC, inserisci la chiave e premi <b>Avvia live</b>. Apri il pubblico sul telefono: il telefono segue e la dashboard conta 1 dispositivo; poi modifica i presenti dalla regia e premi <b>Pubblica live</b>.</li>
       </ol>
       <p style="font-size:14px">Per cambiare chiave modifica le regole; per disattivare il live metti <code>url: ''</code> in <code>config.js</code>.</p>
 
@@ -197,10 +197,10 @@
       <table>
         <tr><th>Nodo</th><th>Chi scrive</th><th>Chi legge</th><th>Cosa contiene</th></tr>
         <tr><td><code>live/stato</code></td><td>regia</td><td>tutti</td><td>posizione: slide × 1000 + passo</td></tr>
-        <tr><td><code>modifiche/patch</code></td><td>setup</td><td>tutti</td><td>differenze rispetto a dati.js</td></tr>
-        <tr><td><code>modifiche/t</code></td><td>setup</td><td>tutti</td><td>ora dell'ultima pubblicazione</td></tr>
-        <tr><td><code>live/k</code>, <code>modifiche/k</code></td><td>regia, setup</td><td>nessuno</td><td>chiave, controllata dalle regole</td></tr>
-        <tr><td><code>assemblea/stato</code></td><td>setup, regia</td><td>tutti</td><td><code>attiva</code>: home o presentazione</td></tr>
+        <tr><td><code>modifiche/patch</code></td><td>regia</td><td>presentazione</td><td>differenze rispetto a dati.js</td></tr>
+        <tr><td><code>modifiche/t</code></td><td>regia</td><td>presentazione</td><td>ora dell'ultima pubblicazione</td></tr>
+        <tr><td><code>live/k</code>, <code>modifiche/k</code></td><td>regia</td><td>nessuno</td><td>chiave, controllata dalle regole</td></tr>
+        <tr><td><code>assemblea/stato</code></td><td>regia</td><td>home / presentazione / regia</td><td><code>attiva</code>: home o presentazione</td></tr>
         <tr><td><code>presenza/{id}</code></td><td>ogni dispositivo</td><td>tutti</td><td>ora e ruolo, per contare i collegati</td></tr>
       </table>
       <h3>Regole (da fare una volta)</h3>
@@ -244,7 +244,7 @@
     <section id="limiti">
       <h2><span class="n">7</span>Limiti del piano gratuito (Spark)</h2>
       <div class="cards">
-        <div class="card r"><span class="big">100</span><b>connessioni simultanee</b>1 per spettatore + regia + setup → circa <strong>97 telefoni</strong> collegati insieme.</div>
+        <div class="card r"><span class="big">100</span><b>connessioni simultanee</b>1 connessione SSE per spettatore e per regia. Setup: <strong>zero</strong>. Lascia margine per richieste REST e altri client.</div>
         <div class="card g"><span class="big">360 MB</span><b>budget download al giorno</b>Budget operativo indicato per questo progetto: verifica la quota vigente e il consumo reale nella console Firebase → Utilizzo. La dashboard non calcola consumi fittizi a partire dal tempo trascorso.</div>
         <div class="card g"><span class="big">1 GB</span><b>dati archiviati</b>La presentazione usa pochi KB.</div>
       </div>
@@ -258,10 +258,10 @@
         <tr><th>Problema</th><th>Soluzione</th></tr>
         <tr><td>Badge rosso “Firebase non raggiungibile” in regia</td><td>Controlla la rete e che le regole Firebase siano aggiornate.</td></tr>
         <tr><td>Dispositivi sempre 0 in regia</td><td>Regole vecchie senza il nodo <code>presenza</code>: incollale di nuovo.</td></tr>
-        <tr><td>Setup: “Chiave non valida o regole Firebase non aggiornate”</td><td>Chiave sbagliata, o mancano le regole del nodo <code>modifiche</code> (sezione 6).</td></tr>
+        <tr><td>Setup: token GitHub non valido</td><td>Usa un token con Contents: Read and write sul repository. Il setup non usa la chiave Firebase.</td></tr>
         <tr><td>“Non trovo dati.js”</td><td>Errore di sintassi in dati.js: correggilo su GitHub o annulla l'ultimo commit.</td></tr>
-        <tr><td>Il pubblico non si sposta</td><td>Ricaricare la pagina; con più di ~97 telefoni vedi i limiti (sezione 7).</td></tr>
-        <tr><td>Modifiche su GitHub non visibili</td><td>Attendi la pubblicazione (~1 min); se un campo è cambiato anche dal setup, vale il setup.</td></tr>
+        <tr><td>Il pubblico non si sposta</td><td>Ricaricare la pagina; avvicinandosi a 100 connessioni complessive vedi i limiti (sezione 7).</td></tr>
+        <tr><td>Modifiche su GitHub non visibili</td><td>Attendi la pubblicazione (~1 min); se un campo è cambiato anche dalla regia, prevale la patch live su Firebase.</td></tr>
       </table>
     </section>
   </main>

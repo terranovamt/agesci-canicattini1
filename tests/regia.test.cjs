@@ -5,8 +5,9 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/regia.js'), 'utf8');
 
-function dashboard(attiva, count = 4, failed = false) {
+function dashboard(attiva, count = 4, failed = false, options = {}) {
   const elements = new Map();
+  const saves = [], alerts = [];
   const $ = selector => {
     if (!elements.has(selector)) {
       const classes = new Set();
@@ -18,17 +19,23 @@ function dashboard(attiva, count = 4, failed = false) {
   };
   const context = {
     window: { LIVE: { url: 'https://firebase.test/' }, ACCESSO: { chiave: () => '' },
-      PRESENZA: { conta: () => ({ totale: count, ruoli: { p: count - 1, r: 1 }, scaduti: [] }) } },
+      PRESENZA: { conta: () => ({ totale: count, ruoli: { p: count - 1, r: 1 }, scaduti: [] }) },
+      ASSEMBLEA: { async salva(...args) {
+        if (options.saveFailure) throw new Error('Firebase 403');
+        saves.push(args); attiva = args[0];
+      } } },
     document: { querySelector: $ }, addEventListener() {}, URL, Date,
+    confirm: () => options.confirm !== false, alert: s => alerts.push(s), setTimeout() {},
     performance: { now: () => 0 },
     fetch: async url => ({ ok: !failed, status: failed ? 403 : 200,
-      text: async () => JSON.stringify(url.includes('assemblea') ? { attiva } : {}) })
+      text: async () => JSON.stringify(url.includes('assemblea') ? options.empty ? null : { attiva }
+        : url.includes('modifiche') ? options.patch === undefined ? null : options.patch : {}) })
   };
   vm.runInNewContext(source.replace(
     'if (key) accedi(key); else mostraLogin();',
-    'window.TEST = { controlla, meter };'
+    'V = {}; window.TEST = { controlla, meter, avviaLive };'
   ), context);
-  return { api: context.window.TEST, $ };
+  return { api: context.window.TEST, $, saves, alerts };
 }
 
 test('connection estimates show true percentages and warning thresholds', async () => {
@@ -64,4 +71,48 @@ test('unavailable metrics are explicit, not stale or zero usage', async () => {
   assert.equal($('#m-conn-t').textContent, 'Non disponibile');
   assert.equal($('#k-ruoli').textContent, 'Presenze non verificabili');
   assert.equal($('#b-live').textContent, 'Stato live non verificato');
+  assert.equal($('#inizia').disabled, true);
+  assert.equal($('#termina').disabled, true);
+});
+
+test('lifecycle controls follow Firebase state, independent of slide number', async () => {
+  for (const active of [false, true, undefined]) {
+    const t = dashboard(active);
+    await t.api.controlla();
+    assert.equal(t.$('#inizia').disabled, active !== false);
+    assert.equal(t.$('#termina').hidden, active !== true);
+    assert.equal(t.$('#termina').disabled, active !== true);
+  }
+});
+
+test('starting in regia preserves the patch and reloads the publisher at the QR slide', async () => {
+  const patch = { censimenti: { presenti_attuali: 42 } };
+  const t = dashboard(false, 4, false, { patch: JSON.stringify(patch) });
+  await t.api.controlla();
+  await t.$('#inizia').onclick();
+  assert.deepEqual(JSON.parse(JSON.stringify(t.saves)), [[true, '', patch]]);
+  assert.match(t.$('#principale').src, /vista=principale.*&avvio=\d+#0\.0$/);
+  assert.equal(t.$('#inizia').hidden, true);
+  assert.equal(t.$('#termina').disabled, false);
+});
+
+test('a new empty database can be started without a patch', async () => {
+  const t = dashboard(false, 4, false, { empty: true });
+  await t.api.controlla();
+  assert.equal(t.$('#inizia').disabled, false);
+  await t.api.avviaLive();
+  assert.equal(t.saves.length, 1);
+  assert.equal(t.saves[0][2], undefined);
+});
+
+test('failed or cancelled starts do not reload the presentation', async () => {
+  for (const options of [{ confirm: false }, { saveFailure: true }, { patch: '{invalid' }]) {
+    const t = dashboard(false, 4, false, options);
+    await t.api.controlla();
+    await t.api.avviaLive();
+    assert.equal(t.saves.length, 0);
+    assert.equal(t.$('#principale').src, undefined);
+    assert.equal(t.$('#inizia').disabled, false);
+    if (options.confirm !== false) assert.match(t.alerts[0], /Avvio non riuscito/);
+  }
 });

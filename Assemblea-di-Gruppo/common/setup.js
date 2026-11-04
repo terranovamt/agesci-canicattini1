@@ -1,9 +1,11 @@
-/* Pagina di setup: modifica qualsiasi campo di dati.js e lo pubblica su Firebase.
-   Su Firebase va solo la differenza rispetto a dati.js (vedi common/modifiche.js). */
+/* Setup statico: modifica dati.js e salva su GitHub, senza accessi Firebase. */
 (function () {
+  if (!window.ACCESSO.verificata()) {
+    location.replace('../area-riservata.html');
+    return;
+  }
   const $ = s => document.querySelector(s);
   const M = window.MODIFICHE, L = window.LIVE || {};
-  const U = (L.url || '').replace(/\/$/, '');
   const clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -12,8 +14,7 @@
   const strip = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
   const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e };
 
-  let key = new URLSearchParams(location.search).get('regia') || window.ACCESSO.chiave();
-  let base, published, edit, remotePatch, view = 'generale';
+  let base, published, edit, view = 'generale', saving = false;
   const open = new Set(['assemblea']);
 
   function toast(msg) {
@@ -25,7 +26,12 @@
 
   /* carica dati.js "pulito", senza modifiche live */
   function script(src) {
-    return new Promise(res => { const s = el('script', { src: src + '?t=' + Date.now() }); s.onload = s.onerror = () => { s.remove(); res() }; document.head.append(s) });
+    return new Promise((res, reject) => {
+      const s = el('script', { src: src + '?t=' + Date.now() });
+      s.onload = () => { s.remove(); res() };
+      s.onerror = () => { s.remove(); reject(new Error('Impossibile caricare dati.js')) };
+      document.head.append(s);
+    });
   }
   async function loadBase() {
     window.DATI = undefined;
@@ -33,15 +39,15 @@
     if (!window.DATI) throw new Error('dati.js non trovato o con errori');
     return clone(window.DATI);
   }
-  const parse = s => { try { return s ? JSON.parse(s) : undefined } catch (e) { return undefined } };
   const dirty = () => !same(edit, published);
 
-  function sync(newBase, newPatch) {
-    const wasDirty = edit && dirty();
-    base = newBase; remotePatch = newPatch;
-    published = M.applyPatch(base, remotePatch);
-    if (!edit || !wasDirty) { edit = clone(published); render() } else updateDirty();
-    status(remotePatch === undefined ? 'Uguale a dati.js' : 'Modifiche live attive', remotePatch === undefined ? 'ok' : 'live');
+  function sync(newBase, snapshot) {
+    const pending = snapshot ? M.diffPatch(snapshot, edit) : undefined;
+    base = newBase;
+    published = clone(base);
+    edit = M.applyPatch(clone(base), pending);
+    render();
+    status('dati.js caricato', 'ok');
   }
 
   /* ---------- campi ---------- */
@@ -120,7 +126,7 @@
     ordine: 'Trascina le slide (o usa ↑ ↓) per cambiare l\'ordine; 👁 le nasconde senza cancellarle. ✎ apre i contenuti della slide.',
     contenuti: 'Testi e nomi di ogni slide. Le slide del bilancio prendono i numeri dalla scheda Bilancio.',
     bilancio: 'Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.',
-    json: 'Tutti i dati (dati.js + modifiche) in formato JSON, per modifiche avanzate.'
+    json: 'Tutti i dati di dati.js e le modifiche locali in formato JSON.'
   };
   const tipoOf = x => String(x.tipo || '').replace(/^slide_/, '');
   const titleOf = x => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
@@ -213,22 +219,10 @@
 
   function updateDirty() {
     const d = dirty();
-    $('#dirty').textContent = d ? '● Modifiche non pubblicate' : '✓ Tutto pubblicato';
+    $('#dirty').textContent = d ? '● Modifiche non salvate su GitHub' : '✓ Nessuna modifica locale';
     $('#dirty').style.color = d ? 'var(--r)' : 'var(--g)';
-    $('#pubblica').disabled = $('#annulla').disabled = !d;
-    $('#ripristina').disabled = remotePatch === undefined;
-  }
-
-  /* ---------- Firebase ---------- */
-  async function save(patch) {
-    const body = { k: key, patch: patch === undefined ? null : JSON.stringify(patch), t: { '.sv': 'timestamp' } };
-    const r = await fetch(U + '/modifiche.json', { method: 'PUT', body: JSON.stringify(body) });
-    if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Chiave non valida o regole Firebase non aggiornate' : 'Errore ' + r.status);
-  }
-  async function publish(patch, msg) {
-    $('#pubblica').disabled = true;
-    try { await save(patch); sync(base, patch); edit = clone(published); render(); toast(msg) }
-    catch (e) { toast('⚠ ' + e.message); status('Errore', 'ko'); updateDirty() }
+    $('#salva-gh').disabled = !d || saving;
+    $('#annulla').disabled = !d || saving;
   }
 
   /* ---------- GitHub: salva dati.js ---------- */
@@ -258,82 +252,58 @@
     if (!r.ok) throw new Error('GitHub: errore ' + r.status);
     return r.json();
   }
-  async function salvaGitHub(tentativo = 0) {
+  async function salvaGitHub() {
+    if (saving || !edit) return;
     if (!GH.repo) return toast('⚠ Imposta "github" in config.js');
-    const tk = await token(); if (!tk) return;
-    const btn = $('#salva-gh'); btn.disabled = true; status('Salvo su GitHub…');
+    saving = true; updateDirty();
+    const snapshot = clone(edit);
     try {
-      const fd = await gh('dati.js', tk);
-      if (!fd) throw new Error('dati.js non trovato su GitHub');
-      const testo = b64dec(fd.content);
-      /* le modifiche del setup vanno sopra l'ultima versione su GitHub (che può essere più nuova di quella online) */
-      const voluto = M.applyPatch(window.SALVA_DATI.valuta(testo), M.diffPatch(base, edit));
-      const nuovo = window.SALVA_DATI.genera(testo, voluto);
-      if (nuovo === testo) { toast('dati.js su GitHub è già aggiornato'); status(remotePatch === undefined ? 'Uguale a dati.js' : 'Modifiche live attive', remotePatch === undefined ? 'ok' : 'live'); return }
-      await gh('dati.js', tk, { message: 'Aggiorna dati.js dalla pagina di setup', content: b64enc(nuovo), sha: fd.sha, branch: GH.ramo });
-      /* intanto gli schermi vedono subito le modifiche; quando GitHub Pages pubblica il file la patch si toglie da sola */
-      if (dirty()) { await save(M.diffPatch(base, edit)); sync(base, M.diffPatch(base, edit)); edit = clone(published); render() }
-      attesa = Date.now();
-      status('Salvato su GitHub', 'live');
-      toast('Salvato su GitHub: tra circa 1 minuto è online');
-    } catch (e) {
-      if (e.conflict && tentativo < 2) return salvaGitHub(tentativo + 1);
-      toast('⚠ ' + e.message); status('Errore', 'ko');
-    } finally { btn.disabled = false; $('.more').open = false }
-  }
-  /* dopo un salvataggio controlla dati.js più spesso; se la patch non cambia più nulla la toglie */
-  let attesa = 0;
-  async function ricarica() {
-    try {
-      const b = await loadBase();
-      if (same(b, base)) return;
-      sync(b, remotePatch);
-      if (remotePatch !== undefined && M.diffPatch(b, M.applyPatch(b, remotePatch)) === undefined) {
-        await save(undefined); sync(b, undefined); attesa = 0;
-        toast('dati.js aggiornato: modifiche live non più necessarie, tolte');
+      const tk = await token(); if (!tk) return;
+      status('Salvo su GitHub…');
+      for (let tentativo = 0; tentativo < 3; tentativo++) {
+        const fd = await gh('dati.js', tk);
+        if (!fd) throw new Error('dati.js non trovato su GitHub');
+        const testo = b64dec(fd.content);
+        /* Applica solo le modifiche locali sopra l'ultima versione su GitHub. */
+        const voluto = M.applyPatch(window.SALVA_DATI.valuta(testo), M.diffPatch(base, snapshot));
+        const nuovo = window.SALVA_DATI.genera(testo, voluto);
+        if (nuovo === testo) { sync(voluto, snapshot); toast('dati.js su GitHub è già aggiornato'); return }
+        try {
+          await gh('dati.js', tk, { message: 'Aggiorna dati.js dalla pagina di setup', content: b64enc(nuovo), sha: fd.sha, branch: GH.ramo });
+        } catch (e) {
+          if (e.conflict && tentativo < 2) continue;
+          throw e;
+        }
+        sync(voluto, snapshot);
+        status('Salvato su GitHub; pubblicazione Pages in attesa', 'ok');
+        toast('Salvato su GitHub: tra circa 1 minuto è online');
+        return;
       }
-    } catch (e) { }
+    } catch (e) {
+      toast('⚠ ' + e.message); status('Errore', 'ko');
+    } finally { saving = false; updateDirty(); $('.more').open = false }
   }
 
   async function init() {
     $('#app').hidden = $('#bar').hidden = false;
     go(view);
     $('#apri-regia').href = 'regia.html';
-    window.PRESENZA?.avvia('s');
     try {
-      const [b, p] = await Promise.all([loadBase(), fetch(U + '/modifiche/patch.json').then(r => r.json())]);
-      sync(b, parse(p));
-      $('#inizia').disabled = false;
+      sync(await loadBase());
     } catch (e) { status('Errore', 'ko'); $('#campi').textContent = '⚠ ' + e.message; return }
-    const es = new EventSource(U + '/modifiche/patch.json');
-    es.addEventListener('put', e => { const m = JSON.parse(e.data); if (m.path === '/' && !same(parse(m.data), remotePatch)) { sync(base, parse(m.data)); if (dirty()) toast('Altre modifiche pubblicate da un altro dispositivo') } });
-    let ultimo = Date.now();
-    setInterval(() => { const f = attesa && Date.now() - attesa < 600000; if (Date.now() - ultimo >= (f ? 10000 : 30000)) { ultimo = Date.now(); ricarica() } }, 2000);
   }
 
-  $('#pubblica').onclick = () => publish(M.diffPatch(base, edit), 'Pubblicato: gli schermi si aggiornano ora');
-  $('#inizia').onclick = async () => {
-    $('#inizia').disabled = true;
-    try {
-      await window.ASSEMBLEA.salva(true, key, M.diffPatch(base, edit));
-      published = clone(edit);
-      location.assign('regia.html');
-    } catch (e) {
-      toast('⚠ ' + e.message); status('Avvio non riuscito', 'ko');
-      $('#inizia').disabled = false;
-    }
-  };
   $('#salva-gh').onclick = () => salvaGitHub();
   $('#dimentica').hidden = !localStorage.getItem(TK);
   $('#dimentica').onclick = () => { localStorage.removeItem(TK); $('#dimentica').hidden = true; toast('Token GitHub dimenticato') };
   $('#esci-area').onclick = () => {
-    if (edit && dirty() && !confirm('Uscire senza pubblicare le modifiche?')) return;
+    if (edit && dirty() && !confirm('Uscire senza salvare le modifiche su GitHub?')) return;
+    localStorage.removeItem(TK);
     window.ACCESSO.esci();
-    edit = clone(published);
-    location.replace('../area-riservata.html');
+    if (published) edit = clone(published);
+    location.replace('../index.html');
   };
   $('#annulla').onclick = () => { edit = clone(published); render() };
-  $('#ripristina').onclick = () => { if (confirm('Togliere tutte le modifiche live e tornare a dati.js?')) publish(undefined, 'Tornato a dati.js') };
   $('#scarica').onclick = async () => {
     let txt;
     try { txt = window.SALVA_DATI.genera(await (await fetch('dati.js?t=' + Date.now(), { cache: 'no-store' })).text(), edit) }
@@ -344,32 +314,11 @@
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => go(b.dataset.tab));
   $('#doc').onload = () => { try { const d = $('#doc').contentDocument; $('#doc').style.height = d.documentElement.scrollHeight + 'px' } catch (e) { } };
   $('#json-apply').onclick = () => {
-    try { const v = JSON.parse($('#json-text').value); if (!plain(v) || !Array.isArray(v.slide)) throw new Error('serve un oggetto con la lista "slide"'); edit = v; $('#json-err').textContent = ''; render(); toast('Applicato: ora premi Pubblica') }
+    try { const v = JSON.parse($('#json-text').value); if (!plain(v) || !Array.isArray(v.slide)) throw new Error('serve un oggetto con la lista "slide"'); edit = v; $('#json-err').textContent = ''; render(); toast('Applicato: ora premi Salva su GitHub') }
     catch (e) { $('#json-err').textContent = 'JSON non valido: ' + e.message }
   };
   addEventListener('beforeunload', e => { if (edit && dirty()) e.preventDefault() });
 
-  if (!U) { status('Firebase non configurato', 'ko'); document.body.append(el('p', { textContent: 'Imposta "url" in config.js.' })); return }
-  async function accedi() {
-    const button = $('#login-form button');
-    button.disabled = true;
-    status('Verifica accesso…');
-    try {
-      await window.ACCESSO.entra(key);
-      history.replaceState(null, '', location.pathname + location.hash);
-      $('#chiave').value = '';
-      $('#login').hidden = true;
-      await init();
-    } catch (e) {
-      status('Accesso negato', 'ko');
-      $('#login').hidden = false;
-      $('#app').hidden = $('#bar').hidden = true;
-      toast('⚠ ' + e.message);
-    } finally { button.disabled = false }
-  }
-  $('#login-form').onsubmit = e => {
-    e.preventDefault(); key = $('#chiave').value.trim(); if (key) accedi();
-  };
-  if (key) accedi();
-  else { status('Area riservata'); $('#login').hidden = false }
+  history.replaceState(null, '', location.pathname + location.hash);
+  init();
 })();

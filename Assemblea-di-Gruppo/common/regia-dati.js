@@ -1,4 +1,4 @@
-/* Modifiche rapide alle slide, usando la stessa patch del setup. */
+/* Modifiche rapide alle slide, pubblicate nella patch live. */
 (function () {
   const $ = s => document.querySelector(s);
   const M = window.MODIFICHE;
@@ -92,7 +92,7 @@
       cambiati.forEach((c, i) => {
         const d = disponibili.find(d => same(d.path, c.path));
         if (!d || d.identita !== c.identita || !same(at(attuale, c.path), c.originale))
-          throw new Error('Questi campi sono cambiati nel setup o in un’altra regia. Ricarica i valori prima di pubblicare.');
+          throw new Error('Questi campi sono cambiati in dati.js o in un’altra regia. Ricarica i valori prima di pubblicare.');
         at(edit, c.path.slice(0, -1))[c.path.at(-1)] = valori[i];
       });
       const nuova = M.diffPatch(base, edit);

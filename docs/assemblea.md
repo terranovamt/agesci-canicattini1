@@ -6,20 +6,25 @@ Come si apre e chiude l'assemblea e come si usano dashboard regia, schermo e tel
 
 ## Aprire e chiudere l'assemblea
 
-1. Dalla home premi **Area riservata**, inserisci la chiave e poi scegli
-   **Assemblea di Gruppo** per aprire il setup.
-2. Prepara i contenuti, poi premi **Inizia assemblea**. Con una sola scrittura
-   Firebase salva le modifiche live, azzera la posizione e attiva l'assemblea;
+1. Entra nell'area riservata con la chiave e apri **Setup dati.js**.
+   La chiave viene verificata una volta per sessione della scheda; il setup
+   controlla la sessione localmente senza richieste Firebase.
+   Prepara i contenuti e premi **Salva su GitHub (dati.js)** con un token GitHub.
+   Attendi la pubblicazione su GitHub Pages.
+2. Apri la regia dall'area riservata con la chiave e premi **Avvia live**.
+   Con una sola scrittura Firebase mantiene le modifiche live esistenti,
+   azzera la posizione e attiva l'assemblea;
    se la scrittura fallisce non avvia nulla e mostra l'errore.
-   Si apre la dashboard regia; da questo momento la home manda tutti alla presentazione.
-3. Nell'ultima slide la dashboard mostra **Termina assemblea**, accanto a **PDF**.
+   la regia riparte dalla slide QR. Da questo momento la home manda tutti alla presentazione.
+3. Durante il live la dashboard mostra **Termina assemblea**, anche prima dell'ultima slide.
    Dopo la conferma salva lo stato inattivo: home e link alla presentazione
    tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
    torna all'area riservata. I contenuti preparati non vengono cancellati.
 
 Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
 gli aggiornamenti della regia non possono riattivare un'assemblea terminata.
-Il setup resta sempre raggiungibile da `/setup`. Con rete assente viene
+Il setup resta sempre raggiungibile da `/setup`, senza accessi Firebase.
+Con rete assente in regia viene
 mostrato un errore e il controllo riprova automaticamente.
 **Aggiorna le regole Firebase** dal file del repository: il nodo
 `assemblea` richiede la stessa chiave degli altri due nodi; il nodo `presenza`
@@ -37,7 +42,8 @@ mostrato un errore e il controllo riprova automaticamente.
   tastiera e clicker: `→ ↓ spazio PagGiù` avanti, `← ↑ PagSu` indietro;
 - l'elenco delle slide: un clic ci salta sopra;
 - stato: assemblea attiva, pubblico allineato alla regia, Firebase raggiungibile;
-- pannello **Firebase**: dispositivi collegati (pubblico, setup, regia), tempo
+- pannello **Firebase**: dispositivi collegati (pubblico, regia ed eventuali setup
+  legacy ancora aperti), tempo
   di risposta e connessioni **stimate della presentazione**, su 100, con
   percentuale. La barra diventa arancione al 70% e rossa al 90%.
   Le presenze non misurano tutte le connessioni al database (ad esempio la
@@ -52,22 +58,24 @@ mostrato un errore e il controllo riprova automaticamente.
   autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito,
   oppure un login Google OAuth nel browser con i permessi di lettura sul
   progetto. La chiave condivisa dell'assemblea non autorizza queste API;
-- **PDF** e **Termina assemblea** sull'ultima slide.
+- **Avvia live** quando l'assemblea è inattiva, **Termina assemblea** durante
+  il live e **PDF** sull'ultima slide.
 
 Il pannello **Presenti e ufficio di presidenza** permette di inserire il
 numero dei presenti nella slide quorum e i nomi del presidente e degli
 scrutatori nelle slide di composizione, senza aprire il setup.
-**Pubblica live** salva i campi modificati nella stessa patch Firebase del
-setup: regia e proiettore si aggiornano subito, i telefoni entro circa
+**Pubblica live** salva i campi modificati nella patch Firebase:
+regia e proiettore si aggiornano subito, i telefoni entro circa
 10 secondi. Il numero deve essere un intero non negativo; lasciare il campo
 vuoto indica che non è ancora noto. Il segretario e gli altri contenuti
 restano invariati. I nomi sono testo semplice, non HTML.
 
 **Ricarica valori** recupera i dati pubblicati e chiede conferma prima di
 scartare modifiche non salvate. Se un campo modificato è stato cambiato anche
-nel setup, la pubblicazione viene fermata e occorre ricaricare. Evitare
-pubblicazioni simultanee da setup e regia: lettura e scrittura della patch
-sono richieste distinte, come nel setup. In caso di errore i campi restano
+in un'altra regia, la pubblicazione viene fermata e occorre ricaricare. Evitare
+pubblicazioni simultanee da più regie: lettura e scrittura della patch
+sono richieste distinte. Il setup non legge né cambia questa patch.
+In caso di errore i campi restano
 compilati e il pannello non dichiara l'avvenuta pubblicazione.
 I dati inseriti diventano pubblici nelle slide, non sono informazioni riservate.
 

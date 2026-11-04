@@ -9,11 +9,14 @@ Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
 | Nodo | Scrive | Legge | Contenuto |
 | --- | --- | --- | --- |
 | `live/stato` | regia | tutti | `pos`, `max` = slide × 1000 + passo |
-| `live/k`, `modifiche/k` | regia / setup | nessuno | chiave inviata a ogni scrittura |
-| `modifiche/patch` | setup | tutti | differenze rispetto a `dati.js` (JSON in una stringa) |
-| `modifiche/t` | setup | tutti | ora dell'ultima pubblicazione |
-| `assemblea/stato` | setup / regia | tutti | `attiva`: home o presentazione |
-| `presenza/{id}` | ogni dispositivo | tutti | `t` ora, `r` ruolo (p/s/r): conteggio dispositivi in regia |
+| `live/k`, `modifiche/k` | regia | nessuno | chiave inviata a ogni scrittura |
+| `modifiche/patch` | regia | client della presentazione | differenze rispetto a `dati.js` (JSON in una stringa) |
+| `modifiche/t` | regia | client della presentazione | ora dell'ultima pubblicazione |
+| `assemblea/stato` | regia | home / presentazione / regia | `attiva`: home o presentazione |
+| `presenza/{id}` | pubblico / regia | regia | `t` ora, `r` ruolo (p/r; s legacy): conteggio dispositivi in regia |
+
+Il setup non usa questi nodi: legge il file statico `dati.js` e salva solo
+su GitHub tramite token, senza alcuna connessione Firebase.
 
 ## Configurare Firebase da zero
 
@@ -34,16 +37,17 @@ Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
    La chiave va **solo nella console**, mai nel repository.
 5. Su GitHub apri `Assemblea-di-Gruppo/config.js` (matita ✏️) e metti
    l'URL del punto 3 in `url:`, poi Commit. Dopo ~1 minuto è online.
-6. Prova: apri `…/Assemblea-di-Gruppo/regia.html` sul PC, inserisci la chiave,
-   e `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia il telefono segue
-   e il pannello Firebase conta 1 pubblico. Poi apri il setup, cambia un orario
-   e premi **Pubblica**.
+6. Prova: apri `…/Assemblea-di-Gruppo/regia.html` sul PC, inserisci la chiave e
+   premi **Avvia live**. Apri
+   `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia il telefono segue
+   e il pannello Firebase conta 1 pubblico. Poi cambia i presenti nella regia
+   e premi **Pubblica live**.
 
 Non servono chiavi API, SDK o `npm`: la presentazione parla con Firebase via
 REST (`fetch` + `EventSource`). Per cambiare chiave basta modificarla nelle
 regole (punto 4). Per disattivare il live: `url: ''` in `config.js`.
 
-Se il setup risponde "Chiave non valida o regole Firebase non aggiornate":
+Se la regia risponde "Chiave non valida o regole Firebase non aggiornate":
 chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo
 `modifiche` (ripeti il punto 4).
 
@@ -51,7 +55,7 @@ chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo
 
 | Risorsa | Limite Spark | Uso della presentazione |
 | --- | --- | --- |
-| Connessioni simultanee | **100** | 1 per spettatore (stato live), 1 regia, 1 setup → **~97 spettatori** |
+| Connessioni simultanee | **100** | 1 SSE per spettatore, 1 SSE per regia; setup: **0**. Lasciare margine per richieste REST e altri client |
 | Dati archiviati | 1 GB | pochi KB |
 | Download | **360 MB/giorno: budget operativo indicato per il progetto**, quota vigente da verificare in console | consumo reale da misurare; nessuna stima automatica |
 | Database | 1 per progetto | 1 |
@@ -73,7 +77,8 @@ indicato dal responsabile del progetto, non una quota verificata online.
 
 Per pianificare con questo budget: 100 spettatori per 3 ore equivalgono a
 300 ore-spettatore; 360 / 300 = **1,2 MB per spettatore per ora**, prima di
-sottrarre il traffico di regia, setup e altri accessi. Non e' una previsione
+sottrarre il traffico di regia e altri accessi. Il setup attuale non consuma
+Firebase. Non e' una previsione
 di consumo. La precedente ipotesi di 1 MB/ora darebbe 300 MB, cioe' **83,3%**
 del budget giornaliero, lasciando 60 MB; non e' stata misurata e non dimostra
 che il sito rimanga sotto quota. Dopo l'ottimizzazione occorre misurare di

@@ -18,11 +18,6 @@
     <span id="stato" class="pill">Caricamento…</span>
   </header>
 
-  <section id="login" hidden>
-    <p>Area riservata: inserisci la chiave di accesso per aprire il setup.</p>
-    <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
-  </section>
-
   <main id="app" hidden>
     <nav class="tabs">
       <button data-tab="generale" class="on">Generale</button>
@@ -36,6 +31,7 @@
       <span class="links"><a id="apri-regia" target="assemblea-regia">Regia ↗</a><a href="index.html" target="assemblea-pubblico">Pubblico ↗</a></span>
     </nav>
     <p id="intro" class="intro"></p>
+    <p class="intro">Accesso già verificato nell'area riservata. Il setup non fa richieste Firebase e non legge le modifiche live della regia. Salva dati.js su GitHub e attendi la pubblicazione prima di avviare il live dalla regia.</p>
     <div id="campi"></div>
     <div id="json" hidden>
       <textarea id="json-text" spellcheck="false"></textarea>
@@ -46,17 +42,14 @@
 
   <footer id="bar" hidden>
     <span id="dirty"></span>
-    <button id="annulla" class="sec">Annulla</button>
-    <button id="pubblica">Pubblica</button>
-    <button id="inizia" disabled>Inizia assemblea</button>
+    <button id="annulla" class="sec" disabled>Annulla</button>
+    <button id="salva-gh" disabled>Salva su GitHub (dati.js)</button>
     <details class="more">
       <summary title="Altro">⋯</summary>
       <div>
-        <button id="salva-gh">Salva su GitHub (dati.js)</button>
-        <button id="ripristina" class="sec">Togli tutte le modifiche live</button>
         <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
         <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
-        <button id="esci-area" class="sec">Esci dall'area riservata</button>
+        <button id="esci-area" class="sec">Esci e torna alla home</button>
       </div>
     </details>
   </footer>
@@ -78,10 +71,8 @@
 
   <script src="config.js"></script>
   <script src="common/accesso.js"></script>
-  <script src="common/assemblea.js"></script>
   <script src="common/salva-dati.js"></script>
   <script src="common/modifiche.js"></script>
-  <script src="common/presenza.js"></script>
   <script src="common/setup.js"></script>
 </body>
 
