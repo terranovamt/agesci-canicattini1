@@ -44,6 +44,10 @@
   cursor: not-allowed;
 }
 
+:where(button, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea, select) {
+  min-height: 44px;
+}
+
 :where(a[href], button:not(:disabled), summary, [role="button"]) {
   transition: filter var(--motion-fast) var(--ease-standard);
 }
