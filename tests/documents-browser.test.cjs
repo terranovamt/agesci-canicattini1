@@ -13,7 +13,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 function fixture(file, css, scripts) {
   const index = read('documents/index.json');
   const mock = `
-    window.ACCESSO = { verificata: () => true };
+    window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
     window.LIVE = { github: { repo: 'test/repo', ramo: 'test' } };
     window.DOCUMENTS_PREVIEW = true;
     history.replaceState = () => {};
@@ -27,9 +27,7 @@ function fixture(file, css, scripts) {
     const append = document.head.append.bind(document.head);
     document.head.append = element => {
       if (element.tagName === 'SCRIPT' && element.src.includes('dati.js')) {
-        window.DATI = { anno_esercizio: 2026, assemblea: { titolo: 'Assemblea del gruppo', data: '20 Novembre' },
-          slide: [{ tipo: 'slide_titolo', titolo: 'Una slide con un titolo abbastanza lungo per verificare la leggibilità' },
-            { tipo: 'slide_divisore_sezione', titolo: 'Sezione di prova' }] };
+        ${read('Assemblea-di-Gruppo/dati.js')}
         element.onload();
       } else append(element);
     };
@@ -47,7 +45,8 @@ test('public documents and management work in a browser at all required widths',
     fixture('index.html', 'home.css', ['home-documents.js']),
     fixture('gestione-documenti.html', 'gestione-documenti.css', ['documents-model.js', 'documents-store.js', 'gestione-documenti.js']),
     fixture('Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/common/setup.css',
-      ['common/salva-dati.js', 'common/modifiche.js', 'common/setup.js'])
+      ['common/salva-dati.js', 'common/modifiche.js', 'common/nuovo-anno-model.js', 'common/nuovo-anno.js', 'common/setup.js']),
+    fixture('area-riservata.html', 'home.css', ['area-dashboard.js', 'area-riservata.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -63,6 +62,7 @@ test('public documents and management work in a browser at all required widths',
         const doc = frame.contentDocument;
         for (const width of [375, 768, 1024, 1440]) {
           frame.style.width = width + 'px';
+          frame.style.height = (width === 375 ? 740 : 1000) + 'px';
           await new Promise(resolve => setTimeout(resolve, 10));
           results.push({ page, width, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
           if (page === 2) {
@@ -74,6 +74,44 @@ test('public documents and management work in a browser at all required widths',
             const field = [...doc.querySelectorAll('#campi input')].at(-1).getBoundingClientRect();
             const footer = doc.querySelector('footer').getBoundingClientRect();
             results.push({ width, reachable: field.bottom <= footer.top });
+            const readSetup = () => {
+              doc.querySelector('[data-tab="json"]').click();
+              const value = JSON.parse(doc.querySelector('#json-text').value);
+              doc.querySelector('[data-tab="generale"]').click();
+              return value;
+            };
+            const before = JSON.stringify(readSetup());
+            doc.querySelector('#nuovo-anno').click();
+            const wizard = doc.querySelector('#year-dialog');
+            results.push({ wizardOpened: wizard.open, width });
+            for (let step = 0; step < 6; step++) {
+              for (const input of doc.querySelectorAll('#year-fields input')) {
+                if (input.type === 'number' && input.value === '') input.value = '10';
+                if (input.type === 'datetime-local') input.value = '2027-11-20T20:30';
+                if (input.required && input.value === '') input.value = '20 Novembre 2027';
+                input.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+              }
+              results.push({ wizardWidth: width, step,
+                fits: wizard.scrollWidth <= wizard.clientWidth,
+                actionsVisible: doc.querySelector('#year-next').getBoundingClientRect().bottom <= frame.contentWindow.innerHeight,
+                valid: doc.querySelector('#year-form').checkValidity() });
+              doc.querySelector('#year-form').requestSubmit();
+            }
+            results.push({ review: doc.querySelector('#year-step-title').textContent,
+              error: doc.querySelector('#year-error').textContent,
+              reviewFits: wizard.scrollWidth <= wizard.clientWidth,
+              unchanged: JSON.stringify(readSetup()) === before });
+            if (width !== 1440) {
+              doc.querySelector('#year-cancel').click();
+              results.push({ cancelUnchanged: JSON.stringify(readSetup()) === before });
+            } else {
+              doc.querySelector('.year-confirm input').checked = true;
+              doc.querySelector('#year-form').requestSubmit();
+              const after = readSetup();
+              results.push({ applied: after.anno_esercizio, archived: after.censimenti.storico_per_anno['2026'].censiti,
+                newAmount: after.entrate[0].importo, previousAmount: after.entrate[0].importo_anno_precedente,
+                dirty: !doc.querySelector('#salva-gh').disabled, wizardClosed: !wizard.open });
+            }
           }
         }
         if (page === 0) {
@@ -118,6 +156,22 @@ test('public documents and management work in a browser at all required widths',
           doc.querySelector('.managed-document:last-child .danger').click();
           await deleted;
           results.push({ remaining: doc.querySelectorAll('.managed-document').length });
+        } else if (page === 3) {
+          results.push({ dashboard: doc.querySelector('#riservata').hidden === false,
+            assembly: doc.querySelector('#dashboard-assembly-title').textContent,
+            documents: doc.querySelectorAll('#dashboard-document-links li').length,
+            tools: doc.querySelectorAll('.dashboard-tool').length });
+          frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
+          await doc.querySelector('#dashboard-documents-retry').onclick();
+          results.push({ dashboardError: !doc.querySelector('#dashboard-documents-retry').hidden });
+          const append = doc.head.append.bind(doc.head);
+          doc.head.append = element => {
+            if (element.tagName === 'SCRIPT') element.onerror();
+            else append(element);
+          };
+          await doc.querySelector('#dashboard-assembly-retry').onclick();
+          results.push({ assemblyError: !doc.querySelector('#dashboard-assembly-retry').hidden,
+            assemblyErrorText: doc.querySelector('#dashboard-assembly-details').textContent });
         }
         frame.remove();
       }
@@ -130,7 +184,7 @@ test('public documents and management work in a browser at all required widths',
     const result = spawnSync(chrome, [
       '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
       '--no-first-run', '--no-default-browser-check', '--no-proxy-server',
-      '--host-resolver-rules=MAP * ~NOTFOUND', '--virtual-time-budget=5000', '--timeout=10000',
+      '--host-resolver-rules=MAP * ~NOTFOUND', '--virtual-time-budget=20000', '--timeout=15000',
       '--user-data-dir=' + path.join(dir, 'profile'), '--dump-dom', 'file://' + file
     ], { encoding: 'utf8', timeout: 30000, maxBuffer: 5 * 1024 * 1024 });
     assert.equal(result.status, 0, result.stderr);
@@ -154,5 +208,33 @@ test('public documents and management work in a browser at all required widths',
     for (const item of results.filter(item => 'reachable' in item)) {
       assert.equal(item.reachable, true, 'setup fields must be reachable above the action bar at width ' + item.width);
     }
+    for (const item of results.filter(item => 'wizardOpened' in item)) assert.equal(item.wizardOpened, true);
+    for (const item of results.filter(item => 'fits' in item)) {
+      assert.equal(item.fits, true, 'wizard fits at ' + item.wizardWidth + ', step ' + item.step);
+      assert.equal(item.actionsVisible, true, 'wizard actions visible at ' + item.wizardWidth + ', step ' + item.step);
+      assert.equal(item.valid, true);
+    }
+    for (const item of results.filter(item => 'review' in item)) {
+      assert.equal(item.review, 'Riepilogo');
+      assert.equal(item.error, '');
+      assert.equal(item.reviewFits, true);
+      assert.equal(item.unchanged, true, 'data must stay unchanged before confirmation');
+    }
+    for (const item of results.filter(item => 'cancelUnchanged' in item)) assert.equal(item.cancelUnchanged, true);
+    const annual = results.find(item => 'applied' in item);
+    assert.equal(annual.applied, 2027);
+    assert.equal(annual.archived, 100);
+    assert.equal(annual.newAmount, 10);
+    assert.equal(annual.previousAmount, 9665);
+    assert.equal(annual.dirty, true);
+    assert.equal(annual.wizardClosed, true);
+    const dashboard = results.find(item => 'dashboard' in item);
+    assert.equal(dashboard.dashboard, true);
+    assert.match(dashboard.assembly, /Assemblea/);
+    assert.equal(dashboard.documents, 2);
+    assert.equal(dashboard.tools, 3);
+    assert.equal(results.find(item => 'dashboardError' in item).dashboardError, true);
+    assert.equal(results.find(item => 'assemblyError' in item).assemblyError, true);
+    assert.match(results.find(item => 'assemblyErrorText' in item).assemblyErrorText, /Impossibile/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 });
