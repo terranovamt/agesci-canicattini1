@@ -33,19 +33,18 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .slide-add select { flex: 1; min-width: 180px; font: inherit; padding: 8px; border: 1px solid var(--vl); border-radius: 8px; max-width: 100% }
 .ord li { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: var(--radius-md); margin: 0 0 6px; padding: 6px 8px; box-shadow: var(--shadow-card); border: 2px solid transparent; transition: background .3s }
 .ord li.sez { background: var(--v); color: #fff; margin-top: 14px }
-.ord li.sez small, .ord li.sez .grip { color: var(--vl) }
+.ord li.sez small, .ord li.sez .grip { color: var(--w) }
 .ord li.sez .ic { color: #fff }
-.ord li.hid { opacity: .5 }
 .ord li.hid .t b { text-decoration: line-through }
 .ord li.drag { opacity: .3 }
 .ord li.over { border-color: var(--y) }
-.ord li.flash { background: #FFF3BF }
+.ord li.flash { background: color-mix(in srgb, var(--y) 36%, var(--w)) }
 .ord li.sez.flash { background: var(--v2) }
-.ord .grip { cursor: grab; color: var(--vl); font-weight: 800; letter-spacing: -2px; user-select: none }
+.ord .grip { cursor: grab; color: var(--v2); font-weight: 800; letter-spacing: -2px; user-select: none }
 .ord .num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--y); color: var(--vd); display: grid; place-items: center; font-size: 12px; font-weight: 800 }
 .ord .t { flex: 1; min-width: 0; display: flex; flex-direction: column }
 .ord .t b, .ord .t small { overflow-wrap: anywhere }
-.ord .t small { font-size: 11px; opacity: .6 }
+.ord .t small { font-size: 11px; color: var(--v2) }
 .ord .ic { flex: none; min-width: 44px; background: none; color: var(--v); padding: 6px 8px; font-size: 16px; line-height: 1; border-radius: var(--radius-sm) }
 .ord .ic svg, .field .reset svg { display: block; width: 20px; height: 20px }
 .ord .ic:hover:not(:disabled) { background: rgba(253, 197, 0, .35) }
