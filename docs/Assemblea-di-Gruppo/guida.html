@@ -7,7 +7,7 @@
   <title>Guida · Assemblea di Gruppo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
-  <link rel="icon" href="img/logo.png">
+  <link rel="icon" href="img/logo-grande.png">
   <style>
     :root { --y: #FDC500; --vd: #211638; --v: #462678; --v2: #6B478D; --vl: #AEB0D9; --g: #21A067; --r: #E74030; --bg: #F4F1EA }
     * { box-sizing: border-box }
@@ -104,10 +104,10 @@
       <h2><span class="n">2</span>Regia (dashboard)</h2>
       <p>Apri <code>regia.html</code> sul PC e inserisci la chiave. La dashboard mostra:</p>
       <div class="cards">
-        <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo.</div>
+        <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live.</div>
         <div class="card"><b>⏭ Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
         <div class="card g"><b>‹ ›</b>Due grandi pulsanti Indietro / Avanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
-        <div class="card y"><b>📊 Firebase</b>Dispositivi collegati, tempo di risposta e barre per connessioni, download e spazio (arancione al 70%, rosso al 90%). Sono stime: i valori ufficiali sono nella console Firebase.</div>
+        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Download mensile e spazio totale, con percentuali reali, sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Integrarli richiede un backend autorizzato a Google Cloud Monitoring, non credenziali nel sito.</div>
       </div>
       <table>
         <tr><th>Tasto / clicker</th><th>Azione</th></tr>
@@ -244,7 +244,7 @@
       <h2><span class="n">7</span>Limiti del piano gratuito (Spark)</h2>
       <div class="cards">
         <div class="card r"><span class="big">100</span><b>connessioni simultanee</b>1 per spettatore + regia + setup → circa <strong>97 telefoni</strong> collegati insieme.</div>
-        <div class="card g"><span class="big">10 GB</span><b>download al mese</b>Circa 1 MB all'ora per spettatore: 100 persone per 3 ore ≈ 300 MB. La dashboard regia ne mostra la stima in diretta.</div>
+        <div class="card g"><span class="big">10 GB</span><b>download al mese</b>Il consumo reale e la percentuale sul totale sono nella console Firebase → Utilizzo. La dashboard non calcola consumi fittizi a partire dal tempo trascorso.</div>
         <div class="card g"><span class="big">1 GB</span><b>dati archiviati</b>La presentazione usa pochi KB.</div>
       </div>
       <p>Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero non seguire la regia. Per assemblee più numerose passa al piano <b>Blaze</b> (a consumo, 200.000 connessioni; per un'assemblea il costo resta praticamente nullo) oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live con una lettura leggera ogni 10 s, senza occupare una seconda connessione.</p>

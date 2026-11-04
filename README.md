@@ -65,16 +65,24 @@ mostrato un errore e il controllo riprova automaticamente.
 
 **Regia** (`regia.html`, sul PC): una dashboard con
 
-- **In onda**: la slide che vede il pubblico, con numero e passo;
+- **In onda**: la slide che vede il pubblico, con numero e passo. Quando
+  l'assemblea non è attiva diventa **Anteprima**, senza bordo rosso o spia live;
 - **Prossima**: anteprima del passo successivo (o "Fine presentazione");
 - due grandi pulsanti **‹ Indietro** / **Avanti ›**, più Inizio e Ordine del giorno;
   tastiera e clicker: `→ ↓ spazio PagGiù` avanti, `← ↑ PagSu` indietro;
 - l'elenco delle slide: un clic ci salta sopra;
 - stato: assemblea attiva, pubblico allineato alla regia, Firebase raggiungibile;
 - pannello **Firebase**: dispositivi collegati (pubblico, setup, regia), tempo
-  di risposta e barre per connessioni (su 100), download stimato (su 10 GB/mese)
-  e spazio usato (su 1 GB). Le barre diventano arancioni al 70% e rosse al 90%.
-  Sono stime: i numeri ufficiali sono nella console Firebase (link nel pannello);
+  di risposta e connessioni **stimate della presentazione**, su 100, con
+  percentuale. La barra diventa arancione al 70% e rossa al 90%.
+  Le presenze non misurano tutte le connessioni al database (ad esempio la
+  console Firebase o altri client), quindi non coincidono con il dato ufficiale.
+  Download mensile (su 10 GB) e spazio totale (su 1 GB), con le relative
+  percentuali, sono disponibili **solo nella console Firebase**: le API
+  pubbliche del Realtime Database non espongono queste metriche.
+  La dashboard non inventa consumi né mostra le dimensioni di pochi nodi
+  come se fossero l'intero database. Per integrarle servirebbe un backend
+  autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito;
 - **PDF** e **Termina assemblea** sull'ultima slide.
 
 **▣ Apri schermo presentazione** apre una finestra con *solo* le slide: spostala

@@ -5,18 +5,16 @@
   const L = window.LIVE || {}, A = window.ACCESSO;
   const U = (L.url || '').replace(/\/$/, '');
   const enc = (i, k) => i * 1000 + k;
-  const LIMITI = { conn: 100, down: 10 * 1024 ** 3, spazio: 1024 ** 3 };
-  const MB_ORA_SPETTATORE = 1;   /* stima: controlli periodici (live, modifiche, assemblea, presenza) */
+  const LIMITI = { conn: 100 };
   let key = A.chiave(), V = null, ultimo = null, finestra = null;
 
   const pill = (sel, testo, cls) => { const p = $(sel); p.textContent = testo; p.className = 'pill ' + (cls || '') };
-  const fmt = b => b < 1024 ** 2 ? Math.max(1, Math.round(b / 1024)) + ' KB' : b < 1024 ** 3 ? (b / 1024 ** 2).toFixed(1) + ' MB' : (b / 1024 ** 3).toFixed(2) + ' GB';
   const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
   function meter(id, val, max, testo) {
-    const r = Math.min(1, val / max), u = $('#' + id);
-    u.style.width = Math.max(r * 100, val > 0 ? 1.5 : 0) + '%';
+    const r = val / max, u = $('#' + id);
+    u.style.width = Math.min(100, r * 100) + '%';
     u.className = r >= .9 ? 'ko' : r >= .7 ? 'warn' : '';
-    $('#' + id + '-t').textContent = testo;
+    $('#' + id + '-t').textContent = testo + ' · ' + (r * 100).toLocaleString('it-IT', { maximumFractionDigits: 1 }) + '%';
   }
 
   /* ---------- accesso ---------- */
@@ -46,7 +44,6 @@
     window.PRESENZA.avvia('r');
     aggancia();
     controlla(); setInterval(controlla, 10000);
-    tempo = Date.now(); stimaTraffico(); setInterval(stimaTraffico, 5000);
   }
   function aggancia() {
     const w = $('#principale').contentWindow;
@@ -117,17 +114,11 @@
   };
 
   /* ---------- stato Firebase ---------- */
-  let tempo = 0, scaricati = 0, spettatori = 0, setup = 0;
-  function stimaTraffico() {
-    const ora = Date.now(), ore = (ora - tempo) / 3600000; tempo = ora;
-    scaricati += (spettatori + setup + 2) * MB_ORA_SPETTATORE * 1024 ** 2 * ore;
-    meter('m-down', scaricati, LIMITI.down, '≈ ' + fmt(scaricati) + ' di 10 GB/mese');
-  }
   async function leggi(path) {
     const r = await fetch(U + path, { cache: 'no-store' });
     if (!r.ok) throw new Error('Firebase ' + r.status);
     const t = await r.text();
-    return { dati: JSON.parse(t), byte: t.length };
+    return { dati: JSON.parse(t) };
   }
   async function controlla() {
     const t0 = performance.now();
@@ -140,29 +131,36 @@
 
       const c = window.PRESENZA.conta(pres.dati);
       if (c.scaduti.length) fetch(U + '/presenza.json', { method: 'PATCH', body: JSON.stringify(Object.fromEntries(c.scaduti.map(id => [id, null]))) }).catch(() => { });
-      spettatori = c.ruoli.p || 0; setup = c.ruoli.s || 0;
+      const spettatori = c.ruoli.p || 0, setup = c.ruoli.s || 0;
       $('#k-disp').textContent = c.totale;
       $('#k-ruoli').textContent = [spettatori + ' pubblico', setup && setup + ' setup', c.ruoli.r && c.ruoli.r + ' regia'].filter(Boolean).join(' · ');
       /* connessioni permanenti: 1 per spettatore (live) + 1 regia + 1 per setup aperto */
-      const conn = spettatori + setup + 1;
-      meter('m-conn', conn, LIMITI.conn, conn + ' / 100');
+      const conn = spettatori + setup + (c.ruoli.r || 0);
+      meter('m-conn', conn, LIMITI.conn, '≈ ' + conn + ' / 100');
 
-      const patch = $('#principale').contentWindow?.MODIFICHE?.patch;
-      const spazio = pres.byte + live.byte + ass.byte + (patch === undefined ? 0 : JSON.stringify(patch).length) + 200;
-      meter('m-spazio', spazio, LIMITI.spazio, fmt(spazio) + ' di 1 GB');
-
+      const attiva = ass.dati?.attiva === true;
+      $('#onda-frame').classList.toggle('big', attiva);
+      $('#onda-dot').hidden = !attiva;
+      $('#onda-label').textContent = attiva ? 'In onda' : 'Anteprima';
+      $('#principale').title = attiva ? 'Slide in onda' : 'Anteprima presentazione';
       if (ass.dati?.attiva) { pill('#b-assemblea', 'Assemblea attiva', 'ok'); $('#avviso').hidden = true }
       else {
         pill('#b-assemblea', 'Assemblea non attiva', 'warn');
         $('#avviso').innerHTML = 'Assemblea non attiva: chi apre il sito vede la home del gruppo. Avviala da <a href="setup.html">Setup → Inizia assemblea</a>.';
         $('#avviso').hidden = false;
       }
-      if (ultimo) {
+      if (!attiva) pill('#b-live', 'Non live');
+      else if (ultimo) {
         const ok = live.dati && live.dati.pos === enc(ultimo.i, ultimo.k);
         pill('#b-live', ok ? 'Pubblico allineato' : 'Pubblico in aggiornamento…', ok ? 'live' : 'warn');
       }
     } catch (e) {
       pill('#b-fb', 'Firebase non raggiungibile', 'ko');
+      pill('#b-live', 'Stato live non verificato', 'warn');
+      $('#m-conn-t').textContent = 'Non disponibile';
+      $('#m-conn').style.width = '0%';
+      $('#k-disp').textContent = '–';
+      $('#k-ruoli').textContent = 'Presenze non verificabili';
       $('#k-lat').textContent = '–'; $('#k-agg').textContent = e.message;
     }
   }

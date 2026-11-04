@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
   <title>Regia — Assemblea di Gruppo</title>
-  <link rel="icon" href="img/logo.png">
+  <link rel="icon" href="img/logo-grande.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="common/regia.css">
@@ -36,8 +36,8 @@
 
   <main id="app" hidden>
     <section class="onda">
-      <div class="lbl"><b class="dot"></b> In onda <span id="pos"></span></div>
-      <div class="frame big"><iframe id="principale" title="Slide in onda"></iframe></div>
+      <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
+      <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
       <h2 id="titolo">…</h2>
     </section>
 
@@ -64,10 +64,10 @@
         <div><b id="k-disp">–</b><span>dispositivi collegati</span><small id="k-ruoli"></small></div>
         <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
       </div>
-      <div class="meter"><span>Connessioni simultanee</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i></div>
-      <div class="meter"><span>Download stimato in questa sessione</span><b id="m-down-t">–</b><i><u id="m-down"></u></i></div>
-      <div class="meter"><span>Spazio usato</span><b id="m-spazio-t">–</b><i><u id="m-spazio"></u></i></div>
-      <p class="note">Valori stimati dalla regia (gratis: 100 connessioni, 10 GB/mese, 1 GB salvati). I dati reali sono nella
+      <div class="meter"><span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i></div>
+      <div class="meter"><span>Download mensile / 10 GB</span><b id="m-down-t">Utilizzo e %: solo in console</b></div>
+      <div class="meter"><span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b></div>
+      <p class="note">Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del database non espongono il consumo mensile o lo spazio totale; per valori e percentuali reali apri la
         <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.</p>
     </section>
 
