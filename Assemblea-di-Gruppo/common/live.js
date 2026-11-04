@@ -14,16 +14,26 @@
     const dot = document.createElement('div');
     dot.style.cssText = 'position:fixed;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#888;z-index:99;opacity:.7;pointer-events:none';
     document.body.append(dot);
-    let t, maxP = 0;
-    const pub = () => {
+    let t, maxP = 0, inviato = null, invio = false;
+    const pub = async () => {
       if (!scenes.length) return;
       const p = enc(si, sk); maxP = Math.max(maxP, p);
-      fetch(U + '/live.json', { method: 'PUT', body: JSON.stringify({ stato: { pos: p, max: maxP }, k: L.chiave }) })
-        .then(r => { dot.style.background = r.ok ? '#21A067' : '#E74030' })
-        .catch(() => { dot.style.background = '#E74030' });
+      const body = JSON.stringify({ stato: { pos: p, max: maxP }, k: L.chiave });
+      if (invio || body === inviato) return;
+      invio = true;
+      try {
+        const r = await fetch(U + '/live.json', { method: 'PUT', body });
+        if (!r.ok) throw new Error('Pubblicazione live non riuscita (Firebase ' + r.status + ')');
+        inviato = body;
+        dot.style.background = '#21A067';
+      } catch (e) {
+        dot.style.background = '#E74030';
+        console.warn('Errore sincronizzazione live', e);
+      } finally { invio = false }
+      if (inviato === body && enc(si, sk) !== p) pub();
     };
     go = (i, k) => { __go(i, k); clearTimeout(t); t = setTimeout(pub, 150) };
-    setInterval(pub, 10000);   /* si autorepara se cade la rete */
+    setInterval(pub, 10000);   /* ritenta solo le scritture fallite o ancora da inviare */
     return;
   }
 
@@ -127,11 +137,39 @@
   }
   addEventListener('resize', myFit); addEventListener('orientationchange', () => setTimeout(myFit, 200)); deviceUi();
 
-  /* ascolto in tempo reale (SSE) + controllo di sicurezza ogni 8 s */
+  /* SSE invia anche lo stato iniziale; REST serve solo quando il flusso cade. */
   const es = new EventSource(U + '/live/stato.json');
+  let connesso = false, lettura = false, versione = 0;
   const put = (m, patch) => { if (m.path === '/') S = patch ? Object.assign(S, m.data) : (m.data || {}); else S[m.path.slice(1)] = m.data; on() };
-  es.addEventListener('put', e => put(JSON.parse(e.data), false));
-  es.addEventListener('patch', e => put(JSON.parse(e.data), true));
-  const poll = () => fetch(U + '/live/stato.json').then(r => r.json()).then(d => { if (d) { S = d; on() } }).catch(() => { });
-  setInterval(poll, 8000); poll();
+  const ricevi = (e, patch) => {
+    put(JSON.parse(e.data), patch);
+    connesso = true; versione++;
+    bn.title = 'Sincronizzazione live attiva';
+  };
+  es.addEventListener('put', e => ricevi(e, false));
+  es.addEventListener('patch', e => ricevi(e, true));
+  const poll = async () => {
+    if (connesso || lettura) return;
+    lettura = true;
+    const v = versione;
+    try {
+      const r = await fetch(U + '/live/stato.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('Lettura live non riuscita (Firebase ' + r.status + ')');
+      const d = await r.json();
+      if (!connesso && v === versione) { S = d || {}; on() }
+    } catch (e) {
+      bn.title = 'Sincronizzazione non disponibile: nuovo tentativo automatico';
+      console.warn('Errore sincronizzazione live', e);
+    } finally { lettura = false }
+  };
+  const errore = () => {
+    connesso = false; versione++;
+    bn.title = 'Connessione live interrotta: controllo periodico attivo';
+    console.warn('Connessione live interrotta; attivo il controllo REST');
+    poll();
+  };
+  es.addEventListener('error', errore);
+  es.addEventListener('cancel', errore);
+  es.addEventListener('auth_revoked', errore);
+  setInterval(poll, 8000);
 })();

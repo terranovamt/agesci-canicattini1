@@ -44,13 +44,15 @@ test('only an explicit, nonempty regia parameter selects the presenter', () => {
   assert.equal(role('?regia=test-key').chiave, 'test-key');
 });
 
-function viewer(isMobile) {
+function viewer(isMobile, read) {
   const elements = {};
   const listeners = {};
   const streams = {};
   const writes = [];
   const rotations = [];
   const navigations = [];
+  const intervals = [];
+  const reads = [];
   const element = () => { const el = ({
     classes: new Set(),
     classList: { toggle(name, on) { on ? this.owner.classes.add(name) : this.owner.classes.delete(name) } },
@@ -66,10 +68,11 @@ function viewer(isMobile) {
     matchMedia: () => ({ matches: isMobile, addEventListener() {} }),
     odgIdx: () => 0, menu() {},
     addEventListener: (name, handler) => { listeners[name] = handler },
-    setInterval() {}, setTimeout() {},
+    setInterval(fn, ms) { intervals.push({ fn, ms }) }, setTimeout() {},
     fetch: async (url, options) => {
-      if (options) writes.push(options);
-      return { json: async () => ({ pos: 1001, max: 2000 }) };
+      if (options?.method) writes.push(options);
+      else reads.push(url);
+      return read ? read() : { ok: true, json: async () => ({ pos: 1001, max: 2000 }) };
     },
     EventSource: class {
       addEventListener(name, handler) { streams[name] = handler }
@@ -80,8 +83,105 @@ function viewer(isMobile) {
   context.prev = () => context.go(context.si, context.sk - 1);
   vm.runInNewContext(sync, context);
   streams.put({ data: JSON.stringify({ path: '/', data: { pos: 1001, max: 2000 } }) });
-  return { context, elements, listeners, writes, rotations, navigations, streams };
+  return { context, elements, listeners, writes, rotations, navigations, streams, intervals, reads };
 }
+
+const flush = () => new Promise(resolve => setImmediate(resolve));
+
+test('healthy SSE uses no initial or periodic REST reads, fallback stops on recovery', async () => {
+  const v = viewer(false);
+  const poll = v.intervals.find(t => t.ms === 8000).fn;
+  for (let i = 0; i < 450; i++) poll();
+  assert.equal(v.reads.length, 0);
+  v.streams.error();
+  assert.equal(v.reads.length, 1);
+  await flush();
+  poll();
+  await flush();
+  assert.equal(v.reads.length, 2);
+  v.streams.put({ data: JSON.stringify({ path: '/', data: { pos: 1002, max: 1002 } }) });
+  poll();
+  assert.equal(v.reads.length, 2);
+  assert.equal(v.context.sk, 2);
+});
+
+test('pending fallback cannot overwrite a newer SSE state and reads never overlap', async () => {
+  let resolve;
+  const v = viewer(false, () => new Promise(r => { resolve = r }));
+  const poll = v.intervals.find(t => t.ms === 8000).fn;
+  v.streams.error();
+  poll(); poll();
+  assert.equal(v.reads.length, 1);
+  v.streams.put({ data: JSON.stringify({ path: '/', data: { pos: 2000, max: 2000 } }) });
+  resolve({ ok: true, json: async () => ({ pos: 0, max: 0 }) });
+  await flush();
+  assert.equal(v.context.si, 2);
+  assert.equal(v.context.sk, 0);
+});
+
+test('denied fallback responses never change the live state', async () => {
+  const v = viewer(false, () => ({ ok: false, status: 403 }));
+  v.streams.error();
+  await flush();
+  assert.equal(v.context.si, 1);
+  assert.match(v.elements['#lv-n'].title, /non disponibile/);
+});
+
+function presenter(write) {
+  const intervals = [], timeouts = [], requests = [], dot = { style: {} };
+  const c = {
+    window: { LIVE: { url: 'https://firebase.test', ruolo: 'regia', chiave: 'key' } },
+    document: { title: '', createElement: () => dot, body: { append() {} } },
+    scenes: [{}, {}, {}], si: 0, sk: 0,
+    go(i, k) { c.si = i; c.sk = k },
+    setInterval(fn) { intervals.push(fn) },
+    setTimeout(fn) { timeouts.push(fn) }, clearTimeout() {},
+    fetch: async (_, o) => { requests.push(JSON.parse(o.body)); return write ? write() : { ok: true } },
+  };
+  vm.runInNewContext(sync, c);
+  return { c, intervals, timeouts, requests, dot };
+}
+
+test('presenter does not republish unchanged positions but preserves max when going back', async () => {
+  const p = presenter();
+  await p.intervals[0]();
+  for (let i = 0; i < 360; i++) await p.intervals[0]();
+  assert.equal(p.requests.length, 1);
+  p.c.go(2, 0);
+  await p.timeouts.at(-1)();
+  p.c.go(1, 0);
+  await p.timeouts.at(-1)();
+  assert.deepEqual(p.requests.at(-1).stato, { pos: 1000, max: 2000 });
+});
+
+test('failed presenter writes are retried instead of remembered as successful', async () => {
+  let ok = false;
+  const p = presenter(() => ({ ok, status: 503 }));
+  await p.intervals[0]();
+  assert.equal(p.dot.style.background, '#E74030');
+  ok = true;
+  await p.intervals[0]();
+  await p.intervals[0]();
+  assert.equal(p.requests.length, 2);
+  assert.equal(p.dot.style.background, '#21A067');
+});
+
+test('presenter serializes writes and publishes navigation made during an in-flight write', async () => {
+  const pending = [];
+  const p = presenter(() => new Promise(resolve => pending.push(resolve)));
+  const first = p.intervals[0]();
+  p.c.go(2, 0);
+  await p.timeouts.at(-1)();
+  assert.equal(p.requests.length, 1);
+  pending[0]({ ok: true });
+  await first;
+  assert.equal(p.requests.length, 2);
+  assert.deepEqual(p.requests[1].stato, { pos: 2000, max: 2000 });
+  pending[1]({ ok: true });
+  await flush();
+  await p.intervals[0]();
+  assert.equal(p.requests.length, 2);
+});
 
 test('spectators follow regia and cannot move beyond its current position', () => {
   const { context, writes } = viewer(false);

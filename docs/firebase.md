@@ -53,13 +53,48 @@ chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo
 | --- | --- | --- |
 | Connessioni simultanee | **100** | 1 per spettatore (stato live), 1 regia, 1 setup → **~97 spettatori** |
 | Dati archiviati | 1 GB | pochi KB |
-| Download | 10 GB / mese | ~1 MB/ora per spettatore → 100 persone × 3 ore ≈ 300 MB |
+| Download | **360 MB/giorno: budget operativo indicato per il progetto**, quota vigente da verificare in console | consumo reale da misurare; nessuna stima automatica |
 | Database | 1 per progetto | 1 |
 
 Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero
-non seguire la regia (possono comunque tornare indietro e ricaricare). Per
+ricevere gli aggiornamenti solo tramite il controllo REST ogni 8 secondi,
+se le richieste REST sono ancora consentite. Questo fallback non supera
+le quote di download o un blocco del servizio. Per
 assemblee più numerose passare al piano **Blaze** (a consumo, 200.000
 connessioni; per un'assemblea il costo resta praticamente nullo) o proiettare
 senza far collegare tutti. Il pubblico non apre una seconda connessione per le
 modifiche: controlla `modifiche/t` ogni 10 s. Limiti aggiornati:
 https://firebase.google.com/pricing.
+
+Le quote sopra si riferiscono a **Realtime Database**, non a Firestore,
+Hosting o altri prodotti Firebase. Verificare nella pagina prezzi e nella
+console del progetto le quote vigenti. Il budget di 360 MB/giorno e' quello
+indicato dal responsabile del progetto, non una quota verificata online.
+
+Per pianificare con questo budget: 100 spettatori per 3 ore equivalgono a
+300 ore-spettatore; 360 / 300 = **1,2 MB per spettatore per ora**, prima di
+sottrarre il traffico di regia, setup e altri accessi. Non e' una previsione
+di consumo. La precedente ipotesi di 1 MB/ora darebbe 300 MB, cioe' **83,3%**
+del budget giornaliero, lasciando 60 MB; non e' stata misurata e non dimostra
+che il sito rimanga sotto quota. Dopo l'ottimizzazione occorre misurare di
+nuovo il consumo reale in console, includendo l'overhead di rete.
+
+## Riduzione del traffico live
+
+Il pubblico riceve lo stato iniziale e i cambi di slide attraverso una sola
+connessione SSE. Finche' il flusso funziona non effettua letture REST della
+posizione: sono eliminate le precedenti 450 richieste/ora per telefono.
+Se il flusso cade, legge lo stato ogni 8 secondi senza sovrapporre le richieste;
+quando SSE riprende, il controllo REST si ferma. Una risposta REST in ritardo
+non sovrascrive gli aggiornamenti SSE piu' recenti.
+
+La regia scrive solo quando cambia la posizione o il massimo raggiunto,
+senza ripubblicare uno stato identico ogni 10 secondi. Le scritture sono
+serializzate e quelle fallite vengono ritentate. Gli errori sono segnalati
+dal punto rosso della regia e nella console del browser; sul pubblico il
+titolo del contatore indica lo stato della sincronizzazione.
+
+Restano i controlli di stato assemblea e timestamp delle modifiche, le
+presenze e le letture della dashboard: l'ottimizzazione non elimina tutto
+il traffico e non aumenta il limite di 100 connessioni. File, immagini e
+script della presentazione sono serviti da GitHub Pages, non dal database.

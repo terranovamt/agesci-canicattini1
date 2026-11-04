@@ -107,7 +107,7 @@
         <div class="card r"><b>🔴 In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa Anteprima, senza bordo rosso o spia live, con un grande avviso “ASSEMBLEA NON INIZIATA”: il pubblico vede ancora la home.</div>
         <div class="card"><b>⏭ Prossima</b>Anteprima del passo successivo, così sai cosa arriva.</div>
         <div class="card g"><b>‹ ›</b>Due grandi pulsanti Indietro / Avanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.</div>
-        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Download mensile e spazio totale, con percentuali reali, sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
+        <div class="card y"><b>📊 Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Il budget operativo di download è 360 MB/giorno; verifica la quota vigente del servizio nella console. Consumo reale e spazio totale sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a queste API; non inserire credenziali di servizio nel sito.</div>
       </div>
       <table>
         <tr><th>Tasto / clicker</th><th>Azione</th></tr>
@@ -244,7 +244,7 @@
       <h2><span class="n">7</span>Limiti del piano gratuito (Spark)</h2>
       <div class="cards">
         <div class="card r"><span class="big">100</span><b>connessioni simultanee</b>1 per spettatore + regia + setup → circa <strong>97 telefoni</strong> collegati insieme.</div>
-        <div class="card g"><span class="big">10 GB</span><b>download al mese</b>Il consumo reale e la percentuale sul totale sono nella console Firebase → Utilizzo. La dashboard non calcola consumi fittizi a partire dal tempo trascorso.</div>
+        <div class="card g"><span class="big">360 MB</span><b>budget download al giorno</b>Budget operativo indicato per questo progetto: verifica la quota vigente e il consumo reale nella console Firebase → Utilizzo. La dashboard non calcola consumi fittizi a partire dal tempo trascorso.</div>
         <div class="card g"><span class="big">1 GB</span><b>dati archiviati</b>La presentazione usa pochi KB.</div>
       </div>
       <p>Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero non seguire la regia. Per assemblee più numerose passa al piano <b>Blaze</b> (a consumo, 200.000 connessioni; per un'assemblea il costo resta praticamente nullo) oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live con una lettura leggera ogni 10 s, senza occupare una seconda connessione.</p>

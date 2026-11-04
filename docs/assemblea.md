@@ -42,8 +42,10 @@ mostrato un errore e il controllo riprova automaticamente.
   percentuale. La barra diventa arancione al 70% e rossa al 90%.
   Le presenze non misurano tutte le connessioni al database (ad esempio la
   console Firebase o altri client), quindi non coincidono con il dato ufficiale.
-  Download mensile (su 10 GB) e spazio totale (su 1 GB), con le relative
-  percentuali, sono disponibili **solo nella console Firebase**: le API
+  Il budget operativo di download indicato per il progetto è **360 MB/giorno**,
+  da confrontare con la quota vigente del servizio in console. Il consumo
+  reale di download e lo spazio totale (su 1 GB) sono disponibili
+  **solo nella console Firebase**: le API
   pubbliche del Realtime Database non espongono queste metriche.
   La dashboard non inventa consumi né mostra le dimensioni di pochi nodi
   come se fossero l'intero database. Per integrarle servirebbe un backend
