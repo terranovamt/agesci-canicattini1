@@ -1,44 +1,45 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
 const { test } = require('node:test');
+const M = require('../calendar-model.js');
+const sources = require('../calendars/sources.json');
+const event = { id: 'one', calendar: 'eg', title: 'Riunione', location: '', allDay: false,
+  start: '2027-03-27T23:30:00Z', end: '2027-03-28T01:30:00Z' };
 
-test('calendar selection preserves Outlook and embeds the three Google IDs without holidays', () => {
-  const outlook = 'https://outlook.office365.com/calendar.html';
-  const elements = {
-    'calendar-view': { src: outlook, getAttribute() { return this.src } },
-    'calendar-open': {},
-    'calendar-view-title': {},
-    'calendar-help': {}
-  };
-  const buttons = ['outlook', '0', '1', '2', 'google'].map(calendar => ({
-    dataset: { calendar }, attributes: {},
-    setAttribute(key, value) { this.attributes[key] = value }
-  }));
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../home-calendars.js'), 'utf8'), {
-    URL, document: { getElementById: id => elements[id], querySelectorAll: () => buttons }
-  });
-  buttons[4].onclick();
-  const combined = new URL(elements['calendar-view'].src);
-  const ids = combined.searchParams.getAll('src');
-  assert.equal(ids.length, 3);
-  assert.equal(new Set(ids).size, 3);
-  assert.ok(ids.every(id => id.endsWith('@group.calendar.google.com')));
-  assert.ok(ids.every(id => !id.includes('holiday')));
-  assert.deepEqual(combined.searchParams.getAll('color'), ['#176B46', '#A64B00', '#B02A1F']);
-  assert.equal(combined.searchParams.get('ctz'), 'Europe/Rome');
-  for (let i = 1; i <= 3; i++) {
-    buttons[i].onclick();
-    const url = new URL(elements['calendar-view'].src);
-    assert.deepEqual(url.searchParams.getAll('src'), [ids[i - 1]]);
-    assert.equal(elements['calendar-open'].href, url.href);
-    assert.equal(buttons[i].attributes['aria-pressed'], 'true');
-    assert.equal(buttons.filter(button => button.attributes['aria-pressed'] === 'true').length, 1);
-    assert.equal(elements['calendar-view-title'].textContent, ids[i - 1]);
-  }
-  buttons[0].onclick();
-  assert.equal(elements['calendar-view'].src, outlook);
-  assert.equal(elements['calendar-open'].href, outlook);
-  assert.equal(elements['calendar-view-title'].textContent, 'Gruppo Canicattini 1');
+test('five public sources map to the requested names and colors with no holiday calendar', () => {
+  assert.deepEqual(sources.map(source => [source.name, source.color]), [
+    ['Gruppo Canicattini 1', 'sky'], ['Branca E/G', 'green'], ['Branca L/C', 'yellow'],
+    ['Branca R/S', 'red'], ['Zona Aretusea', 'violet']
+  ]);
+  assert.match(sources[1].feed, /4801ea6d.*\/public\/basic\.ics$/);
+  assert.match(sources[2].feed, /92f7e68e/);
+  assert.match(sources[3].feed, /5b317e01/);
+  assert.match(sources[4].feed, /70048520/);
+  assert.ok(sources.every(source => !source.feed.includes('holiday') && !source.feed.includes('/private-')));
+});
+
+test('calendar days use Rome time across daylight saving and exclusive event ends', () => {
+  assert.equal(M.onDay(event, '2027-03-28'), true);
+  assert.equal(M.onDay(event, '2027-03-27'), false);
+  const midnight = { ...event, start: '2027-06-01T18:00:00Z', end: '2027-06-01T22:00:00Z' };
+  assert.equal(M.onDay(midnight, '2027-06-01'), true);
+  assert.equal(M.onDay(midnight, '2027-06-02'), false);
+  const allDay = { ...event, allDay: true, start: '2027-06-01', end: '2027-06-03' };
+  assert.equal(M.onDay(allDay, '2027-06-02'), true);
+  assert.equal(M.onDay(allDay, '2027-06-03'), false);
+  assert.equal(M.upcoming([allDay], new Date('2027-06-02T18:00:00Z')).length, 1);
+  assert.equal(M.upcoming([allDay], new Date('2027-06-03T08:00:00Z')).length, 0);
+});
+
+test('upcoming list includes ongoing events but not finished events', () => {
+  assert.equal(M.upcoming([event], new Date('2027-03-28T00:00:00Z')).length, 1);
+  assert.equal(M.upcoming([event], new Date('2027-03-28T02:00:00Z')).length, 0);
+});
+
+test('bad snapshots fail explicitly instead of rendering an empty success state', () => {
+  assert.throws(() => M.validate({}), /non validi/);
+  const data = { generatedAt: '2027-01-01T00:00:00Z', rangeStart: '2026-01-01T00:00:00Z',
+    rangeEnd: '2028-01-01T00:00:00Z', calendars: sources.map(source => ({ ...source, status: 'ok' })), events: [event] };
+  assert.equal(M.validate(data), data);
+  assert.throws(() => M.validate({ ...data, events: [{ ...event, calendar: 'unknown' }] }), /non valido/);
+  assert.throws(() => M.validate({ ...data, events: [{ ...event, end: 'invalid' }] }), /non valido/);
 });

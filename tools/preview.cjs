@@ -7,7 +7,7 @@ const path = require('node:path');
 const documents = require('../documents-model.js');
 
 const ROOT = path.resolve(__dirname, '..');
-const IGNORED_DIRS = new Set(['.git', '.github', 'node_modules']);
+const IGNORED_DIRS = new Set(['.git', '.github', 'node_modules', '.venv-calendar', '__pycache__']);
 const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.cjs': 'text/javascript; charset=utf-8',

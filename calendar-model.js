@@ -1,0 +1,44 @@
+(function () {
+  const dateKey = date => new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(date);
+  function onDay(event, day) {
+    if (event.allDay) return event.start <= day && event.end > day;
+    const first = dateKey(new Date(event.start));
+    const end = new Date(event.end);
+    const last = dateKey(new Date(Math.max(new Date(event.start).getTime(), end.getTime() - 1)));
+    return first <= day && day <= last;
+  }
+  function upcoming(events, now) {
+    const today = dateKey(now);
+    return events.filter(event => event.allDay ? event.end > today
+      : new Date(event.end) > now || new Date(event.start) >= now)
+      .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title, 'it'));
+  }
+  function validate(data) {
+    if (!Array.isArray(data?.calendars) || !Array.isArray(data.events)
+      || !Number.isFinite(Date.parse(data.generatedAt)) || !Number.isFinite(Date.parse(data.rangeStart))
+      || !Number.isFinite(Date.parse(data.rangeEnd)) || Date.parse(data.rangeEnd) <= Date.parse(data.rangeStart)) {
+      throw new Error('Dati del calendario non validi');
+    }
+    const ids = new Set();
+    data.calendars.forEach(calendar => {
+      if (!calendar || typeof calendar.id !== 'string' || ids.has(calendar.id) || typeof calendar.name !== 'string'
+        || !['sky', 'green', 'yellow', 'red', 'violet'].includes(calendar.color)
+        || !['ok', 'error'].includes(calendar.status)) throw new Error('Elenco calendari non valido');
+      ids.add(calendar.id);
+    });
+    data.events.forEach(event => {
+      if (!event || !ids.has(event.calendar) || typeof event.title !== 'string' || typeof event.location !== 'string'
+        || typeof event.allDay !== 'boolean' || !Number.isFinite(Date.parse(event.start))
+        || !Number.isFinite(Date.parse(event.end)) || Date.parse(event.end) < Date.parse(event.start)
+        || (event.allDay && (!/^\d{4}-\d{2}-\d{2}$/.test(event.start) || !/^\d{4}-\d{2}-\d{2}$/.test(event.end)))) {
+        throw new Error('Evento del calendario non valido');
+      }
+    });
+    return data;
+  }
+  const model = { dateKey, onDay, upcoming, validate };
+  if (typeof module !== 'undefined' && module.exports) module.exports = model;
+  else window.CALENDAR_MODEL = model;
+})();

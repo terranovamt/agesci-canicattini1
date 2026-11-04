@@ -12,6 +12,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 function fixture(file, css, scripts) {
   const index = read('documents/index.json');
+  const calendars = read('calendars/events.json');
   const mock = `
     window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
     window.LIVE = { github: { repo: 'test/repo', ramo: 'test' } };
@@ -21,6 +22,18 @@ function fixture(file, css, scripts) {
     Object.defineProperty(window, 'localStorage', { value: { getItem: () => null, setItem() {}, removeItem() {} } });
     window.confirm = () => true;
     window.fetch = async (url, options) => {
+      if (url === 'calendars/events.json') {
+        const snapshot = ${calendars};
+        snapshot.generatedAt = new Date().toISOString();
+        snapshot.calendars.forEach(calendar => { calendar.status = 'ok'; calendar.lastSuccess = snapshot.generatedAt });
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+        const day = tomorrow.toISOString().slice(0, 10);
+        snapshot.events = snapshot.calendars.map((calendar, i) => ({
+          id: String(i), calendar: calendar.id, title: '<img src=x onerror=alert(1)>Evento ' + calendar.name,
+          location: 'Sede', start: day + 'T09:00:00Z', end: day + 'T10:00:00Z', allDay: false
+        }));
+        return { ok: true, json: async () => snapshot };
+      }
       if (options?.method === 'POST') items = DOCUMENTS_MODEL.apply(items, JSON.parse(options.body));
       return { ok: true, json: async () => JSON.parse(JSON.stringify(items)) };
     };
@@ -42,7 +55,7 @@ function fixture(file, css, scripts) {
 test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [
-    fixture('index.html', 'home.css', ['home-documents.js']),
+    fixture('index.html', 'home.css', ['home-documents.js', 'calendar-model.js', 'home-calendars.js']),
     fixture('gestione-documenti.html', 'gestione-documenti.css', ['documents-model.js', 'documents-store.js', 'gestione-documenti.js']),
     fixture('Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/common/setup.css',
       ['common/salva-dati.js', 'common/modifiche.js', 'common/nuovo-anno-model.js', 'common/nuovo-anno.js', 'common/setup.js']),
@@ -95,6 +108,8 @@ test('public documents and management work in a browser at all required widths',
                 fits: wizard.scrollWidth <= wizard.clientWidth,
                 actionsVisible: doc.querySelector('#year-next').getBoundingClientRect().bottom <= frame.contentWindow.innerHeight,
                 valid: doc.querySelector('#year-form').checkValidity() });
+              if (step === 1) results.push({ dateTimeFields: doc.querySelectorAll('#year-fields input[type="datetime-local"]').length,
+                duplicateDate: [...doc.querySelectorAll('#year-fields label')].some(label => label.textContent.includes('Data assemblea (es.')) });
               doc.querySelector('#year-form').requestSubmit();
             }
             results.push({ review: doc.querySelector('#year-step-title').textContent,
@@ -109,12 +124,39 @@ test('public documents and management work in a browser at all required widths',
               doc.querySelector('#year-form').requestSubmit();
               const after = readSetup();
               results.push({ applied: after.anno_esercizio, archived: after.censimenti.storico_per_anno['2026'].censiti,
+                writtenDate: after.assemblea.data,
+                qrDate: after.slide.find(slide => slide.tipo === 'slide_qr_live').data_ora,
                 newAmount: after.entrate[0].importo, previousAmount: after.entrate[0].importo_anno_precedente,
                 dirty: !doc.querySelector('#salva-gh').disabled, wizardClosed: !wizard.open });
             }
           }
         }
         if (page === 0) {
+          results.push({ calendarFilters: doc.querySelectorAll('#calendar-filters input').length,
+            agendaCount: doc.querySelectorAll('.agenda-event').length,
+            safeText: doc.querySelector('.agenda-event h4').textContent.startsWith('<img'),
+            injected: doc.querySelector('.agenda-event h4 img') !== null });
+          const filters = [...doc.querySelectorAll('#calendar-filters input')];
+          filters.forEach(input => { input.checked = false; input.onchange() });
+          results.push({ noneSelected: doc.querySelector('#calendar-agenda').textContent });
+          filters[1].checked = true; filters[1].onchange();
+          results.push({ branchCount: doc.querySelectorAll('.agenda-event').length,
+            branch: doc.querySelector('.event-source').textContent });
+          doc.querySelector('#calendar-all').click();
+          const previousMonth = doc.querySelector('#calendar-month').textContent;
+          doc.querySelector('#calendar-next').click();
+          results.push({ changedMonth: previousMonth !== doc.querySelector('#calendar-month').textContent });
+          doc.querySelector('#calendar-today').click();
+          const dayWithEvent = [...doc.querySelectorAll('.calendar-day')].find(button => button.querySelector('.day-marker'));
+          if (dayWithEvent) {
+            dayWithEvent.click();
+            results.push({ selectedDay: doc.querySelectorAll('.calendar-day[aria-pressed=true]').length,
+              dayAgenda: doc.querySelectorAll('.agenda-event').length });
+          }
+          frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
+          await doc.querySelector('#calendar-retry').onclick();
+          results.push({ calendarFailure: !doc.querySelector('#calendar-retry').hidden,
+            calendarFailureText: doc.querySelector('#calendar-status').textContent });
           const cards = [...doc.querySelectorAll('.document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
@@ -223,6 +265,8 @@ test('public documents and management work in a browser at all required widths',
     for (const item of results.filter(item => 'cancelUnchanged' in item)) assert.equal(item.cancelUnchanged, true);
     const annual = results.find(item => 'applied' in item);
     assert.equal(annual.applied, 2027);
+    assert.equal(annual.writtenDate, '20 Novembre 2027');
+    assert.equal(annual.qrDate, '2027-11-20T20:30');
     assert.equal(annual.archived, 100);
     assert.equal(annual.newAmount, 10);
     assert.equal(annual.previousAmount, 9665);
@@ -236,5 +280,19 @@ test('public documents and management work in a browser at all required widths',
     assert.equal(results.find(item => 'dashboardError' in item).dashboardError, true);
     assert.equal(results.find(item => 'assemblyError' in item).assemblyError, true);
     assert.match(results.find(item => 'assemblyErrorText' in item).assemblyErrorText, /Impossibile/);
+    assert.equal(results.find(item => 'calendarFilters' in item).calendarFilters, 5);
+    assert.equal(results.find(item => 'agendaCount' in item).agendaCount, 5);
+    assert.equal(results.find(item => 'safeText' in item).safeText, true);
+    assert.equal(results.find(item => 'injected' in item).injected, false);
+    assert.match(results.find(item => 'noneSelected' in item).noneSelected, /Seleziona almeno/);
+    assert.equal(results.find(item => 'branchCount' in item).branchCount, 1);
+    assert.equal(results.find(item => 'branch' in item).branch, 'Branca E/G');
+    assert.equal(results.find(item => 'changedMonth' in item).changedMonth, true);
+    assert.equal(results.find(item => 'calendarFailure' in item).calendarFailure, true);
+    assert.match(results.find(item => 'calendarFailureText' in item).calendarFailureText, /503/);
+    for (const item of results.filter(item => 'dateTimeFields' in item)) {
+      assert.equal(item.dateTimeFields, 1);
+      assert.equal(item.duplicateDate, false);
+    }
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 });

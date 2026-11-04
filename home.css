@@ -57,23 +57,50 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .section-description { max-width: 330px; margin: 0; color: var(--v2); font-size: 14px }
 .calendar-card { border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card) }
 .calendar-card { padding: clamp(18px, 3vw, 28px) }
-.group-calendar { display: block; width: 100%; height: 600px; border: 0; border-radius: var(--radius-md); background: var(--w) }
 .calendar-status { min-height: 20px; margin: 16px 0 0; color: var(--v2); font-size: 12px }
 .calendar-status a { color: var(--v); text-underline-offset: 3px }
-.calendar-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 24px }
-.calendar-choice { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid var(--v2); border-radius: var(--radius-md); background: var(--w); color: var(--vd); text-align: left; min-width: 0 }
-.calendar-choice strong, .calendar-choice small { display: block; overflow-wrap: anywhere }
-.calendar-choice strong { font-size: 13px }
-.calendar-choice small { font-size: 11px; font-weight: 400; color: var(--v2); margin-top: 5px }
-.calendar-choice[aria-pressed=true] { border: 2px solid var(--v); padding: 13px; background: var(--bg) }
-.calendar-choice[aria-pressed=true] strong::after { content: ' · selezionato'; font-size: 11px }
-.calendar-dot { width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; flex: none; background: var(--v) }
-.calendar-google-one .calendar-dot { background: var(--g-strong) }
-.calendar-google-two .calendar-dot { background: var(--o-strong) }
-.calendar-google-three .calendar-dot { background: var(--r-strong) }
-.calendar-view-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; margin-bottom: 16px }
-.calendar-view-heading h3 { margin: 0; min-width: 0; flex: 1; font-size: 18px; overflow-wrap: anywhere }
-.calendar-view-heading a { white-space: normal }
+.calendar-sky { --event-color: var(--b2); --event-ink: var(--vd) }
+.calendar-green { --event-color: var(--g-strong); --event-ink: var(--w) }
+.calendar-yellow { --event-color: var(--y); --event-ink: var(--vd) }
+.calendar-red { --event-color: var(--r-strong); --event-ink: var(--w) }
+.calendar-violet { --event-color: var(--v); --event-ink: var(--w) }
+.calendar-filter-set { border: 0; padding: 0; margin: 24px 0 0; min-width: 0 }
+.calendar-filter-set legend { color: var(--v); font-weight: 800; font-size: 14px; margin-bottom: 12px }
+.calendar-filters { display: flex; flex-wrap: wrap; gap: 10px }
+.calendar-filter { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; min-height: 48px; border: 1px solid var(--v2); border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--vd); font-weight: 700 }
+.calendar-filter input { width: 20px; height: 20px; accent-color: var(--v); flex: none }
+.calendar-filter span { border-bottom: 5px solid var(--event-color); overflow-wrap: anywhere }
+.calendar-filter-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0 28px; color: var(--v2); font-size: 12px }
+.calendar-card button:not(.button) { padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg); color: var(--v); font-weight: 700; font-size: 13px }
+.calendar-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: start }
+.calendar-layout > section { min-width: 0 }
+.calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px }
+.calendar-toolbar h3 { margin: 0; font-size: 20px; text-transform: capitalize }
+.calendar-toolbar > div { display: flex; gap: 6px }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px }
+.calendar-weekdays { color: var(--v2); text-align: center; font-size: 11px; font-weight: 700; margin-bottom: 8px }
+.calendar-card .calendar-day { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 62px; padding: 6px 2px; border: 1px solid transparent; color: var(--vd); min-width: 0 }
+.calendar-day[aria-current=date] { outline: 2px solid var(--v); outline-offset: -2px }
+.calendar-card .calendar-day[aria-pressed=true] { background: var(--v); color: var(--w) }
+.calendar-day[aria-pressed=true]:focus-visible { outline-color: var(--y) }
+.day-markers { display: flex; justify-content: center; flex-wrap: wrap; gap: 3px; min-height: 7px }
+.day-marker { width: 7px; height: 7px; border-radius: 50%; background: var(--event-color); border: 1px solid var(--vd) }
+.calendar-agenda-panel { background: var(--bg); padding: 20px; border-radius: var(--radius-lg) }
+.calendar-agenda-panel h3 { font: 700 25px/1.2 Georgia, serif; margin: 0 0 16px }
+.agenda-event { padding: 16px; background: var(--w); border-radius: var(--radius-md); border-left: 5px solid var(--event-color); margin-top: 12px }
+.event-source { display: inline-block; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--event-color); color: var(--event-ink); font-size: 11px; font-weight: 800 }
+.agenda-event h4 { margin: 10px 0 6px; font-size: 16px; overflow-wrap: anywhere }
+.agenda-event time, .agenda-event p { display: block; font-size: 12px; color: var(--v2); overflow-wrap: anywhere }
+.agenda-event p { margin: 8px 0 0 }
+.calendar-originals { margin-top: 24px; color: var(--v); font-size: 13px }
+.calendar-originals summary, .calendar-originals a { min-height: 44px; padding: 10px 0 }
+.calendar-originals a { display: inline-block; color: var(--v); overflow-wrap: anywhere }
+@media (max-width: 900px) { .calendar-layout { grid-template-columns: 1fr } }
+@media (max-width: 400px) {
+  .calendar-weekdays, .calendar-days { gap: 2px }
+  .calendar-card .calendar-day { min-height: 48px; font-size: 12px }
+  .calendar-agenda-panel { padding: 14px }
+}
 .documents-section { padding-top: 4px }
 .document-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px }
 .document-card { position: relative; display: flex; flex-direction: column; min-height: 250px; padding: 22px; border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w)); border-radius: var(--radius-lg); background: var(--w); box-shadow: var(--shadow-card); transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard) }

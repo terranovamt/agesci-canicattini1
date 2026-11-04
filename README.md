@@ -77,30 +77,59 @@ PDF forniti: PEG 2026-2028 e Rendiconto per cassa - Modello D.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 Dopo il salvataggio attendi il deployment di GitHub Pages.
 
-## Calendario Outlook
+## Calendario personalizzato
 
-La home propone quattro calendari: **Gruppo Canicattini 1** (Outlook) e tre
-Google identificati provvisoriamente dai prefissi **92f7e68e**, **5b317e01** e
-**70048520**. Le festività italiane sono escluse. I colori provvisori sono
-viola per il gruppo, verde, arancio e rosso per i tre Google. La selezione
-**Tutti i Google** sovrappone i tre calendari Google con colori distinti,
-lingua italiana e fuso Europe/Rome. Outlook resta una vista separata: nessun
-proxy o servizio esterno è stato introdotto per unificare i provider.
-I calendari Google devono essere pubblici per la consultazione anonima;
-altrimenti richiedono un account autorizzato. Ogni vista ha un link di apertura
-esterna. Nomi, autorizzazioni ed eventi Google non sono verificabili da questo
-ambiente per mancata risoluzione DNS.
+La home riunisce cinque feed pubblici senza iframe: **Gruppo Canicattini 1**
+azzurro (Outlook), **Branca E/G** verde, **Branca L/C** giallo, **Branca R/S**
+rosso e **Zona Aretusea** viola. Le festività italiane sono escluse.
+I checkbox filtrano sia il mese sia i prossimi appuntamenti. Selezionando un
+giorno vengono mostrati gli eventi di quel giorno, inclusi quelli di più giorni;
+**Mostra tutti** riattiva tutti i calendari. Le etichette testuali accompagnano
+sempre i colori. Tutti gli orari sono mostrati in Europe/Rome.
 
-La home incorpora la vista pubblicata `calendar.html`; il link `calendar.ics`
-serve invece per iscriversi dagli strumenti calendario. Il feed ICS può
-essere pubblico ma non leggibile tramite JavaScript per i vincoli CORS.
-In Outlook verifica **Impostazioni > Calendario > Calendari condivisi >
-Pubblica un calendario**, scegli il calendario del gruppo e rendi visibili i
-dettagli degli eventi. Confronta il link HTML pubblicato con quello nella home.
-Se l'incorporamento è bloccato, usa il link per aprire il calendario in una
-nuova scheda. L'URL HTML è stato derivato dal link ICS: la sua disponibilità
-non è stata verificata perché l'ambiente di lavoro non risolve il dominio
-Outlook; non possiamo quindi confermare la condivisione né la presenza di eventi.
+I feed e i nomi sono configurati in `calendars/sources.json`. Il browser legge
+soltanto `calendars/events.json`, evitando CORS, token e API key nel sito.
+Il workflow **Sync public calendars** legge i cinque feed ogni ora al minuto
+17 (GitHub può ritardare gli orari), al cambio della configurazione su `main`,
+oppure manualmente dalla scheda Actions. Parte **solo dopo il merge su main**.
+Pubblica un commit con il solo snapshot e richiede una build Pages; ha permessi
+Contents e Pages in scrittura, senza segreti esterni né crediti AI. Regole di
+protezione del branch che vietano il push del bot richiedono un adeguamento
+esplicito dell'amministratore: lo script non aggira tali regole.
+
+La sincronizzazione considera circa un anno passato e due futuri, espande
+ricorrenze, esclusioni, eccezioni e cancellazioni, gestisce eventi giornalieri,
+durate e fusi orari. Pubblica solo titolo, luogo, date e calendario, non
+organizzatori, invitati o descrizioni. Se un feed fallisce, conserva gli ultimi
+eventi noti, li segnala come non aggiornati e fa fallire il workflow dopo aver
+pubblicato lo stato d'errore. La home segnala anche snapshot vecchi oltre tre ore
+e il periodo coperto; un errore non viene presentato come assenza di eventi.
+
+I due pacchetti Python in `tools/calendar-requirements.txt` sono usati
+**solo dalla sincronizzazione**, per non implementare un parser ICS incompleto.
+Non sono dipendenze del browser o del server preview. Per aggiornare in locale:
+
+```sh
+python3 -m venv .venv-calendar
+.venv-calendar/bin/pip install -r tools/calendar-requirements.txt
+.venv-calendar/bin/python tools/sync-calendars.py
+```
+
+In PowerShell usa `py -m venv .venv-calendar` e gli eseguibili
+`.venv-calendar\Scripts\pip.exe` / `.venv-calendar\Scripts\python.exe`.
+Non committare l'ambiente virtuale. Per i test del sincronizzatore:
+`python -m unittest discover -s tests -p test_calendar_sync.py`.
+La preview legge lo snapshot locale: non contatta i feed.
+
+I feed devono essere pubblici con i dettagli visibili; non usare indirizzi
+segreti iCal. In Outlook controlla **Impostazioni > Calendario > Calendari
+condivisi > Pubblica un calendario**; in Google **Impostazioni > Autorizzazioni
+di accesso per gli eventi > Rendi disponibile pubblicamente**, quindi usa
+l'indirizzo pubblico iCal in **Integra calendario**. Restano i link per aprire
+i calendari originali e per iscriversi al gruppo. La prima lettura reale da
+questo ambiente ha fallito per DNS: lo snapshot incluso riporta gli errori,
+senza inventare eventi. La disponibilità dei feed va verificata dalla prima
+esecuzione Actions dopo il merge.
 
 ## Pubblicazione (GitHub Pages)
 
@@ -137,7 +166,9 @@ uscite, patrimonio, contenuti delle slide e riepilogo.
 
 La procedura parte dai dati aperti nel setup, comprese le modifiche locali.
 Richiede tutti i nuovi importi (zero va inserito esplicitamente), i nuovi
-censiti, la data dell'assemblea e il conto alla rovescia delle slide QR.
+censiti e **un solo campo data/ora** dell'assemblea e del conto alla rovescia.
+Da questo campo ricava la data scritta, per esempio **20 Novembre 2027**,
+e la data/ora di tutte le slide QR; non occorre reinserirle separatamente.
 L'anno scout viene registrato separatamente dall'esercizio. Titoli, ordine del
 giorno, persone, regolamento e PEG sono rivedibili al passaggio Contenuti:
 nessuna sostituzione automatica degli anni nei testi.
