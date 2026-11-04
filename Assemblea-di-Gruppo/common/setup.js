@@ -148,7 +148,7 @@
   }
   const badge = (t, c) => el('span', { className: 'badge ' + (c || ''), textContent: t });
 
-  const GENERALE = ['anno_esercizio', 'assemblea'];
+  const GENERALE = ['anno_esercizio', 'anno_scout', 'assemblea'];
   const INTRO = {
     generale: 'Data, luogo e orari dell\'assemblea.',
     ordine: 'Aggiungi, modifica, duplica o nascondi le slide. Collassa un divisore per spostare tutta la sezione: trascinala oppure usa i pulsanti Sposta su e Sposta giù.',
@@ -335,6 +335,7 @@
   function go(tab) {
     const prev = view; view = tab;
     document.querySelectorAll('.tabs button').forEach(x => {
+      if (!x.dataset.tab) return;
       x.classList.toggle('on', x.dataset.tab === tab);
       x.setAttribute('aria-pressed', String(x.dataset.tab === tab));
     });
@@ -354,6 +355,7 @@
     $('#salva-gh').textContent = saving ? 'Salvataggio in corso…' : 'Salva su GitHub (dati.js)';
     $('#salva-gh').disabled = !d || saving;
     $('#annulla').disabled = !d || saving;
+    $('#nuovo-anno').disabled = !edit || saving;
   }
 
   /* ---------- GitHub: salva dati.js ---------- */
@@ -444,7 +446,18 @@
     const a = el('a', { href: URL.createObjectURL(new Blob([txt], { type: 'text/javascript' })), download: 'dati.js' });
     a.click(); URL.revokeObjectURL(a.href);
   };
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => go(b.dataset.tab));
+  document.querySelectorAll('.tabs button').forEach(b => {
+    if (b.dataset.tab) b.onclick = () => go(b.dataset.tab);
+  });
+  if (window.NUOVO_ANNO) window.NUOVO_ANNO.mount({
+    getData: () => edit,
+    apply(data) {
+      edit = data; go('generale');
+      status('Nuovo anno applicato alla bozza: salva su GitHub per pubblicare', 'live');
+      toast('Nuovo anno pronto. Nessuna pubblicazione effettuata.');
+    },
+    error(message) { toast(message) }
+  });
   $('#doc').onload = () => { try { const d = $('#doc').contentDocument; $('#doc').style.height = d.documentElement.scrollHeight + 'px' } catch (e) { } };
   $('#json-apply').onclick = () => {
     try { const v = JSON.parse($('#json-text').value); if (!plain(v) || !Array.isArray(v.slide)) throw new Error('serve un oggetto con la lista "slide"'); edit = v; $('#json-err').textContent = ''; render(); toast('Applicato: ora premi Salva su GitHub') }

@@ -30,6 +30,10 @@
       <span class="sep"></span>
       <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
       <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
+      <div class="year-launch">
+        <p>Un nuovo ciclo per il gruppo</p>
+        <button id="nuovo-anno" type="button" disabled>Setup nuovo anno<small>Compila, controlla e conferma</small></button>
+      </div>
       <span class="links"><a id="apri-regia" target="assemblea-regia">Apri regia ↗</a><a href="index.html" target="assemblea-pubblico">Vista pubblico ↗</a><a href="../gestione-documenti.html">Gestisci PDF →</a></span>
     </nav>
     <section class="workspace" aria-labelledby="workspace-title">
@@ -87,10 +91,31 @@
     </form>
   </dialog>
 
+  <dialog id="year-dialog" aria-labelledby="year-title" aria-describedby="year-progress">
+    <form id="year-form">
+      <div class="year-heading">
+        <div><p id="year-progress" role="status"></p><h2 id="year-title">Setup nuovo anno</h2></div>
+        <button id="year-cancel" type="button" class="sec">Annulla procedura</button>
+      </div>
+      <div id="year-scroll">
+        <h3 id="year-step-title" tabindex="-1"></h3>
+        <div id="year-fields"></div>
+      </div>
+      <p id="year-error" class="err" role="alert"></p>
+      <div class="year-actions">
+        <button id="year-back" type="button" class="sec">Indietro</button>
+        <button id="year-next" type="submit">Continua</button>
+      </div>
+      <p class="hint">Solo una bozza fino al tuo OK. Dopo l’applicazione, usa Salva su GitHub per pubblicare.</p>
+    </form>
+  </dialog>
+
   <script src="config.js"></script>
   <script src="common/accesso.js"></script>
   <script src="common/salva-dati.js"></script>
   <script src="common/modifiche.js"></script>
+  <script src="common/nuovo-anno-model.js"></script>
+  <script src="common/nuovo-anno.js"></script>
   <script src="common/setup.js"></script>
 </body>
 

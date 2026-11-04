@@ -116,3 +116,30 @@ Nel setup le sezioni sono raccolte nella barra laterale (su telefono diventano
 una griglia). Ogni sezione ha titolo e indicazioni contestuali; la barra di
 salvataggio resta visibile, con stato delle modifiche e accesso a download e
 uscita. Il collegamento alla gestione PDF non modifica i dati dell'assemblea.
+
+## Setup nuovo anno
+
+Il blocco viola **Setup nuovo anno**, tra **Limiti** e **Apri regia**, apre una
+procedura guidata di sette passaggi: anno, assemblea, censimenti, entrate e
+uscite, patrimonio, contenuti delle slide e riepilogo.
+
+La procedura parte dai dati aperti nel setup, comprese le modifiche locali.
+Richiede tutti i nuovi importi (zero va inserito esplicitamente), i nuovi
+censiti, la data dell'assemblea e il conto alla rovescia delle slide QR.
+L'anno scout viene registrato separatamente dall'esercizio. Titoli, ordine del
+giorno, persone, regolamento e PEG sono rivedibili al passaggio Contenuti:
+nessuna sostituzione automatica degli anni nei testi.
+
+Solo **OK, applica nuovo anno**, dopo il controllo del riepilogo, aggiorna la
+bozza del setup. Gli importi correnti diventano precedenti, i censimenti e
+l'avanzo/disavanzo entrano negli storici, gli anni del patrimonio e gli orari
+delle prime due convocazioni nelle slide quorum vengono aggiornati. I presenti
+del nuovo anno tornano “da rilevare”. Gli storici più vecchi restano intatti;
+uno storico dello stesso anno già presente ma diverso blocca la procedura.
+L'esercizio deve essere immediatamente successivo e l'ordine delle sei voci
+del patrimonio non cambia.
+
+**Annulla procedura** scarta soltanto la bozza annuale. Dopo l'applicazione,
+**Annulla** nella barra del setup ripristina tutti i dati all'ultima versione
+caricata/salvata, incluse altre modifiche locali: non è un annullamento limitato
+al cambio anno. **Salva su GitHub** rimane necessario per pubblicare.
