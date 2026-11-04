@@ -47,6 +47,30 @@ e i contenuti destinati al pubblico restano pubblici: non inserire dati riservat
 
 ## Pubblicazione (GitHub Pages)
 
+### Anteprima locale della grafica
+
+Per provare home, area riservata, setup e regia senza Firebase, dalla radice
+del repository esegui:
+
+```bash
+node tools/preview.cjs
+```
+
+Apri `http://localhost:8000` (oppure inoltra la porta 8000 dalla scheda
+**Ports** del workspace). Accedi con una chiave qualsiasi non vuota.
+Un avviso giallo identifica l'anteprima: Firebase e il live sono simulati
+in memoria, il salvataggio GitHub è bloccato e i file del repository non
+vengono modificati. Anche la sessione demo è separata dall'accesso reale.
+Le prove del setup restano nella pagina: puoi conservarle
+con **Scarica dati.js**; il riavvio del server azzera i dati live simulati.
+Per cambiare porta: `PORT=8001 node tools/preview.cjs`.
+
+Questa modalità serve solo al lavoro grafico: non modifica l'autenticazione
+del sito pubblicato. Il normale `python3 -m http.server` usa invece Firebase
+e GitHub reali.
+
+### Sito pubblicato
+
 In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
 Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
 del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
