@@ -8,14 +8,13 @@ const read = file => fs.readFileSync(path.join(__dirname, '../docs', file), 'utf
 test('home stays on the group page until the assembly is active', () => {
   for (const search of ['', '?regia=test']) {
     let destination, state, error;
-    const elements = { stato: {}, assemblea: {} };
+    const elements = { stato: {} };
     vm.runInNewContext(read('home.js'), {
       document: { getElementById: id => elements[id] },
       location: { search, hash: '#3.2', replace: url => { destination = url } },
       window: { ASSEMBLEA: { osserva: (s, e) => { state = s; error = e } } },
       console: { error() {} },
     });
-    assert.equal(elements.assemblea.href, 'setup.html' + search);
     state(null);
     state({ attiva: false });
     assert.equal(destination, undefined);
@@ -25,4 +24,5 @@ test('home stays on the group page until the assembly is active', () => {
     assert.equal(destination, 'Assemblea-di-Gruppo/index.html' + search + '#3.2');
   }
   assert.ok(!read('index.html').includes('http-equiv="refresh"'));
+  assert.ok(read('index.html').includes('href="area-riservata.html">Area riservata'));
 });

@@ -1,6 +1,7 @@
 /* Pagina di setup: modifica live dei dati della presentazione */
 :root { --y: #FDC500; --vd: #211638; --v: #462678; --v2: #6B478D; --vl: #AEB0D9; --g: #21A067; --r: #E74030; --bg: #F4F1EA }
 * { box-sizing: border-box }
+[hidden] { display: none !important }
 body { margin: 0; font: 15px/1.4 Montserrat, system-ui, sans-serif; background: var(--bg); color: var(--vd); padding-bottom: 90px }
 header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--v); color: #fff }
 header h1 { margin: 0; font-size: 18px; flex: 1 }

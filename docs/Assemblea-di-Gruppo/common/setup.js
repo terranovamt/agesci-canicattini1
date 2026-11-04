@@ -12,7 +12,7 @@
   const strip = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
   const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e };
 
-  let key = new URLSearchParams(location.search).get('regia') || '';
+  let key = new URLSearchParams(location.search).get('regia') || window.ACCESSO.chiave();
   let base, published, edit, remotePatch, view = 'generale';
   const open = new Set(['assemblea']);
 
@@ -325,6 +325,12 @@
   $('#salva-gh').onclick = () => salvaGitHub();
   $('#dimentica').hidden = !localStorage.getItem(TK);
   $('#dimentica').onclick = () => { localStorage.removeItem(TK); $('#dimentica').hidden = true; toast('Token GitHub dimenticato') };
+  $('#esci-area').onclick = () => {
+    if (edit && dirty() && !confirm('Uscire senza pubblicare le modifiche?')) return;
+    window.ACCESSO.esci();
+    edit = clone(published);
+    location.replace('../area-riservata.html');
+  };
   $('#annulla').onclick = () => { edit = clone(published); render() };
   $('#ripristina').onclick = () => { if (confirm('Togliere tutte le modifiche live e tornare a dati.js?')) publish(undefined, 'Tornato a dati.js') };
   $('#scarica').onclick = async () => {
@@ -343,14 +349,26 @@
   addEventListener('beforeunload', e => { if (edit && dirty()) e.preventDefault() });
 
   if (!U) { status('Firebase non configurato', 'ko'); document.body.append(el('p', { textContent: 'Imposta "url" in config.js.' })); return }
-  if (key) init();
-  else {
-    status('Serve la chiave');
-    $('#login').hidden = false;
-    $('#login-form').onsubmit = e => {
-      e.preventDefault(); key = $('#chiave').value.trim(); if (!key) return;
-      history.replaceState(null, '', '?regia=' + encodeURIComponent(key));
-      $('#login').hidden = true; init();
-    };
+  async function accedi() {
+    const button = $('#login-form button');
+    button.disabled = true;
+    status('Verifica accesso…');
+    try {
+      await window.ACCESSO.entra(key);
+      history.replaceState(null, '', location.pathname + location.hash);
+      $('#chiave').value = '';
+      $('#login').hidden = true;
+      await init();
+    } catch (e) {
+      status('Accesso negato', 'ko');
+      $('#login').hidden = false;
+      $('#app').hidden = $('#bar').hidden = true;
+      toast('⚠ ' + e.message);
+    } finally { button.disabled = false }
   }
+  $('#login-form').onsubmit = e => {
+    e.preventDefault(); key = $('#chiave').value.trim(); if (key) accedi();
+  };
+  if (key) accedi();
+  else { status('Area riservata'); $('#login').hidden = false }
 })();

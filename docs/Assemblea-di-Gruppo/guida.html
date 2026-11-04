@@ -90,13 +90,14 @@
 
     <section id="ciclo">
       <h2>Home e assemblea</h2>
-      <p>Di norma il sito mostra la home del gruppo. <b>Assemblea di Gruppo</b> apre il setup.</p>
+      <p>Di norma il sito mostra la home del gruppo. Premi <b>Area riservata</b> e inserisci la chiave: viene verificata su Firebase, poi compare <b>Assemblea di Gruppo</b> per aprire il setup. Anche il link diretto al setup richiede una chiave valida.</p>
       <ol class="steps">
         <li>Inserisci la chiave, prepara i contenuti e premi <b>Inizia assemblea</b>: salva le modifiche live, riparte dalla prima slide e apre la regia.</li>
         <li>Durante l'assemblea chi apre la home viene portato alla presentazione.</li>
-        <li>Nell'ultima slide, solo in regia, premi <b>Termina assemblea</b> accanto a <b>PDF</b> e conferma: entro 10 secondi il pubblico torna alla home; il bottone apre di nuovo il setup.</li>
+        <li>Nell'ultima slide, solo in regia, premi <b>Termina assemblea</b> accanto a <b>PDF</b> e conferma: entro 10 secondi il pubblico torna alla home; il bottone apre di nuovo l'area riservata.</li>
       </ol>
       <p>Il setup resta accessibile da <code>/setup</code>. La chiusura non cancella i contenuti. Per usare avvio e chiusura aggiorna le regole Firebase, includendo il nodo <code>assemblea</code> con la stessa chiave.</p>
+      <p>La sessione resta nella scheda del browser; <b>Esci dall'area riservata</b> cancella chiave e token GitHub. I contenuti della presentazione restano pubblici, ma senza chiave Firebase impedisce di cambiarli.</p>
     </section>
 
     <section id="regia">

@@ -11,12 +11,25 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Chi | Indirizzo |
 | --- | --- |
 | Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
+| Area riservata | `.../area-riservata.html` (accesso con chiave) |
 | Regia | `.../Assemblea-di-Gruppo/?regia=LA-TUA-CHIAVE` |
 | Setup (modifiche live) | https://terranovamt.github.io/agesci-canicattini1/setup (chiede la chiave) |
 | Guida | `.../Assemblea-di-Gruppo/guida.html` |
 
-La chiave non viene salvata nel browser: deve restare nell'URL (anche ricaricando).
-Non condividere mai link con `?regia=`.
+La home propone **Area riservata**, non il setup: dopo la verifica della chiave
+su Firebase compare **Assemblea di Gruppo**, che apre il pannello.
+Anche aprendo direttamente `/setup` la chiave viene verificata prima di mostrare
+campi e pulsanti. Una chiave sbagliata non apre il pannello.
+La sessione dura nella scheda del browser (`sessionStorage`); **Esci**
+cancella la chiave e il token GitHub eventualmente memorizzato. Nel setup la
+chiave viene rimossa dall'URL dopo la verifica.
+La regia usa ancora `?regia=`: non condividere mai questi link.
+
+Il login usa la stessa chiave condivisa della regia, non account personali:
+Firebase verifica il permesso scrivendo soltanto `modifiche/k`, senza toccare
+contenuti, orario di pubblicazione o stato dell'assemblea. Le regole Firebase
+proteggono le scritture anche se qualcuno aggira l'interfaccia. Il repository
+e i contenuti destinati al pubblico restano pubblici: non inserire dati riservati.
 
 ## Pubblicazione (GitHub Pages)
 
@@ -27,7 +40,8 @@ a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.p
 
 ### Aprire e chiudere l'assemblea
 
-1. Dalla home premi **Assemblea di Gruppo**: apre il setup, dove inserire la chiave.
+1. Dalla home premi **Area riservata**, inserisci la chiave e poi scegli
+   **Assemblea di Gruppo** per aprire il setup.
 2. Prepara i contenuti, poi premi **Inizia assemblea**. Con una sola scrittura
    Firebase salva le modifiche live, azzera la posizione e attiva l'assemblea;
    se la scrittura fallisce non avvia nulla e mostra l'errore.
@@ -35,7 +49,7 @@ a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.p
 3. Nell'ultima slide la regia ha **Termina assemblea**, accanto a **PDF**.
    Dopo la conferma salva lo stato inattivo: home e link alla presentazione
    tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
-   torna ad aprire il setup. I contenuti preparati non vengono cancellati.
+   torna all'area riservata. I contenuti preparati non vengono cancellati.
 
 Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
 gli aggiornamenti della regia non possono riattivare un'assemblea terminata.

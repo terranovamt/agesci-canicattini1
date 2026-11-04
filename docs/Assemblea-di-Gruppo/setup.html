@@ -18,7 +18,7 @@
   </header>
 
   <section id="login" hidden>
-    <p>Inserisci la chiave della regia (la stessa di <code>?regia=</code>).</p>
+    <p>Area riservata: inserisci la chiave di accesso per aprire il setup.</p>
     <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
   </section>
 
@@ -55,6 +55,7 @@
         <button id="ripristina" class="sec">Togli tutte le modifiche live</button>
         <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
         <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
+        <button id="esci-area" class="sec">Esci dall'area riservata</button>
       </div>
     </details>
   </footer>
@@ -75,6 +76,7 @@
   </dialog>
 
   <script src="config.js"></script>
+  <script src="common/accesso.js"></script>
   <script src="common/assemblea.js"></script>
   <script src="common/salva-dati.js"></script>
   <script src="common/modifiche.js"></script>
