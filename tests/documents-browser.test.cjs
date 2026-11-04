@@ -81,6 +81,14 @@ test('public documents and management work in a browser at all required widths',
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
             links: cards.every(card => [...card.querySelectorAll('a')].every(link => /documents\\/pdf\\/.+\\.pdf$/i.test(link.getAttribute('href')))) });
+          frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
+          await doc.querySelector('#documents-retry').onclick();
+          results.push({ errorVisible: !doc.querySelector('#documents-retry').hidden,
+            error: doc.querySelector('#documents-status').textContent });
+          frame.contentWindow.fetch = async () => ({ ok: true, json: async () => [] });
+          await doc.querySelector('#documents-retry').onclick();
+          results.push({ empty: doc.querySelector('#documents-status').textContent,
+            retryHidden: doc.querySelector('#documents-retry').hidden });
         } else if (page === 1) {
           const win = frame.contentWindow;
           const input = doc.querySelector('#document-file');
@@ -135,6 +143,10 @@ test('public documents and management work in a browser at all required widths',
     assert.equal(results.find(item => 'cards' in item).cards, 2);
     assert.equal(results.find(item => 'cards' in item).links, true);
     assert.ok(results.find(item => 'cards' in item).description.length > 10);
+    assert.equal(results.find(item => 'errorVisible' in item).errorVisible, true);
+    assert.match(results.find(item => 'error' in item).error, /503/);
+    assert.match(results.find(item => 'empty' in item).empty, /Non ci sono ancora/);
+    assert.equal(results.find(item => 'retryHidden' in item).retryHidden, true);
     assert.equal(results.find(item => 'uploaded' in item).uploaded, 3, JSON.stringify(results));
     assert.match(results.find(item => 'uploaded' in item).status, /Salvato/);
     assert.equal(results.find(item => 'edited' in item).edited, 'Titolo modificato');
