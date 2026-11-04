@@ -4,16 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#462678">
   <title>Area riservata · AGESCI Canicattini 1</title>
   <link rel="icon" href="Assemblea-di-Gruppo/img/logo-grande.png">
   <link rel="stylesheet" href="home.css">
 </head>
 <body>
-  <header>AGESCI <strong>Canicattini 1</strong></header>
-  <main>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="AGESCI Canicattini 1, home">
+      <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="">
+      <span><strong>AGESCI</strong><span>Canicattini 1</span></span>
+    </a>
+    <span class="header-note">Associazione Guide e Scouts Cattolici Italiani</span>
+  </header>
+  <main class="access-main">
     <p class="eyebrow">Gestione del gruppo</p>
     <h1>Area riservata</h1>
-    <section id="login">
+    <section id="login" class="access-card">
       <p>Inserisci la chiave per accedere agli strumenti di gestione.</p>
       <form id="login-form" class="accesso">
         <label for="chiave">Chiave di accesso</label>
@@ -22,15 +29,18 @@
       </form>
     </section>
     <p id="accesso-stato" role="status" aria-live="polite"></p>
-    <section id="riservata" hidden>
+    <section id="riservata" class="access-card" hidden>
       <p>Accesso effettuato. Scegli cosa gestire.</p>
       <a class="button" href="Assemblea-di-Gruppo/setup.html">Setup presentazione</a>
       <a class="button" href="Assemblea-di-Gruppo/regia.html">Regia live</a>
       <p><button id="esci" class="text-button">Esci dall'area riservata</button></p>
     </section>
-    <p><a href="./">Torna al sito del gruppo</a></p>
+    <p class="back-link"><a href="./">Torna al sito del gruppo</a></p>
   </main>
-  <footer>AGESCI Canicattini 1</footer>
+  <footer class="site-footer">
+    <span>AGESCI Canicattini 1</span>
+    <span>Canicattini Bagni · Sicilia</span>
+  </footer>
   <script src="Assemblea-di-Gruppo/config.js"></script>
   <script src="Assemblea-di-Gruppo/common/accesso.js"></script>
   <script src="area-riservata.js"></script>

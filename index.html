@@ -14,16 +14,46 @@
   <link rel="stylesheet" href="home.css">
 </head>
 <body>
-  <header>AGESCI <strong>Canicattini 1</strong></header>
-  <main>
-    <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="Logo del gruppo AGESCI Canicattini 1">
-    <p class="eyebrow">Benvenuti nel sito del gruppo</p>
-    <h1>Canicattini 1</h1>
-    <p>Associazione Guide e Scouts Cattolici Italiani</p>
-    <a class="button" id="area-riservata" href="area-riservata.html">Area riservata</a>
-    <p id="stato" role="status">Controllo dello stato dell'assemblea...</p>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="AGESCI Canicattini 1, home">
+      <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="">
+      <span><strong>AGESCI</strong><span>Canicattini 1</span></span>
+    </a>
+    <span class="header-note">Associazione Guide e Scouts Cattolici Italiani</span>
+  </header>
+  <main class="home-main">
+    <section class="hero" aria-labelledby="titolo">
+      <div class="hero-copy">
+        <p class="eyebrow">AGESCI · Canicattini 1</p>
+        <h1 id="titolo">Crescere insieme, passo dopo passo.</h1>
+        <p class="hero-intro">Siamo il gruppo scout AGESCI Canicattini 1: una comunità che cammina e cresce insieme.</p>
+        <div class="hero-action">
+          <a class="button" id="area-riservata" href="area-riservata.html">
+            Area riservata
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+              <path d="M4 10h11m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <span>Per accedere agli strumenti di gestione</span>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="sun-disc" aria-hidden="true"></div>
+        <div class="emblem">
+          <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="Logo AGESCI Canicattini 1">
+        </div>
+        <span class="art-caption" aria-hidden="true">Sempre in cammino</span>
+      </div>
+    </section>
+    <section class="live-panel" aria-label="Stato dell'assemblea">
+      <span class="live-label">Assemblea di gruppo</span>
+      <p id="stato" data-state="checking" role="status" aria-live="polite">Controllo dello stato dell'assemblea...</p>
+    </section>
   </main>
-  <footer>AGESCI Canicattini 1</footer>
+  <footer class="site-footer">
+    <span>AGESCI Canicattini 1</span>
+    <span>Canicattini Bagni · Sicilia</span>
+  </footer>
   <script src="Assemblea-di-Gruppo/config.js"></script>
   <script src="Assemblea-di-Gruppo/common/assemblea.js"></script>
   <script src="home.js"></script>
