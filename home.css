@@ -29,8 +29,13 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .hero h1 { margin: 0; color: var(--w); font: 700 clamp(42px, 6vw, 74px)/1.04 Georgia, 'Times New Roman', serif; letter-spacing: -.035em }
 .hero-intro { max-width: 550px; margin: 22px 0 0; color: color-mix(in srgb, var(--w) 88%, var(--y)); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.7 }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px }
-.peg-home-link { display: inline-flex; align-items: center; gap: 12px; flex-basis: 100%; min-height: 48px; color: var(--y); font-size: 17px; font-weight: 750; text-decoration: none; text-underline-offset: 6px; text-decoration-thickness: 2px }
+.hero-actions .peg-home-link { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; width: fit-content; min-height: 52px; padding: 8px 0; margin-bottom: 8px; color: var(--w); font-size: clamp(18px, 2vw, 21px); font-weight: 650; text-decoration: none; text-underline-offset: 7px; text-decoration-thickness: 1px }
+.peg-home-link span { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 1px solid color-mix(in srgb, var(--w) 45%, transparent); border-radius: 50%; color: var(--y); transition: background-color var(--motion-base), color var(--motion-base), transform var(--motion-base) }
 .peg-home-link:hover, .peg-home-link:focus-visible { text-decoration: underline }
+.peg-home-link:hover span, .peg-home-link:focus-visible span { transform: translateX(3px); background: var(--y); color: var(--vd); border-color: var(--y) }
+.hero-actions .hero-secondary-actions { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: 8px 20px }
+.hero-secondary-actions a { display: inline-flex; align-items: center; min-height: 44px; color: color-mix(in srgb, var(--w) 82%, transparent); font-size: 13px; text-decoration: none; text-underline-offset: 4px }
+.hero-secondary-actions a:hover { color: var(--w); text-decoration: underline }
 .hero a:focus-visible { outline-color: var(--y) }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 11px 18px; border: 1px solid transparent; border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 800; transition: background-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard) }
 .button:hover { transform: translateY(-2px) }
