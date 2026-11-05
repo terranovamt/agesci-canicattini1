@@ -113,7 +113,14 @@
       if (i === s.i) li.querySelector('button').setAttribute('aria-current', 'step');
       else li.querySelector('button').removeAttribute('aria-current');
     });
-    ol.children[s.i]?.scrollIntoView({ block: 'nearest' });
+    const attiva = ol.children[s.i];
+    if (attiva) {
+      const box = attiva.getBoundingClientRect();
+      const top = ol.getBoundingClientRect().top + ol.clientTop;
+      const bottom = top + ol.clientHeight;
+      if (box.top < top) ol.scrollTop += box.top - top;
+      else if (box.bottom > bottom) ol.scrollTop += box.bottom - bottom;
+    }
   }
 
   $('#next').onclick = () => V && V.next();
