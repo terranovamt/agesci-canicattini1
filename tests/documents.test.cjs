@@ -34,6 +34,19 @@ test('document model accepts PDF metadata and rejects duplicates, invalid paths 
   assert.deepEqual(model.apply([document], { operation: 'delete', previous: document }), []);
 });
 
+test('document years and publication dates are validated and preserved on save', () => {
+  const dated = { ...document, year: 2026, publishedAt: '2026-11-05' };
+  assert.deepEqual(model.apply([], { operation: 'save', document: dated }), [dated]);
+  const updated = { ...dated, title: 'Titolo aggiornato', year: 2027, publishedAt: '2027-01-03' };
+  assert.deepEqual(model.apply([dated], { operation: 'save', previous: dated, document: updated }), [updated]);
+  for (const year of [0, 1899, 10000, 2026.5, '2026', null]) {
+    assert.throws(() => model.validate([{ ...dated, year }]), /Anno/);
+  }
+  for (const publishedAt of ['', '05/11/2026', '2026-02-30', '2026-13-01', null]) {
+    assert.throws(() => model.validate([{ ...dated, publishedAt }]), /Data/);
+  }
+});
+
 test('GitHub save writes PDF and metadata atomically and updates the configured branch without force', async () => {
   const calls = [];
   const replies = [

@@ -25,6 +25,7 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Area riservata | `.../area-riservata/index.html` (accesso con chiave) |
 | Gestione PDF | `.../area-riservata/documenti.html` |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login) |
+| Archivio documenti | `.../documenti/` (pubblico, ricerca per anno e testo) |
 | PEG corrente | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
 | Regia (dashboard) | `.../area-riservata/assemblea/regia.html` (chiede la chiave) |
 | Setup (solo GitHub) | https://terranovamt.github.io/agesci-canicattini1/setup (nessun accesso Firebase) |
@@ -76,15 +77,21 @@ File e indice vengono pubblicati insieme in un unico commit sul ramo
 Non vengono modificate le impostazioni del setup o i dati dell'assemblea.
 
 La sezione pubblica **Documenti preparatori all'assemblea 2026**, in
-`assemblea/index.html` e nella home, legge
+`assemblea/index.html`, legge
 `documents/index.json` e presenta quattro schede ordinate: PEG 2026-2028,
 Bilancio 2026 - Modello D, Convocazione assemblea 2026 e Regolamento assembleare.
 Il PEG si legge anche nella pagina dedicata; tutte le schede permettono di
 scaricare il PDF. Le altre tre aprono il PDF in una nuova scheda.
 I file sono in `documents/pdf/`; per aggiungerli manualmente, aggiorna anche
 l'indice con `file`, `title` e `description`. Titoli, descrizioni e PDF restano
-gestibili dall'area riservata; ulteriori documenti compaiono dopo i quattro
-materiali preparatori. Ordine, icone e collegamento al PEG sono definiti in
+gestibili dall'area riservata. L'archivio `documenti/index.html` mostra tutti i
+PDF, con filtro per anno di riferimento e ricerca in titolo e descrizione.
+La home mostra soltanto gli ultimi quattro documenti, ordinati per
+`publishedAt` (data ISO `YYYY-MM-DD`, decrescente). A parità di data rimane
+l'ordine nell'indice. `year` è l'anno di riferimento, distinto dalla data di
+pubblicazione; entrambi si impostano nella gestione documenti. Le voci
+precedenti senza metadati restano disponibili nell'archivio sotto “Senza anno”
+e vengono dopo quelle datate nella home. Ordine, icone e collegamento al PEG sono definiti in
 `assets/js/home-documents.js`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 Dopo il salvataggio attendi il deployment di GitHub Pages.

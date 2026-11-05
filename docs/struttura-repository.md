@@ -29,6 +29,8 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 │           └── portrait/          Renderer e CSS verticali
 ├── assemblea/                     Sezione pubblica dell'assemblea
 │   └── index.html                 Quattro schede dei documenti preparatori
+├── documenti/                     Archivio pubblico di tutti i documenti
+│   └── index.html                 Ricerca per anno e testo
 ├── peg/                           Progetto Educativo di Gruppo
 │   ├── index.html                 Ingresso che rimanda all'edizione corrente
 │   └── edizioni/
@@ -73,6 +75,8 @@ alla nuova sezione.
 **Le pagine sono organizzate per funzione**, non tutte alla radice.
 `assemblea/` raccoglie i documenti preparatori pubblici, senza login e senza
 chiamate Firebase; `peg/` conserva i progetti educativi pubblici per edizione.
+`documenti/` è l'archivio pubblico con filtro per anno e ricerca testuale.
+La home mostra solo i quattro documenti più recenti per data di pubblicazione.
 `area-riservata/` raccoglie login e gestione del sito, con setup, regia e
 applicazione delle slide nella sottosezione `area-riservata/assemblea/`.
 Il nome `index.html` identifica l'ingresso
