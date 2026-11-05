@@ -13,10 +13,10 @@ Ogni nuovo progetto va conservato come una nuova pagina storica nella cartella
 `PEG/` (per esempio `PEG/PEG2931.html`); per renderlo corrente aggiornare il
 destinatario del reindirizzamento in `PEG.html`.
 Il testo della pagina è statico e consultabile anche senza JavaScript;
-gli stili responsive e di stampa sono in `peg.css`. Se viene aggiornato il
+gli stili responsive e di stampa sono in `assets/css/peg.css`. Se viene aggiornato il
 PDF, aggiornare anche il testo HTML mantenendo la corrispondenza con l'originale.
-`site-menu.js` gestisce il menu condiviso tra home e pagina PEG.
-`peg.js` evidenzia nell'indice la sezione raggiunta durante lo scorrimento.
+`assets/js/site-menu.js` gestisce il menu condiviso tra home e pagina PEG.
+`assets/js/peg.js` evidenzia nell'indice la sezione raggiunta durante lo scorrimento.
 Le fotografie in `assets/peg/` provengono dal PDF originale; il carattere
 manoscritto Caveat è servito localmente da `assets/fonts/`, insieme alla
 licenza SIL OFL. È una scelta tipografica, non la grafia autentica di B.-P.

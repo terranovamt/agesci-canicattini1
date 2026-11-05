@@ -4,7 +4,7 @@
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
-const documents = require('../documents-model.js');
+const documents = require('../assets/js/documents-model.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const IGNORED_DIRS = new Set(['.git', '.github', 'node_modules', '.venv-calendar', '__pycache__']);

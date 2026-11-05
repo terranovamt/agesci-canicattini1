@@ -11,16 +11,21 @@ funzioni del prodotto e poi i suoi strumenti di manutenzione.
 
 ```text
 /
-├── index.html, home.css, home.js, home-*.js, site-menu.js
-│   Home pubblica e moduli JavaScript che la alimentano.
-├── area-riservata.html / area-riservata.js
-│   Accesso agli strumenti riservati.
-├── gestione-documenti.html / gestione-documenti.css / gestione-documenti.js
-│   Gestione dei documenti, con documents-store.js per la persistenza GitHub.
-├── PEG.html, setup.html, peg.css, peg.js
-│   Pagina PEG e scorciatoia pubblica /setup.
+├── index.html, area-riservata.html, gestione-documenti.html, PEG.html, setup.html
+│   Pagine di ingresso pubbliche e strumenti web serviti da GitHub Pages.
+├── assets/
+│   ├── css/
+│   │   Fogli di stile delle pagine principali e dei documenti.
+│   ├── js/
+│   │   Logica web della home, accesso, calendario, documenti e PEG.
+│   ├── fonts/, peg/
+│   │   Font e immagini riutilizzati dal sito.
+│   └── altri asset condivisi
+│       Immagini e risorse del sito.
 ├── manifest.webmanifest, .nojekyll
 │   Installazione PWA e configurazione della pubblicazione statica.
+├── PEG/
+│   Versione pubblica del Progetto Educativo.
 ├── Assemblea-di-Gruppo/
 │   ├── index.html, regia.html, setup.html, guida.html
 │   │   Pagine della presentazione, regia, configurazione e guida.
@@ -34,10 +39,6 @@ funzioni del prodotto e poi i suoi strumenti di manutenzione.
 │   │   Configurazione applicativa e contenuti delle slide.
 │   └── altri file .js e .css
 │       Codice condiviso della presentazione.
-├── PEG/
-│   Versione pubblica del Progetto Educativo.
-├── assets/
-│   Font e immagini riutilizzati dalle pagine del sito.
 ├── calendars/
 │   Configurazione delle fonti e snapshot pubblico degli eventi.
 ├── documents/
@@ -59,8 +60,11 @@ funzioni del prodotto e poi i suoi strumenti di manutenzione.
         Prompt, istruzioni riutilizzabili, dati e script di supporto.
 ```
 
-I nomi sopra raggruppano le responsabilità principali; per i file dettagliati
-della presentazione, vedere [Sviluppo](sviluppo.md).
+Le pagine HTML (`index.html`, `area-riservata.html`,
+`gestione-documenti.html`, `PEG.html` e `setup.html`) restano alla radice per
+mantenere stabili gli indirizzi pubblici. I loro file CSS e JavaScript sono
+in `assets/css/` e `assets/js/`; le pagine storiche del PEG stanno in `PEG/`.
+Per i file dettagliati della presentazione, vedere [Sviluppo](sviluppo.md).
 
 ## Perché le pagine sono alla radice
 
@@ -72,11 +76,11 @@ la sorgente o spostare file in questo progetto non è una semplice
 riorganizzazione: va trattato come una modifica agli URL, aggiornata in tutti
 i riferimenti e verificata sulla preview e sulla pubblicazione.
 
-Per questo la radice contiene le pagine e i moduli che sono già parte
-dell'interfaccia web. I file relativi a una funzionalità complessa, come la
-presentazione dell'assemblea, sono invece raccolti nella propria cartella.
-Test, documentazione, automazioni, dati pubblici e strumenti locali sono
-separati dal codice eseguito dal browser.
+Per questo la radice contiene le pagine HTML e gli URL di accesso; CSS e
+JavaScript applicativi sono raggruppati in `assets/`, mentre la presentazione
+complessa dell'assemblea resta nella propria cartella. Test, documentazione,
+automazioni, dati pubblici e strumenti locali sono separati dal codice
+eseguito dal browser.
 
 ## Criteri di buona organizzazione applicati
 

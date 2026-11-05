@@ -25,8 +25,8 @@
 
 | Pagina / flusso | File principali | Elementi riutilizzabili |
 |---|---|---|
-| Home del gruppo | `index.html`, `home.css`, `home.js` | header/footer, hero con logo, CTA, stato assemblea |
-| Accesso e gestione | `area-riservata.html`, `area-riservata.js` | form chiave, messaggio di stato, CTA e link di ritorno |
+| Home del gruppo | `index.html`, `assets/css/home.css`, `assets/js/home.js` | header/footer, hero con logo, CTA, stato assemblea |
+| Accesso e gestione | `area-riservata.html`, `assets/js/area-riservata.js` | form chiave, messaggio di stato, CTA e link di ritorno |
 | Alias `/setup` | `setup.html` | redirect preservando query e hash |
 | Setup contenuti | `Assemblea-di-Gruppo/setup.html`, `common/setup.css`, `common/setup.js` | header/stato, tab, form, campi, editor dialog, toast, barra azioni, dettagli/menu, lista riordinabile |
 | Regia live | `Assemblea-di-Gruppo/regia.html`, `common/regia.css`, `common/regia.js` | header, badge, avviso, anteprime iframe, controlli slide, card, KPI, meter, form live, elenco slide |
@@ -61,7 +61,7 @@
 ### Media
 
 - **Valori visivi ripetuti tra fogli e pagine.** Palette e superfici sono
-  dichiarate separatamente in `home.css`, `common/setup.css`,
+  dichiarate separatamente in `assets/css/home.css`, `common/setup.css`,
   `common/regia.css`, `common/base.css` e negli stili inline della guida. Le
   slide hanno anche geometrie fisse 1280×720, intenzionali per la scalatura del
   palco; non vanno convertite indiscriminatamente in valori fluidi.

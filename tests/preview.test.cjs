@@ -29,6 +29,12 @@ test('local preview serves the redesigned home with local access and hot reload'
     assert.match(html, /ANTEPRIMA LOCALE/);
     assert.match(html, /__preview\/events/);
     assert.ok(html.indexOf('window.fetch') < html.indexOf('src="Assemblea-di-Gruppo/config.js"'));
+    for (const resource of [
+      '/assets/css/home.css', '/assets/css/gestione-documenti.css', '/assets/css/peg.css',
+      '/assets/js/home.js', '/assets/js/documents-model.js', '/assets/js/area-riservata.js'
+    ]) {
+      assert.equal((await fetch(origin + resource)).status, 200, resource);
+    }
     const area = await (await fetch(origin + '/area-riservata.html')).text();
     assert.match(area, /window\.ACCESSO=\{chiave:\(\)=>"preview-locale",verificata:\(\)=>true/);
     const doc = await fetch(origin + '/docs/assemblea.md');

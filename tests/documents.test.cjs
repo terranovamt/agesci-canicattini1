@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const model = require('../documents-model.js');
-const source = fs.readFileSync(path.join(__dirname, '../documents-store.js'), 'utf8');
+const model = require('../assets/js/documents-model.js');
+const source = fs.readFileSync(path.join(__dirname, '../assets/js/documents-store.js'), 'utf8');
 const document = { file: 'Progetto.pdf', title: 'Progetto educativo', description: 'Il progetto del gruppo.' };
 const base64 = value => Buffer.from(JSON.stringify(value)).toString('base64');
 

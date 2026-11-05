@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const M = require('../calendar-model.js');
+const M = require('../assets/js/calendar-model.js');
 const sources = require('../calendars/sources.json');
 const event = { id: 'one', calendar: 'eg', title: 'Riunione', location: '', allDay: false,
   start: '2027-03-27T23:30:00Z', end: '2027-03-28T01:30:00Z' };
