@@ -47,13 +47,13 @@
     </section>
     <section class="onda">
       <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
-      <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
+      <div class="fit"><div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div></div>
       <h2 id="titolo">…</h2>
     </section>
 
     <section class="lato">
       <div class="lbl">Prossima <span id="pos-next"></span></div>
-      <div class="frame"><iframe id="anteprima" title="Prossima slide" tabindex="-1"></iframe><div id="fine" hidden>Fine presentazione</div></div>
+      <div class="fit"><div class="frame"><iframe id="anteprima" title="Prossima slide" tabindex="-1"></iframe><div id="fine" hidden>Fine presentazione</div></div></div>
       <h3 id="titolo-next">…</h3>
       <div class="cmd">
         <button id="prev" class="big-btn sec" aria-label="Slide precedente">‹<small>Indietro</small></button>
@@ -70,7 +70,7 @@
 
     <section class="dati-live card">
       <h3>Presenti e ufficio di presidenza</h3>
-      <p class="note">Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si aggiornano entro circa 10 secondi. Questi dati sono pubblici.</p>
+      <details class="note"><summary>Come funziona</summary>Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si aggiornano entro circa 10 secondi. Questi dati sono pubblici.</details>
       <form id="dati-live-form">
         <fieldset id="dati-live-campi" disabled></fieldset>
         <div class="mini">
@@ -88,10 +88,13 @@
         <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
       </div>
       <div class="meter"><span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i></div>
-      <div class="meter"><span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b></div>
-      <div class="meter"><span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b></div>
-      <p class="note">360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
-        <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.</p>
+      <details class="note">
+        <summary>Quote e consumi reali</summary>
+        <div class="meter"><span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b></div>
+        <div class="meter"><span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b></div>
+        360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
+        <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.
+      </details>
     </section>
 
     <section class="lista card">
