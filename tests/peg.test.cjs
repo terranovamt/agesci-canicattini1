@@ -7,26 +7,31 @@ const { test } = require('node:test');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
+const currentPegPath = 'PEG/PEG2628.html';
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 
 test('home introduces the dedicated PEG page and the original PDF stays available', () => {
   assert.match(read('index.html'), /class="peg-home-link" href="PEG.html">Consulta il PEG 26-28/);
-  assert.match(read('PEG.html'), /href="documents\/pdf\/PEG26-28.pdf" download/);
+  assert.match(read('PEG.html'), /location\.replace\('PEG\/PEG2628\.html' \+ location\.search \+ location\.hash\)/);
+  assert.match(read('PEG.html'), /href="PEG\/PEG2628\.html"/);
+  assert.match(read(currentPegPath), /href="\.\.\/documents\/pdf\/PEG26-28\.pdf" download/);
   assert.ok(fs.existsSync(path.join(root, 'documents/pdf/PEG26-28.pdf')));
-  assert.doesNotMatch(read('PEG.html'), /home.js|assemblea.js|iframe/);
-  assert.equal((read('PEG.html').match(/<dt>/g) || []).length, 8);
-  for (const file of ['index.html', 'PEG.html']) assert.match(read(file), /src="site-menu.js"/);
-  assert.doesNotMatch(read('PEG.html'), /peg-trail/);
-  assert.match(read('PEG.html'), /src="peg.js"/);
-  const areas = read('PEG.html').match(/<article class="peg-area[\s\S]*?<\/article>/g);
+  assert.doesNotMatch(read(currentPegPath), /home.js|assemblea.js|iframe|peg-trail/);
+  assert.equal((read(currentPegPath).match(/<dt>/g) || []).length, 8);
+  assert.match(read('index.html'), /src="site-menu\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/site-menu\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/peg\.js"/);
+  const areas = read(currentPegPath).match(/<article class="peg-area[\s\S]*?<\/article>/g);
   for (const area of areas) {
     assert.ok(area.indexOf('<blockquote') < area.indexOf('class="peg-goals-labels"'));
     assert.match(area, /<\/p>\s*<blockquote[\s\S]*?<\/blockquote>\s*<div class="peg-goals-labels"/);
   }
-  for (const image of read('PEG.html').matchAll(/src="(assets\/peg\/[^"]+)"/g))
-    assert.ok(fs.existsSync(path.join(root, image[1])));
+  for (const image of read(currentPegPath).matchAll(/src="(\.\.\/assets\/peg\/[^"]+)"/g))
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, '..', image[1])));
+  for (const link of read(currentPegPath).matchAll(/(?:href|src)="(\.\.\/[^"#]+)"/g))
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, '..', link[1])), link[1]);
   assert.ok(fs.existsSync(path.join(root, 'assets/fonts/caveat.ttf')));
   assert.match(read('assets/fonts/OFL-Caveat.txt'), /SIL OPEN FONT LICENSE/);
 });
@@ -73,14 +78,14 @@ test('reading index follows all sections on scroll, resize, load and return to t
 
 test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigation', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'peg-layout-'));
-  const pages = ['PEG.html', 'index.html'].map(file => read(file)
+  const pages = [currentPegPath, 'index.html'].map(file => read(file)
     .replace(/<link\b[^>]*>/g, '')
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, '')
-    .replace('</head>', '<base href="file://' + root + '/"><style>' + read('Assemblea-di-Gruppo/common/theme.css') +
-      read('home.css') + (file === 'PEG.html' ? read('peg.css') : '') +
+    .replace('</head>', '<base href="file://' + (file === currentPegPath ? path.join(root, 'PEG') : root) + '/"><style>' + read('Assemblea-di-Gruppo/common/theme.css') +
+      read('home.css') + (file === currentPegPath ? read('peg.css') : '') +
       '</style></head>')
     .replace('</body>', '<script>' + read('site-menu.js') +
-      (file === 'PEG.html' ? read('peg.js') : '') + '</script></body>'));
+      (file === currentPegPath ? read('peg.js') : '') + '</script></body>'));
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
     const results = [];

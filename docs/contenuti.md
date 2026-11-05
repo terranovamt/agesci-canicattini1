@@ -6,8 +6,12 @@ Setup statico, `dati.js` su GitHub e salvataggio definitivo.
 
 ## Progetto Educativo di Gruppo
 
-La home rimanda a `PEG.html`, che presenta il testo integrale di
+La home rimanda a `PEG.html`, pagina d’ingresso che reindirizza al progetto
+corrente in `PEG/PEG2628.html`. La pagina presenta il testo integrale di
 `documents/pdf/PEG26-28.pdf` in sezioni con indice e percorsi educativi.
+Ogni nuovo progetto va conservato come una nuova pagina storica nella cartella
+`PEG/` (per esempio `PEG/PEG2931.html`); per renderlo corrente aggiornare il
+destinatario del reindirizzamento in `PEG.html`.
 Il testo della pagina è statico e consultabile anche senza JavaScript;
 gli stili responsive e di stampa sono in `peg.css`. Se viene aggiornato il
 PDF, aggiornare anche il testo HTML mantenendo la corrispondenza con l'originale.
