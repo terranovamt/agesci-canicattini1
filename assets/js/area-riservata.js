@@ -25,7 +25,7 @@
   form.onsubmit = e => { e.preventDefault(); login(input.value.trim()) };
   document.getElementById('esci').onclick = () => {
     A.esci();
-    location.replace('./');
+    location.replace('../');
   };
   if (A.verificata()) mostraStrumenti();
   else if (A.chiave()) login(A.chiave());

@@ -1,9 +1,9 @@
 {
   "name": "Assemblea di Gruppo",
   "short_name": "Assemblea",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "../assemblea/",
+  "scope": "../assemblea/",
   "display": "fullscreen",
   "background_color": "#ffffff",
-  "icons": [{ "src": "img/logo-grande.png", "sizes": "512x512", "type": "image/png" }]
+  "icons": [{ "src": "../assets/img/logo-grande.png", "sizes": "512x512", "type": "image/png" }]
 }

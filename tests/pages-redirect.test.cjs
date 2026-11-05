@@ -23,8 +23,8 @@ test('home stays on the group page until the assembly is active', () => {
     assert.match(elements['assembly-connection-status'].textContent, /Offline/);
     assert.equal(elements['assembly-connection-status'].hidden, false);
     state({ attiva: true });
-    assert.equal(destination, 'Assemblea-di-Gruppo/index.html' + search + '#3.2');
+    assert.equal(destination, 'assemblea/index.html' + search + '#3.2');
   }
   assert.ok(!read('index.html').includes('http-equiv="refresh"'));
-  assert.ok(read('index.html').includes('href="area-riservata.html">Area riservata'));
+  assert.ok(read('index.html').includes('href="area-riservata/index.html">Area riservata'));
 });

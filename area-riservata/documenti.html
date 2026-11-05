@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Gestione documenti · Canicattini 1</title>
+  <link rel="icon" href="../assets/img/logo-grande.png">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/gestione-documenti.css">
+</head>
+<body>
+  <header>
+    <a href="index.html">← Area riservata</a>
+    <h1>Documenti del gruppo</h1>
+    <a href="../index.html#documenti" target="_blank" rel="noopener">Vedi la pagina pubblica ↗</a>
+  </header>
+  <main id="documents-app" hidden>
+    <section class="publish-info">
+      <h2>Una biblioteca per il gruppo</h2>
+      <p>Carica un PDF, scegli un titolo e aggiungi una breve descrizione. Solo i documenti pubblicati qui compaiono nella home; il salvataggio aggiorna il repository GitHub.</p>
+      <p id="documents-message" role="status" aria-live="polite">Caricamento…</p>
+      <button id="reload-documents" type="button" class="secondary">Ricarica da GitHub</button>
+    </section>
+    <div class="documents-workspace">
+      <section class="panel" aria-labelledby="edit-heading">
+        <p class="eyebrow">Pubblicazione</p>
+        <h2 id="edit-heading">Nuovo documento</h2>
+        <form id="document-form">
+          <label for="document-file">File PDF <span id="file-hint">(obbligatorio)</span></label>
+          <input id="document-file" type="file" accept=".pdf,application/pdf" required aria-describedby="upload-hint">
+          <p id="upload-hint" class="hint">Il file sarà salvato in documents/pdf. Limite GitHub: meno di 100 MiB. Non caricare informazioni riservate: i PDF sono pubblici.</p>
+          <label for="document-title">Titolo nella pagina pubblica</label>
+          <input id="document-title" type="text" maxlength="160" required placeholder="Es. Progetto educativo 2026-2028">
+          <label for="document-description">Breve descrizione</label>
+          <textarea id="document-description" rows="3" maxlength="500" required placeholder="Spiega in poche parole cosa contiene il documento."></textarea>
+          <fieldset id="github-credentials">
+            <legend>Accesso GitHub</legend>
+            <label for="document-token">Token con permesso Contents: Read and write</label>
+            <input id="document-token" type="password" autocomplete="off" placeholder="github_pat_…">
+            <p class="hint">Usa un token autorizzato per questo repository. Puoi usare quello già memorizzato dal setup. Dopo averlo inserito, premi “Ricarica da GitHub”.</p>
+            <button id="forget-token" type="button" class="secondary">Dimentica token memorizzato</button>
+          </fieldset>
+          <div class="actions">
+            <button id="save-document" type="submit" disabled>Pubblica documento</button>
+            <button id="cancel-document" type="button" class="secondary" hidden>Annulla modifica</button>
+          </div>
+          <p class="hint">Dopo il salvataggio, attendi la pubblicazione di GitHub Pages per vedere l’aggiornamento sul sito.</p>
+        </form>
+      </section>
+      <section class="panel" aria-labelledby="library-heading">
+        <p class="eyebrow">Biblioteca</p>
+        <h2 id="library-heading">Documenti pubblicati</h2>
+        <div id="managed-documents"></div>
+      </section>
+    </div>
+  </main>
+  <script src="../config/site.js"></script>
+  <script src="../assets/js/shared/accesso.js"></script>
+  <script src="../assets/js/documents-model.js"></script>
+  <script src="../assets/js/documents-store.js"></script>
+  <script src="../assets/js/gestione-documenti.js"></script>
+</body>
+</html>

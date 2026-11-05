@@ -8,7 +8,7 @@
     try {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'Assemblea-di-Gruppo/dati.js?t=' + Date.now();
+        script.src = '../assemblea/dati.js?t=' + Date.now();
         script.onload = () => { script.remove(); resolve() };
         script.onerror = () => { script.remove(); reject(new Error('Impossibile caricare dati.js')) };
         document.head.append(script);
@@ -38,7 +38,7 @@
     $('dashboard-documents-status').textContent = 'Caricamento dell’indice PDF…';
     $('dashboard-document-links').replaceChildren();
     try {
-      const response = await fetch('documents/index.json', { cache: 'no-store' });
+      const response = await fetch('../documents/index.json', { cache: 'no-store' });
       if (!response.ok) throw new Error('Caricamento PDF non riuscito (HTTP ' + response.status + ')');
       const items = await response.json();
       if (!Array.isArray(items) || items.some(item => typeof item?.file !== 'string'
@@ -49,7 +49,7 @@
       items.slice(0, 3).forEach(item => {
         const li = document.createElement('li'), link = document.createElement('a');
         link.textContent = item.title;
-        link.href = 'documents/pdf/' + encodeURIComponent(item.file);
+        link.href = '../documents/pdf/' + encodeURIComponent(item.file);
         link.target = '_blank'; link.rel = 'noopener';
         link.setAttribute('aria-label', item.title + ' (PDF, nuova scheda)');
         li.append(link); $('dashboard-document-links').append(li);

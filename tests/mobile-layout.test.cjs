@@ -5,15 +5,15 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 
-const root = path.join(__dirname, '../Assemblea-di-Gruppo');
+const root = path.join(__dirname, '../assemblea');
 const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 
 test('mobile QR background stays square and role notes follow their reveal step', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'assemblea-mobile-'));
-  const css = ['landscape/qr_live.css', 'portrait/base.css', 'portrait/composizione_organo.css']
+  const css = ['slides/landscape/qr_live.css', 'slides/portrait/base.css', 'slides/portrait/composizione_organo.css']
     .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
-  const organo = fs.readFileSync(path.join(root, 'portrait/composizione_organo.js'), 'utf8');
+  const organo = fs.readFileSync(path.join(root, 'slides/portrait/composizione_organo.js'), 'utf8');
   const html = `<!DOCTYPE html><html><head><style>
     :root { --w: #fff; --v: #462678; --y: #FDC500; --bt: 24px }
     * { box-sizing: border-box } body { margin: 0 }

@@ -1,0 +1,418 @@
+/* Stili comuni a tutte le slide: colori, palco, barra del titolo, righe, navigazione.
+   Gli stili di ogni tipo di slide sono in landscape/<tipo>.css e portrait/<tipo>.css */
+
+/* ============ Token specifici alla presentazione ============ */
+:root {
+  /* testi e sfondi */
+  --ink: var(--vd);
+  --muted: var(--v2);
+  --line: var(--vl);
+  --note: var(--v2);
+  --track: var(--be);
+  --out: var(--vd);
+  --halo-a: color-mix(in srgb, var(--vl) 40%, transparent);
+  --halo-b: color-mix(in srgb, var(--y) 20%, transparent);
+  /* grafici */
+  --c1: var(--v);
+  --c2: var(--b2);
+  --c3: var(--y);
+  --c4: var(--g);
+  --c5: var(--vl);
+  --c6: var(--r);
+  /* ciambella patrimonio */
+  --pie1: var(--v);
+  --pie2: var(--v2);
+  --pie3: var(--r);
+  --pie4: var(--g);
+  --pie5: var(--y);
+  --pie6: var(--vl);
+  /* esito bilancio */
+  --ok: var(--g-strong);
+  --ko: var(--r-strong);
+  --even: var(--v);
+  --near: var(--v2);
+  /* ombre e trasparenze */
+  --shadow: color-mix(in srgb, var(--v) 13%, transparent);
+  --shadow-strong: color-mix(in srgb, var(--v) 27%, transparent);
+  --shadow-chart: color-mix(in srgb, var(--v) 20%, transparent);
+  --shadow-row: color-mix(in srgb, var(--v) 9%, transparent);
+  --shadow-hd: color-mix(in srgb, var(--vd) 33%, transparent);
+  --glass: color-mix(in srgb, var(--vd) 80%, transparent);
+  --dot-shadow: color-mix(in srgb, var(--k) 27%, transparent);
+  --w85: color-mix(in srgb, var(--w) 85%, transparent);
+  --w80: color-mix(in srgb, var(--w) 80%, transparent);
+  --w72: color-mix(in srgb, var(--w) 72%, transparent);
+}
+
+* {
+  box-sizing: border-box
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--out);
+  overflow: hidden;
+  font-family: Montserrat, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--v)
+}
+
+/* palco 1280x720, scalato da fit() */
+#stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+  overflow: hidden;
+  --bg: #ECE9E6;
+  background: var(--bg)
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(40px) scale(.99);
+  transition: opacity .6s, transform .6s;
+  background: radial-gradient(circle at 90% 10%, var(--halo-a) 0, transparent 45%), radial-gradient(circle at 5% 100%, var(--halo-b) 0, transparent 35%), var(--bg);
+  overflow: hidden
+}
+
+.slide.in {
+  opacity: 1;
+  transform: none
+}
+
+.slide.out {
+  opacity: 0;
+  transform: translateX(-40px) scale(.99)
+}
+
+/* barra del titolo FISSA (fuori dalle slide) */
+.hd {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 72px;
+  background: var(--v) url(../../assets/img/texture.svg) center/cover;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  box-shadow: 0 6px 24px var(--shadow-hd)
+}
+
+.hd span {
+  color: var(--w);
+  font: 700 30px "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  line-height: 1.05;
+  letter-spacing: .5px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 16px;
+  overflow-wrap: anywhere
+}
+
+.hd img {
+  height: 50px
+}
+
+#hdr {
+  z-index: 4;
+  transition: opacity .4s, transform .5s
+}
+
+#hdr.off {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none
+}
+
+#hdr>span {
+  transition: opacity .25s
+}
+
+.a {
+  position: absolute
+}
+
+.card {
+  position: absolute;
+  background: var(--w);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px var(--shadow)
+}
+
+.k {
+  font-size: 17px;
+  font-weight: 500;
+  opacity: .75
+}
+
+.num {
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--vd);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  white-space: nowrap
+}
+
+/* righe (rendiconto, ordine del giorno) */
+.row {
+  position: absolute;
+  left: 56px;
+  width: 600px;
+  height: 60px;
+  background: var(--w);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  box-shadow: 0 6px 20px var(--shadow-row);
+  opacity: 0;
+  transform: translateX(-24px);
+  transition: .5s
+}
+
+.row.on {
+  opacity: 1;
+  transform: none
+}
+
+.row i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: none
+}
+
+.row span {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 500
+}
+
+.row b {
+  font-size: 19px;
+  color: var(--vd);
+  font-variant-numeric: tabular-nums
+}
+
+.fade {
+  opacity: 0;
+  transition: opacity .6s, transform .6s;
+  transform: translateY(16px)
+}
+
+.fade.on {
+  opacity: 1;
+  transform: none
+}
+
+svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible
+}
+
+circle.seg {
+  transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease
+}
+
+.red {
+  color: var(--r-strong) !important
+}
+
+.grn {
+  color: var(--g-strong) !important
+}
+
+.bar {
+  position: absolute;
+  border-radius: 12px 12px 0 0;
+  height: 0;
+  transition: height 1s cubic-bezier(.2, .8, .2, 1), opacity .5s;
+  opacity: 0
+}
+
+.bdg {
+  margin-left: auto;
+  margin-right: 18px;
+  width: 60px;
+  height: 60px;
+  position: relative
+}
+
+.bdg svg {
+  position: relative
+}
+
+/* barra di avanzamento e contatore slide */
+#prog {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 5px;
+  background: var(--y);
+  transition: width .5s;
+  z-index: 5
+}
+
+#cnt {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v);
+  opacity: .6;
+  z-index: 5
+}
+
+#cnt.w {
+  color: var(--w)
+}
+
+#msg {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--w);
+  text-align: center;
+  padding: 30px;
+  z-index: 9;
+  background: var(--vd)
+}
+
+/* pulsanti di navigazione (home, menu, torna indietro) */
+#nav {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  z-index: 6;
+  display: flex;
+  gap: 6px
+}
+
+.nb {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  gap: 5px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--glass);
+  color: var(--w);
+  font: 600 12px Montserrat, sans-serif;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: .35;
+  transition: opacity .3s, transform .2s;
+  backdrop-filter: blur(6px)
+}
+
+.nb svg {
+  position: static;
+  width: 14px;
+  height: 14px;
+  flex: none
+}
+
+.nb:active {
+  transform: scale(.92)
+}
+
+.nb:hover {
+  opacity: 1
+}
+
+.row {
+  pointer-events: none
+}
+
+.row.on {
+  pointer-events: auto
+}
+
+/* nessuna transizione (ricostruzione istantanea, misure) */
+.nt,
+.nt * {
+  transition: none !important
+}
+
+/* segnalini sulla barra di progressione */
+#pm {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  z-index: 6;
+  pointer-events: none
+}
+
+.pmk {
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: 5px
+}
+
+.pmk:before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  bottom: 0;
+  width: 4px;
+  height: 5px;
+  background: var(--v)
+}
+
+.pmk b {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  transform: translateX(-50%);
+  background: var(--v);
+  color: var(--w);
+  font: 800 8px Montserrat, sans-serif;
+  min-width: 14px;
+  text-align: center;
+  padding: 2px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px var(--shadow-strong)
+}
+
+/* slide successiva = ordine del giorno: il numero compare con un "pop" */
+.pmk.nx b {
+  display: block;
+  transform: translateX(-50%) scale(1.5);
+  animation: pmkin .55s cubic-bezier(.2, 1.7, .4, 1) both
+}
+
+@keyframes pmkin {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0)
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.5)
+  }
+}

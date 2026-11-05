@@ -93,7 +93,7 @@ Se ricarichi la dashboard riparte dalla slide in onda, non dalla prima.
 Il setup si apre da `…/agesci-canicattini1/setup`.
 
 **Pubblico** (telefono): segue la regia e può tornare indietro, ma non andare
-oltre il limite di `config.js` (`limite: 'corrente'` = la slide mostrata ora,
+oltre il limite di `config/site.js` (`limite: 'corrente'` = la slide mostrata ora,
 `'massimo'` = la più avanzata raggiunta). Barra in basso: indietro, ODG, contatore
 o **Slide attuale** (quando si è rimasti indietro), Ruota, avanti; swipe per
 cambiare slide. Su touch la slide occupa tutto lo schermo e i controlli si

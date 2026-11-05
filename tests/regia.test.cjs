@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/regia.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../assemblea/core/regia.js'), 'utf8');
 
 function dashboard(attiva, count = 4, failed = false, options = {}) {
   const elements = new Map();
@@ -105,7 +105,7 @@ test('starting in regia preserves the patch and updates immediately without relo
 });
 
 test('the large start control sits before the slide previews', () => {
-  const html = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/regia.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../assemblea/regia.html'), 'utf8');
   assert.equal((html.match(/id="inizia"/g) || []).length, 1);
   assert.ok(html.indexOf('id="inizia"') < html.indexOf('class="onda"'));
 });

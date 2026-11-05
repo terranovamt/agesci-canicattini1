@@ -83,7 +83,7 @@ function transformHtml(source) {
     ''
   );
   html = html.replace(
-    /(<script\b[^>]*\bsrc=["'](?:\.{1,2}\/)?(?:Assemblea-di-Gruppo\/)?common\/accesso\.js["'][^>]*><\/script>)/gi,
+    /(<script\b[^>]*\bsrc=["'](?:\.\.\/)*assets\/js\/shared\/accesso\.js["'][^>]*><\/script>)/gi,
     '$1<script>window.ACCESSO={chiave:()=>\"preview-locale\",verificata:()=>true,entra:async()=>{},esci:()=>{}};</script>'
   );
   const networkGuard = `<script>
@@ -260,13 +260,25 @@ function createPreviewServer({ watch = true } = {}) {
     }
     let target = file;
     try {
-      target = await fs.promises.realpath(target);
+      try {
+        target = await fs.promises.realpath(target);
+      } catch (error) {
+        if (error.code !== 'ENOENT' || path.extname(target)) throw error;
+        target = await fs.promises.realpath(target + '.html');
+      }
       if (!target.startsWith(ROOT + path.sep)) {
         response.writeHead(403);
         response.end('Percorso non consentito');
         return;
       }
-      if ((await fs.promises.stat(target)).isDirectory()) target = await fs.promises.realpath(path.join(target, 'index.html'));
+      if ((await fs.promises.stat(target)).isDirectory()) {
+        if (!url.pathname.endsWith('/')) {
+          response.writeHead(308, { Location: url.pathname + '/' + url.search });
+          response.end();
+          return;
+        }
+        target = await fs.promises.realpath(path.join(target, 'index.html'));
+      }
       if (!target.startsWith(ROOT + path.sep)) {
         response.writeHead(403);
         response.end('Percorso non consentito');
@@ -276,7 +288,7 @@ function createPreviewServer({ watch = true } = {}) {
       const extension = path.extname(target).toLowerCase();
       let output = content;
       if (extension === '.html') output = Buffer.from(transformHtml(content.toString('utf8')));
-      else if (target === path.join(ROOT, 'Assemblea-di-Gruppo', 'config.js')) {
+      else if (target === path.join(ROOT, 'config', 'site.js')) {
         output = Buffer.from(transformConfig(content.toString('utf8')));
       }
       response.writeHead(200, {

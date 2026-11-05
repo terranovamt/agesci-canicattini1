@@ -1,6 +1,6 @@
 (function () {
   if (!window.ACCESSO.verificata()) {
-    location.replace('area-riservata.html');
+    location.replace('index.html');
     return;
   }
   const $ = id => document.getElementById(id);
@@ -66,7 +66,7 @@
       const description = document.createElement('p');
       description.textContent = item.description;
       const open = document.createElement('a');
-      open.href = 'documents/pdf/' + encodeURIComponent(item.file);
+      open.href = '../documents/pdf/' + encodeURIComponent(item.file);
       open.target = '_blank';
       open.rel = 'noopener';
       open.textContent = 'Apri ' + item.file;

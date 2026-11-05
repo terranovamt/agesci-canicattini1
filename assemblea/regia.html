@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Regia — Assemblea di Gruppo</title>
+  <link rel="icon" href="../assets/img/logo-grande.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="core/regia.css">
+</head>
+
+<body>
+  <header>
+    <img src="../assets/img/logo.png" alt="">
+    <h1>Regia</h1>
+    <span id="b-assemblea" class="pill">Assemblea…</span>
+    <span id="b-live" class="pill">Live…</span>
+    <span id="b-fb" class="pill">Firebase…</span>
+    <span class="sp"></span>
+    <button id="schermo" hidden title="Finestra con sole slide: mettila a schermo intero sul secondo schermo o condividila">▣ Apri schermo presentazione</button>
+    <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
+    <button id="esci" class="sec" hidden>Esci</button>
+  </header>
+
+  <section id="login" hidden>
+    <h2>Area riservata</h2>
+    <p>Inserisci la chiave di accesso per aprire la regia.</p>
+    <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
+    <p id="login-err" class="err" role="alert"></p>
+  </section>
+
+  <section id="avviso" class="avviso" role="status" hidden>
+    <h2>ASSEMBLEA NON INIZIATA</h2>
+    <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
+    <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
+    <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
+  </section>
+
+  <main id="app" hidden>
+    <section class="avvio-live">
+      <button id="inizia" disabled>Avvia live</button>
+      <p id="avvio-stato" role="status" aria-live="polite"></p>
+    </section>
+    <section class="onda">
+      <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
+      <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
+      <h2 id="titolo">…</h2>
+    </section>
+
+    <section class="lato">
+      <div class="lbl">Prossima <span id="pos-next"></span></div>
+      <div class="frame"><iframe id="anteprima" title="Prossima slide" tabindex="-1"></iframe><div id="fine" hidden>Fine presentazione</div></div>
+      <h3 id="titolo-next">…</h3>
+      <div class="cmd">
+        <button id="prev" class="big-btn sec" aria-label="Slide precedente">‹<small>Indietro</small></button>
+        <button id="next" class="big-btn" aria-label="Slide successiva">›<small>Avanti</small></button>
+      </div>
+      <div class="mini">
+        <button id="home" class="sec">Inizio</button>
+        <button id="odg" class="sec">Ordine del giorno</button>
+        <button id="pdf" class="sec" hidden>PDF</button>
+        <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
+      </div>
+      <p class="tasti">Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd> <kbd>PagSu</kbd> indietro</p>
+    </section>
+
+    <section class="dati-live card">
+      <h3>Presenti e ufficio di presidenza</h3>
+      <p class="note">Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si aggiornano entro circa 10 secondi. Questi dati sono pubblici.</p>
+      <form id="dati-live-form">
+        <fieldset id="dati-live-campi" disabled></fieldset>
+        <div class="mini">
+          <button id="dati-live-pubblica" type="submit" disabled>Pubblica live</button>
+          <button id="dati-live-ricarica" type="button" class="sec" disabled>Ricarica valori</button>
+        </div>
+      </form>
+      <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
+    </section>
+
+    <section class="fb card">
+      <h3>Firebase <small>piano gratuito Spark</small></h3>
+      <div class="kpi">
+        <div><b id="k-disp">–</b><span>dispositivi collegati</span><small id="k-ruoli"></small></div>
+        <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
+      </div>
+      <div class="meter"><span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i></div>
+      <div class="meter"><span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b></div>
+      <div class="meter"><span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b></div>
+      <p class="note">360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
+        <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.</p>
+    </section>
+
+    <section class="lista card">
+      <h3>Slide</h3>
+      <ol id="slide"></ol>
+    </section>
+  </main>
+
+  <script src="../config/site.js"></script>
+  <script src="../assets/js/shared/accesso.js"></script>
+  <script src="../assets/js/shared/assemblea.js"></script>
+  <script src="core/presenza.js"></script>
+  <script src="core/modifiche.js"></script>
+  <script src="core/regia-dati.js"></script>
+  <script src="core/regia.js"></script>
+</body>
+
+</html>

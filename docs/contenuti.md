@@ -6,12 +6,12 @@ Setup statico, `dati.js` su GitHub e salvataggio definitivo.
 
 ## Progetto Educativo di Gruppo
 
-La home rimanda a `PEG.html`, pagina d’ingresso che reindirizza al progetto
-corrente in `PEG/PEG2628.html`. La pagina presenta il testo integrale di
+La home rimanda a `peg/index.html`, pagina d’ingresso che reindirizza al progetto
+corrente in `peg/edizioni/2026-2028.html`. La pagina presenta il testo integrale di
 `documents/pdf/PEG26-28.pdf` in sezioni con indice e percorsi educativi.
 Ogni nuovo progetto va conservato come una nuova pagina storica nella cartella
-`PEG/` (per esempio `PEG/PEG2931.html`); per renderlo corrente aggiornare il
-destinatario del reindirizzamento in `PEG.html`.
+`peg/edizioni/` (per esempio `peg/edizioni/2029-2031.html`); per renderlo corrente aggiornare il
+destinatario del reindirizzamento in `peg/index.html`.
 Il testo della pagina è statico e consultabile anche senza JavaScript;
 gli stili responsive e di stampa sono in `assets/css/peg.css`. Se viene aggiornato il
 PDF, aggiornare anche il testo HTML mantenendo la corrispondenza con l'originale.
@@ -79,7 +79,7 @@ La prima volta chiede un **token GitHub**
 
 In alternativa **⋯ → Scarica dati.js aggiornato** e caricalo a mano su GitHub.
 Repository, ramo e cartella sono in
-`config.js` (`github`).
+`config/site.js` (`github`).
 
 Il setup legge solo il file statico pubblicato, non le modifiche live della
 regia; non le importa, non le salva e non le cancella. Una patch live su
