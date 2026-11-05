@@ -1,6 +1,6 @@
 # Sviluppo: struttura del codice
 
-[README](../README.md) · [Assemblea](assemblea.md) · [Contenuti](contenuti.md) · [Firebase](firebase.md) · [Sviluppo](sviluppo.md)
+[README](../README.md) · [Assemblea](assemblea.md) · [Contenuti](contenuti.md) · [Firebase](firebase.md) · [Sviluppo](sviluppo.md) · [Struttura repository](struttura-repository.md)
 
 Dove si trovano layout, stili e script della presentazione.
 
