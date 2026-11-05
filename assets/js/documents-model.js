@@ -5,7 +5,8 @@
     const names = new Set();
     items.forEach(item => {
       if (!safeName(item?.file) || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 160
-        || typeof item.description !== 'string' || !item.description.trim() || item.description.length > 500 || names.has(item.file)) {
+        || typeof item.description !== 'string' || !item.description.trim() || item.description.length > 500 || names.has(item.file)
+        || (item.assemblyYear !== undefined && (!Number.isInteger(item.assemblyYear) || item.assemblyYear < 2000 || item.assemblyYear > 9999))) {
         throw new Error('Indice documenti non valido: controlla file, titoli e descrizioni');
       }
       names.add(item.file);
@@ -27,7 +28,8 @@
     if (change.operation === 'save') next.push(change.document);
     return validate(next);
   }
-  const model = { apply, validate, safeName };
+  const preparatory = (items, year) => validate(items).filter(item => item.assemblyYear === year);
+  const model = { apply, validate, safeName, preparatory };
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   else window.DOCUMENTS_MODEL = model;
 })();

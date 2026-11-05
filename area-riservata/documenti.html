@@ -13,7 +13,7 @@
   <header>
     <a href="index.html">← Area riservata</a>
     <h1>Documenti del gruppo</h1>
-    <a href="../assemblea/index.html" target="_blank" rel="noopener">Vedi la pagina pubblica ↗</a>
+    <a href="../index.html#documenti" target="_blank" rel="noopener">Vedi l’archivio pubblico ↗</a>
   </header>
   <main id="documents-app" hidden>
     <section class="publish-info">
@@ -34,6 +34,9 @@
           <input id="document-title" type="text" maxlength="160" required placeholder="Es. Progetto educativo 2026-2028">
           <label for="document-description">Breve descrizione</label>
           <textarea id="document-description" rows="3" maxlength="500" required placeholder="Spiega in poche parole cosa contiene il documento."></textarea>
+          <label for="document-assembly-year">Documento preparatorio: anno dell’assemblea</label>
+          <input id="document-assembly-year" type="number" min="2000" max="9999" step="1" aria-describedby="assembly-year-hint" placeholder="Es. 2026">
+          <p id="assembly-year-hint" class="hint">Lascia vuoto per i documenti generali. Indicando l’anno, il PDF resta nell’archivio e compare anche tra i preparatori quando coincide con l’anno corrente.</p>
           <fieldset id="github-credentials">
             <legend>Accesso GitHub</legend>
             <label for="document-token">Token con permesso Contents: Read and write</label>

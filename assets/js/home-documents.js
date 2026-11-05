@@ -3,6 +3,15 @@
   const status = document.getElementById('documents-status');
   const retry = document.getElementById('documents-retry');
   const siteRoot = list.dataset.siteRoot || '';
+  const year = Number(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', year: 'numeric' }).format(new Date()));
+  const panels = [{ list, status, retry, onlyPreparatory: list.dataset.preparatory === 'current' }];
+  const preparatoryList = document.getElementById('preparatory-list');
+  if (preparatoryList) panels.push({
+    list: preparatoryList,
+    status: document.getElementById('preparatory-status'),
+    retry: document.getElementById('preparatory-retry'),
+    onlyPreparatory: true
+  });
   const preparatory = [
     { file: 'PEG26-28.pdf', label: 'Il nostro percorso', theme: 'project', link: 'peg/index.html',
       icon: ['M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-3-1H4z', 'M13 8a3 3 0 0 1 3-3h4v14h-4a4 4 0 0 0-3 1'] },
@@ -32,24 +41,29 @@
   }
 
   async function load() {
-    retry.hidden = true;
-    status.textContent = 'Caricamento dei documenti…';
-    list.replaceChildren();
+    panels.forEach(panel => {
+      panel.retry.hidden = true;
+      panel.status.textContent = 'Caricamento dei documenti…';
+      panel.list.replaceChildren();
+    });
     try {
       const response = await fetch(list.dataset.documentsUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error('Impossibile leggere i documenti (HTTP ' + response.status + ')');
       const entries = await response.json();
-      if (!Array.isArray(entries)) throw new Error('Elenco dei documenti non valido');
-      const files = entries.filter(entry => typeof entry.file === 'string'
-        && /^[^/\\]+\.pdf$/i.test(entry.file) && !entry.file.startsWith('.'));
+      const files = window.DOCUMENTS_MODEL.validate(entries).slice();
       const order = file => {
         const index = preparatory.findIndex(item => item.file === file.file);
         return index === -1 ? preparatory.length : index;
       };
       files.sort((a, b) => order(a) - order(b)
         || (a.title || a.file).localeCompare(b.title || b.file, 'it', { numeric: true }));
-      status.textContent = files.length ? files.length + ' documenti PDF disponibili.' : 'Non ci sono ancora documenti PDF pubblicati.';
-      files.forEach(file => {
+      panels.forEach(panel => {
+        const selected = panel.onlyPreparatory ? window.DOCUMENTS_MODEL.preparatory(files, year) : files;
+        panel.status.textContent = panel.onlyPreparatory
+          ? (selected.length ? selected.length + ' documenti preparatori per l’assemblea ' + year + '.'
+            : 'Non sono ancora stati pubblicati documenti preparatori per l’assemblea ' + year + '.')
+          : (selected.length ? selected.length + ' documenti PDF disponibili.' : 'Non ci sono ancora documenti PDF pubblicati.');
+        selected.forEach(file => {
         const detail = preparatory.find(item => item.file === file.file);
         const card = document.createElement('article');
         card.className = 'document-card document-' + (detail?.theme || 'rules');
@@ -86,14 +100,17 @@
         download.setAttribute('aria-label', 'Scarica ' + heading.textContent);
         actions.append(open, download);
         card.append(top, label, heading, description, actions);
-        list.append(card);
+        panel.list.append(card);
+        });
       });
     } catch (error) {
-      status.textContent = error.message + '. Riprova tra poco.';
-      retry.hidden = false;
+      panels.forEach(panel => {
+        panel.status.textContent = error.message + '. Riprova tra poco.';
+        panel.retry.hidden = false;
+      });
       console.error('Caricamento PDF non riuscito', error);
     }
   }
-  retry.onclick = load;
+  panels.forEach(panel => { panel.retry.onclick = load });
   load();
 })();

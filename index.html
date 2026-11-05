@@ -28,7 +28,8 @@
     <nav id="main-nav" aria-label="Navigazione principale">
       <a href="peg/index.html">Il PEG</a>
       <a href="#eventi">Eventi</a>
-      <a href="assemblea/index.html">Documenti assemblea</a>
+      <a href="#documenti">Documenti</a>
+      <a href="#documenti-preparatori">Preparatori assemblea</a>
       <a class="nav-access" href="area-riservata/index.html">Area riservata</a>
     </nav>
   </header>
@@ -43,7 +44,7 @@
           <a class="peg-home-link" href="peg/index.html">Consulta il PEG 26-28 <span aria-hidden="true">→</span></a>
           <div class="hero-secondary-actions">
             <a href="#eventi">Scopri gli eventi</a>
-            <a href="assemblea/index.html">Consulta i documenti</a>
+            <a href="#documenti">Consulta i documenti</a>
           </div>
         </div>
         <p id="stato" class="assembly-status" role="status" hidden></p>
@@ -107,20 +108,35 @@
       </div>
     </section>
 
+    <section class="content-section documents-section" id="documenti-preparatori" aria-labelledby="titolo-preparatori">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Verso l’assemblea</p>
+          <h2 id="titolo-preparatori">Documenti preparatori</h2>
+        </div>
+        <a class="text-link" href="#documenti">Tutti i documenti del gruppo →</a>
+      </div>
+      <p class="section-description">Una selezione dall’archivio per prepararsi all’assemblea dell’anno corrente.</p>
+      <p id="preparatory-status" role="status">Caricamento dei documenti preparatori…</p>
+      <p><a class="text-link" href="assemblea/index.html">Apri i preparatori dell’assemblea →</a></p>
+      <div id="preparatory-list" class="document-grid" data-documents-url="documents/index.json"></div>
+      <button id="preparatory-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i preparatori</button>
+      <noscript>Attiva JavaScript per vedere i PDF preparatori dell’assemblea.</noscript>
+    </section>
+
     <section class="content-section documents-section" id="documenti" aria-labelledby="titolo-documenti">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Assemblea di gruppo · 2026</p>
-          <h2 id="titolo-documenti">Documenti preparatori<br>all’assemblea</h2>
+          <p class="eyebrow">Guide e materiali</p>
+          <h2 id="titolo-documenti">Documenti del gruppo</h2>
         </div>
-        <p class="section-description">Un percorso condiviso, quattro documenti per arrivare preparati. Leggi il progetto educativo e consulta i materiali prima dell’incontro.</p>
+        <p class="section-description">L’archivio completo dei PDF pubblicati dal gruppo, inclusi i preparatori delle assemblee.</p>
       </div>
       <p id="documents-status" role="status">Caricamento dei documenti…</p>
-      <p><a class="text-link" href="assemblea/index.html">Apri la sezione pubblica dell’assemblea →</a></p>
       <div id="documents-list" class="document-grid" data-documents-url="documents/index.json"></div>
       <button id="documents-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i PDF</button>
       <noscript>
-        <p>Consulta i documenti preparatori all’assemblea 2026:</p>
+        <p>Consulta i documenti del gruppo:</p>
         <ul>
           <li><a href="peg/index.html">PEG 2026-2028</a></li>
           <li><a href="documents/pdf/Rendiconto_per_cassa_-_ModelloD.pdf">Bilancio 2026 · Modello D (PDF)</a></li>
@@ -150,6 +166,7 @@
   <script src="assets/js/shared/assemblea.js"></script>
   <script src="assets/js/site-menu.js"></script>
   <script src="assets/js/home.js"></script>
+  <script src="assets/js/documents-model.js"></script>
   <script src="assets/js/home-documents.js"></script>
   <script src="assets/js/calendar-model.js"></script>
   <script src="assets/js/home-calendars.js"></script>

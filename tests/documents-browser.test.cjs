@@ -57,12 +57,12 @@ function fixture(file, css, scripts) {
 test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [
-    fixture('index.html', 'assets/css/home.css', ['assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
+    fixture('index.html', 'assets/css/home.css', ['assets/js/documents-model.js', 'assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
     fixture('area-riservata/documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
     fixture('area-riservata/assemblea/setup.html', 'area-riservata/assemblea/core/setup.css',
       ['area-riservata/assemblea/core/salva-dati.js', 'area-riservata/assemblea/core/modifiche.js', 'area-riservata/assemblea/core/nuovo-anno-model.js', 'area-riservata/assemblea/core/nuovo-anno.js', 'area-riservata/assemblea/core/setup.js']),
     fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js']),
-    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/home-documents.js'])
+    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/documents-model.js', 'assets/js/home-documents.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -187,12 +187,13 @@ test('public documents and management work in a browser at all required widths',
           await doc.querySelector('#calendar-retry').onclick();
           results.push({ upcomingAssemblyVisible: !doc.querySelector('#stato').hidden,
             upcomingAssemblyText: doc.querySelector('#stato').textContent });
-          const cards = [...doc.querySelectorAll('.document-card')];
+          const cards = [...doc.querySelectorAll('#documents-list .document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
             titles: cards.map(card => card.querySelector('h3').textContent),
             pegLink: cards[0].querySelector('.document-primary').getAttribute('href'),
-            icons: doc.querySelectorAll('.document-icon svg[aria-hidden="true"]').length,
+            icons: doc.querySelectorAll('#documents-list .document-icon svg[aria-hidden="true"]').length,
+            preparatoryCards: doc.querySelectorAll('#preparatory-list .document-card').length,
             links: cards.every(card => /documents\\/pdf\\/.+\\.pdf$/i.test(card.querySelector('a[download]').getAttribute('href'))),
             pdfLinks: cards.slice(1).every(card => /documents\\/pdf\\/.+\\.pdf$/i.test(card.querySelector('.document-primary').getAttribute('href'))) });
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
@@ -211,6 +212,7 @@ test('public documents and management work in a browser at all required widths',
           input.files = transfer.files;
           doc.querySelector('#document-title').value = 'Documento nuovo';
           doc.querySelector('#document-description').value = 'Descrizione di prova';
+          doc.querySelector('#document-assembly-year').value = '2026';
           const saved = () => new Promise(resolve => {
             const observer = new win.MutationObserver(() => {
               if (!doc.querySelector('#save-document').disabled) { observer.disconnect(); resolve() }
@@ -223,6 +225,7 @@ test('public documents and management work in a browser at all required widths',
           results.push({ uploaded: doc.querySelectorAll('.managed-document').length,
             status: doc.querySelector('#documents-message').textContent });
           doc.querySelector('.managed-document:last-child button').click();
+          results.push({ assemblyYear: doc.querySelector('#document-assembly-year').value });
           doc.querySelector('#document-title').value = 'Titolo modificato';
           const edited = saved();
           doc.querySelector('#document-form').requestSubmit();
@@ -280,6 +283,8 @@ test('public documents and management work in a browser at all required widths',
       assert.equal(item.overflow, false, 'page ' + item.page + ' must fit width ' + item.width);
     }
     assert.equal(results.find(item => 'cards' in item).cards, 4);
+    assert.equal(results.find(item => 'cards' in item).preparatoryCards, 4);
+    assert.equal(results.find(item => 'assemblyYear' in item).assemblyYear, '2026');
     assert.equal(results.find(item => 'cards' in item).links, true);
     assert.equal(results.find(item => 'cards' in item).pdfLinks, true);
     assert.equal(results.find(item => 'cards' in item).icons, 4);

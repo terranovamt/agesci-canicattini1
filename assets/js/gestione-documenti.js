@@ -30,6 +30,7 @@
     $('document-file').required = true;
     $('document-title').value = '';
     $('document-description').value = '';
+    $('document-assembly-year').value = '';
     $('edit-heading').textContent = 'Nuovo documento';
     $('file-hint').textContent = '(obbligatorio)';
     $('save-document').textContent = 'Pubblica documento';
@@ -42,6 +43,7 @@
     $('document-file').required = false;
     $('document-title').value = item.title;
     $('document-description').value = item.description;
+    $('document-assembly-year').value = item.assemblyYear || '';
     $('file-hint').textContent = '(facoltativo: sostituisce ' + item.file + ')';
     $('edit-heading').textContent = 'Modifica documento';
     $('save-document').textContent = 'Salva modifiche';
@@ -65,6 +67,7 @@
       title.textContent = item.title;
       const description = document.createElement('p');
       description.textContent = item.description;
+      if (item.assemblyYear) description.textContent += ' · Preparatorio assemblea ' + item.assemblyYear;
       const open = document.createElement('a');
       open.href = '../documents/pdf/' + encodeURIComponent(item.file);
       open.target = '_blank';
@@ -146,7 +149,10 @@
       } else if (!editing) throw new Error('Seleziona un PDF da caricare');
       change = {
         operation: 'save', previous: editing || undefined,
-        document: { file: editing?.file || file.name, title, description },
+        document: {
+          file: editing?.file || file.name, title, description,
+          ...($('document-assembly-year').value ? { assemblyYear: Number($('document-assembly-year').value) } : {})
+        },
         content
       };
       D.apply(items, change);

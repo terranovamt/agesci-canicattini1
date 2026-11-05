@@ -34,6 +34,22 @@ test('document model accepts PDF metadata and rejects duplicates, invalid paths 
   assert.deepEqual(model.apply([document], { operation: 'delete', previous: document }), []);
 });
 
+test('preparatory documents are an annual subset of the full archive', () => {
+  const current = { ...document, assemblyYear: 2026 };
+  const older = { ...document, file: 'Precedente.pdf', assemblyYear: 2025 };
+  const general = { ...document, file: 'Generale.pdf' };
+  const items = [current, older, general];
+  assert.deepEqual(model.preparatory(items, 2026), [current]);
+  assert.deepEqual(model.preparatory(items, 2025), [older]);
+  assert.deepEqual(model.preparatory(items, 2027), []);
+  assert.equal(model.validate(items).length, 3);
+  for (const assemblyYear of [null, '2026', 1999, 10000, 2026.5]) {
+    assert.throws(() => model.validate([{ ...document, assemblyYear }]), /non valido/);
+  }
+  const updated = model.apply([current], { operation: 'save', previous: current, document });
+  assert.equal(updated[0].assemblyYear, undefined);
+});
+
 test('GitHub save writes PDF and metadata atomically and updates the configured branch without force', async () => {
   const calls = [];
   const replies = [
