@@ -39,6 +39,9 @@
           <label for="document-published-at">Data di pubblicazione</label>
           <input id="document-published-at" type="date" required aria-describedby="date-hint">
           <p id="date-hint" class="hint">Determina l’ordine dei documenti nella home, dal più recente.</p>
+          <label for="document-assembly-year">Documento preparatorio: anno dell’assemblea</label>
+          <input id="document-assembly-year" type="number" min="2000" max="9999" step="1" aria-describedby="assembly-year-hint" placeholder="Es. 2026">
+          <p id="assembly-year-hint" class="hint">Lascia vuoto per i documenti generali. Indicando l’anno, il PDF resta nell’archivio e compare anche tra i preparatori quando coincide con l’anno corrente.</p>
           <fieldset id="github-credentials">
             <legend>Accesso GitHub</legend>
             <label for="document-token">Token con permesso Contents: Read and write</label>

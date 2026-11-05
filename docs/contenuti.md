@@ -4,6 +4,25 @@
 
 Setup statico, `dati.js` su GitHub e salvataggio definitivo.
 
+## Documenti preparatori dell’assemblea
+
+L’archivio completo è in `documenti/index.html`, con ricerca per anno e testo.
+La home mostra i quattro documenti più recenti per data di pubblicazione e una
+sezione separata «Documenti preparatori», che ne mostra un sottoinsieme senza
+duplicare i PDF. Dalla gestione documenti, compilare «Documento preparatorio:
+anno dell’assemblea» per includere un PDF nella selezione di quell’anno;
+lasciare il campo vuoto per i documenti generali.
+Il metadato opzionale `assemblyYear` in `documents/index.json` indica l’anno
+solare dell’assemblea. La home mostra i preparatori dell’anno corrente
+(fuso Europe/Rome); quelli precedenti restano nell’archivio completo.
+I quattro PDF già selezionati per l’assemblea 2026 mantengono quella
+classificazione. La pagina pubblica `assemblea/index.html` mostra lo stesso
+sottoinsieme annuale e rimanda all’archivio completo in `documenti/index.html`.
+Nella gestione, «Anno di riferimento» (`year`) serve al filtro dell’archivio;
+«Data di pubblicazione» (`publishedAt`, formato `YYYY-MM-DD`) determina
+l’ordine cronologico. Sono metadati distinti da `assemblyYear`, che decide
+soltanto l’inclusione nei preparatori dell’anno corrente.
+
 ## Progetto Educativo di Gruppo
 
 La home rimanda a `peg/index.html`, pagina d’ingresso che reindirizza al progetto

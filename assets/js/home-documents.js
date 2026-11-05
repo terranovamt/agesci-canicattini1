@@ -5,6 +5,15 @@
   const siteRoot = list.dataset.siteRoot || '';
   const yearFilter = document.getElementById('documents-year');
   const search = document.getElementById('documents-search');
+  const currentYear = Number(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', year: 'numeric' }).format(new Date()));
+  const panels = [{ list, status, retry, onlyPreparatory: list.dataset.preparatory === 'current' }];
+  const preparatoryList = document.getElementById('preparatory-list');
+  if (preparatoryList) panels.push({
+    list: preparatoryList,
+    status: document.getElementById('preparatory-status'),
+    retry: document.getElementById('preparatory-retry'),
+    onlyPreparatory: true
+  });
   let files = [];
   const order = file => {
     const index = preparatory.findIndex(item => item.file === file.file);
@@ -39,18 +48,18 @@
   }
 
   async function load() {
-    retry.hidden = true;
-    status.textContent = 'Caricamento dei documenti…';
-    list.replaceChildren();
+    panels.forEach(panel => {
+      panel.retry.hidden = true;
+      panel.status.textContent = 'Caricamento dei documenti…';
+      panel.list.replaceChildren();
+    });
     files = [];
     if (yearFilter) { yearFilter.disabled = true; search.disabled = true }
     try {
       const response = await fetch(list.dataset.documentsUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error('Impossibile leggere i documenti (HTTP ' + response.status + ')');
       const entries = await response.json();
-      if (!Array.isArray(entries)) throw new Error('Elenco dei documenti non valido');
-      files = entries.filter(entry => entry && typeof entry.file === 'string'
-        && /^[^/\\]+\.pdf$/i.test(entry.file) && !entry.file.startsWith('.'));
+      files = window.DOCUMENTS_MODEL.validate(entries).slice();
       if (list.dataset.order === 'latest') {
         files.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
       } else {
@@ -69,20 +78,28 @@
       }
       render();
     } catch (error) {
-      status.textContent = error.message + '. Riprova tra poco.';
-      retry.hidden = false;
+      panels.forEach(panel => {
+        panel.status.textContent = error.message + '. Riprova tra poco.';
+        panel.retry.hidden = false;
+      });
       console.error('Caricamento PDF non riuscito', error);
     }
   }
   function render() {
+    panels.forEach(panel => {
+      const { list, status } = panel;
       list.replaceChildren();
       const query = (search?.value || '').trim().toLocaleLowerCase('it');
       const year = yearFilter?.value || '';
-      let shown = files.filter(file => (!year || (year === 'undated' ? !file.year : String(file.year) === year))
+      const available = panel.onlyPreparatory ? window.DOCUMENTS_MODEL.preparatory(files, currentYear) : files;
+      let shown = available.filter(file => (!year || (year === 'undated' ? !file.year : String(file.year) === year))
         && (!query || [file.title, file.description, file.file].join(' ').toLocaleLowerCase('it').includes(query)));
       const total = shown.length;
       if (list.dataset.limit) shown = shown.slice(0, Number(list.dataset.limit));
-      status.textContent = !files.length ? 'Non ci sono ancora documenti PDF pubblicati.'
+      status.textContent = panel.onlyPreparatory
+        ? (shown.length ? shown.length + ' documenti preparatori per l’assemblea ' + currentYear + '.'
+          : 'Non sono ancora stati pubblicati documenti preparatori per l’assemblea ' + currentYear + '.')
+        : !files.length ? 'Non ci sono ancora documenti PDF pubblicati.'
         : !total ? 'Nessun documento corrisponde alla ricerca.'
         : shown.length < total ? 'Gli ultimi ' + shown.length + ' documenti su ' + total + ' disponibili nell’archivio.'
         : shown.length + ' documenti PDF disponibili.';
@@ -123,11 +140,12 @@
         download.setAttribute('aria-label', 'Scarica ' + heading.textContent);
         actions.append(open, download);
         card.append(top, label, heading, description, actions);
-        list.append(card);
+        panel.list.append(card);
+        });
       });
   }
   if (yearFilter) yearFilter.onchange = render;
   if (search) search.oninput = render;
-  retry.onclick = load;
+  panels.forEach(panel => { panel.retry.onclick = load });
   load();
 })();
