@@ -14,6 +14,7 @@
 .peg-cover-quote blockquote { margin: 0; padding: 24px 0 24px 32px; border-left: 1px solid color-mix(in srgb, var(--w) 30%, transparent) }
 .peg-cover-quote p { margin: 0 0 24px; font: 500 clamp(32px, 3.2vw, 44px)/1.25 "Caveat", "Segoe Print", cursive }
 .peg-cover-quote cite { display: block; color: var(--y); font: 600 60px/1.2 "Caveat", "Segoe Print", cursive; text-align: right }
+.peg-cover-quote cite img { display: block; width: min(220px, 70%); height: auto; margin-left: auto }
 .peg-quote cite { font: 750 12px/1.5 system-ui, sans-serif; letter-spacing: .05em }
 .peg-layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: start; margin-top: 64px }
 .peg-index { position: sticky; top: 24px; max-height: calc(100svh - 48px); overflow-y: auto }
