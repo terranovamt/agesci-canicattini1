@@ -14,6 +14,8 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | [docs/contenuti.md](docs/contenuti.md) | setup solo GitHub, `dati.js`, Salva su GitHub |
 | [docs/firebase.md](docs/firebase.md) | nodi, configurazione da zero, regole, limiti del piano gratuito |
 | [docs/sviluppo.md](docs/sviluppo.md) | struttura del codice e dei tipi di slide |
+| [docs/struttura-repository.md](docs/struttura-repository.md) | gerarchia completa del repository e criteri di organizzazione |
+| [docs/audit-ui-ux.md](docs/audit-ui-ux.md) | audit UI/UX e priorità di manutenzione |
 
 ## Indirizzi
 
@@ -152,17 +154,11 @@ Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jek
 
 ## Struttura del repository
 
-| Percorso | Contenuto |
-| --- | --- |
-| `index.html`, `home.css`, `home.js`, `manifest.webmanifest` | home del gruppo |
-| `area-riservata.html`, `area-riservata.js` | accesso con chiave |
-| `gestione-documenti.html`, `gestione-documenti.js`, `documents-store.js` | gestione PDF con pubblicazione GitHub |
-| `documents/index.json`, `documents/pdf/`, `home-documents.js` | indice, PDF pubblici e lista della home |
-| `setup.html` | scorciatoia `/setup` verso il setup dell'assemblea |
-| `Assemblea-di-Gruppo/` | presentazione, regia, setup, guida, `dati.js`, `config.js` |
-| `docs/` | documentazione (questi file non servono al sito) |
-| `firebase/database.rules.json` | regole da incollare nella console Firebase |
-| `tests/` | test: `node --test tests/*.test.cjs` |
+La gerarchia completa, il ruolo di ogni cartella e le ragioni per mantenere
+le pagine pubbliche alla radice sono descritti in
+[docs/struttura-repository.md](docs/struttura-repository.md). Le pagine
+principali sono servite direttamente da GitHub Pages dalla radice del ramo
+`main`; spostarle richiede di aggiornare insieme link, script, test e URL.
 
 Nel setup le sezioni sono raccolte nella barra laterale (su telefono diventano
 una griglia). Ogni sezione ha titolo e indicazioni contestuali; la barra di

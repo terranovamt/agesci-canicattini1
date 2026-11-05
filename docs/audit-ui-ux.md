@@ -1,4 +1,4 @@
-# Audit UI/UX
+# Audit UI/UX del repository
 
 ## Ambito e stack rilevato
 
