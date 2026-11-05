@@ -55,11 +55,11 @@ function fixture(file, css, scripts) {
 test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [
-    fixture('index.html', 'home.css', ['home-documents.js', 'calendar-model.js', 'home-calendars.js']),
-    fixture('gestione-documenti.html', 'gestione-documenti.css', ['documents-model.js', 'documents-store.js', 'gestione-documenti.js']),
+    fixture('index.html', 'assets/css/home.css', ['assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
+    fixture('gestione-documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
     fixture('Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/common/setup.css',
       ['common/salva-dati.js', 'common/modifiche.js', 'common/nuovo-anno-model.js', 'common/nuovo-anno.js', 'common/setup.js']),
-    fixture('area-riservata.html', 'home.css', ['area-dashboard.js', 'area-riservata.js'])
+    fixture('area-riservata.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};

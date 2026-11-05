@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const source = fs.readFileSync(path.join(__dirname, '../area-riservata.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../assets/js/area-riservata.js'), 'utf8');
 
 function load(verified, key = '') {
   const elements = new Map(), calls = [];

@@ -9,7 +9,7 @@ test('home stays on the group page until the assembly is active', () => {
   for (const search of ['', '?regia=test']) {
     let destination, state, error;
     const elements = { 'assembly-connection-status': {} };
-    vm.runInNewContext(read('home.js'), {
+    vm.runInNewContext(read('assets/js/home.js'), {
       document: { getElementById: id => elements[id] },
       location: { search, hash: '#3.2', replace: url => { destination = url } },
       window: { ASSEMBLEA: { osserva: (s, e) => { state = s; error = e } } },

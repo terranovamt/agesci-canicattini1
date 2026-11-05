@@ -20,9 +20,30 @@ test('home introduces the dedicated PEG page and the original PDF stays availabl
   assert.ok(fs.existsSync(path.join(root, 'documents/pdf/PEG26-28.pdf')));
   assert.doesNotMatch(read(currentPegPath), /home.js|assemblea.js|iframe|peg-trail/);
   assert.equal((read(currentPegPath).match(/<dt>/g) || []).length, 8);
-  assert.match(read('index.html'), /src="site-menu\.js"/);
-  assert.match(read(currentPegPath), /src="\.\.\/site-menu\.js"/);
-  assert.match(read(currentPegPath), /src="\.\.\/peg\.js"/);
+  assert.match(read('index.html'), /src="assets\/js\/site-menu\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/assets\/js\/site-menu\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/assets\/js\/peg\.js"/);
+  assert.match(read('index.html'), /href="assets\/css\/home\.css"/);
+  assert.match(read(currentPegPath), /href="\.\.\/assets\/css\/home\.css"/);
+  assert.match(read(currentPegPath), /href="\.\.\/assets\/css\/peg\.css"/);
+  for (const page of [
+    'index.html', 'area-riservata.html', 'gestione-documenti.html', 'PEG.html', 'setup.html',
+    currentPegPath, 'Assemblea-di-Gruppo/index.html', 'Assemblea-di-Gruppo/regia.html',
+    'Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/guida.html'
+  ]) {
+    const html = read(page);
+    for (const [, resource] of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
+      if (/^(?:https?:|#)/.test(resource)) continue;
+      assert.ok(fs.existsSync(path.resolve(root, path.dirname(page), resource)), `${page}: ${resource}`);
+    }
+  }
+  for (const stylesheet of ['assets/css/home.css', 'assets/css/peg.css', 'assets/css/gestione-documenti.css']) {
+    const css = read(stylesheet);
+    for (const [, resource] of css.matchAll(/url\(["']?([^)"']+)["']?\)/g)) {
+      if (/^(?:data:|https?:|#)/.test(resource)) continue;
+      assert.ok(fs.existsSync(path.resolve(root, path.dirname(stylesheet), resource)), `${stylesheet}: ${resource}`);
+    }
+  }
   const areas = read(currentPegPath).match(/<article class="peg-area[\s\S]*?<\/article>/g);
   for (const area of areas) {
     assert.ok(area.indexOf('<blockquote') < area.indexOf('class="peg-goals-labels"'));
@@ -50,7 +71,7 @@ test('reading index follows all sections on scroll, resize, load and return to t
     addEventListener: (name, callback) => { events[name] = callback },
     requestAnimationFrame: callback => { events.frame = callback }
   };
-  vm.runInNewContext(read('peg.js'), {
+  vm.runInNewContext(read('assets/js/peg.js'), {
     window,
     document: {
       querySelectorAll: () => links,
@@ -82,10 +103,10 @@ test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
     .replace(/<link\b[^>]*>/g, '')
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, '')
     .replace('</head>', '<base href="file://' + (file === currentPegPath ? path.join(root, 'PEG') : root) + '/"><style>' + read('Assemblea-di-Gruppo/common/theme.css') +
-      read('home.css') + (file === currentPegPath ? read('peg.css') : '') +
+      read('assets/css/home.css') + (file === currentPegPath ? read('assets/css/peg.css') : '') +
       '</style></head>')
-    .replace('</body>', '<script>' + read('site-menu.js') +
-      (file === currentPegPath ? read('peg.js') : '') + '</script></body>'));
+    .replace('</body>', '<script>' + read('assets/js/site-menu.js') +
+      (file === currentPegPath ? read('assets/js/peg.js') : '') + '</script></body>'));
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
     const results = [];

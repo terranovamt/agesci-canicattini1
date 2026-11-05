@@ -10,6 +10,6 @@ test('dashboard does not load data or make requests before verified access', () 
     document: { getElementById() { throw new Error('must not render before login') } },
     fetch() { throw new Error('must not request before login') }
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../area-dashboard.js'), 'utf8'), context);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../assets/js/area-dashboard.js'), 'utf8'), context);
   context.window.AREA_DASHBOARD.load();
 });
