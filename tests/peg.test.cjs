@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -17,6 +18,57 @@ test('home introduces the dedicated PEG page and the original PDF stays availabl
   assert.doesNotMatch(read('PEG.html'), /home.js|assemblea.js|iframe/);
   assert.equal((read('PEG.html').match(/<dt>/g) || []).length, 8);
   for (const file of ['index.html', 'PEG.html']) assert.match(read(file), /src="site-menu.js"/);
+  assert.doesNotMatch(read('PEG.html'), /peg-trail/);
+  assert.match(read('PEG.html'), /src="peg.js"/);
+  const areas = read('PEG.html').match(/<article class="peg-area[\s\S]*?<\/article>/g);
+  for (const area of areas) {
+    assert.ok(area.indexOf('<blockquote') < area.indexOf('class="peg-goals-labels"'));
+    assert.match(area, /<\/p>\s*<blockquote[\s\S]*?<\/blockquote>\s*<div class="peg-goals-labels"/);
+  }
+  for (const image of read('PEG.html').matchAll(/src="(assets\/peg\/[^"]+)"/g))
+    assert.ok(fs.existsSync(path.join(root, image[1])));
+  assert.ok(fs.existsSync(path.join(root, 'assets/fonts/caveat.ttf')));
+  assert.match(read('assets/fonts/OFL-Caveat.txt'), /SIL OPEN FONT LICENSE/);
+});
+
+test('reading index follows all sections on scroll, resize, load and return to top', () => {
+  const ids = ['premessa', 'analisi-esterna', 'analisi-interna', 'fondamenta', 'strutturazione', 'scelta', 'custodi', 'cittadini'];
+  const attributes = ids.map(() => ({}));
+  const links = ids.map((id, i) => ({
+    hash: '#' + id,
+    setAttribute: (name, value) => { attributes[i][name] = value },
+    removeAttribute: name => { delete attributes[i][name] }
+  }));
+  const events = {};
+  const window = {
+    innerHeight: 900, scrollY: 0,
+    addEventListener: (name, callback) => { events[name] = callback },
+    requestAnimationFrame: callback => { events.frame = callback }
+  };
+  vm.runInNewContext(read('peg.js'), {
+    window,
+    document: {
+      querySelectorAll: () => links,
+      getElementById: id => ({ getBoundingClientRect: () => ({ top: 500 + ids.indexOf(id) * 1000 - window.scrollY }) }),
+      documentElement: { scrollHeight: 9000 }
+    }
+  });
+  const current = () => attributes.flatMap((attrs, i) => attrs['aria-current'] === 'location' ? [ids[i]] : []);
+  assert.deepEqual(current(), ['premessa']);
+  for (const [i, id] of ids.entries()) {
+    window.scrollY = 500 + i * 1000 - 100;
+    events.scroll(); events.frame();
+    assert.deepEqual(current(), [id]);
+  }
+  window.scrollY = 8100;
+  events.scroll(); events.frame();
+  assert.deepEqual(current(), ['cittadini']);
+  window.scrollY = 0;
+  events.resize(); events.frame();
+  assert.deepEqual(current(), ['premessa']);
+  window.scrollY = 3500;
+  events.load(); events.frame();
+  assert.deepEqual(current(), ['fondamenta']);
 });
 
 test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigation', { skip: !chrome }, () => {
@@ -24,10 +76,11 @@ test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
   const pages = ['PEG.html', 'index.html'].map(file => read(file)
     .replace(/<link\b[^>]*>/g, '')
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, '')
-    .replace('</head>', '<style>' + read('Assemblea-di-Gruppo/common/theme.css') +
+    .replace('</head>', '<base href="file://' + root + '/"><style>' + read('Assemblea-di-Gruppo/common/theme.css') +
       read('home.css') + (file === 'PEG.html' ? read('peg.css') : '') +
       '</style></head>')
-    .replace('</body>', '<script>' + read('site-menu.js') + '</script></body>'));
+    .replace('</body>', '<script>' + read('site-menu.js') +
+      (file === 'PEG.html' ? read('peg.js') : '') + '</script></body>'));
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
     const results = [];
