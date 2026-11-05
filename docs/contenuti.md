@@ -4,6 +4,15 @@
 
 Setup statico, `dati.js` su GitHub e salvataggio definitivo.
 
+## Progetto Educativo di Gruppo
+
+La home rimanda a `PEG.html`, che presenta il testo integrale di
+`documents/pdf/PEG26-28.pdf` in sezioni con indice e percorsi educativi.
+Il testo della pagina è statico e consultabile anche senza JavaScript;
+gli stili responsive e di stampa sono in `peg.css`. Se viene aggiornato il
+PDF, aggiornare anche il testo HTML mantenendo la corrispondenza con l'originale.
+`site-menu.js` gestisce il menu condiviso tra home e pagina PEG.
+
 | Modo | Quando | Tempo | Durata |
 | --- | --- | --- | --- |
 | **Setup** (`/setup`, dopo accesso all'area riservata) | preparazione di nomi, orari, slide, testi, numeri | ~1 min (Pages) + ≤30 s | commit permanente su GitHub |

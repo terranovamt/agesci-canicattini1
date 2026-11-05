@@ -29,6 +29,9 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .hero h1 { margin: 0; color: var(--w); font: 700 clamp(42px, 6vw, 74px)/1.04 Georgia, 'Times New Roman', serif; letter-spacing: -.035em }
 .hero-intro { max-width: 550px; margin: 22px 0 0; color: color-mix(in srgb, var(--w) 88%, var(--y)); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.7 }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px }
+.peg-home-link { display: inline-flex; align-items: center; gap: 12px; flex-basis: 100%; min-height: 48px; color: var(--y); font-size: 17px; font-weight: 750; text-decoration: none; text-underline-offset: 6px; text-decoration-thickness: 2px }
+.peg-home-link:hover, .peg-home-link:focus-visible { text-decoration: underline }
+.hero a:focus-visible { outline-color: var(--y) }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 11px 18px; border: 1px solid transparent; border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 800; transition: background-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard) }
 .button:hover { transform: translateY(-2px) }
 .button-primary { background: var(--y); color: var(--vd) }
