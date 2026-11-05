@@ -6,8 +6,8 @@ const { test } = require('node:test');
 test('all site pages use the home favicon', () => {
   const docs = path.join(__dirname, '..');
   const pages = ['index.html', 'setup.html', 'area-riservata/index.html',
-    'assemblea/index.html', 'assemblea/setup.html',
-    'assemblea/regia.html', 'assemblea/guida.html'];
+    'area-riservata/assemblea/index.html', 'area-riservata/assemblea/setup.html',
+    'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html'];
   const icons = pages.map(page => {
     const html = fs.readFileSync(path.join(docs, page), 'utf8');
     const icon = html.match(/<link rel="icon" href="([^"]+)">/);

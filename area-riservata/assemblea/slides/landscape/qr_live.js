@@ -5,7 +5,7 @@ LANDSCAPE.slide_qr_live = x => (r, D) => {
   r.classList.add('qrl');
   const t = x.titolo || 'Scansiona il QR code<br><b>e segui l\'assemblea live</b>';
   r.innerHTML = `<div class="qra"><h1>${t}</h1><div class="qrs">${x.sottotitolo || D.assemblea.titolo}</div></div>
-<div class="qrq"><img src="${x.immagine || '../assets/img/qr.svg'}" alt="QR code"></div>
+<div class="qrq"><img src="${x.immagine || '../../assets/img/qr.svg'}" alt="QR code"></div>
 <div class="qrc"><div class="qrl2"></div><div class="qrt"></div></div>`;
   const target = new Date(x.data_ora || '2026-11-20T20:30:00').getTime();
   const lab = r.querySelector('.qrl2'), box = r.querySelector('.qrt');

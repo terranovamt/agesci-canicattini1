@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const root = path.join(__dirname, '../assemblea');
+const root = path.join(__dirname, '../area-riservata/assemblea');
 const source = fs.readFileSync(path.join(root, 'core/setup.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -40,7 +40,7 @@ function setup(options = {}) {
   }
   context = {
     window: { ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
-      LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'assemblea' } } },
+      LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'area-riservata/assemblea' } } },
     document: {
       querySelector: $, querySelectorAll: s => s === '.tabs button' ? tabs : [], createElement: element,
       createElementNS: (_namespace, tag) => element(tag),
@@ -94,7 +94,7 @@ function setup(options = {}) {
 
 test('setup loads without Firebase login, streams, polling or presence', async () => {
   for (const script of ['assemblea.js', 'presenza.js']) assert.equal(html.includes('src="core/' + script + '"'), false);
-  assert.ok(html.includes('src="../assets/js/shared/accesso.js"'));
+  assert.ok(html.includes('src="../../assets/js/shared/accesso.js"'));
   for (const id of ['login-form', 'pubblica', 'inizia', 'ripristina']) assert.equal(html.includes('id="' + id + '"'), false);
   const t = setup();
   await flush();
@@ -284,7 +284,7 @@ test('deleting a collapsed divider retains its slides and requires confirmation'
 test('setup requires an already verified session before loading any data', async () => {
   const t = setup({ unauthenticated: true });
   await flush();
-  assert.deepEqual(t.redirects, ['../area-riservata/index.html']);
+  assert.deepEqual(t.redirects, ['../index.html']);
   assert.equal(t.scripts.length, 0);
   assert.equal(t.requests.length, 0);
 });

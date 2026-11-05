@@ -28,10 +28,10 @@
 | Home del gruppo | `index.html`, `assets/css/home.css`, `assets/js/home.js` | header/footer, hero con logo, CTA, stato assemblea |
 | Accesso e gestione | `area-riservata/index.html`, `assets/js/area-riservata.js` | form chiave, messaggio di stato, CTA e link di ritorno |
 | Alias `/setup` | `setup.html` | redirect preservando query e hash |
-| Setup contenuti | `assemblea/setup.html`, `core/setup.css`, `core/setup.js` | header/stato, tab, form, campi, editor dialog, toast, barra azioni, dettagli/menu, lista riordinabile |
-| Regia live | `assemblea/regia.html`, `core/regia.css`, `core/regia.js` | header, badge, avviso, anteprime iframe, controlli slide, card, KPI, meter, form live, elenco slide |
-| Presentazione pubblica | `assemblea/index.html`, `core/base.css`, `slides/portrait/base.css`, `slides/landscape/`, `slides/portrait/` | palco, barra titolo, navigazione/progresso, righe e card; varianti per decine di tipi di slide e due orientamenti |
-| Guida | `assemblea/guida.html` | header sticky, hero, indice, sezioni, card, tabelle, note, pulsanti |
+| Setup contenuti | `area-riservata/assemblea/setup.html`, `core/setup.css`, `core/setup.js` | header/stato, tab, form, campi, editor dialog, toast, barra azioni, dettagli/menu, lista riordinabile |
+| Regia live | `area-riservata/assemblea/regia.html`, `core/regia.css`, `core/regia.js` | header, badge, avviso, anteprime iframe, controlli slide, card, KPI, meter, form live, elenco slide |
+| Presentazione pubblica | `area-riservata/assemblea/index.html`, `core/base.css`, `slides/portrait/base.css`, `slides/landscape/`, `slides/portrait/` | palco, barra titolo, navigazione/progresso, righe e card; varianti per decine di tipi di slide e due orientamenti |
+| Guida | `area-riservata/assemblea/guida.html` | header sticky, hero, indice, sezioni, card, tabelle, note, pulsanti |
 
 ## Riscontri e priorità
 

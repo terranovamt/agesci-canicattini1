@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 
-const root = path.join(__dirname, '../assemblea');
+const root = path.join(__dirname, '../area-riservata/assemblea');
 const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 

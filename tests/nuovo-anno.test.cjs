@@ -3,13 +3,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const model = require('../assemblea/core/nuovo-anno-model.js');
+const model = require('../area-riservata/assemblea/core/nuovo-anno-model.js');
 const prepare = (source, next, present) => model.prepare(source, next, present,
   (source.anno_esercizio + 1) + '-11-20T20:30');
 const clone = value => JSON.parse(JSON.stringify(value));
 function initial() {
   const context = { window: {} };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../assemblea/dati.js'), 'utf8'), context);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/dati.js'), 'utf8'), context);
   return clone(context.window.DATI);
 }
 function completed(source) {
@@ -107,8 +107,8 @@ test('the next rollover preserves the history from the prior one and handles unk
 test('annual data serializes with the existing GitHub save helper, retaining comments and new scout year', () => {
   const source = initial(), next = prepare(source, completed(source), null);
   const context = { window: {} };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../assemblea/core/salva-dati.js'), 'utf8'), context);
-  const original = fs.readFileSync(path.join(__dirname, '../assemblea/dati.js'), 'utf8');
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/core/salva-dati.js'), 'utf8'), context);
+  const original = fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/dati.js'), 'utf8');
   const output = context.window.SALVA_DATI.genera(original, next);
   assert.ok(output.includes('// 3. CENSIMENTI: dati usati dalla slide quorum.'));
   assert.deepEqual(clone(context.window.SALVA_DATI.valuta(output)), next);

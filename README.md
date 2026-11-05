@@ -4,7 +4,7 @@ Presentazione dell'**Assemblea di Gruppo AGESCI Canicattini 1**, con regia live,
 spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 > 📘 Guida illustrata (stesso stile della presentazione):
-> https://terranovamt.github.io/agesci-canicattini1/assemblea/guida.html
+> https://terranovamt.github.io/agesci-canicattini1/area-riservata/assemblea/guida.html
 
 ## Documentazione
 
@@ -24,10 +24,11 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
 | Area riservata | `.../area-riservata/index.html` (accesso con chiave) |
 | Gestione PDF | `.../area-riservata/documenti.html` |
+| Documenti pubblici assemblea | `.../assemblea/` (nessun login) |
 | PEG corrente | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
-| Regia (dashboard) | `.../assemblea/regia.html` (chiede la chiave) |
+| Regia (dashboard) | `.../area-riservata/assemblea/regia.html` (chiede la chiave) |
 | Setup (solo GitHub) | https://terranovamt.github.io/agesci-canicattini1/setup (nessun accesso Firebase) |
-| Guida | `.../assemblea/guida.html` |
+| Guida | `.../area-riservata/assemblea/guida.html` |
 
 La home propone **Area riservata**: dopo la verifica della chiave
 su Firebase compare **Regia Assemblea di Gruppo**, con **Avvia live** e
@@ -74,10 +75,17 @@ File e indice vengono pubblicati insieme in un unico commit sul ramo
 `LIVE.github.ramo` di `config/site.js` (in produzione `main`).
 Non vengono modificate le impostazioni del setup o i dati dell'assemblea.
 
-La home legge `documents/index.json` e mostra solo i PDF elencati, con apertura
-e download. I file sono in `documents/pdf/`; per aggiungerli manualmente,
-aggiorna anche l'indice con `file`, `title` e `description`. Sono inclusi i due
-PDF forniti: PEG 2026-2028 e Rendiconto per cassa - Modello D.
+La sezione pubblica **Documenti preparatori all'assemblea 2026**, in
+`assemblea/index.html` e nella home, legge
+`documents/index.json` e presenta quattro schede ordinate: PEG 2026-2028,
+Bilancio 2026 - Modello D, Convocazione assemblea 2026 e Regolamento assembleare.
+Il PEG si legge anche nella pagina dedicata; tutte le schede permettono di
+scaricare il PDF. Le altre tre aprono il PDF in una nuova scheda.
+I file sono in `documents/pdf/`; per aggiungerli manualmente, aggiorna anche
+l'indice con `file`, `title` e `description`. Titoli, descrizioni e PDF restano
+gestibili dall'area riservata; ulteriori documenti compaiono dopo i quattro
+materiali preparatori. Ordine, icone e collegamento al PEG sono definiti in
+`assets/js/home-documents.js`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 Dopo il salvataggio attendi il deployment di GitHub Pages.
 
@@ -151,14 +159,16 @@ esecuzione Actions dopo il merge.
 In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
 Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
 del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
-a `assemblea/index.html`, conservando parametri e posizione (`#slide.passo`).
+a `area-riservata/assemblea/index.html`, conservando parametri e posizione (`#slide.passo`).
 Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jekyll.
 
 ## Struttura del repository
 
 La home resta in `index.html`; le altre pagine sono raggruppate per funzione:
-`area-riservata/` per dashboard e gestione PDF, `assemblea/` per presentazione
-e strumenti live, `peg/edizioni/` per i progetti educativi. `config/` contiene
+`assemblea/` per i documenti preparatori pubblici, `peg/edizioni/` per i
+progetti educativi pubblici, `area-riservata/` per dashboard e gestione PDF.
+Dentro `area-riservata/assemblea/` vivono setup, regia, guida e presentazione
+con il relativo motore. `config/` contiene
 la configurazione pubblica e `assets/` le risorse condivise. Calendari e PDF
 restano in `calendars/` e `documents/`, separati dalla logica che li legge.
 La [gerarchia completa](docs/struttura-repository.md) spiega anche la struttura

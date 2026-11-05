@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 
 test('invisible groups never enter presentation scenes or trigger unknown-type warnings', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../assemblea/core/motore.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/core/motore.js'), 'utf8');
   const start = source.slice(source.indexOf('function start(data)'), source.indexOf('/* carica dati.js'));
   const warnings = [];
   const context = {

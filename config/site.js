@@ -8,7 +8,7 @@ window.LIVE = {
   limite: 'corrente',
   ruolo: 'locale',
   // dove la pagina di setup salva dati.js con "Salva su GitHub"
-  github: { repo: 'terranovamt/agesci-canicattini1', ramo: 'main', cartella: 'assemblea' }
+  github: { repo: 'terranovamt/agesci-canicattini1', ramo: 'main', cartella: 'area-riservata/assemblea' }
 };
 /* Solo chi apre index.html?regia=LA-TUA-CHIAVE è il presentatore.
    Senza il parametro, anche nello stesso browser, il ruolo è sempre "pubblico". */

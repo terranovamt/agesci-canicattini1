@@ -1,6 +1,6 @@
 /* slide QR live + conto alla rovescia (orizzontale; verticale in fondo) */
 .qrl {
-  background: var(--v) url(../../../assets/img/texture.svg) center/cover;
+  background: var(--v) url(../../../../assets/img/texture.svg) center/cover;
   color: var(--w);
   display: flex;
   flex-direction: column;

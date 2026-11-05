@@ -88,7 +88,12 @@ test('token and concurrency errors are visible and never return successful saves
 
 test('the supplied PDF files match the public manifest', () => {
   const index = model.validate(JSON.parse(fs.readFileSync(path.join(__dirname, '../documents/index.json'), 'utf8')));
-  assert.equal(index.length, 2);
+  assert.equal(index.length, 4);
+  assert.deepEqual(index.map(item => item.file), [
+    'PEG26-28.pdf', 'Rendiconto_per_cassa_-_ModelloD.pdf',
+    'ConvocaAssemblea26.pdf', 'RegolamentoAssembleaCanicattini1.pdf'
+  ]);
+  assert.match(index[1].title, /2026.*Modello D/);
   for (const item of index) {
     const pdf = fs.readFileSync(path.join(__dirname, '../documents/pdf', item.file));
     assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
