@@ -1,7 +1,7 @@
 /* Setup statico: modifica dati.js e salva su GitHub, senza accessi Firebase. */
 (function () {
   if (!window.ACCESSO.verificata()) {
-    location.replace('../area-riservata/index.html');
+    location.replace('../index.html');
     return;
   }
   const $ = s => document.querySelector(s);
@@ -165,7 +165,7 @@
     { tipo: 'slide_divisore_sezione', titolo: 'Nuova sezione', sottotitolo: '' },
     { tipo: 'slide_testo_articoli', titolo_barra: 'Nuovo testo', articoli: [{ titolo: 'Titolo', paragrafi: ['Testo'] }] },
     { tipo: 'slide_gruppo_invisibile', titolo: 'Nuovo gruppo' },
-    { tipo: 'slide_qr_live', titolo: 'Scansiona il QR code', sottotitolo: '', data_ora: '2026-11-20T20:30:00', immagine: '../assets/img/qr.svg' },
+    { tipo: 'slide_qr_live', titolo: 'Scansiona il QR code', sottotitolo: '', data_ora: '2026-11-20T20:30:00', immagine: '../../assets/img/qr.svg' },
     { tipo: 'slide_ordine_del_giorno', punti: [{ testo: 'Nuovo punto', slide_collegata: '' }] },
     { tipo: 'slide_avanzamento_odg', completati: 0 },
     { tipo: 'slide_quorum_convocazioni', convocazioni: [
@@ -436,7 +436,7 @@
     localStorage.removeItem(TK);
     window.ACCESSO.esci();
     if (published) edit = clone(published);
-    location.replace('../index.html');
+    location.replace('../../index.html');
   };
   $('#annulla').onclick = () => { edit = clone(published); render() };
   $('#scarica').onclick = async () => {

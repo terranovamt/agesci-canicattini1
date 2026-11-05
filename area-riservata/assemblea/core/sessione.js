@@ -8,7 +8,7 @@
   document.body.append(errore);
   A.osserva(s => {
     errore.hidden = true;
-    if (s?.attiva === false) location.replace('../index.html');
+    if (s?.attiva === false) location.replace('../../index.html');
   }, e => {
     errore.textContent = e.message + '. Riprovo automaticamente.';
     errore.hidden = false;
@@ -31,7 +31,7 @@
     e.stopPropagation();
     if (!confirm('Terminare l’assemblea e riportare il sito alla home del gruppo?')) return;
     fine.disabled = true;
-    try { await A.salva(false, L.chiave); location.replace('../index.html') }
+    try { await A.salva(false, L.chiave); location.replace('../../index.html') }
     catch (err) {
       fine.disabled = false;
       errore.textContent = err.message;

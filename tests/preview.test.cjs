@@ -49,7 +49,7 @@ test('preview uploads, edits and deletes PDFs only in its in-memory document lib
   await withServer(async origin => {
     const read = async () => (await fetch(origin + '/documents/index.json')).json();
     const initial = await read();
-    assert.equal(initial.length, 2);
+    assert.equal(initial.length, 4);
     const existing = await fetch(origin + '/documents/pdf/PEG26-28.pdf');
     assert.equal(existing.headers.get('content-type'), 'application/pdf');
     assert.ok((await existing.arrayBuffer()).byteLength > 1000);
@@ -61,7 +61,7 @@ test('preview uploads, edits and deletes PDFs only in its in-memory document lib
     const content = Buffer.from('%PDF-1.7\nanteprima').toString('base64');
     let response = await post({ operation: 'save', document, content });
     assert.equal(response.status, 200);
-    assert.equal((await read()).length, 3);
+    assert.equal((await read()).length, 5);
     assert.equal(await (await fetch(origin + '/documents/pdf/prova.pdf')).text(), '%PDF-1.7\nanteprima');
     const edited = { ...document, title: 'Titolo aggiornato' };
     response = await post({ operation: 'save', previous: document, document: edited });
@@ -71,7 +71,7 @@ test('preview uploads, edits and deletes PDFs only in its in-memory document lib
     assert.equal(response.status, 400, 'stale changes must not overwrite remote edits');
     response = await post({ operation: 'delete', previous: edited });
     assert.equal(response.status, 200);
-    assert.equal((await read()).length, 2);
+    assert.equal((await read()).length, 4);
     assert.equal((await fetch(origin + '/documents/pdf/prova.pdf')).status, 404);
     assert.equal(await fs.readFile(path.join(__dirname, '../documents/index.json'), 'utf8'), original);
     assert.equal(await fs.stat(path.join(__dirname, '../documents/pdf/prova.pdf')).then(() => true, () => false), false);
@@ -103,7 +103,7 @@ test('preview refuses an unknown Firebase endpoint instead of serving it live', 
 
 test('section directories redirect before resolving relative resources', async () => {
   await withServer(async origin => {
-    for (const section of ['area-riservata', 'assemblea', 'peg']) {
+    for (const section of ['area-riservata', 'area-riservata/assemblea', 'assemblea', 'peg']) {
       const response = await fetch(origin + '/' + section + '?test=1', { redirect: 'manual' });
       assert.equal(response.status, 308);
       assert.equal(response.headers.get('location'), '/' + section + '/?test=1');
@@ -111,7 +111,7 @@ test('section directories redirect before resolving relative resources', async (
     }
     const setup = await fetch(origin + '/setup');
     assert.equal(setup.status, 200);
-    assert.match(await setup.text(), /location\.replace\('assemblea\/setup\.html'/);
+    assert.match(await setup.text(), /location\.replace\('area-riservata\/assemblea\/setup\.html'/);
   });
 });
 
@@ -128,6 +128,7 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
   let sequence = 0, buffer = '';
   const exceptions = [];
   const failedResponses = [];
+  const requests = [];
   const pending = new Map();
   browser.stdio[4].on('data', chunk => {
     buffer += chunk;
@@ -136,6 +137,7 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
       const message = JSON.parse(buffer.slice(0, end));
       buffer = buffer.slice(end + 1);
       if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
+      if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
       if (message.method === 'Network.responseReceived' && message.params.response.status >= 400) {
         failedResponses.push(message.params.response.url);
       }
@@ -164,9 +166,11 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
       const cases = [
         ['/area-riservata/', /id="dashboard-assembly-title">[^<]+<\/h3>/, /id="dashboard-document-links"><li>/],
         ['/area-riservata/documenti.html', /class="managed-document"/, /Documenti aggiornati|Anteprima: modifiche simulate/],
+        ['/area-riservata/assemblea/setup.html', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/],
+        ['/assemblea/', /Documenti preparatori/, /class="document-card document-project"/, /href="\.\.\/peg\/index.html"/],
+        ['/area-riservata/assemblea/', /id="msg" style="display: none;"/, /class="qrq"/],
         ['/assemblea/setup.html', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/],
-        ['/assemblea/', /id="msg" style="display: none;"/, /class="qrq"/],
-        ['/assemblea/regia.html', /id="principale"[^>]+src="index\.html\?vista=principale/, /id="b-assemblea"[^>]*>Assemblea attiva/],
+        ['/area-riservata/assemblea/regia.html', /id="principale"[^>]+src="index\.html\?vista=principale/, /id="b-assemblea"[^>]*>Assemblea attiva/],
         ['/PEG/PEG2628.html#scelta', /id="scelta"/, /class="peg-page"/],
         ['/area-riservata.html', /id="dashboard-document-links"><li>/, /id="riservata">/],
         ['/setup', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/]
@@ -176,6 +180,7 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
       await command('Runtime.enable', {}, sessionId);
       await command('Network.enable', {}, sessionId);
       for (const [page, ...patterns] of cases) {
+        const requestStart = requests.length;
         await command('Page.navigate', { url: origin + page }, sessionId);
         const deadline = Date.now() + 5000;
         let html = '';
@@ -191,6 +196,23 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
           }
         } while (patterns.some(pattern => !pattern.test(html)) && Date.now() < deadline);
         for (const pattern of patterns) assert.match(html, pattern, page);
+        if (page === '/assemblea/') {
+          assert.equal(requests.slice(requestStart).some(url => url.includes('/__preview/firebase/')), false,
+            'public preparatory documents must not contact Firebase');
+          const { result } = await command('Runtime.evaluate', {
+            expression: `JSON.stringify({
+              cards: document.querySelectorAll('.document-card').length,
+              downloads: [...document.querySelectorAll('.document-card a[download]')].map(link => link.href)
+            })`, returnByValue: true
+          }, sessionId);
+          const documents = JSON.parse(result.value);
+          assert.equal(documents.cards, 4);
+          for (const pdf of documents.downloads) {
+            const response = await fetch(pdf);
+            assert.equal(response.status, 200, pdf);
+            assert.equal(response.headers.get('content-type'), 'application/pdf', pdf);
+          }
+        }
         assert.deepEqual(exceptions, [], page);
         assert.deepEqual(failedResponses, [], page);
       }

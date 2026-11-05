@@ -1,0 +1,15 @@
+{
+  "name": "Assemblea di Gruppo",
+  "short_name": "Assemblea",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "../../assets/img/logo-grande.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

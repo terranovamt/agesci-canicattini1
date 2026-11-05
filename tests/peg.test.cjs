@@ -28,8 +28,8 @@ test('home introduces the dedicated PEG page and the original PDF stays availabl
   assert.match(read(currentPegPath), /href="\.\.\/\.\.\/assets\/css\/peg\.css"/);
   for (const page of [
     'index.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'peg/index.html', 'setup.html',
-    currentPegPath, 'assemblea/index.html', 'assemblea/regia.html',
-    'assemblea/setup.html', 'assemblea/guida.html'
+    currentPegPath, 'area-riservata/assemblea/index.html', 'area-riservata/assemblea/regia.html',
+    'area-riservata/assemblea/setup.html', 'area-riservata/assemblea/guida.html'
   ]) {
     const html = read(page);
     for (const [, resource] of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {

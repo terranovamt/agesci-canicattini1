@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const root = path.join(__dirname, '../assemblea');
+const root = path.join(__dirname, '../area-riservata/assemblea');
 const config = fs.readFileSync(path.join(__dirname, '../config/site.js'), 'utf8');
 const sync = fs.readFileSync(path.join(root, 'core', 'live.js'), 'utf8');
 

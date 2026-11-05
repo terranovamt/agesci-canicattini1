@@ -28,7 +28,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  background: var(--v) url(../../../assets/img/texture.svg) center/cover;
+  background: var(--v) url(../../../../assets/img/texture.svg) center/cover;
   color: var(--w);
   text-align: right;
   padding: 0 70px;

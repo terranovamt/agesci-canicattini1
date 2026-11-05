@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const root = path.join(__dirname, '../assemblea');
+const root = path.join(__dirname, '../area-riservata/assemblea');
 const source = fs.readFileSync(path.join(root, 'core/regia-dati.js'), 'utf8');
 const patchSource = fs.readFileSync(path.join(root, 'core/modifiche.js'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));

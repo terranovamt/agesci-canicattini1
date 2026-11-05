@@ -14,7 +14,7 @@ orizzontale ridimensionato. L'esportazione PDF resta orizzontale.
 
 ## Dove modificare cosa
 
-I percorsi sono relativi alla cartella `assemblea/`.
+I percorsi sono relativi alla cartella `area-riservata/assemblea/`.
 Ogni tipo di slide (campo `tipo` in `dati.js`, senza `slide_`) ha i suoi file:
 
 - `slides/landscape/<tipo>.js` e `slides/landscape/<tipo>.css`: versione orizzontale.
@@ -45,8 +45,8 @@ File comuni:
 - `index.html`: pagina e ordine di caricamento di stili e script.
 - `../config/site.js`: Firebase, limite degli spettatori, repository per "Salva su GitHub";
   `dati.js`: tutti i contenuti (anche le slide del Progetto Educativo).
-- `../assets/css/theme.css`: tema condiviso da sito e assemblea;
-  `../assets/js/shared/accesso.js` e `assemblea.js`: servizi condivisi di
+- `../../assets/css/theme.css`: tema condiviso da sito e assemblea;
+  `../../assets/js/shared/accesso.js` e `assemblea.js`: servizi condivisi di
   accesso e stato dell'assemblea.
 - `../assets/img/`: loghi, icone, QR, texture e foto di gruppo.
 - `core/base.css`: colori, barra del titolo, navigazione; `core/print.css`: PDF.

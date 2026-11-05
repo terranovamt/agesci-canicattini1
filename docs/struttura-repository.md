@@ -15,18 +15,20 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 ├── manifest.webmanifest            Installazione della home
 ├── area-riservata/                 Accesso e gestione del sito
 │   ├── index.html                 Login e dashboard
-│   └── documenti.html             Gestione e pubblicazione dei PDF
-├── assemblea/                     Sezione assemblea di gruppo
-│   ├── index.html                 Presentazione per pubblico e proiettore
-│   ├── regia.html                 Dashboard della diretta
-│   ├── setup.html                 Editor dei contenuti e nuovo anno
-│   ├── guida.html                 Guida illustrata
-│   ├── dati.js                    Contenuti modificabili dal setup
-│   ├── manifest.webmanifest       Installazione della presentazione
-│   ├── core/                      Motore, live, PDF, regia, setup e relativi stili
-│   └── slides/                    Componenti dei singoli tipi di slide
-│       ├── landscape/             Renderer e CSS orizzontali
-│       └── portrait/              Renderer e CSS verticali
+│   ├── documenti.html             Gestione e pubblicazione dei PDF
+│   └── assemblea/                 Strumenti e applicazione assemblea
+│       ├── index.html             Presentazione per pubblico e proiettore
+│       ├── regia.html             Dashboard della diretta
+│       ├── setup.html             Editor dei contenuti e nuovo anno
+│       ├── guida.html             Guida illustrata
+│       ├── dati.js                Contenuti modificabili dal setup
+│       ├── manifest.webmanifest   Installazione della presentazione
+│       ├── core/                  Motore, live, PDF, regia, setup e stili
+│       └── slides/                Componenti dei singoli tipi di slide
+│           ├── landscape/         Renderer e CSS orizzontali
+│           └── portrait/          Renderer e CSS verticali
+├── assemblea/                     Sezione pubblica dell'assemblea
+│   └── index.html                 Quattro schede dei documenti preparatori
 ├── peg/                           Progetto Educativo di Gruppo
 │   ├── index.html                 Ingresso che rimanda all'edizione corrente
 │   └── edizioni/
@@ -69,14 +71,16 @@ alla nuova sezione.
 ## Come leggere la gerarchia
 
 **Le pagine sono organizzate per funzione**, non tutte alla radice.
-`area-riservata/` raccoglie login e gestione del sito; `assemblea/` contiene
-un'applicazione completa con pubblico, regia e preparazione; `peg/` conserva
-i progetti educativi per edizione. Il nome `index.html` identifica l'ingresso
+`assemblea/` raccoglie i documenti preparatori pubblici, senza login e senza
+chiamate Firebase; `peg/` conserva i progetti educativi pubblici per edizione.
+`area-riservata/` raccoglie login e gestione del sito, con setup, regia e
+applicazione delle slide nella sottosezione `area-riservata/assemblea/`.
+Il nome `index.html` identifica l'ingresso
 di ciascuna sezione, accessibile anche con il solo nome della cartella.
 
 **Il codice specifico resta nella propria sezione.** I componenti delle slide
-vivono in `assemblea/slides/`, mentre il motore e gli strumenti che lavorano
-su quelle slide sono in `assemblea/core/`. Regia e setup restano insieme
+vivono in `area-riservata/assemblea/slides/`, mentre il motore e gli strumenti che lavorano
+su quelle slide sono in `area-riservata/assemblea/core/`. Regia e setup restano insieme
 alla presentazione perché condividono `dati.js`, renderer e flusso live.
 I servizi realmente usati da più sezioni, come accesso e stato assemblea,
 sono invece in `assets/js/shared/`: la home non dipende più dal codice
@@ -86,9 +90,9 @@ interno della presentazione.
 stili, script e media; `config/site.js` configura il comportamento pubblico;
 `calendars/` e `documents/` contengono dati. Gli URL di snapshot, indice e PDF
 non sono cambiati: non si interrompono download già condivisi, salvataggi
-GitHub e workflow. `assemblea/dati.js` resta vicino alle pagine che lo
+GitHub e workflow. `area-riservata/assemblea/dati.js` resta vicino alle pagine che lo
 caricano e viene salvato dal setup nel percorso `LIVE.github.cartella`,
-ora impostato a `assemblea`.
+ora impostato a `area-riservata/assemblea`.
 
 **Gli strumenti del repository non sono pagine del sito.** Test, guide
 tecniche, specifiche visive e automazioni hanno ciascuno la propria cartella.
@@ -96,6 +100,11 @@ Con la pubblicazione dalla radice anche i file raggiungibili di queste
 cartelle possono essere pubblici: la separazione organizzativa non costituisce
 un controllo di accesso. Non inserire segreti o dati riservati in alcuna parte
 pubblicata; la chiave Firebase resta nella console, il token GitHub nel browser.
+Setup e regia mantengono i controlli di accesso già previsti. La presentazione
+resta leggibile dal pubblico durante la diretta anche se il suo codice è
+raggruppato sotto l'area riservata: il percorso non è un vincolo di sicurezza.
+I PDF pubblici restano in `documents/pdf/`; `area-riservata/documenti.html`
+è esclusivamente l'interfaccia di gestione.
 
 ## Migrazione degli indirizzi
 
@@ -103,10 +112,13 @@ pubblicata; la chiave Firebase resta nella console, il token GitHub nel browser.
 | --- | --- |
 | `area-riservata.html` | `area-riservata/index.html` |
 | `gestione-documenti.html` | `area-riservata/documenti.html` |
-| `Assemblea-di-Gruppo/` | `assemblea/` |
-| `Assemblea-di-Gruppo/regia.html` | `assemblea/regia.html` |
-| `Assemblea-di-Gruppo/setup.html`, `setup.html` | `assemblea/setup.html` |
-| `Assemblea-di-Gruppo/guida.html` | `assemblea/guida.html` |
+| `Assemblea-di-Gruppo/` | `area-riservata/assemblea/` |
+| `Assemblea-di-Gruppo/regia.html` | `area-riservata/assemblea/regia.html` |
+| `Assemblea-di-Gruppo/setup.html`, `setup.html` | `area-riservata/assemblea/setup.html` |
+| `Assemblea-di-Gruppo/guida.html` | `area-riservata/assemblea/guida.html` |
+| `assemblea/setup.html` | `area-riservata/assemblea/setup.html` |
+| `assemblea/regia.html` | `area-riservata/assemblea/regia.html` |
+| `assemblea/guida.html` | `area-riservata/assemblea/guida.html` |
 | `PEG.html` | `peg/index.html`, quindi l'edizione corrente |
 | `PEG/PEG2628.html` | `peg/edizioni/2026-2028.html` |
 
@@ -114,11 +126,15 @@ I reindirizzamenti JavaScript conservano query string e frammento, compresi
 i vecchi link della regia e la posizione delle slide. È presente anche un
 collegamento HTML alla nuova destinazione e un redirect senza JavaScript.
 La navigazione interna usa direttamente le destinazioni nuove.
+`assemblea/index.html` ora mostra i documenti preparatori pubblici, non le
+slide. La home continua ad aprire la presentazione durante la diretta, nel
+nuovo percorso `area-riservata/assemblea/index.html`.
 
 Quando si pubblica questa migrazione, chiudere e riaprire eventuali schede
 di setup e regia già aperte prima del deployment: il vecchio JavaScript
 potrebbe conservare in memoria la precedente destinazione dei salvataggi.
-Le nuove pagine caricano `config/site.js` con `github.cartella: 'assemblea'`.
+Le nuove pagine degli strumenti caricano `config/site.js` con
+`github.cartella: 'area-riservata/assemblea'`.
 
 I percorsi relativi permettono di servire lo stesso sito sia sotto
 `/agesci-canicattini1/` su GitHub Pages sia nella preview locale. Le URL CSS
@@ -134,8 +150,8 @@ Per questo uno spostamento richiede di verificare entrambi, non solo i tag
    viene davvero usato da più sezioni.
 3. Per un nuovo PEG aggiungere una pagina in `peg/edizioni/` e aggiornare
    `peg/index.html`, senza sovrascrivere l'edizione precedente.
-4. Per una nuova slide aggiungere i renderer in `assemblea/slides/` e
-   registrarli in `assemblea/index.html`, secondo [Sviluppo](sviluppo.md).
+4. Per una nuova slide aggiungere i renderer in `area-riservata/assemblea/slides/` e
+   registrarli in `area-riservata/assemblea/index.html`, secondo [Sviluppo](sviluppo.md).
 5. Aggiornare insieme link, immagini, chiamate dinamiche, manifest,
    configurazione di salvataggio, preview e test quando cambia un percorso.
 

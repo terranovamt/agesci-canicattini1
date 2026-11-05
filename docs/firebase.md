@@ -37,9 +37,9 @@ Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
    La chiave va **solo nella console**, mai nel repository.
 5. Su GitHub apri `config/site.js` (matita ✏️) e metti
    l'URL del punto 3 in `url:`, poi Commit. Dopo ~1 minuto è online.
-6. Prova: apri `…/assemblea/regia.html` sul PC, inserisci la chiave e
+6. Prova: apri `…/area-riservata/assemblea/regia.html` sul PC, inserisci la chiave e
    premi **Avvia live**. Apri
-   `…/assemblea/` sul telefono: avanzando in regia il telefono segue
+   `…/area-riservata/assemblea/` sul telefono: avanzando in regia il telefono segue
    e il pannello Firebase conta 1 pubblico. Poi cambia i presenti nella regia
    e premi **Pubblica live**.
 

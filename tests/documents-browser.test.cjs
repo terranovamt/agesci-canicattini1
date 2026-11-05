@@ -40,7 +40,7 @@ function fixture(file, css, scripts) {
     const append = document.head.append.bind(document.head);
     document.head.append = element => {
       if (element.tagName === 'SCRIPT' && element.src.includes('dati.js')) {
-        ${read('assemblea/dati.js')}
+        ${read('area-riservata/assemblea/dati.js')}
         element.onload();
       } else append(element);
     };
@@ -59,9 +59,10 @@ test('public documents and management work in a browser at all required widths',
   const pages = [
     fixture('index.html', 'assets/css/home.css', ['assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
     fixture('area-riservata/documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
-    fixture('assemblea/setup.html', 'assemblea/core/setup.css',
-      ['assemblea/core/salva-dati.js', 'assemblea/core/modifiche.js', 'assemblea/core/nuovo-anno-model.js', 'assemblea/core/nuovo-anno.js', 'assemblea/core/setup.js']),
-    fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js'])
+    fixture('area-riservata/assemblea/setup.html', 'area-riservata/assemblea/core/setup.css',
+      ['area-riservata/assemblea/core/salva-dati.js', 'area-riservata/assemblea/core/modifiche.js', 'area-riservata/assemblea/core/nuovo-anno-model.js', 'area-riservata/assemblea/core/nuovo-anno.js', 'area-riservata/assemblea/core/setup.js']),
+    fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js']),
+    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/home-documents.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -189,7 +190,11 @@ test('public documents and management work in a browser at all required widths',
           const cards = [...doc.querySelectorAll('.document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
-            links: cards.every(card => [...card.querySelectorAll('a')].every(link => /documents\\/pdf\\/.+\\.pdf$/i.test(link.getAttribute('href')))) });
+            titles: cards.map(card => card.querySelector('h3').textContent),
+            pegLink: cards[0].querySelector('.document-primary').getAttribute('href'),
+            icons: doc.querySelectorAll('.document-icon svg[aria-hidden="true"]').length,
+            links: cards.every(card => /documents\\/pdf\\/.+\\.pdf$/i.test(card.querySelector('a[download]').getAttribute('href'))),
+            pdfLinks: cards.slice(1).every(card => /documents\\/pdf\\/.+\\.pdf$/i.test(card.querySelector('.document-primary').getAttribute('href'))) });
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#documents-retry').onclick();
           results.push({ errorVisible: !doc.querySelector('#documents-retry').hidden,
@@ -227,6 +232,11 @@ test('public documents and management work in a browser at all required widths',
           doc.querySelector('.managed-document:last-child .danger').click();
           await deleted;
           results.push({ remaining: doc.querySelectorAll('.managed-document').length });
+        } else if (page === 4) {
+          results.push({ publicAssembly: doc.querySelectorAll('.document-card').length,
+            publicPeg: doc.querySelector('.document-primary').getAttribute('href'),
+            publicPdfs: [...doc.querySelectorAll('a[download]')].every(link =>
+              link.getAttribute('href').startsWith('../documents/pdf/')) });
         } else if (page === 3) {
           results.push({ dashboard: doc.querySelector('#riservata').hidden === false,
             assembly: doc.querySelector('#dashboard-assembly-title').textContent,
@@ -262,20 +272,30 @@ test('public documents and management work in a browser at all required widths',
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
     assert.ok(match, result.stdout.slice(-6000));
     const results = JSON.parse(match[1]);
+    const publicAssembly = results.find(item => 'publicAssembly' in item);
+    assert.equal(publicAssembly.publicAssembly, 4);
+    assert.equal(publicAssembly.publicPeg, '../peg/index.html');
+    assert.equal(publicAssembly.publicPdfs, true);
     for (const item of results.filter(item => 'overflow' in item)) {
       assert.equal(item.overflow, false, 'page ' + item.page + ' must fit width ' + item.width);
     }
-    assert.equal(results.find(item => 'cards' in item).cards, 2);
+    assert.equal(results.find(item => 'cards' in item).cards, 4);
     assert.equal(results.find(item => 'cards' in item).links, true);
+    assert.equal(results.find(item => 'cards' in item).pdfLinks, true);
+    assert.equal(results.find(item => 'cards' in item).icons, 4);
+    assert.equal(results.find(item => 'cards' in item).pegLink, 'peg/index.html');
+    assert.deepEqual(results.find(item => 'cards' in item).titles, [
+      'PEG 2026-2028', 'Bilancio 2026 · Modello D', 'Convocazione assemblea 2026', 'Regolamento assembleare'
+    ]);
     assert.ok(results.find(item => 'cards' in item).description.length > 10);
     assert.equal(results.find(item => 'errorVisible' in item).errorVisible, true);
     assert.match(results.find(item => 'error' in item).error, /503/);
     assert.match(results.find(item => 'empty' in item).empty, /Non ci sono ancora/);
     assert.equal(results.find(item => 'retryHidden' in item).retryHidden, true);
-    assert.equal(results.find(item => 'uploaded' in item).uploaded, 3, JSON.stringify(results));
+    assert.equal(results.find(item => 'uploaded' in item).uploaded, 5, JSON.stringify(results));
     assert.match(results.find(item => 'uploaded' in item).status, /Salvato/);
     assert.equal(results.find(item => 'edited' in item).edited, 'Titolo modificato');
-    assert.equal(results.find(item => 'remaining' in item).remaining, 2);
+    assert.equal(results.find(item => 'remaining' in item).remaining, 4);
     for (const item of results.filter(item => 'reachable' in item)) {
       assert.equal(item.reachable, true, 'setup fields must be reachable above the action bar at width ' + item.width);
     }
@@ -304,7 +324,7 @@ test('public documents and management work in a browser at all required widths',
     const dashboard = results.find(item => 'dashboard' in item);
     assert.equal(dashboard.dashboard, true);
     assert.match(dashboard.assembly, /Assemblea/);
-    assert.equal(dashboard.documents, 2);
+    assert.equal(dashboard.documents, 3);
     assert.equal(dashboard.tools, 3);
     assert.equal(results.find(item => 'dashboardError' in item).dashboardError, true);
     assert.equal(results.find(item => 'assemblyError' in item).assemblyError, true);

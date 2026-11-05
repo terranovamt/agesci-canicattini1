@@ -18,11 +18,14 @@ const aliases = {
   'gestione-documenti.html': 'area-riservata/documenti.html',
   'PEG.html': 'peg/index.html',
   'PEG/PEG2628.html': 'peg/edizioni/2026-2028.html',
-  'setup.html': 'assemblea/setup.html',
-  'Assemblea-di-Gruppo/index.html': 'assemblea/index.html',
-  'Assemblea-di-Gruppo/regia.html': 'assemblea/regia.html',
-  'Assemblea-di-Gruppo/setup.html': 'assemblea/setup.html',
-  'Assemblea-di-Gruppo/guida.html': 'assemblea/guida.html',
+  'setup.html': 'area-riservata/assemblea/setup.html',
+  'assemblea/setup.html': 'area-riservata/assemblea/setup.html',
+  'assemblea/regia.html': 'area-riservata/assemblea/regia.html',
+  'assemblea/guida.html': 'area-riservata/assemblea/guida.html',
+  'Assemblea-di-Gruppo/index.html': 'area-riservata/assemblea/index.html',
+  'Assemblea-di-Gruppo/regia.html': 'area-riservata/assemblea/regia.html',
+  'Assemblea-di-Gruppo/setup.html': 'area-riservata/assemblea/setup.html',
+  'Assemblea-di-Gruppo/guida.html': 'area-riservata/assemblea/guida.html',
   'peg/index.html': 'peg/edizioni/2026-2028.html'
 };
 
@@ -43,13 +46,14 @@ test('all pages, stylesheets and manifests resolve local references under a Page
       if (file !== null) assert.ok(fs.existsSync(path.join(root, file)), `${page}: ${reference}`);
     }
   }
-  for (const stylesheet of [...files('assets'), ...files('assemblea')].filter(file => file.endsWith('.css'))) {
+  for (const stylesheet of [...files('assets'), ...files('area-riservata/assemblea')].filter(file => file.endsWith('.css'))) {
     for (const [, reference] of read(stylesheet).matchAll(/url\(["']?([^)"']+)["']?\)/g)) {
       const file = localTarget(stylesheet, reference);
       if (file !== null) assert.ok(fs.existsSync(path.join(root, file)), `${stylesheet}: ${reference}`);
     }
   }
-  for (const file of ['manifest.webmanifest', 'assemblea/manifest.webmanifest', 'Assemblea-di-Gruppo/manifest.webmanifest']) {
+  for (const file of ['manifest.webmanifest', 'assemblea/manifest.webmanifest',
+    'area-riservata/assemblea/manifest.webmanifest', 'Assemblea-di-Gruppo/manifest.webmanifest']) {
     const manifest = JSON.parse(read(file));
     for (const reference of [manifest.start_url, ...manifest.icons.map(icon => icon.src)]) {
       assert.ok(fs.existsSync(path.join(root, localTarget(file, reference))), `${file}: ${reference}`);
@@ -98,12 +102,23 @@ test('shared configuration publishes assembly edits into the migrated data direc
     document: { getElementById: () => null }
   };
   vm.runInNewContext(read('config/site.js'), context);
-  assert.equal(context.window.LIVE.github.cartella, 'assemblea');
+  assert.equal(context.window.LIVE.github.cartella, 'area-riservata/assemblea');
   assert.ok(fs.existsSync(path.join(root, context.window.LIVE.github.cartella, 'dati.js')));
   for (const page of ['index.html', 'area-riservata/index.html', 'area-riservata/documenti.html',
-    'assemblea/index.html', 'assemblea/regia.html', 'assemblea/setup.html']) {
+    'area-riservata/assemblea/index.html', 'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/setup.html']) {
     const scripts = [...read(page).matchAll(/<script src="([^"]+)"/g)]
       .map(([, src]) => localTarget(page, src));
     assert.equal(scripts[0], 'config/site.js', page);
   }
+});
+
+test('public assembly documents and PEG stay independent of restricted tools and Firebase', () => {
+  const html = read('assemblea/index.html');
+  assert.match(html, /data-documents-url="\.\.\/documents\/index.json"/);
+  assert.match(html, /data-site-root="\.\.\/"/);
+  assert.doesNotMatch(html, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js/);
+  assert.match(read('index.html'), /href="assemblea\/index.html"/);
+  assert.match(read('area-riservata/index.html'), /href="assemblea\/setup.html"/);
+  assert.match(read('area-riservata/index.html'), /href="assemblea\/regia.html"/);
+  assert.match(read('area-riservata/assemblea/setup.html'), /href="\.\.\/index.html"/);
 });

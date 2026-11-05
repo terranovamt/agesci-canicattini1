@@ -8,7 +8,7 @@
     try {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = '../assemblea/dati.js?t=' + Date.now();
+        script.src = 'assemblea/dati.js?t=' + Date.now();
         script.onload = () => { script.remove(); resolve() };
         script.onerror = () => { script.remove(); reject(new Error('Impossibile caricare dati.js')) };
         document.head.append(script);

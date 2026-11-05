@@ -48,7 +48,7 @@
     finally { b.disabled = false }
   }
   $('#login-form').onsubmit = e => { e.preventDefault(); accedi($('#chiave').value.trim()); $('#chiave').value = '' };
-  $('#esci').onclick = () => { A.esci(); location.replace('../area-riservata/index.html') };
+  $('#esci').onclick = () => { A.esci(); location.replace('../index.html') };
 
   /* ---------- presentazione ---------- */
   async function avvia() {
@@ -150,7 +150,7 @@
     if (cambioStato || statoAttivo !== true) return;
     if (!confirm('Terminare l’assemblea e riportare il sito alla home del gruppo?')) return;
     cambioStato = true; pulsantiStato();
-    try { await window.ASSEMBLEA.salva(false, key); finestra?.close(); location.replace('../index.html') }
+    try { await window.ASSEMBLEA.salva(false, key); finestra?.close(); location.replace('../../index.html') }
     catch (e) { alert(e.message) }
     finally { cambioStato = false; pulsantiStato() }
   };
