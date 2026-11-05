@@ -28,7 +28,7 @@
     <nav id="main-nav" aria-label="Navigazione principale">
       <a href="peg/index.html">Il PEG</a>
       <a href="#eventi">Eventi</a>
-      <a href="assemblea/index.html">Documenti assemblea</a>
+      <a href="documenti/index.html">Documenti</a>
       <a class="nav-access" href="area-riservata/index.html">Area riservata</a>
     </nav>
   </header>
@@ -43,7 +43,7 @@
           <a class="peg-home-link" href="peg/index.html">Consulta il PEG 26-28 <span aria-hidden="true">→</span></a>
           <div class="hero-secondary-actions">
             <a href="#eventi">Scopri gli eventi</a>
-            <a href="assemblea/index.html">Consulta i documenti</a>
+            <a href="documenti/index.html">Consulta i documenti</a>
           </div>
         </div>
         <p id="stato" class="assembly-status" role="status" hidden></p>
@@ -110,14 +110,15 @@
     <section class="content-section documents-section" id="documenti" aria-labelledby="titolo-documenti">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Assemblea di gruppo · 2026</p>
-          <h2 id="titolo-documenti">Documenti preparatori<br>all’assemblea</h2>
+          <p class="eyebrow">La biblioteca del gruppo</p>
+          <h2 id="titolo-documenti">Gli ultimi documenti</h2>
         </div>
-        <p class="section-description">Un percorso condiviso, quattro documenti per arrivare preparati. Leggi il progetto educativo e consulta i materiali prima dell’incontro.</p>
+        <p class="section-description">Le quattro pubblicazioni più recenti. Nell’archivio trovi tutti i documenti, ricercabili per anno.</p>
       </div>
       <p id="documents-status" role="status">Caricamento dei documenti…</p>
       <p><a class="text-link" href="assemblea/index.html">Apri la sezione pubblica dell’assemblea →</a></p>
-      <div id="documents-list" class="document-grid" data-documents-url="documents/index.json"></div>
+      <p><a class="text-link" href="documenti/index.html">Tutti i documenti · Cerca per anno →</a></p>
+      <div id="documents-list" class="document-grid" data-documents-url="documents/index.json" data-order="latest" data-limit="4"></div>
       <button id="documents-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i PDF</button>
       <noscript>
         <p>Consulta i documenti preparatori all’assemblea 2026:</p>

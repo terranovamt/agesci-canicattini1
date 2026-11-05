@@ -3,10 +3,17 @@
   const status = document.getElementById('documents-status');
   const retry = document.getElementById('documents-retry');
   const siteRoot = list.dataset.siteRoot || '';
+  const yearFilter = document.getElementById('documents-year');
+  const search = document.getElementById('documents-search');
+  let files = [];
+  const order = file => {
+    const index = preparatory.findIndex(item => item.file === file.file);
+    return index === -1 ? preparatory.length : index;
+  };
   const preparatory = [
     { file: 'PEG26-28.pdf', label: 'Il nostro percorso', theme: 'project', link: 'peg/index.html',
       icon: ['M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-3-1H4z', 'M13 8a3 3 0 0 1 3-3h4v14h-4a4 4 0 0 0-3 1'] },
-    { file: 'Rendiconto_per_cassa_-_ModelloD.pdf', label: 'Trasparenza · 2026', theme: 'finance',
+    { file: 'Rendiconto_per_cassa_-_ModelloD.pdf', label: 'Trasparenza', theme: 'finance',
       icon: ['M4 20h16', 'M6 16v-4', 'M12 16V4', 'M18 16V8'] },
     { file: 'ConvocaAssemblea26.pdf', label: 'L’invito a partecipare', theme: 'invitation',
       icon: ['M4 6h16v13H4z', 'm4 7 8 6 8-6'] },
@@ -35,21 +42,51 @@
     retry.hidden = true;
     status.textContent = 'Caricamento dei documenti…';
     list.replaceChildren();
+    files = [];
+    if (yearFilter) { yearFilter.disabled = true; search.disabled = true }
     try {
       const response = await fetch(list.dataset.documentsUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error('Impossibile leggere i documenti (HTTP ' + response.status + ')');
       const entries = await response.json();
       if (!Array.isArray(entries)) throw new Error('Elenco dei documenti non valido');
-      const files = entries.filter(entry => typeof entry.file === 'string'
+      files = entries.filter(entry => entry && typeof entry.file === 'string'
         && /^[^/\\]+\.pdf$/i.test(entry.file) && !entry.file.startsWith('.'));
-      const order = file => {
-        const index = preparatory.findIndex(item => item.file === file.file);
-        return index === -1 ? preparatory.length : index;
-      };
-      files.sort((a, b) => order(a) - order(b)
-        || (a.title || a.file).localeCompare(b.title || b.file, 'it', { numeric: true }));
-      status.textContent = files.length ? files.length + ' documenti PDF disponibili.' : 'Non ci sono ancora documenti PDF pubblicati.';
-      files.forEach(file => {
+      if (list.dataset.order === 'latest') {
+        files.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+      } else {
+        files.sort((a, b) => order(a) - order(b)
+          || (a.title || a.file).localeCompare(b.title || b.file, 'it', { numeric: true }));
+      }
+      if (yearFilter) {
+        const selected = yearFilter.value;
+        yearFilter.replaceChildren(new Option('Tutti gli anni', ''));
+        const years = [...new Set(files.filter(file => Number.isInteger(file.year)).map(file => file.year))];
+        years.sort((a, b) => b - a).forEach(year => yearFilter.add(new Option(String(year), String(year))));
+        if (files.some(file => !file.year)) yearFilter.add(new Option('Senza anno', 'undated'));
+        if ([...yearFilter.options].some(option => option.value === selected)) yearFilter.value = selected;
+        yearFilter.disabled = false;
+        search.disabled = false;
+      }
+      render();
+    } catch (error) {
+      status.textContent = error.message + '. Riprova tra poco.';
+      retry.hidden = false;
+      console.error('Caricamento PDF non riuscito', error);
+    }
+  }
+  function render() {
+      list.replaceChildren();
+      const query = (search?.value || '').trim().toLocaleLowerCase('it');
+      const year = yearFilter?.value || '';
+      let shown = files.filter(file => (!year || (year === 'undated' ? !file.year : String(file.year) === year))
+        && (!query || [file.title, file.description, file.file].join(' ').toLocaleLowerCase('it').includes(query)));
+      const total = shown.length;
+      if (list.dataset.limit) shown = shown.slice(0, Number(list.dataset.limit));
+      status.textContent = !files.length ? 'Non ci sono ancora documenti PDF pubblicati.'
+        : !total ? 'Nessun documento corrisponde alla ricerca.'
+        : shown.length < total ? 'Gli ultimi ' + shown.length + ' documenti su ' + total + ' disponibili nell’archivio.'
+        : shown.length + ' documenti PDF disponibili.';
+      shown.forEach(file => {
         const detail = preparatory.find(item => item.file === file.file);
         const card = document.createElement('article');
         card.className = 'document-card document-' + (detail?.theme || 'rules');
@@ -64,7 +101,7 @@
         top.append(emblem, type);
         const label = document.createElement('span');
         label.className = 'document-label';
-        label.textContent = detail?.label || 'Documenti del gruppo';
+        label.textContent = (detail?.label || 'Documenti del gruppo') + (file.year ? ' · ' + file.year : '');
         const heading = document.createElement('h3');
         heading.textContent = file.title || file.file.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
         const description = document.createElement('p');
@@ -88,12 +125,9 @@
         card.append(top, label, heading, description, actions);
         list.append(card);
       });
-    } catch (error) {
-      status.textContent = error.message + '. Riprova tra poco.';
-      retry.hidden = false;
-      console.error('Caricamento PDF non riuscito', error);
-    }
   }
+  if (yearFilter) yearFilter.onchange = render;
+  if (search) search.oninput = render;
   retry.onclick = load;
   load();
 })();

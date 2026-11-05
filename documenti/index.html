@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Archivio documenti · AGESCI Canicattini 1</title>
+  <meta name="description" content="Tutti i documenti pubblici del gruppo AGESCI Canicattini 1: cerca per anno, titolo o descrizione e scarica i PDF.">
+  <meta name="theme-color" content="#462678">
+  <link rel="icon" href="../assets/img/logo-grande.png">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/home.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenuto">Vai al contenuto</a>
+  <header class="site-header">
+    <a class="brand" href="../" aria-label="AGESCI Canicattini 1, home">
+      <img src="../assets/img/logo-grande.png" alt="">
+      <span><b>AGESCI</b><small>Canicattini 1</small></span>
+    </a>
+    <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Apri il menu" aria-controls="main-nav" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="main-nav" aria-label="Navigazione principale">
+      <a href="../peg/index.html">Il PEG</a>
+      <a href="../#eventi">Eventi</a>
+      <a href="index.html" aria-current="page">Documenti</a>
+      <a class="nav-access" href="../area-riservata/index.html">Area riservata</a>
+    </nav>
+  </header>
+  <main id="contenuto">
+    <section class="content-section documents-section" aria-labelledby="titolo-documenti">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">La biblioteca del gruppo</p>
+          <h1 id="titolo-documenti">Archivio documenti</h1>
+        </div>
+        <p class="section-description">Tutti i materiali pubblici, dal più recente. Scegli un anno o cerca un documento: non serve effettuare l’accesso.</p>
+      </div>
+      <p><a class="text-link" href="../assemblea/index.html">Documenti preparatori all’assemblea 2026 →</a></p>
+      <form class="document-filters" role="search" aria-label="Cerca nell’archivio documenti" onsubmit="return false">
+        <div>
+          <label for="documents-year">Anno di riferimento</label>
+          <select id="documents-year" disabled><option value="">Tutti gli anni</option></select>
+        </div>
+        <div>
+          <label for="documents-search">Cerca nei documenti</label>
+          <input id="documents-search" type="search" placeholder="Titolo o descrizione…" disabled>
+        </div>
+      </form>
+      <p id="documents-status" role="status" aria-live="polite">Caricamento dei documenti…</p>
+      <div id="documents-list" class="document-grid" data-documents-url="../documents/index.json" data-site-root="../" data-order="latest"></div>
+      <button id="documents-retry" class="button button-secondary" type="button" hidden>Riprova a caricare i PDF</button>
+      <noscript><p>Attiva JavaScript per consultare l’archivio e filtrare per anno, oppure <a href="../assemblea/index.html">consulta i documenti preparatori all’assemblea</a>.</p></noscript>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <a class="footer-brand" href="../">AGESCI <b>Canicattini 1</b></a>
+    <span>Archivio pubblico dei documenti</span>
+    <a href="#contenuto">Torna all’inizio ↑</a>
+  </footer>
+  <script src="../assets/js/site-menu.js"></script>
+  <script src="../assets/js/home-documents.js"></script>
+</body>
+</html>

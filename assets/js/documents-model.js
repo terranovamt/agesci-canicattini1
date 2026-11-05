@@ -9,6 +9,15 @@
         throw new Error('Indice documenti non valido: controlla file, titoli e descrizioni');
       }
       names.add(item.file);
+      if (item.year !== undefined && (!Number.isInteger(item.year) || item.year < 1900 || item.year > 9999)) {
+        throw new Error('Anno del documento non valido');
+      }
+      if (item.publishedAt !== undefined && (typeof item.publishedAt !== 'string'
+        || !/^\d{4}-\d{2}-\d{2}$/.test(item.publishedAt)
+        || !Number.isFinite(Date.parse(item.publishedAt))
+        || new Date(item.publishedAt).toISOString().slice(0, 10) !== item.publishedAt)) {
+        throw new Error('Data di pubblicazione non valida');
+      }
     });
     return items;
   }

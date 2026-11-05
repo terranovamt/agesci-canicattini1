@@ -10,7 +10,7 @@ const files = directory => fs.readdirSync(path.join(root, directory), { withFile
   .flatMap(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]);
 const pages = [
   ...fs.readdirSync(root).filter(file => file.endsWith('.html')),
-  ...['area-riservata', 'assemblea', 'peg', 'Assemblea-di-Gruppo', 'PEG']
+  ...['area-riservata', 'assemblea', 'documenti', 'peg', 'Assemblea-di-Gruppo', 'PEG']
     .flatMap(directory => files(directory).filter(file => file.endsWith('.html')))
 ];
 const aliases = {
@@ -121,4 +121,14 @@ test('public assembly documents and PEG stay independent of restricted tools and
   assert.match(read('area-riservata/index.html'), /href="assemblea\/setup.html"/);
   assert.match(read('area-riservata/index.html'), /href="assemblea\/regia.html"/);
   assert.match(read('area-riservata/assemblea/setup.html'), /href="\.\.\/index.html"/);
+});
+
+test('public archive has year and text search and the home limits recent documents to four', () => {
+  const archive = read('documenti/index.html');
+  assert.match(archive, /id="documents-year"/);
+  assert.match(archive, /id="documents-search"/);
+  assert.match(archive, /data-order="latest"/);
+  assert.doesNotMatch(archive, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js|data-limit=/);
+  assert.match(read('index.html'), /data-order="latest" data-limit="4"/);
+  assert.match(read('index.html'), /href="documenti\/index.html"/);
 });

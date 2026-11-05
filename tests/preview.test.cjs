@@ -103,7 +103,7 @@ test('preview refuses an unknown Firebase endpoint instead of serving it live', 
 
 test('section directories redirect before resolving relative resources', async () => {
   await withServer(async origin => {
-    for (const section of ['area-riservata', 'area-riservata/assemblea', 'assemblea', 'peg']) {
+    for (const section of ['area-riservata', 'area-riservata/assemblea', 'assemblea', 'documenti', 'peg']) {
       const response = await fetch(origin + '/' + section + '?test=1', { redirect: 'manual' });
       assert.equal(response.status, 308);
       assert.equal(response.headers.get('location'), '/' + section + '/?test=1');
@@ -168,6 +168,7 @@ test('migrated pages load dynamic data and legacy links in a real browser', { ti
         ['/area-riservata/documenti.html', /class="managed-document"/, /Documenti aggiornati|Anteprima: modifiche simulate/],
         ['/area-riservata/assemblea/setup.html', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/],
         ['/assemblea/', /Documenti preparatori/, /class="document-card document-project"/, /href="\.\.\/peg\/index.html"/],
+        ['/documenti/', /Archivio documenti/, /class="document-card document-project"/, /<option value="2026">2026<\/option>/],
         ['/area-riservata/assemblea/', /id="msg" style="display: none;"/, /class="qrq"/],
         ['/assemblea/setup.html', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/],
         ['/area-riservata/assemblea/regia.html', /id="principale"[^>]+src="index\.html\?vista=principale/, /id="b-assemblea"[^>]*>Assemblea attiva/],

@@ -62,7 +62,8 @@ test('public documents and management work in a browser at all required widths',
     fixture('area-riservata/assemblea/setup.html', 'area-riservata/assemblea/core/setup.css',
       ['area-riservata/assemblea/core/salva-dati.js', 'area-riservata/assemblea/core/modifiche.js', 'area-riservata/assemblea/core/nuovo-anno-model.js', 'area-riservata/assemblea/core/nuovo-anno.js', 'area-riservata/assemblea/core/setup.js']),
     fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js']),
-    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/home-documents.js'])
+    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/home-documents.js']),
+    fixture('documenti/index.html', 'assets/css/home.css', ['assets/js/home-documents.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -203,6 +204,17 @@ test('public documents and management work in a browser at all required widths',
           await doc.querySelector('#documents-retry').onclick();
           results.push({ empty: doc.querySelector('#documents-status').textContent,
             retryHidden: doc.querySelector('#documents-retry').hidden });
+          const recent = [
+            { file: 'old.pdf', title: 'Vecchio', year: 2025, publishedAt: '2025-01-01' },
+            { file: 'new.pdf', title: 'Nuovissimo', year: 2027, publishedAt: '2027-01-01' },
+            { file: 'undated.pdf', title: 'Senza data' },
+            { file: 'four.pdf', title: 'Quarto', year: 2026, publishedAt: '2026-01-01' },
+            { file: 'second.pdf', title: 'Secondo', year: 2026, publishedAt: '2026-12-01' },
+            { file: 'third.pdf', title: 'Terzo', year: 2026, publishedAt: '2026-06-01' }
+          ];
+          frame.contentWindow.fetch = async () => ({ ok: true, json: async () => recent });
+          await doc.querySelector('#documents-retry').onclick();
+          results.push({ latestTitles: [...doc.querySelectorAll('.document-card h3')].map(node => node.textContent) });
         } else if (page === 1) {
           const win = frame.contentWindow;
           const input = doc.querySelector('#document-file');
@@ -211,6 +223,8 @@ test('public documents and management work in a browser at all required widths',
           input.files = transfer.files;
           doc.querySelector('#document-title').value = 'Documento nuovo';
           doc.querySelector('#document-description').value = 'Descrizione di prova';
+          doc.querySelector('#document-year').value = '2027';
+          doc.querySelector('#document-published-at').value = '2027-02-03';
           const saved = () => new Promise(resolve => {
             const observer = new win.MutationObserver(() => {
               if (!doc.querySelector('#save-document').disabled) { observer.disconnect(); resolve() }
@@ -223,6 +237,8 @@ test('public documents and management work in a browser at all required widths',
           results.push({ uploaded: doc.querySelectorAll('.managed-document').length,
             status: doc.querySelector('#documents-message').textContent });
           doc.querySelector('.managed-document:last-child button').click();
+          results.push({ editedYear: doc.querySelector('#document-year').value,
+            editedDate: doc.querySelector('#document-published-at').value });
           doc.querySelector('#document-title').value = 'Titolo modificato';
           const edited = saved();
           doc.querySelector('#document-form').requestSubmit();
@@ -232,6 +248,30 @@ test('public documents and management work in a browser at all required widths',
           doc.querySelector('.managed-document:last-child .danger').click();
           await deleted;
           results.push({ remaining: doc.querySelectorAll('.managed-document').length });
+        } else if (page === 5) {
+          results.push({ archiveCards: doc.querySelectorAll('.document-card').length,
+            archiveYear: [...doc.querySelector('#documents-year').options].map(option => option.value) });
+          const data = [
+            { file: '2027.pdf', title: 'Nuovo bilancio', description: 'Conti', year: 2027, publishedAt: '2027-01-01' },
+            { file: '2026.pdf', title: 'Convocazione', description: 'Assemblea', year: 2026, publishedAt: '2026-11-05' },
+            { file: 'legacy.pdf', title: 'Storico', description: 'Materiale precedente' }
+          ];
+          frame.contentWindow.fetch = async () => ({ ok: true, json: async () => data });
+          await doc.querySelector('#documents-retry').onclick();
+          const year = doc.querySelector('#documents-year');
+          const search = doc.querySelector('#documents-search');
+          const titles = () => [...doc.querySelectorAll('.document-card h3')].map(node => node.textContent);
+          results.push({ archiveAll: titles(), archiveYears: [...year.options].map(option => option.value) });
+          year.value = '2026'; year.onchange();
+          results.push({ archive2026: titles() });
+          search.value = 'ASSEMBLEA'; search.oninput();
+          results.push({ archiveText: titles() });
+          search.value = 'inesistente'; search.oninput();
+          results.push({ archiveEmpty: titles(), archiveMessage: doc.querySelector('#documents-status').textContent });
+          search.value = ''; year.value = 'undated'; year.onchange();
+          results.push({ archiveUndated: titles() });
+          year.value = ''; search.value = 'conti'; search.oninput();
+          results.push({ archiveDescription: titles() });
         } else if (page === 4) {
           results.push({ publicAssembly: doc.querySelectorAll('.document-card').length,
             publicPeg: doc.querySelector('.document-primary').getAttribute('href'),
@@ -272,6 +312,19 @@ test('public documents and management work in a browser at all required widths',
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
     assert.ok(match, result.stdout.slice(-6000));
     const results = JSON.parse(match[1]);
+    assert.deepEqual(results.find(item => 'latestTitles' in item).latestTitles, ['Nuovissimo', 'Secondo', 'Terzo', 'Quarto']);
+    assert.equal(results.find(item => 'editedYear' in item).editedYear, '2027');
+    assert.equal(results.find(item => 'editedDate' in item).editedDate, '2027-02-03');
+    assert.equal(results.find(item => 'archiveCards' in item).archiveCards, 4);
+    assert.deepEqual(results.find(item => 'archiveYear' in item).archiveYear, ['', '2026']);
+    assert.deepEqual(results.find(item => 'archiveYears' in item).archiveYears, ['', '2027', '2026', 'undated']);
+    assert.deepEqual(results.find(item => 'archiveAll' in item).archiveAll, ['Nuovo bilancio', 'Convocazione', 'Storico']);
+    assert.deepEqual(results.find(item => 'archive2026' in item).archive2026, ['Convocazione']);
+    assert.deepEqual(results.find(item => 'archiveText' in item).archiveText, ['Convocazione']);
+    assert.deepEqual(results.find(item => 'archiveEmpty' in item).archiveEmpty, []);
+    assert.match(results.find(item => 'archiveMessage' in item).archiveMessage, /Nessun documento/);
+    assert.deepEqual(results.find(item => 'archiveUndated' in item).archiveUndated, ['Storico']);
+    assert.deepEqual(results.find(item => 'archiveDescription' in item).archiveDescription, ['Nuovo bilancio']);
     const publicAssembly = results.find(item => 'publicAssembly' in item);
     assert.equal(publicAssembly.publicAssembly, 4);
     assert.equal(publicAssembly.publicPeg, '../peg/index.html');

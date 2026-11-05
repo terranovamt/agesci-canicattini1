@@ -13,12 +13,12 @@
   <header>
     <a href="index.html">← Area riservata</a>
     <h1>Documenti del gruppo</h1>
-    <a href="../assemblea/index.html" target="_blank" rel="noopener">Vedi la pagina pubblica ↗</a>
+    <a href="../documenti/index.html" target="_blank" rel="noopener">Vedi l’archivio pubblico ↗</a>
   </header>
   <main id="documents-app" hidden>
     <section class="publish-info">
       <h2>Una biblioteca per il gruppo</h2>
-      <p>Carica un PDF, scegli un titolo e aggiungi una breve descrizione. Solo i documenti pubblicati qui compaiono nella home; il salvataggio aggiorna il repository GitHub.</p>
+      <p>Carica un PDF con titolo, descrizione, anno e data di pubblicazione. Tutti i documenti compaiono nell’archivio pubblico; la home mostra soltanto i quattro più recenti. Il salvataggio aggiorna il repository GitHub.</p>
       <p id="documents-message" role="status" aria-live="polite">Caricamento…</p>
       <button id="reload-documents" type="button" class="secondary">Ricarica da GitHub</button>
     </section>
@@ -34,6 +34,11 @@
           <input id="document-title" type="text" maxlength="160" required placeholder="Es. Progetto educativo 2026-2028">
           <label for="document-description">Breve descrizione</label>
           <textarea id="document-description" rows="3" maxlength="500" required placeholder="Spiega in poche parole cosa contiene il documento."></textarea>
+          <label for="document-year">Anno di riferimento</label>
+          <input id="document-year" type="number" min="1900" max="9999" step="1" required>
+          <label for="document-published-at">Data di pubblicazione</label>
+          <input id="document-published-at" type="date" required aria-describedby="date-hint">
+          <p id="date-hint" class="hint">Determina l’ordine dei documenti nella home, dal più recente.</p>
           <fieldset id="github-credentials">
             <legend>Accesso GitHub</legend>
             <label for="document-token">Token con permesso Contents: Read and write</label>

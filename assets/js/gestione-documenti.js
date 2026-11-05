@@ -30,6 +30,8 @@
     $('document-file').required = true;
     $('document-title').value = '';
     $('document-description').value = '';
+    $('document-year').value = new Date().getFullYear();
+    $('document-published-at').value = new Date().toLocaleDateString('sv-SE');
     $('edit-heading').textContent = 'Nuovo documento';
     $('file-hint').textContent = '(obbligatorio)';
     $('save-document').textContent = 'Pubblica documento';
@@ -42,6 +44,8 @@
     $('document-file').required = false;
     $('document-title').value = item.title;
     $('document-description').value = item.description;
+    $('document-year').value = item.year ?? '';
+    $('document-published-at').value = item.publishedAt || '';
     $('file-hint').textContent = '(facoltativo: sostituisce ' + item.file + ')';
     $('edit-heading').textContent = 'Modifica documento';
     $('save-document').textContent = 'Salva modifiche';
@@ -65,6 +69,7 @@
       title.textContent = item.title;
       const description = document.createElement('p');
       description.textContent = item.description;
+      if (item.year) description.textContent += ' · Anno ' + item.year;
       const open = document.createElement('a');
       open.href = '../documents/pdf/' + encodeURIComponent(item.file);
       open.target = '_blank';
@@ -146,7 +151,8 @@
       } else if (!editing) throw new Error('Seleziona un PDF da caricare');
       change = {
         operation: 'save', previous: editing || undefined,
-        document: { file: editing?.file || file.name, title, description },
+        document: { ...editing, file: editing?.file || file.name, title, description,
+          year: Number($('document-year').value), publishedAt: $('document-published-at').value },
         content
       };
       D.apply(items, change);
