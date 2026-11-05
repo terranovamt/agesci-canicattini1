@@ -22,7 +22,10 @@
       <img src="Assemblea-di-Gruppo/img/logo-grande.png" alt="">
       <span><b>AGESCI</b><small>Canicattini 1</small></span>
     </a>
-    <nav aria-label="Navigazione principale">
+    <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Apri il menu" aria-controls="main-nav" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="main-nav" aria-label="Navigazione principale">
       <a href="#eventi">Eventi</a>
       <a href="#documenti">Documenti</a>
       <a class="nav-access" href="area-riservata.html">Area riservata</a>
@@ -80,7 +83,7 @@
             <div id="calendar-filters" class="calendar-filters"></div>
           </fieldset>
           <div class="calendar-layout">
-            <section aria-labelledby="calendar-month">
+            <section id="calendar-month-panel" class="calendar-month-panel" aria-labelledby="calendar-month">
               <div class="calendar-toolbar">
                 <h3 id="calendar-month" aria-live="polite"></h3>
                 <div><button id="calendar-prev" type="button" aria-label="Mese precedente">←</button><button id="calendar-today" type="button">Oggi</button><button id="calendar-next" type="button" aria-label="Mese successivo">→</button></div>
@@ -88,10 +91,11 @@
               <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
               <div id="calendar-days" class="calendar-days" role="group" aria-label="Giorni del mese"></div>
             </section>
-            <section class="calendar-agenda-panel" aria-labelledby="calendar-agenda-title">
+            <section id="calendar-agenda-panel" class="calendar-agenda-panel" aria-labelledby="calendar-agenda-title">
               <h3 id="calendar-agenda-title">Prossimi appuntamenti</h3>
-              <button id="calendar-upcoming" type="button" hidden>Torna ai prossimi eventi</button>
+              <button id="calendar-upcoming" type="button" hidden>Torna a tutti gli appuntamenti</button>
               <div id="calendar-agenda" aria-live="polite"></div>
+              <button id="calendar-more" type="button" aria-controls="calendar-agenda" aria-expanded="false" hidden></button>
             </section>
           </div>
         </div>
