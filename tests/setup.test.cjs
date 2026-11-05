@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const root = path.join(__dirname, '../Assemblea-di-Gruppo');
-const source = fs.readFileSync(path.join(root, 'common/setup.js'), 'utf8');
+const root = path.join(__dirname, '../assemblea');
+const source = fs.readFileSync(path.join(root, 'core/setup.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const initial = { anno_esercizio: 2026, assemblea: { titolo: 'Assemblea', data: '20 Novembre' }, slide: [] };
@@ -40,7 +40,7 @@ function setup(options = {}) {
   }
   context = {
     window: { ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
-      LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'Assemblea-di-Gruppo' } } },
+      LIVE: { url: 'https://firebase.test/', github: { repo: 'test/repo', ramo: 'main', cartella: 'assemblea' } } },
     document: {
       querySelector: $, querySelectorAll: s => s === '.tabs button' ? tabs : [], createElement: element,
       createElementNS: (_namespace, tag) => element(tag),
@@ -73,7 +73,7 @@ function setup(options = {}) {
   };
   vm.createContext(context);
   for (const file of ['modifiche.js', 'salva-dati.js'])
-    vm.runInContext(fs.readFileSync(path.join(root, 'common', file), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(root, 'core', file), 'utf8'), context);
   vm.runInContext(source, context);
   return {
     $, requests, scripts, store, listeners, redirects, tabs,
@@ -93,8 +93,8 @@ function setup(options = {}) {
 }
 
 test('setup loads without Firebase login, streams, polling or presence', async () => {
-  for (const script of ['assemblea.js', 'presenza.js']) assert.equal(html.includes('src="common/' + script + '"'), false);
-  assert.ok(html.includes('src="common/accesso.js"'));
+  for (const script of ['assemblea.js', 'presenza.js']) assert.equal(html.includes('src="core/' + script + '"'), false);
+  assert.ok(html.includes('src="../assets/js/shared/accesso.js"'));
   for (const id of ['login-form', 'pubblica', 'inizia', 'ripristina']) assert.equal(html.includes('id="' + id + '"'), false);
   const t = setup();
   await flush();
@@ -208,9 +208,9 @@ test('new slide type selector covers every supported renderer', async () => {
   await flush();
   t.tab('ordine');
   const select = t.$('#campi').children.at(-2).children[0];
-  const files = fs.readdirSync(path.join(root, 'landscape')).filter(f => f.endsWith('.js'));
+  const files = fs.readdirSync(path.join(root, 'slides/landscape')).filter(f => f.endsWith('.js'));
   const types = files.flatMap(file => {
-    const text = fs.readFileSync(path.join(root, 'landscape', file), 'utf8');
+    const text = fs.readFileSync(path.join(root, 'slides/landscape', file), 'utf8');
     return [...text.matchAll(/LANDSCAPE\.(slide_\w+)\s*=/g)].map(m => m[1].slice(6).replace(/_/g, ' '));
   });
   for (const type of types) assert.ok(select.children.some(o => o.textContent === type), type);
@@ -284,7 +284,7 @@ test('deleting a collapsed divider retains its slides and requires confirmation'
 test('setup requires an already verified session before loading any data', async () => {
   const t = setup({ unauthenticated: true });
   await flush();
-  assert.deepEqual(t.redirects, ['../area-riservata.html']);
+  assert.deepEqual(t.redirects, ['../area-riservata/index.html']);
   assert.equal(t.scripts.length, 0);
   assert.equal(t.requests.length, 0);
 });

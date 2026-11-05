@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const { once } = require('node:events');
+const { spawn, spawnSync } = require('node:child_process');
+const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 const { createPreviewServer, transformConfig } = require('../tools/preview.cjs');
@@ -11,7 +13,7 @@ async function withServer(run) {
   await once(server, 'listening');
   try { await run(`http://127.0.0.1:${server.address().port}`) }
   finally {
-    server.close();
+    server.stop();
     await once(server, 'close');
   }
 }
@@ -28,14 +30,14 @@ test('local preview serves the redesigned home with local access and hot reload'
     assert.match(html, /data-documents-url="documents\/index.json"/);
     assert.match(html, /ANTEPRIMA LOCALE/);
     assert.match(html, /__preview\/events/);
-    assert.ok(html.indexOf('window.fetch') < html.indexOf('src="Assemblea-di-Gruppo/config.js"'));
+    assert.ok(html.indexOf('window.fetch') < html.indexOf('src="config/site.js"'));
     for (const resource of [
       '/assets/css/home.css', '/assets/css/gestione-documenti.css', '/assets/css/peg.css',
       '/assets/js/home.js', '/assets/js/documents-model.js', '/assets/js/area-riservata.js'
     ]) {
       assert.equal((await fetch(origin + resource)).status, 200, resource);
     }
-    const area = await (await fetch(origin + '/area-riservata.html')).text();
+    const area = await (await fetch(origin + '/area-riservata/index.html')).text();
     assert.match(area, /window\.ACCESSO=\{chiave:\(\)=>"preview-locale",verificata:\(\)=>true/);
     const doc = await fetch(origin + '/docs/assemblea.md');
     assert.match(await doc.text(), /assemblea/i);
@@ -78,7 +80,7 @@ test('preview uploads, edits and deletes PDFs only in its in-memory document lib
 
 test('local preview redirects Firebase reads and writes to its in-memory database', async () => {
   await withServer(async origin => {
-    const config = await (await fetch(origin + '/Assemblea-di-Gruppo/config.js')).text();
+    const config = await (await fetch(origin + '/config/site.js')).text();
     assert.match(config, /location\.origin \+ '\/__preview\/firebase\/'/);
     assert.doesNotMatch(config, /assemblea-canicattini1-default-rtdb/);
 
@@ -97,6 +99,111 @@ test('local preview redirects Firebase reads and writes to its in-memory databas
 
 test('preview refuses an unknown Firebase endpoint instead of serving it live', () => {
   assert.throws(() => transformConfig('window.LIVE = { url: "https://unknown.example/" };'), /anteprima bloccata/);
+});
+
+test('section directories redirect before resolving relative resources', async () => {
+  await withServer(async origin => {
+    for (const section of ['area-riservata', 'assemblea', 'peg']) {
+      const response = await fetch(origin + '/' + section + '?test=1', { redirect: 'manual' });
+      assert.equal(response.status, 308);
+      assert.equal(response.headers.get('location'), '/' + section + '/?test=1');
+      assert.equal((await fetch(origin + '/' + section + '/')).status, 200);
+    }
+    const setup = await fetch(origin + '/setup');
+    assert.equal(setup.status, 200);
+    assert.match(await setup.text(), /location\.replace\('assemblea\/setup\.html'/);
+  });
+});
+
+test('migrated pages load dynamic data and legacy links in a real browser', { timeout: 60000 }, async t => {
+  const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
+    spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
+  if (!chrome) { t.skip('Chromium non disponibile'); return }
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'site-migration-'));
+  const browser = spawn(chrome, [
+    '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    '--disable-background-networking', '--no-first-run', '--no-default-browser-check',
+    '--no-proxy-server', '--remote-debugging-pipe', '--user-data-dir=' + directory
+  ], { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
+  let sequence = 0, buffer = '';
+  const exceptions = [];
+  const failedResponses = [];
+  const pending = new Map();
+  browser.stdio[4].on('data', chunk => {
+    buffer += chunk;
+    let end;
+    while ((end = buffer.indexOf('\0')) !== -1) {
+      const message = JSON.parse(buffer.slice(0, end));
+      buffer = buffer.slice(end + 1);
+      if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails);
+      if (message.method === 'Network.responseReceived' && message.params.response.status >= 400) {
+        failedResponses.push(message.params.response.url);
+      }
+      if (!pending.has(message.id)) continue;
+      const { resolve, reject, timer } = pending.get(message.id);
+      pending.delete(message.id);
+      clearTimeout(timer);
+      if (message.error) reject(new Error(message.error.message));
+      else resolve(message.result);
+    }
+  });
+  const command = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
+    const id = ++sequence;
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error('Browser command timed out: ' + method));
+    }, 5000);
+    pending.set(id, { resolve, reject, timer });
+    browser.stdio[3].write(JSON.stringify({ id, method, params, sessionId }) + '\0');
+  });
+  try {
+    await withServer(async origin => {
+      await fetch(origin + '/__preview/firebase/.json', {
+        method: 'PATCH', body: JSON.stringify({ assemblea: { stato: { attiva: true } } })
+      });
+      const cases = [
+        ['/area-riservata/', /id="dashboard-assembly-title">[^<]+<\/h3>/, /id="dashboard-document-links"><li>/],
+        ['/area-riservata/documenti.html', /class="managed-document"/, /Documenti aggiornati|Anteprima: modifiche simulate/],
+        ['/assemblea/setup.html', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/],
+        ['/assemblea/', /id="msg" style="display: none;"/, /class="qrq"/],
+        ['/assemblea/regia.html', /id="principale"[^>]+src="index\.html\?vista=principale/, /id="b-assemblea"[^>]*>Assemblea attiva/],
+        ['/PEG/PEG2628.html#scelta', /id="scelta"/, /class="peg-page"/],
+        ['/area-riservata.html', /id="dashboard-document-links"><li>/, /id="riservata">/],
+        ['/setup', /dati\.js caricato/, /id="apri-regia"[^>]+href="regia\.html"/]
+      ];
+      const { targetId } = await command('Target.createTarget', { url: 'about:blank' });
+      const { sessionId } = await command('Target.attachToTarget', { targetId, flatten: true });
+      await command('Runtime.enable', {}, sessionId);
+      await command('Network.enable', {}, sessionId);
+      for (const [page, ...patterns] of cases) {
+        await command('Page.navigate', { url: origin + page }, sessionId);
+        const deadline = Date.now() + 5000;
+        let html = '';
+        do {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          try {
+            const { result } = await command('Runtime.evaluate', {
+              expression: 'document.documentElement.outerHTML', returnByValue: true
+            }, sessionId);
+            html = result.value || '';
+          } catch (error) {
+            if (error.message !== 'Inspected target navigated or closed') throw error;
+          }
+        } while (patterns.some(pattern => !pattern.test(html)) && Date.now() < deadline);
+        for (const pattern of patterns) assert.match(html, pattern, page);
+        assert.deepEqual(exceptions, [], page);
+        assert.deepEqual(failedResponses, [], page);
+      }
+    });
+  } finally {
+    for (const { timer } of pending.values()) clearTimeout(timer);
+    if (browser.exitCode === null) {
+      const closed = once(browser, 'exit');
+      browser.kill();
+      await closed;
+    }
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('local preview reloads connected browsers when a project file changes', { timeout: 5000 }, async () => {

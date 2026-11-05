@@ -4,8 +4,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const dir = path.join(__dirname, '../Assemblea-di-Gruppo');
-const load = () => { const context = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(dir, 'common/salva-dati.js'), 'utf8'), context); return context.window.SALVA_DATI };
+const dir = path.join(__dirname, '../assemblea');
+const load = () => { const context = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(dir, 'core/salva-dati.js'), 'utf8'), context); return context.window.SALVA_DATI };
 const testo = fs.readFileSync(path.join(dir, 'dati.js'), 'utf8');
 const lines = t => t.split('\n');
 const changed = (a, b) => { const A = new Set(lines(a)); return lines(b).filter(l => !A.has(l)) };

@@ -4,7 +4,7 @@ Presentazione dell'**Assemblea di Gruppo AGESCI Canicattini 1**, con regia live,
 spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 > 📘 Guida illustrata (stesso stile della presentazione):
-> https://terranovamt.github.io/agesci-canicattini1/Assemblea-di-Gruppo/guida.html
+> https://terranovamt.github.io/agesci-canicattini1/assemblea/guida.html
 
 ## Documentazione
 
@@ -22,10 +22,12 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Chi | Indirizzo |
 | --- | --- |
 | Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
-| Area riservata | `.../area-riservata.html` (accesso con chiave) |
-| Regia (dashboard) | `.../Assemblea-di-Gruppo/regia.html` (chiede la chiave) |
+| Area riservata | `.../area-riservata/index.html` (accesso con chiave) |
+| Gestione PDF | `.../area-riservata/documenti.html` |
+| PEG corrente | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
+| Regia (dashboard) | `.../assemblea/regia.html` (chiede la chiave) |
 | Setup (solo GitHub) | https://terranovamt.github.io/agesci-canicattini1/setup (nessun accesso Firebase) |
-| Guida | `.../Assemblea-di-Gruppo/guida.html` |
+| Guida | `.../assemblea/guida.html` |
 
 La home propone **Area riservata**: dopo la verifica della chiave
 su Firebase compare **Regia Assemblea di Gruppo**, con **Avvia live** e
@@ -69,7 +71,7 @@ Nell'area riservata apri **Gestisci documenti PDF**. Inserisci il token GitHub
 **Ricarica da GitHub**. Puoi caricare un PDF con titolo e descrizione, modificare
 i testi o sostituire il PDF, ed eliminare un documento con conferma.
 File e indice vengono pubblicati insieme in un unico commit sul ramo
-`LIVE.github.ramo` di `config.js` (in produzione `main`).
+`LIVE.github.ramo` di `config/site.js` (in produzione `main`).
 Non vengono modificate le impostazioni del setup o i dati dell'assemblea.
 
 La home legge `documents/index.json` e mostra solo i PDF elencati, con apertura
@@ -149,16 +151,18 @@ esecuzione Actions dopo il merge.
 In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
 Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
 del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
-a `Assemblea-di-Gruppo/index.html`, conservando parametri e posizione (`#slide.passo`).
+a `assemblea/index.html`, conservando parametri e posizione (`#slide.passo`).
 Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jekyll.
 
 ## Struttura del repository
 
-La gerarchia completa, il ruolo di ogni cartella e le ragioni per mantenere
-le pagine pubbliche alla radice sono descritti in
-[docs/struttura-repository.md](docs/struttura-repository.md). Le pagine
-principali sono servite direttamente da GitHub Pages dalla radice del ramo
-`main`; spostarle richiede di aggiornare insieme link, script, test e URL.
+La home resta in `index.html`; le altre pagine sono raggruppate per funzione:
+`area-riservata/` per dashboard e gestione PDF, `assemblea/` per presentazione
+e strumenti live, `peg/edizioni/` per i progetti educativi. `config/` contiene
+la configurazione pubblica e `assets/` le risorse condivise. Calendari e PDF
+restano in `calendars/` e `documents/`, separati dalla logica che li legge.
+La [gerarchia completa](docs/struttura-repository.md) spiega anche la struttura
+interna, i criteri e i reindirizzamenti dai vecchi URL.
 
 Nel setup le sezioni sono raccolte nella barra laterale (su telefono diventano
 una griglia). Ogni sezione ha titolo e indicazioni contestuali; la barra di

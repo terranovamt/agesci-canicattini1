@@ -7,29 +7,29 @@ const { test } = require('node:test');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
-const currentPegPath = 'PEG/PEG2628.html';
+const currentPegPath = 'peg/edizioni/2026-2028.html';
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 
 test('home introduces the dedicated PEG page and the original PDF stays available', () => {
-  assert.match(read('index.html'), /class="peg-home-link" href="PEG.html">Consulta il PEG 26-28/);
-  assert.match(read('PEG.html'), /location\.replace\('PEG\/PEG2628\.html' \+ location\.search \+ location\.hash\)/);
-  assert.match(read('PEG.html'), /href="PEG\/PEG2628\.html"/);
-  assert.match(read(currentPegPath), /href="\.\.\/documents\/pdf\/PEG26-28\.pdf" download/);
+  assert.match(read('index.html'), /class="peg-home-link" href="peg\/index\.html">Consulta il PEG 26-28/);
+  assert.match(read('peg/index.html'), /location\.replace\('edizioni\/2026-2028\.html' \+ location\.search \+ location\.hash\)/);
+  assert.match(read('peg/index.html'), /href="edizioni\/2026-2028\.html"/);
+  assert.match(read(currentPegPath), /href="\.\.\/\.\.\/documents\/pdf\/PEG26-28\.pdf" download/);
   assert.ok(fs.existsSync(path.join(root, 'documents/pdf/PEG26-28.pdf')));
   assert.doesNotMatch(read(currentPegPath), /home.js|assemblea.js|iframe|peg-trail/);
   assert.equal((read(currentPegPath).match(/<dt>/g) || []).length, 8);
   assert.match(read('index.html'), /src="assets\/js\/site-menu\.js"/);
-  assert.match(read(currentPegPath), /src="\.\.\/assets\/js\/site-menu\.js"/);
-  assert.match(read(currentPegPath), /src="\.\.\/assets\/js\/peg\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/\.\.\/assets\/js\/site-menu\.js"/);
+  assert.match(read(currentPegPath), /src="\.\.\/\.\.\/assets\/js\/peg\.js"/);
   assert.match(read('index.html'), /href="assets\/css\/home\.css"/);
-  assert.match(read(currentPegPath), /href="\.\.\/assets\/css\/home\.css"/);
-  assert.match(read(currentPegPath), /href="\.\.\/assets\/css\/peg\.css"/);
+  assert.match(read(currentPegPath), /href="\.\.\/\.\.\/assets\/css\/home\.css"/);
+  assert.match(read(currentPegPath), /href="\.\.\/\.\.\/assets\/css\/peg\.css"/);
   for (const page of [
-    'index.html', 'area-riservata.html', 'gestione-documenti.html', 'PEG.html', 'setup.html',
-    currentPegPath, 'Assemblea-di-Gruppo/index.html', 'Assemblea-di-Gruppo/regia.html',
-    'Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/guida.html'
+    'index.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'peg/index.html', 'setup.html',
+    currentPegPath, 'assemblea/index.html', 'assemblea/regia.html',
+    'assemblea/setup.html', 'assemblea/guida.html'
   ]) {
     const html = read(page);
     for (const [, resource] of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
@@ -102,7 +102,7 @@ test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
   const pages = [currentPegPath, 'index.html'].map(file => read(file)
     .replace(/<link\b[^>]*>/g, '')
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, '')
-    .replace('</head>', '<base href="file://' + (file === currentPegPath ? path.join(root, 'PEG') : root) + '/"><style>' + read('Assemblea-di-Gruppo/common/theme.css') +
+    .replace('</head>', '<base href="file://' + path.dirname(path.join(root, file)) + '/"><style>' + read('assets/css/theme.css') +
       read('assets/css/home.css') + (file === currentPegPath ? read('assets/css/peg.css') : '') +
       '</style></head>')
     .replace('</body>', '<script>' + read('assets/js/site-menu.js') +

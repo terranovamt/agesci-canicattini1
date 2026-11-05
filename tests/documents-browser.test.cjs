@@ -40,26 +40,28 @@ function fixture(file, css, scripts) {
     const append = document.head.append.bind(document.head);
     document.head.append = element => {
       if (element.tagName === 'SCRIPT' && element.src.includes('dati.js')) {
-        ${read('Assemblea-di-Gruppo/dati.js')}
+        ${read('assemblea/dati.js')}
         element.onload();
       } else append(element);
     };
   `;
   return read(file).replace(/<link\b[^>]*>/g, '')
     .replace(/<iframe\b[\s\S]*?<\/iframe>/g, original => file === 'index.html' ? '' : original)
-    .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
-      scripts.includes(src) ? '<script>' + read(path.join(path.dirname(file), src)) + '</script>' : '')
-    .replace('</head>', '<style>' + read('Assemblea-di-Gruppo/common/theme.css') + read(css) + '</style><script>' + mock + '</script></head>');
+    .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
+      const source = path.normalize(path.join(path.dirname(file), src));
+      return scripts.includes(source) ? '<script>' + read(source) + '</script>' : '';
+    })
+    .replace('</head>', '<style>' + read('assets/css/theme.css') + read(css) + '</style><script>' + mock + '</script></head>');
 }
 
 test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [
     fixture('index.html', 'assets/css/home.css', ['assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
-    fixture('gestione-documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
-    fixture('Assemblea-di-Gruppo/setup.html', 'Assemblea-di-Gruppo/common/setup.css',
-      ['common/salva-dati.js', 'common/modifiche.js', 'common/nuovo-anno-model.js', 'common/nuovo-anno.js', 'common/setup.js']),
-    fixture('area-riservata.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js'])
+    fixture('area-riservata/documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
+    fixture('assemblea/setup.html', 'assemblea/core/setup.css',
+      ['assemblea/core/salva-dati.js', 'assemblea/core/modifiche.js', 'assemblea/core/nuovo-anno-model.js', 'assemblea/core/nuovo-anno.js', 'assemblea/core/setup.js']),
+    fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js'])
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
@@ -145,8 +147,8 @@ test('public documents and management work in a browser at all required widths',
           doc.querySelector('#calendar-info').open = false;
           results.push({ calendarFilters: doc.querySelectorAll('#calendar-filters input').length,
             agendaCount: doc.querySelectorAll('.agenda-event').length,
-            safeText: doc.querySelector('.agenda-event h4').textContent.startsWith('<img'),
-            injected: doc.querySelector('.agenda-event h4 img') !== null });
+            safeText: doc.querySelector('.agenda-event h5').textContent.startsWith('<img'),
+            injected: doc.querySelector('.agenda-event h5 img') !== null });
           const filters = [...doc.querySelectorAll('#calendar-filters input')];
           filters.forEach(input => { input.checked = false; input.onchange() });
           results.push({ noneSelected: doc.querySelector('#calendar-agenda').textContent });

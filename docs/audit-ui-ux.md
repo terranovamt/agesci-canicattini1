@@ -16,8 +16,8 @@
 - Identità ricavata dagli asset e dal codice: viola `#462678`, viola scuro
   `#211638`, giallo `#FDC500`; Montserrat nella presentazione e negli strumenti,
   con Georgia/serif per alcuni titoli della home e della presentazione. Asset
-  esistenti, da non modificare: `Assemblea-di-Gruppo/img/logo-grande.png`,
-  `Assemblea-di-Gruppo/img/logo.png` e `Assemblea-di-Gruppo/img/texture.svg`.
+  esistenti, da non modificare: `assets/img/logo-grande.png`,
+  `assets/img/logo.png` e `assets/img/texture.svg`.
   Le specifiche di brand non compilate nella richiesta sono state quindi
   dedotte esclusivamente da questi riferimenti presenti nel repository.
 
@@ -26,12 +26,12 @@
 | Pagina / flusso | File principali | Elementi riutilizzabili |
 |---|---|---|
 | Home del gruppo | `index.html`, `assets/css/home.css`, `assets/js/home.js` | header/footer, hero con logo, CTA, stato assemblea |
-| Accesso e gestione | `area-riservata.html`, `assets/js/area-riservata.js` | form chiave, messaggio di stato, CTA e link di ritorno |
+| Accesso e gestione | `area-riservata/index.html`, `assets/js/area-riservata.js` | form chiave, messaggio di stato, CTA e link di ritorno |
 | Alias `/setup` | `setup.html` | redirect preservando query e hash |
-| Setup contenuti | `Assemblea-di-Gruppo/setup.html`, `common/setup.css`, `common/setup.js` | header/stato, tab, form, campi, editor dialog, toast, barra azioni, dettagli/menu, lista riordinabile |
-| Regia live | `Assemblea-di-Gruppo/regia.html`, `common/regia.css`, `common/regia.js` | header, badge, avviso, anteprime iframe, controlli slide, card, KPI, meter, form live, elenco slide |
-| Presentazione pubblica | `Assemblea-di-Gruppo/index.html`, `common/base.css`, `portrait/base.css`, `landscape/`, `portrait/` | palco, barra titolo, navigazione/progresso, righe e card; varianti per decine di tipi di slide e due orientamenti |
-| Guida | `Assemblea-di-Gruppo/guida.html` | header sticky, hero, indice, sezioni, card, tabelle, note, pulsanti |
+| Setup contenuti | `assemblea/setup.html`, `core/setup.css`, `core/setup.js` | header/stato, tab, form, campi, editor dialog, toast, barra azioni, dettagli/menu, lista riordinabile |
+| Regia live | `assemblea/regia.html`, `core/regia.css`, `core/regia.js` | header, badge, avviso, anteprime iframe, controlli slide, card, KPI, meter, form live, elenco slide |
+| Presentazione pubblica | `assemblea/index.html`, `core/base.css`, `slides/portrait/base.css`, `slides/landscape/`, `slides/portrait/` | palco, barra titolo, navigazione/progresso, righe e card; varianti per decine di tipi di slide e due orientamenti |
+| Guida | `assemblea/guida.html` | header sticky, hero, indice, sezioni, card, tabelle, note, pulsanti |
 
 ## Riscontri e priorità
 
@@ -61,8 +61,8 @@
 ### Media
 
 - **Valori visivi ripetuti tra fogli e pagine.** Palette e superfici sono
-  dichiarate separatamente in `assets/css/home.css`, `common/setup.css`,
-  `common/regia.css`, `common/base.css` e negli stili inline della guida. Le
+  dichiarate separatamente in `assets/css/home.css`, `core/setup.css`,
+  `core/regia.css`, `core/base.css` e negli stili inline della guida. Le
   slide hanno anche geometrie fisse 1280×720, intenzionali per la scalatura del
   palco; non vanno convertite indiscriminatamente in valori fluidi.
 - **Testi lunghi nel setup.** `.ord .t b` e `.ord .t small` vengono troncati a

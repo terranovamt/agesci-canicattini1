@@ -4,7 +4,7 @@
 
 Nodi del database, configurazione da zero e limiti del piano gratuito.
 
-Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config.js`.
+Realtime Database: `assemblea-canicattini1` (europe-west1), URL in `config/site.js`.
 
 | Nodo | Scrive | Legge | Contenuto |
 | --- | --- | --- | --- |
@@ -35,17 +35,17 @@ Serve solo un account Google; il piano gratuito (Spark) basta, nessuna carta.
    tutte e tre le `LA-TUA-CHIAVE` con la stessa chiave inventata da te (es. `lupo-rosso-42`;
    solo lettere, numeri e trattini) e premi **Pubblica**.
    La chiave va **solo nella console**, mai nel repository.
-5. Su GitHub apri `Assemblea-di-Gruppo/config.js` (matita ✏️) e metti
+5. Su GitHub apri `config/site.js` (matita ✏️) e metti
    l'URL del punto 3 in `url:`, poi Commit. Dopo ~1 minuto è online.
-6. Prova: apri `…/Assemblea-di-Gruppo/regia.html` sul PC, inserisci la chiave e
+6. Prova: apri `…/assemblea/regia.html` sul PC, inserisci la chiave e
    premi **Avvia live**. Apri
-   `…/Assemblea-di-Gruppo/` sul telefono: avanzando in regia il telefono segue
+   `…/assemblea/` sul telefono: avanzando in regia il telefono segue
    e il pannello Firebase conta 1 pubblico. Poi cambia i presenti nella regia
    e premi **Pubblica live**.
 
 Non servono chiavi API, SDK o `npm`: la presentazione parla con Firebase via
 REST (`fetch` + `EventSource`). Per cambiare chiave basta modificarla nelle
-regole (punto 4). Per disattivare il live: `url: ''` in `config.js`.
+regole (punto 4). Per disattivare il live: `url: ''` in `config/site.js`.
 
 Se la regia risponde "Chiave non valida o regole Firebase non aggiornate":
 chiave diversa da quella nelle regole, oppure regole vecchie senza il nodo

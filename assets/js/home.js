@@ -1,7 +1,7 @@
 (function () {
   const stato = document.getElementById('assembly-connection-status');
   window.ASSEMBLEA.osserva(s => {
-    if (s?.attiva) location.replace('Assemblea-di-Gruppo/index.html' + location.search + location.hash);
+    if (s?.attiva) location.replace('assemblea/index.html' + location.search + location.hash);
     else if (stato) { stato.textContent = ''; stato.hidden = true }
   }, e => {
     if (stato) { stato.textContent = e.message + '. Riprovo automaticamente; l’area riservata resta disponibile.'; stato.hidden = false }

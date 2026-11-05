@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const source = fs.readFileSync(path.join(__dirname, '../Assemblea-di-Gruppo/common/presenza.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../assemblea/core/presenza.js'), 'utf8');
 function load(fetch, ruolo = 'regia') {
   const session = new Map(), timers = [], listeners = {};
   const c = {

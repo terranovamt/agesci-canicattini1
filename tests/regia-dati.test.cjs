@@ -3,9 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const root = path.join(__dirname, '../Assemblea-di-Gruppo');
-const source = fs.readFileSync(path.join(root, 'common/regia-dati.js'), 'utf8');
-const patchSource = fs.readFileSync(path.join(root, 'common/modifiche.js'), 'utf8');
+const root = path.join(__dirname, '../assemblea');
+const source = fs.readFileSync(path.join(root, 'core/regia-dati.js'), 'utf8');
+const patchSource = fs.readFileSync(path.join(root, 'core/modifiche.js'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const base = {
   censimenti: { censiti_attuali: 100, presenti_attuali: null },
@@ -19,8 +19,8 @@ const base = {
 };
 test('dashboard loads patch helpers and live editor before starting regia', () => {
   const html = fs.readFileSync(path.join(root, 'regia.html'), 'utf8');
-  assert.ok(html.indexOf('src="common/modifiche.js"') < html.indexOf('src="common/regia-dati.js"'));
-  assert.ok(html.indexOf('src="common/regia-dati.js"') < html.indexOf('src="common/regia.js"'));
+  assert.ok(html.indexOf('src="core/modifiche.js"') < html.indexOf('src="core/regia-dati.js"'));
+  assert.ok(html.indexOf('src="core/regia-dati.js"') < html.indexOf('src="core/regia.js"'));
   for (const id of ['dati-live-form', 'dati-live-campi', 'dati-live-pubblica', 'dati-live-ricarica', 'dati-live-stato'])
     assert.ok(html.includes(`id="${id}"`));
 });
