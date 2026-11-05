@@ -2,7 +2,7 @@
   const $ = id => document.getElementById(id);
   const M = window.CALENDAR_MODEL;
   const now = new Date();
-  let data, selected = new Set(), chosenDay = null;
+  let data, selected = new Set(), chosenDay = null, showAllUpcoming = false;
   let month = new Date(M.dateKey(now).slice(0, 7) + '-01T12:00:00Z');
   const format = (date, options) => new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', ...options }).format(date);
   const element = (tag, text, cls) => {
@@ -10,6 +10,11 @@
     if (text !== undefined) node.textContent = text;
     if (cls) node.className = cls;
     return node;
+  };
+  const addDays = (key, days) => {
+    const date = new Date(key + 'T12:00:00Z');
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
   };
   const filtered = () => data.events.filter(event => selected.has(event.calendar));
   const stale = () => Date.now() - Date.parse(data.generatedAt) > 3 * 60 * 60 * 1000;
@@ -49,36 +54,76 @@
     const list = $('calendar-agenda');
     list.replaceChildren();
     $('calendar-agenda-title').textContent = chosenDay
-      ? format(new Date(chosenDay + 'T12:00:00Z'), { weekday: 'long', day: 'numeric', month: 'long' })
+      ? 'Appuntamenti · ' + format(new Date(chosenDay + 'T12:00:00Z'), { day: 'numeric', month: 'long' })
       : 'Prossimi appuntamenti';
     $('calendar-upcoming').hidden = !chosenDay;
-    const events = chosenDay ? filtered().filter(event => M.onDay(event, chosenDay))
-      : M.upcoming(filtered(), new Date()).slice(0, 12);
-    if (!events.length) {
+    const today = M.dateKey(new Date());
+    const upcoming = chosenDay ? filtered().filter(event => M.onDay(event, chosenDay))
+      : M.upcoming(filtered(), new Date());
+    const byDay = new Map();
+    upcoming.forEach(event => {
+      const startDay = event.allDay ? event.start : M.dateKey(new Date(event.start));
+      const endDay = event.allDay ? addDays(event.end, -1)
+        : M.dateKey(new Date(Date.parse(event.end) - 1));
+      const firstDay = chosenDay ? chosenDay : startDay < today ? today : startDay;
+      const lastDay = chosenDay ? chosenDay : endDay;
+      for (let day = firstDay; day <= lastDay; day = addDays(day, 1)) {
+        if (!M.onDay(event, day)) continue;
+        const calendar = data.calendars.find(item => item.id === event.calendar);
+        const entry = { event, calendar, continuesBefore: day > startDay, continuesAfter: day < endDay };
+        if (!byDay.has(day)) byDay.set(day, []);
+        byDay.get(day).push(entry);
+      }
+    });
+    const days = [...byDay.keys()].sort();
+    const visibleDays = chosenDay || showAllUpcoming ? days : days.slice(0, 5);
+    const moreButton = $('calendar-more');
+    moreButton.hidden = Boolean(chosenDay) || days.length <= 5;
+    moreButton.textContent = showAllUpcoming ? 'Mostra meno' : 'Mostra tutti gli appuntamenti';
+    moreButton.setAttribute('aria-expanded', String(showAllUpcoming));
+    if (!days.length) {
       const failed = data.calendars.some(calendar => selected.has(calendar.id) && calendar.status !== 'ok');
       list.append(element('p', !selected.size ? 'Seleziona almeno un calendario.'
         : failed ? 'Eventi non disponibili. Dettagli in ⓘ.'
           : chosenDay ? 'Nessun appuntamento in questo giorno.' : 'Nessun prossimo appuntamento nel periodo sincronizzato.'));
     }
-    events.forEach(event => {
-      const calendar = data.calendars.find(item => item.id === event.calendar);
-      const card = element('article', undefined, 'agenda-event calendar-' + calendar.color);
-      const badge = element('span', calendar.name, 'event-source');
-      const time = element('time');
-      time.dateTime = event.start;
-      if (event.allDay) {
-        const final = new Date(event.end + 'T12:00:00Z');
-        final.setUTCDate(final.getUTCDate() - 1);
-        time.textContent = format(new Date(event.start + 'T12:00:00Z'), { day: 'numeric', month: 'long' })
-          + (M.dateKey(final) !== event.start ? ' – ' + format(final, { day: 'numeric', month: 'long' }) : '') + ' · Tutto il giorno';
-      } else {
-        time.textContent = format(new Date(event.start), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-          + ' – ' + format(new Date(event.end), M.dateKey(new Date(event.start)) === M.dateKey(new Date(event.end))
-            ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-      }
-      card.append(badge, element('h4', event.title), time);
-      if (event.location) card.append(element('p', event.location));
-      list.append(card);
+    visibleDays.forEach(day => {
+      const entries = byDay.get(day);
+      const group = element('section', undefined, 'agenda-day');
+      const date = new Date(day + 'T12:00:00Z');
+      const label = element('h4', format(date, { weekday: 'long', day: 'numeric' }), 'agenda-day-label');
+      label.append(element('span', entries.length + (entries.length === 1 ? ' appuntamento' : ' appuntamenti')));
+      const timeline = element('div', undefined, 'agenda-day-events calendar-' + entries[0].calendar.color);
+      if (entries.some(entry => entry.continuesBefore)) group.classList.add('has-continuation-before');
+      if (entries.some(entry => entry.continuesAfter)) group.classList.add('has-continuation-after');
+      entries.forEach(({ event, calendar, starts, ends, continuesBefore, continuesAfter }) => {
+        const card = element('article', undefined, 'agenda-event calendar-' + calendar.color);
+        const badge = element('span', calendar.name, 'event-source');
+        const time = element('time');
+        time.dateTime = event.start;
+        const multiDay = continuesBefore || continuesAfter;
+        if (event.allDay) {
+          time.textContent = multiDay
+            ? (continuesBefore ? 'Continua da ieri' : 'Tutto il giorno')
+              + (continuesAfter ? ' · Continua domani' : ' · Termina oggi')
+            : 'Tutto il giorno';
+        } else if (continuesBefore) {
+          time.textContent = 'Continua da ieri · Termina alle '
+            + format(new Date(event.end), { hour: '2-digit', minute: '2-digit' });
+        } else if (continuesAfter) {
+          time.textContent = 'Inizia alle ' + format(new Date(event.start), { hour: '2-digit', minute: '2-digit' })
+            + ' · Continua domani';
+        } else {
+          time.textContent = format(new Date(event.start), { hour: '2-digit', minute: '2-digit' })
+            + ' – ' + format(new Date(event.end), { hour: '2-digit', minute: '2-digit' });
+        }
+        const title = continuesBefore ? '↳ ' + event.title : event.title;
+        card.append(badge, element('h5', title), time);
+        if (event.location) card.append(element('p', event.location));
+        timeline.append(card);
+      });
+      group.append(label, timeline);
+      list.append(group);
     });
   }
   function renderMonth(focusDay) {
@@ -94,23 +139,34 @@
     for (let day = 1; day <= days; day++) {
       const date = new Date(Date.UTC(year, index, day, 12));
       const key = M.dateKey(date);
-      const matches = events.filter(event => M.onDay(event, key));
+      const matches = events.filter(event => M.onDay(event, key))
+        .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title, 'it'));
+      const column = (offset + day - 1) % 7;
       const button = element('button', undefined, 'calendar-day');
       button.type = 'button';
       button.dataset.day = key;
       button.append(element('span', String(day)));
       const markers = element('span', undefined, 'day-markers');
-      new Set(matches.map(event => event.calendar)).forEach(id => {
-        const calendar = data.calendars.find(item => item.id === id);
-        const dot = element('i', undefined, 'day-marker calendar-' + calendar.color);
+      matches.slice(0, 6).forEach((event, markerIndex) => {
+        const calendar = data.calendars.find(item => item.id === event.calendar);
+        const previousDay = addDays(key, -1);
+        const followingDay = addDays(key, 1);
+        const classes = ['day-marker', 'calendar-' + calendar.color];
+        if (column > 0 && M.onDay(event, previousDay)) classes.push('is-continuation');
+        if (column < 6 && M.onDay(event, followingDay)) classes.push('is-continuing');
+        const dot = element('i', undefined, classes.join(' '));
+        dot.style.setProperty('--marker-column', markerIndex % 3 + 1);
+        dot.style.setProperty('--marker-row', Math.floor(markerIndex / 3) + 1);
         dot.setAttribute('aria-hidden', 'true');
         markers.append(dot);
       });
       button.append(markers);
-      button.setAttribute('aria-label', format(date, { dateStyle: 'full' }) + ': ' + matches.length + ' appuntamenti');
+      if (matches.length > 6) button.append(element('span', '+' + (matches.length - 6), 'day-event-overflow'));
+      const titles = matches.length ? ': ' + matches.map(event => event.title).join('; ') : '';
+      button.setAttribute('aria-label', format(date, { dateStyle: 'full' }) + ': ' + matches.length + ' appuntamenti' + titles);
       button.setAttribute('aria-pressed', String(chosenDay === key));
       if (key === M.dateKey(new Date())) button.setAttribute('aria-current', 'date');
-      button.onclick = () => { chosenDay = key; renderMonth(key); renderList() };
+      button.onclick = () => { chosenDay = key; showAllUpcoming = false; renderMonth(key); renderList() };
       grid.append(button);
     }
     const rangeStart = M.dateKey(new Date(data.rangeStart)).slice(0, 7);
@@ -183,6 +239,7 @@
   $('calendar-today').onclick = () => {
     month = new Date(M.dateKey(new Date()).slice(0, 7) + '-01T12:00:00Z'); chosenDay = null; refresh();
   };
-  $('calendar-upcoming').onclick = () => { chosenDay = null; refresh() };
+  $('calendar-upcoming').onclick = () => { chosenDay = null; showAllUpcoming = false; refresh() };
+  $('calendar-more').onclick = () => { showAllUpcoming = !showAllUpcoming; renderList() };
   load();
 })();
