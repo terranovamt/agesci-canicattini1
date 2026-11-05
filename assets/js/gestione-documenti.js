@@ -32,6 +32,7 @@
     $('document-description').value = '';
     $('document-year').value = new Date().getFullYear();
     $('document-published-at').value = new Date().toLocaleDateString('sv-SE');
+    $('document-assembly-year').value = '';
     $('edit-heading').textContent = 'Nuovo documento';
     $('file-hint').textContent = '(obbligatorio)';
     $('save-document').textContent = 'Pubblica documento';
@@ -46,6 +47,7 @@
     $('document-description').value = item.description;
     $('document-year').value = item.year ?? '';
     $('document-published-at').value = item.publishedAt || '';
+    $('document-assembly-year').value = item.assemblyYear || '';
     $('file-hint').textContent = '(facoltativo: sostituisce ' + item.file + ')';
     $('edit-heading').textContent = 'Modifica documento';
     $('save-document').textContent = 'Salva modifiche';
@@ -70,6 +72,7 @@
       const description = document.createElement('p');
       description.textContent = item.description;
       if (item.year) description.textContent += ' · Anno ' + item.year;
+      if (item.assemblyYear) description.textContent += ' · Preparatorio assemblea ' + item.assemblyYear;
       const open = document.createElement('a');
       open.href = '../documents/pdf/' + encodeURIComponent(item.file);
       open.target = '_blank';
@@ -149,10 +152,14 @@
         for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
         content = btoa(binary);
       } else if (!editing) throw new Error('Seleziona un PDF da caricare');
+      const assemblyYear = $('document-assembly-year').value.trim();
+      const metadata = { ...editing, file: editing?.file || file.name, title, description,
+        year: Number($('document-year').value), publishedAt: $('document-published-at').value };
+      delete metadata.assemblyYear;
+      if (assemblyYear) metadata.assemblyYear = Number(assemblyYear);
       change = {
         operation: 'save', previous: editing || undefined,
-        document: { ...editing, file: editing?.file || file.name, title, description,
-          year: Number($('document-year').value), publishedAt: $('document-published-at').value },
+        document: metadata,
         content
       };
       D.apply(items, change);

@@ -86,13 +86,16 @@ I file sono in `documents/pdf/`; per aggiungerli manualmente, aggiorna anche
 l'indice con `file`, `title` e `description`. Titoli, descrizioni e PDF restano
 gestibili dall'area riservata. L'archivio `documenti/index.html` mostra tutti i
 PDF, con filtro per anno di riferimento e ricerca in titolo e descrizione.
-La home mostra soltanto gli ultimi quattro documenti, ordinati per
+La sezione «Gli ultimi documenti» della home mostra soltanto quattro PDF, ordinati per
 `publishedAt` (data ISO `YYYY-MM-DD`, decrescente). A parità di data rimane
 l'ordine nell'indice. `year` è l'anno di riferimento, distinto dalla data di
 pubblicazione; entrambi si impostano nella gestione documenti. Le voci
 precedenti senza metadati restano disponibili nell'archivio sotto “Senza anno”
 e vengono dopo quelle datate nella home. Ordine, icone e collegamento al PEG sono definiti in
 `assets/js/home-documents.js`.
+La selezione «Documenti preparatori» resta distinta: mostra soltanto i PDF
+con `assemblyYear` uguale all'anno corrente (Europe/Rome), anche nella pagina
+`assemblea/index.html`. Il relativo anno si imposta separatamente nella gestione.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 Dopo il salvataggio attendi il deployment di GitHub Pages.
 
