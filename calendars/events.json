@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T23:44:34.032250+00:00",
+  "generatedAt": "2026-11-05T06:56:38.802089+00:00",
   "rangeStart": "2025-10-31T00:00:00+01:00",
   "rangeEnd": "2028-11-01T00:00:00+01:00",
   "calendars": [
@@ -9,7 +9,7 @@
       "color": "sky",
       "feed": "https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.ics",
       "url": "https://outlook.office365.com/owa/calendar/0d573ac91db14040adc5ae0838ff79b5@sicilia.agesci.it/378e146548034028aac391df52b2307d9166140046071851244/calendar.html",
-      "lastSuccess": "2026-11-04T23:44:34.032250+00:00",
+      "lastSuccess": "2026-11-05T06:56:38.802089+00:00",
       "status": "ok",
       "error": null
     },
@@ -19,7 +19,7 @@
       "color": "green",
       "feed": "https://calendar.google.com/calendar/ical/4801ea6da35ff7140dec4fcc1f7b3e377a344bc6a504ba80a6b5064d1b076991%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=4801ea6da35ff7140dec4fcc1f7b3e377a344bc6a504ba80a6b5064d1b076991%40group.calendar.google.com",
-      "lastSuccess": "2026-11-04T23:44:34.032250+00:00",
+      "lastSuccess": "2026-11-05T06:56:38.802089+00:00",
       "status": "ok",
       "error": null
     },
@@ -29,7 +29,7 @@
       "color": "yellow",
       "feed": "https://calendar.google.com/calendar/ical/92f7e68e280fb41aefbf65c2d02e8ed0f51d7b33c331e0fdba746d7892ffa586%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=92f7e68e280fb41aefbf65c2d02e8ed0f51d7b33c331e0fdba746d7892ffa586%40group.calendar.google.com",
-      "lastSuccess": "2026-11-04T23:44:34.032250+00:00",
+      "lastSuccess": "2026-11-05T06:56:38.802089+00:00",
       "status": "ok",
       "error": null
     },
@@ -39,7 +39,7 @@
       "color": "red",
       "feed": "https://calendar.google.com/calendar/ical/5b317e0106e0517891d95fa2b1fa3007d4a577db103764e2ac396f083fe68c04%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=5b317e0106e0517891d95fa2b1fa3007d4a577db103764e2ac396f083fe68c04%40group.calendar.google.com",
-      "lastSuccess": "2026-11-04T23:44:34.032250+00:00",
+      "lastSuccess": "2026-11-05T06:56:38.802089+00:00",
       "status": "ok",
       "error": null
     },
@@ -49,7 +49,7 @@
       "color": "violet",
       "feed": "https://calendar.google.com/calendar/ical/700485200aca9eeaf5b28d44a59e4969ad9a2683af866b4de32e7454a141c05c%40group.calendar.google.com/public/basic.ics",
       "url": "https://calendar.google.com/calendar/embed?src=700485200aca9eeaf5b28d44a59e4969ad9a2683af866b4de32e7454a141c05c%40group.calendar.google.com",
-      "lastSuccess": "2026-11-04T23:44:34.032250+00:00",
+      "lastSuccess": "2026-11-05T06:56:38.802089+00:00",
       "status": "ok",
       "error": null
     }
