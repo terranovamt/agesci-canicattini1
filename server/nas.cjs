@@ -51,7 +51,8 @@ async function createNasServer({
   hostProc = "",
   release = "manual",
 } = {}) {
-  if (!password || password.length < 16) throw new Error("La password NAS deve contenere almeno 16 caratteri");
+  if (typeof password !== "string" || password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password))
+    throw new Error("La password NAS deve contenere almeno 8 caratteri, una maiuscola, una minuscola e un numero");
   if (!publicOrigin || new URL(publicOrigin).origin !== publicOrigin)
     throw new Error("NAS_PUBLIC_ORIGIN deve essere una origine senza percorso");
   if (secureCookie && !publicOrigin.startsWith("https://")) throw new Error("In produzione serve una origine HTTPS");

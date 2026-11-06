@@ -187,8 +187,10 @@ mkdir -p /volume1/docker/agesci-nas/secrets
    Mantenere dati in `agesci-nas/data` e secret in `agesci-nas/secrets`.
    Lasciare `COMPOSE_PROFILES=` vuoto: Cloudflare non viene avviato.
    Su un'installazione gia' presente rimuovere il vecchio valore `tunnel`.
-5. Creare `secrets/admin-password.txt` con una password unica di almeno 16
-   caratteri. Non serve alcun token Cloudflare per DDNS. Il file deve contenere
+5. Creare `secrets/admin-password.txt` con una password unica di almeno 8
+   caratteri, con almeno una maiuscola, una minuscola e un numero. Una password
+   piu' lunga resta consigliata per il sito pubblico. Non serve alcun token
+   Cloudflare per DDNS. Il file deve contenere
    solo la password, senza nome di variabile. Inserirla sul NAS, mai in chat o Git.
    Usare una sola riga, testo UTF-8 senza BOM. Non mettere i valori in comandi
    `echo` condivisi o nella cronologia del terminale. Modificare i file con un
