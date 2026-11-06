@@ -3,7 +3,45 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
 const { test } = require("node:test");
-const { createResources } = require("../server/monitor.cjs");
+const { DatabaseSync } = require("node:sqlite");
+const { createMonitor, createResources } = require("../server/monitor.cjs");
+
+test("live presence counts every open site tab, background ones included, and samples it each minute", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-presence-"));
+  const database = new DatabaseSync(":memory:");
+  const monitor = createMonitor(database, { dataDir: directory });
+  const uuid = (index) => String(index).repeat(8) + "-1234-1234-1234-123456789abc";
+  const tab = (index, page, visible, type = "view") =>
+    monitor.telemetry({ id: uuid(index > 3 ? index : 1), tab: uuid(index), type, page, visible, events: [] });
+  try {
+    tab(1, "home", true);
+    tab(2, "peg", true);
+    tab(3, "documenti", true);
+    tab(4, "assemblea", true);
+    tab(5, "home", true);
+    tab(2, "peg", false, "heartbeat");
+    tab(3, "documenti", false, "heartbeat");
+    let snapshot = monitor.snapshot(0, 0, "live");
+    assert.equal(snapshot.traffic.online, 5);
+    assert.equal(snapshot.traffic.visible, 3);
+    assert.equal(snapshot.traffic.presentationDevices, 0);
+    const sampled = Date.now() - 60000;
+    monitor.samplePerformance(sampled);
+    snapshot = monitor.snapshot(0, 0);
+    const minute = snapshot.performance.hourly.find((value) => value.sampledAt === Math.floor(sampled / 60000) * 60000);
+    assert.equal(minute.online, 5);
+    assert.deepEqual(
+      snapshot.traffic.sessions.map((value) => value.visible).sort(),
+      [false, false, true, true, true],
+    );
+    tab(3, "documenti", false, "leave");
+    assert.equal(monitor.snapshot(0, 0, "live").traffic.online, 4);
+  } finally {
+    monitor.stop();
+    database.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
 
 test("NAS host CPU uses successive samples and container memory uses cgroup limits", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-resources-"));

@@ -325,9 +325,11 @@ test("NAS counts active tabs separately and deduplicates retried page views", as
     };
     const second = { ...first, tab: "bbbbbbbb-1234-1234-1234-123456789abc" };
     for (const payload of [first, first, second]) await app.request("/api/telemetry", "POST", payload, false);
+    await app.request("/api/telemetry", "POST", { ...second, type: "heartbeat", visible: false }, false);
     await app.login();
     const metrics = await (await app.request("/api/metrics")).json();
     assert.equal(metrics.traffic.online, 2);
+    assert.equal(metrics.traffic.visible, 1);
     assert.equal(metrics.traffic.today.visits, 1);
     assert.equal(metrics.traffic.today.views, 2);
     await app.request("/api/telemetry", "POST", { ...first, type: "leave" }, false);

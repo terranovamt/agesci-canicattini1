@@ -424,7 +424,8 @@ i PDF persistenti non vengono spostati, cancellati o importati nuovamente.
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Visite oggi               | Sessioni browser osservate; nuova visita dopo 30 minuti di inattivita'. Non sono persone uniche o accessi certificati                                             |
 | Pagine                    | Caricamenti delle pagine monitorate, con deduplicazione dei retry                                                                                                 |
-| Schede visibili online    | Schede con heartbeat recente e visibili; non tutti i TCP aperti. Scadenza dopo 90 secondi                                                                         |
+| Connessioni attive (presenze live) | Schede del sito aperte, anche in background, con heartbeat negli ultimi 150 secondi; escono subito alla chiusura. Il grafico orario ne salva un campione al minuto |
+| Schede in primo piano     | Parte delle connessioni attive visibile sullo schermo negli ultimi 90 secondi                                                                                     |
 | Flussi SSE reali          | Connessioni streaming attualmente aperte sul backend; limite globale 500                                                                                          |
 | Dispositivi presentazione | Heartbeat della presentazione/regia negli ultimi 60 secondi, distinto dal traffico generale                                                                       |
 | CPU backend / un core     | CPU usata dal processo Node nel campione; 100% equivale a un core. Non e' la CPU totale del NAS                                                                   |
@@ -443,8 +444,11 @@ Gli eventi conservano al massimo 500 voci delle ultime 24 ore e il pannello
 mostra le ultime 20. Le righe di scheda sono anonime, senza nome, IP, URL con
 parametri o stack trace; non permettono di identificare una persona specifica.
 
-Ad blocker, JavaScript disabilitato, schede nascoste, bot e reti interrotte
-possono alterare i conteggi osservati. Le riconnessioni non dimostrano da sole
+Ad blocker, JavaScript disabilitato, bot e reti interrotte possono alterare
+i conteggi osservati. iPhone e iPad sospendono le pagine con schermo spento o
+Safari in background, e i browser possono congelare le schede inattive: queste
+schede escono dalle connessioni attive dopo 150 secondi e rientrano appena
+tornano visibili. Le riconnessioni non dimostrano da sole
 un guasto del NAS. Se un telefono non raggiunge il server, puo' non riuscire
 neppure a inviare la segnalazione. Un valore `-` significa non disponibile,
 non zero utilizzo. Quando il pannello perde la connessione, svuota i valori
