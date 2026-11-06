@@ -5,6 +5,7 @@ const path = require("node:path");
 const { once } = require("node:events");
 const { test } = require("node:test");
 const { createNasServer } = require("../server/nas.cjs");
+const { startNasDev } = require("../tools/nas-dev.cjs");
 
 const password = "Nas-test-password1-not-for-production";
 const publicOrigin = "http://localhost";
@@ -45,14 +46,71 @@ async function start(dataDir, options = {}) {
 
 test("NAS password requires at least eight characters with uppercase, lowercase and a digit", async () => {
   for (const invalid of [undefined, null, "Abc1234", "abcdefgh1", "ABCDEFGH1", "Abcdefgh", "12345678"]) {
-    await assert.rejects(createNasServer({ password: invalid, publicOrigin, secureCookie: false }), /almeno 8 caratteri/);
+    await assert.rejects(
+      createNasServer({ password: invalid, publicOrigin, secureCookie: false }),
+      /almeno 8 caratteri/,
+    );
   }
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-password-"));
   const app = await start(directory, { password: "Abcdefg1" });
   try {
     await app.login();
     assert.equal((await (await app.request("/api/session")).json()).authenticated, true);
-  } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }) }
+  } finally {
+    await app.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("NAS subpath scopes APIs and session cookies without exposing root routes", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-subpath-"));
+  const basePath = "/agesci-canicattini1";
+  const app = await start(directory, { basePath });
+  try {
+    assert.equal((await app.request("/healthz")).status, 200);
+    assert.equal((await app.request("/api/session")).status, 404);
+    assert.equal((await app.request(basePath + "-other/api/session")).status, 404);
+    assert.equal((await app.request(basePath + "/api/metrics")).status, 401);
+    const login = await app.request(basePath + "/api/state/modifiche/k.json", "PUT", password);
+    assert.equal(login.status, 200);
+    assert.match(login.headers.get("set-cookie"), /Path=\/agesci-canicattini1\/;/);
+    assert.equal((await (await app.request(basePath + "/api/session")).json()).authenticated, true);
+    assert.equal((await app.request(basePath + "/documents/index.json")).status, 200);
+    assert.equal((await app.request(basePath + "/api/metrics?view=live")).status, 200);
+    const logout = await app.request(basePath + "/api/logout", "POST");
+    assert.match(logout.headers.get("set-cookie"), /Path=\/agesci-canicattini1\/;/);
+    assert.equal((await (await app.request(basePath + "/api/session")).json()).authenticated, false);
+  } finally {
+    await app.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("NAS gateway serves pages, config, QR and PDFs only under the site prefix", async () => {
+  const app = await startNasDev({ basePath: "/agesci-canicattini1" });
+  try {
+    const root = app.origin + "/agesci-canicattini1";
+    assert.equal((await fetch(app.origin + "/index.html")).status, 404);
+    assert.equal((await fetch(app.origin + "/api/session")).status, 404);
+    const redirect = await fetch(root, { redirect: "manual" });
+    assert.equal(redirect.headers.get("location"), "/agesci-canicattini1/");
+    for (const resource of [
+      "/",
+      "/index.html",
+      "/config/site.js",
+      "/assets/img/qr-live.png",
+      "/area-riservata/statistiche.html",
+      "/documents/index.json",
+      "/healthz",
+    ])
+      assert.equal((await fetch(root + resource)).status, 200, resource);
+    const manifest = await (await fetch(root + "/documents/index.json")).json();
+    const entries = Array.isArray(manifest) ? manifest : manifest.documents;
+    if (entries?.length)
+      assert.equal((await fetch(root + "/documents/pdf/" + encodeURIComponent(entries[0].file))).status, 200);
+  } finally {
+    await app.stop();
+  }
 });
 
 test("NAS requires session and same-origin writes, hides secrets and preserves state across restarts", async () => {
@@ -120,7 +178,7 @@ test("NAS atomically persists document metadata, PDFs and optimistic content rev
 
 test("NAS streams live state in the event format expected by the presentation", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-stream-"));
-  const app = await start(directory);
+  let app = await start(directory);
   const abort = new AbortController();
   try {
     const response = await fetch(app.origin + "/api/state/live/stato.json", {
@@ -132,9 +190,27 @@ test("NAS streams live state in the event format expected by the presentation", 
     assert.match(new TextDecoder().decode((await reader.read()).value), /event: put\ndata: .*"pos":0/);
     await app.login();
     await app.request("/api/state/live.json", "PUT", { stato: { pos: 2000, max: 2000 } });
-    assert.equal((await (await app.request("/api/metrics")).json()).traffic.liveStreams, 1);
+    const complete = await (await app.request("/api/metrics")).json();
+    assert.equal(complete.traffic.liveStreams, 1);
+    assert.equal(complete.traffic.today.connections, 1);
+    const live = await (await app.request("/api/metrics?view=live")).json();
+    assert.equal(live.traffic.liveStreams, 1);
+    for (const field of ["today", "daily", "pages", "totals", "sessions"]) assert.equal(live.traffic[field], undefined);
+    assert.equal(live.events, undefined);
+    assert.equal(live.api, undefined);
+    const summary = await (await app.request("/api/metrics?view=summary")).json();
+    assert.equal(summary.traffic.today.connections, 1);
+    assert.equal(summary.traffic.daily, undefined);
+    assert.equal((await app.request("/api/metrics?view=unknown")).status, 400);
     assert.match(new TextDecoder().decode((await reader.read()).value), /"pos":2000/);
     abort.abort();
+    await app.close();
+    app = await start(directory);
+    await app.login();
+    const restored = await (await app.request("/api/metrics")).json();
+    assert.equal(restored.traffic.liveStreams, 0);
+    assert.equal(restored.traffic.today.connections, 1);
+    assert.equal(restored.traffic.totals.connections, 1);
   } finally {
     abort.abort();
     await app.close();

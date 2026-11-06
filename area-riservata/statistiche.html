@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Statistiche sito · AGESCI Canicattini 1</title>
+    <link rel="icon" href="../assets/img/logo-grande.png" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <link rel="stylesheet" href="../assets/css/home.css" />
+    <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
+  </head>
+  <body class="reserved-page metrics-page">
+    <header class="reserved-header">
+      <a class="brand" href="../"
+        ><img src="../assets/img/logo-grande.png" alt="" /><span><b>AGESCI</b><small>Canicattini 1</small></span></a
+      >
+      <nav aria-label="Area riservata">
+        <a href="index.html">Area riservata</a><a href="assemblea/regia.html">Regia</a>
+      </nav>
+    </header>
+    <main class="statistics-page">
+      <div class="metrics-heading">
+        <div>
+          <p class="eyebrow">Area riservata</p>
+          <h1>Statistiche sito</h1>
+        </div>
+        <a href="index.html">Torna alla dashboard</a>
+      </div>
+      <p id="statistics-status" class="metrics-status" role="status" aria-live="polite">Verifica accesso...</p>
+      <div id="statistics-content" hidden>
+        <section class="metrics-section" aria-labelledby="statistics-today">
+          <h2 id="statistics-today">Oggi</h2>
+          <dl class="metrics-overview">
+            <div>
+              <dt>Visite</dt>
+              <dd id="stats-visits">-</dd>
+            </div>
+            <div>
+              <dt>Pagine viste</dt>
+              <dd id="stats-views">-</dd>
+            </div>
+            <div>
+              <dt>Connessioni live aperte</dt>
+              <dd id="stats-connections">-</dd>
+            </div>
+            <div>
+              <dt>Schede visibili ora</dt>
+              <dd id="stats-online">-</dd>
+            </div>
+            <div>
+              <dt>Flussi SSE attuali</dt>
+              <dd id="stats-streams">-</dd>
+            </div>
+            <div>
+              <dt>Segnalazioni</dt>
+              <dd id="stats-errors">-</dd>
+            </div>
+          </dl>
+          <p id="stats-totals" class="metrics-status">-</p>
+        </section>
+        <div class="statistics-columns">
+          <section class="metrics-section" aria-labelledby="statistics-days">
+            <h2 id="statistics-days">Ultimi sette giorni</h2>
+            <table class="metrics-table">
+              <thead>
+                <tr>
+                  <th>Giorno</th>
+                  <th>Visite</th>
+                  <th>Pagine</th>
+                  <th>Connessioni live</th>
+                </tr>
+              </thead>
+              <tbody id="stats-days"></tbody>
+            </table>
+          </section>
+          <section class="metrics-section" aria-labelledby="statistics-pages">
+            <h2 id="statistics-pages">Pagine viste oggi</h2>
+            <table class="metrics-table">
+              <thead>
+                <tr>
+                  <th>Pagina</th>
+                  <th>Viste</th>
+                </tr>
+              </thead>
+              <tbody id="stats-pages"></tbody>
+            </table>
+          </section>
+        </div>
+        <section class="metrics-section" aria-labelledby="statistics-sessions">
+          <h2 id="statistics-sessions">Ultime schede visibili</h2>
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th>Pagina</th>
+                <th>Risposta browser</th>
+                <th>Ultimo segnale</th>
+              </tr>
+            </thead>
+            <tbody id="stats-sessions"></tbody>
+          </table>
+        </section>
+        <section class="metrics-section" aria-labelledby="statistics-diagnostics">
+          <h2 id="statistics-diagnostics">Diagnostica</h2>
+          <dl class="metrics-overview">
+            <div>
+              <dt>Risposta API p95 / 5 min</dt>
+              <dd id="stats-latency">-</dd>
+            </div>
+            <div>
+              <dt>Errori API 5xx / 5 min</dt>
+              <dd id="stats-api-errors">-</dd>
+            </div>
+            <div>
+              <dt>Richieste limitate / 5 min</dt>
+              <dd id="stats-limited">-</dd>
+            </div>
+          </dl>
+          <p id="stats-no-events" class="metrics-status">Nessuna segnalazione recente.</p>
+          <ol id="stats-events" class="metrics-events"></ol>
+        </section>
+      </div>
+    </main>
+    <footer>AGESCI Canicattini 1</footer>
+    <script src="../config/site.js"></script>
+    <script src="../assets/js/nas-telemetry.js"></script>
+    <script src="../assets/js/shared/accesso.js"></script>
+    <script src="../assets/js/shared/nas-metrics.js"></script>
+    <script src="../assets/js/statistiche.js"></script>
+  </body>
+</html>

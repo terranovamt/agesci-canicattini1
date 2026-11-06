@@ -74,7 +74,7 @@ function createLocalDatabase() {
 
 function transformConfig(source) {
   const transformed = source.replace(
-    /url:\s*'https:\/\/[^']+firebaseio\.com\/'|url:\s*'https:\/\/[^']+firebasedatabase\.app\/'|url:\s*location\.origin\s*\+\s*'\/api\/state\/'/,
+    /url:\s*'https:\/\/[^']+firebaseio\.com\/'|url:\s*'https:\/\/[^']+firebasedatabase\.app\/'|url:\s*location\.origin\s*\+\s*(?:\([^;\n]*\)\s*\+\s*)?["']\/api\/state\/["']/,
     "url: location.origin + '/__preview/firebase/'",
   );
   if (transformed === source) throw new Error("URL Firebase non riconosciuto: anteprima bloccata per sicurezza.");

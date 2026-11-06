@@ -5,7 +5,19 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { monitorEventLoopDelay } = require("node:perf_hooks");
 
-const PAGES = new Set(["home", "assemblea", "documenti", "peg", "area", "regia", "setup", "guida"]);
+const PAGES = new Set([
+  "home",
+  "assemblea",
+  "assemblea-documenti",
+  "documenti",
+  "gestione-documenti",
+  "peg",
+  "area",
+  "regia",
+  "setup",
+  "guida",
+  "statistiche",
+]);
 const EVENTS = new Set(["offline", "network-error", "http-error", "resource-error", "js-error", "stream-reconnect"]);
 const dayOf = (time) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(time);
 const number = (value) => (Number.isFinite(value) ? value : null);
@@ -118,6 +130,10 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
   );
   database.prepare("INSERT OR IGNORE INTO monitor_totals VALUES (1,0,0,?)").run(dayOf(new Date()));
   database.exec("CREATE TABLE IF NOT EXISTS monitor_views (id TEXT PRIMARY KEY, seen INTEGER NOT NULL);");
+  database.exec(
+    "CREATE TABLE IF NOT EXISTS monitor_connections (day TEXT PRIMARY KEY, opens INTEGER NOT NULL DEFAULT 0);",
+  );
+  database.prepare("INSERT OR IGNORE INTO monitor_connections VALUES ('total',0)").run();
   const clients = new Map(),
     requests = [];
   const resources = createResources({ dataDir, hostProc });
@@ -208,7 +224,23 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     if (requests.length > 2000) requests.shift();
     if (status >= 500) recordEvent("server-error", "server", status, now);
   }
-  function snapshot(streams, devices) {
+  function connection() {
+    const day = dayOf(new Date());
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(day);
+      const increment = database.prepare(
+        "INSERT INTO monitor_connections VALUES (?,1) ON CONFLICT(day) DO UPDATE SET opens=opens+1",
+      );
+      increment.run(day);
+      increment.run("total");
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  function snapshot(streams, devices, view = "full") {
     const now = Date.now(),
       day = dayOf(new Date(now));
     const recent = requests.filter((value) => value.time > now - 300000);
@@ -225,45 +257,64 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     if (sample.disk && sample.disk.availableBytes < Math.max(1024 ** 3, sample.disk.totalBytes * 0.05))
       warnings.push("Spazio volume dati ridotto");
     if (streams >= 450) warnings.push("Connessioni live vicine al limite");
-    if (recent.some((value) => value.status === 429)) warnings.push("Richieste limitate dal server (HTTP 429)");
-    if (recent.some((value) => value.status >= 500)) warnings.push("Errori server negli ultimi cinque minuti");
+    if (view !== "live" && recent.some((value) => value.status === 429))
+      warnings.push("Richieste limitate dal server (HTTP 429)");
+    if (view !== "live" && recent.some((value) => value.status >= 500))
+      warnings.push("Errori server negli ultimi cinque minuti");
     if (sample.process.eventLoopP95Ms >= 100) warnings.push("Event loop backend rallentato");
     if (missing) warnings.push("Sessioni senza aggiornamenti recenti");
-    return {
+    const result = {
       sampledAt: now,
       timezone: "Europe/Rome",
       enabled: telemetryEnabled,
       service: { release, startedAt: initialized, uptimeSeconds: Math.floor((now - initialized) / 1000) },
       traffic: {
-        totals: database.prepare("SELECT visits,views,started FROM monitor_totals WHERE id=1").get(),
-        today: database.prepare("SELECT visits,views,errors FROM monitor_days WHERE day=?").get(day) || {
-          visits: 0,
-          views: 0,
-          errors: 0,
-        },
-        daily: database.prepare("SELECT * FROM monitor_days ORDER BY day DESC LIMIT 7").all(),
-        pages: database.prepare("SELECT page,views FROM monitor_pages WHERE day=? ORDER BY views DESC").all(day),
         online: online.length,
         missing,
         liveStreams: streams,
         liveLimit: 500,
         presentationDevices: devices,
-        sessions: online
-          .slice(0, 20)
-          .map((value) => ({ page: value.page, lastSeen: value.seen, latencyMs: value.latencyMs })),
-      },
-      api: {
-        sampleCount: recent.length,
-        windowSeconds: 300,
-        p95Ms: durations.length ? durations[Math.ceil(durations.length * 0.95) - 1] : null,
-        errors5xx: recent.filter((value) => value.status >= 500).length,
-        rejected: recent.filter((value) => value.status >= 400 && value.status < 500).length,
-        limited: recent.filter((value) => value.status === 429).length,
       },
       resources: sample,
       warnings,
-      events: database.prepare("SELECT time,kind,page,status FROM monitor_events ORDER BY time DESC LIMIT 20").all(),
     };
+    if (view === "live") return result;
+    result.traffic.today = {
+      ...(database.prepare("SELECT visits,views,errors FROM monitor_days WHERE day=?").get(day) || {
+        visits: 0,
+        views: 0,
+        errors: 0,
+      }),
+      connections: database.prepare("SELECT opens FROM monitor_connections WHERE day=?").get(day)?.opens || 0,
+    };
+    if (view === "summary") return result;
+    result.traffic.totals = {
+      ...database.prepare("SELECT visits,views,started FROM monitor_totals WHERE id=1").get(),
+      connections: database.prepare("SELECT opens FROM monitor_connections WHERE day='total'").get().opens,
+    };
+    result.traffic.daily = database
+      .prepare(
+        "SELECT d.*,COALESCE(c.opens,0) AS connections FROM monitor_days d LEFT JOIN monitor_connections c ON c.day=d.day ORDER BY d.day DESC LIMIT 7",
+      )
+      .all();
+    result.traffic.pages = database
+      .prepare("SELECT page,views FROM monitor_pages WHERE day=? ORDER BY views DESC")
+      .all(day);
+    result.traffic.sessions = online
+      .slice(0, 20)
+      .map((value) => ({ page: value.page, lastSeen: value.seen, latencyMs: value.latencyMs }));
+    result.api = {
+      sampleCount: recent.length,
+      windowSeconds: 300,
+      p95Ms: durations.length ? durations[Math.ceil(durations.length * 0.95) - 1] : null,
+      errors5xx: recent.filter((value) => value.status >= 500).length,
+      rejected: recent.filter((value) => value.status >= 400 && value.status < 500).length,
+      limited: recent.filter((value) => value.status === 429).length,
+    };
+    result.events = database
+      .prepare("SELECT time,kind,page,status FROM monitor_events ORDER BY time DESC LIMIT 20")
+      .all();
+    return result;
   }
   const timer = setInterval(() => {
     const now = Date.now();
@@ -280,11 +331,13 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     const oldest = dayOf(new Date(now - 30 * 86400000));
     database.prepare("DELETE FROM monitor_days WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_pages WHERE day<?").run(oldest);
+    database.prepare("DELETE FROM monitor_connections WHERE day<?").run(oldest);
   }, 5000);
   timer.unref();
   return {
     telemetry,
     request,
+    connection,
     snapshot,
     enabled: telemetryEnabled,
     stop() {

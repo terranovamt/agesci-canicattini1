@@ -26,7 +26,7 @@ const mime = {
   ".woff2": "font/woff2",
 };
 
-async function startNasDev() {
+async function startNasDev({ basePath = "" } = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "agesci-nas-dev-"));
   let backend;
   const gateway = http.createServer(async (request, response) => {
@@ -36,6 +36,19 @@ async function startNasDev() {
         response.writeHead(503);
         response.end();
         return;
+      }
+      if (basePath && url.pathname === basePath) {
+        response.writeHead(308, { Location: basePath + "/" + url.search });
+        response.end();
+        return;
+      }
+      if (basePath) {
+        if (!url.pathname.startsWith(basePath + "/")) {
+          response.writeHead(404);
+          response.end();
+          return;
+        }
+        url.pathname = url.pathname.slice(basePath.length);
       }
       if (
         url.pathname.startsWith("/api/") ||
@@ -102,7 +115,7 @@ async function startNasDev() {
       const stats = await fs.promises.stat(file);
       if (stats.isDirectory()) {
         if (!pathname.endsWith("/")) {
-          response.writeHead(308, { Location: pathname + "/" + url.search });
+          response.writeHead(308, { Location: basePath + pathname + "/" + url.search });
           response.end();
           return;
         }
@@ -128,6 +141,7 @@ async function startNasDev() {
       siteRoot: root,
       password,
       publicOrigin: origin,
+      basePath,
       secureCookie: false,
       release: "sviluppo-locale",
     });
@@ -153,9 +167,9 @@ async function startNasDev() {
 
 module.exports = { startNasDev };
 if (require.main === module)
-  startNasDev()
+  startNasDev({ basePath: "/agesci-canicattini1" })
     .then((app) => {
-      console.log("Anteprima NAS locale: " + app.origin);
+      console.log("Anteprima NAS locale: " + app.origin + "/agesci-canicattini1/");
       console.log("Password di test (solo locale): " + app.password);
       console.log("Database temporaneo; nessun servizio reale modificato.");
       const stop = () => app.stop().then(() => process.exit(0));

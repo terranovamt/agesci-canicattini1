@@ -11,7 +11,7 @@ const sync = fs.readFileSync(path.join(root, 'core', 'live.js'), 'utf8');
 function role(search, page = 'setup') {
   const session = new Map(), replaced = [];
   const context = {
-    window: {}, location: { search, replace: u => replaced.push(u) }, URLSearchParams,
+    window: {}, location: { search, pathname: '/', origin: 'https://site.test', replace: u => replaced.push(u) }, URLSearchParams,
     localStorage: { getItem: () => 'old-key' },
     sessionStorage: { setItem: (k, v) => session.set(k, v) },
     document: { getElementById: id => id === 'stage' && page === 'presentazione' ? {} : null },

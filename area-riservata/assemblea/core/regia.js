@@ -314,7 +314,7 @@
   /* link alla console Firebase (utilizzo reale) */
   try {
     if (L.nas) {
-      $("#console").href = "/healthz";
+      $("#console").href = (window.LIVE.basePath || "") + "/healthz";
       $("#console").textContent = "Stato NAS";
     } else {
       const host = new URL(U).hostname,
