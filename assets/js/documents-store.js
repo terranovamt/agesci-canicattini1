@@ -28,7 +28,7 @@
   }
 
   async function load(token) {
-    if (window.DOCUMENTS_PREVIEW) {
+    if (window.DOCUMENTS_PREVIEW || window.LIVE.nas) {
       const response = await fetch('/documents/index.json', { cache: 'no-store' });
       if (!response.ok) throw new Error('Indice documenti locale non disponibile');
       return validate(await response.json());
@@ -39,8 +39,8 @@
   }
 
   async function save(change, token) {
-    if (window.DOCUMENTS_PREVIEW) {
-      const response = await fetch('/__preview/documents', {
+    if (window.DOCUMENTS_PREVIEW || window.LIVE.nas) {
+      const response = await fetch(window.DOCUMENTS_PREVIEW ? '/__preview/documents' : '/api/documents', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change)
       });
       if (!response.ok) throw new Error(await response.text());

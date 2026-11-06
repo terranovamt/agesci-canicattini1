@@ -3,6 +3,28 @@
 Presentazione dell'**Assemblea di Gruppo AGESCI Canicattini 1**, con regia live,
 spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
+## Branch NAS
+
+Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
+diretta, contenuti o PDF. Setup e gestione documenti salvano direttamente sul
+NAS, senza token GitHub. GitHub resta la sorgente del codice: un'attivita' DSM
+controlla `NAS` ogni minuto e distribuisce l'ultimo commit preservando i dati.
+Non pubblicare questo branch su GitHub Pages.
+
+La pubblicazione predefinita usa **Synology DDNS (`nomegruppo.synology.me`)
+e reverse proxy HTTPS DSM**, senza acquistare un dominio o usare Cloudflare.
+Con Sky WiFi verificare prima che la propria linea consenta la porta TCP 443
+in ingresso su un IP pubblico. Il solo DDNS non supera CGNAT o porte condivise.
+
+**Installazione DDNS, configurazione Sky WiFi, aggiornamenti e backup:**
+[guida Synology](docs/ottimizzazione-synology.md).
+
+In regia, **Monitoraggio NAS > Apri monitor** mostra visite, pagine viste,
+schede visibili, flussi live reali, CPU/RAM backend e NAS, spazio, latenza e
+segnalazioni recenti. La raccolta browser e' disattivabile; i report non sono
+accessibili senza sessione amministrativa. La guida spiega le definizioni,
+le opzioni privacy e i controlli da fare quando un dispositivo ha problemi.
+
 > 📘 Guida illustrata (stesso stile della presentazione):
 > https://terranovamt.github.io/agesci-canicattini1/area-riservata/assemblea/guida.html
 
@@ -11,48 +33,41 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 | Documento                                                          | Contenuto                                                                    |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | [docs/assemblea.md](docs/assemblea.md)                             | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
-| [docs/contenuti.md](docs/contenuti.md)                             | setup solo GitHub, `dati.js`, Salva su GitHub                                |
-| [docs/firebase.md](docs/firebase.md)                               | nodi, configurazione da zero, regole, limiti del piano gratuito              |
+| [docs/contenuti.md](docs/contenuti.md)                             | riferimento storico al setup GitHub della versione main                      |
+| [docs/firebase.md](docs/firebase.md)                               | riferimento storico Firebase, non usato dal backend NAS                      |
 | [docs/sviluppo.md](docs/sviluppo.md)                               | struttura del codice e dei tipi di slide                                     |
 | [docs/struttura-repository.md](docs/struttura-repository.md)       | gerarchia completa del repository e criteri di organizzazione                |
 | [docs/audit-ui-ux.md](docs/audit-ui-ux.md)                         | audit UI/UX e priorità di manutenzione                                       |
-| [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | roadmap prestazioni e deployment statico su Synology con Cloudflare Tunnel   |
+| [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | backend NAS, DDNS Sky WiFi, auto-deployment, calendari DSM e backup          |
 
 ## Indirizzi
 
-| Chi                          | Indirizzo                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| Home / pubblico              | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
-| Area riservata               | `.../area-riservata/index.html` (accesso con chiave)                                        |
-| Gestione PDF                 | `.../area-riservata/documenti.html`                                                         |
-| Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                                             |
-| Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)                                       |
-| PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`)                              |
-| Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (chiede la chiave)                                |
-| Setup (solo GitHub)          | `.../area-riservata/assemblea/setup.html` (nessun accesso Firebase)                         |
-| Guida                        | `.../area-riservata/assemblea/guida.html`                                                   |
+| Chi                          | Indirizzo                                                      |
+| ---------------------------- | -------------------------------------------------------------- |
+| Home / pubblico              | dominio HTTPS configurato in `NAS_PUBLIC_ORIGIN`               |
+| Area riservata               | `.../area-riservata/index.html` (accesso con chiave)           |
+| Gestione PDF                 | `.../area-riservata/documenti.html`                            |
+| Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
+| Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
+| PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
+| Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (chiede la chiave)   |
+| Setup (NAS)                  | `.../area-riservata/assemblea/setup.html` (salvataggio SQLite) |
+| Guida                        | `.../area-riservata/assemblea/guida.html`                      |
 
-La home propone **Area riservata**: dopo la verifica della chiave
-su Firebase compare **Regia Assemblea di Gruppo**, con **Avvia live** e
-**Termina assemblea**. Dall'area riservata si apre anche il setup: richiede
-un accesso già verificato nella sessione della scheda, senza ripetere
-richieste Firebase. Il setup in `area-riservata/assemblea/setup.html` rimanda al login se manca la sessione.
-Modifica solo `dati.js` e richiede un token GitHub autorizzato per
-fare il commit. Non legge né scrive Firebase, non conta presenze e non legge
-le modifiche live pubblicate dalla regia.
-La sessione dura nella scheda del browser (`sessionStorage`); **Esci**
-cancella la chiave e il token GitHub eventualmente memorizzato. Nel setup i
-parametri dell'URL vengono rimossi e **Dimentica token GitHub** cancella il token.
-Anche la regia chiede la chiave; il vecchio link `?regia=LA-TUA-CHIAVE`
-funziona ancora e apre la dashboard: non condividerlo mai.
-
-Il login usa la stessa chiave condivisa della regia, non account personali:
-Firebase verifica il permesso scrivendo soltanto `modifiche/k`, senza toccare
-contenuti, orario di pubblicazione o stato dell'assemblea. Le regole Firebase
-proteggono le scritture anche se qualcuno aggira l'interfaccia. Il repository
-e i contenuti destinati al pubblico restano pubblici: non inserire dati riservati.
+La home propone **Area riservata**: il backend NAS verifica la password del
+file secret e crea una sessione HttpOnly/Secure di otto ore. Il browser non
+conserva la password; **Esci** revoca la sessione. Il server protegge le scritture
+anche se qualcuno aggira l'interfaccia. Un riavvio del backend richiede un nuovo
+accesso agli amministratori; il pubblico riconnette la diretta.
+Il setup modifica i contenuti persistenti di base, separati dalle modifiche live.
+Il percorso sotto `area-riservata/` non rende private slide, PDF o codice:
+non inserire informazioni riservate. Non condividere vecchi URL con password.
 
 ## Anteprima locale
+
+Per collaudare backend NAS e monitor con database temporaneo, usare Node 24:
+`node tools/nas-dev.cjs`. Il comando stampa URL e password di solo test;
+nessun dato reale del NAS viene modificato. CPU/RAM host richiedono Linux/NAS.
 
 Avvia il sito con hot reload senza installare dipendenze:
 
@@ -69,13 +84,10 @@ perdono al riavvio del server: i file del repository non vengono modificati.
 
 ## Documenti pubblici
 
-Nell'area riservata apri **Gestisci documenti PDF**. Inserisci il token GitHub
-(lo stesso del setup, con permesso **Contents: Read and write**) e premi
-**Ricarica da GitHub**. Puoi caricare un PDF con titolo e descrizione, modificare
-i testi o sostituire il PDF, ed eliminare un documento con conferma.
-File e indice vengono pubblicati insieme in un unico commit sul ramo
-`LIVE.github.ramo` di `config/site.js` (in produzione `main`).
-Non vengono modificate le impostazioni del setup o i dati dell'assemblea.
+Nell'area riservata apri **Gestisci documenti PDF**. Dopo l'accesso puoi caricare,
+modificare o eliminare PDF inferiori a 20 MiB. File e metadati vengono salvati
+insieme in una transazione SQLite e sono subito disponibili sul NAS.
+Non servono token o commit GitHub; conflitti concorrenti richiedono una ricarica.
 
 La sezione pubblica **Documenti preparatori all'assemblea 2026**, in
 `assemblea/index.html`, legge
@@ -83,9 +95,9 @@ La sezione pubblica **Documenti preparatori all'assemblea 2026**, in
 Bilancio 2026 - Modello D, Convocazione assemblea 2026 e Regolamento assembleare.
 Il PEG si legge anche nella pagina dedicata; tutte le schede permettono di
 scaricare il PDF. Le altre tre aprono il PDF in una nuova scheda.
-I file sono in `documents/pdf/`; per aggiungerli manualmente, aggiorna anche
-l'indice con `file`, `title` e `description`. Titoli, descrizioni e PDF restano
-gestibili dall'area riservata. L'archivio `documenti/index.html` mostra tutti i
+I file in `documents/pdf/` e l'indice nel repository inizializzano SQLite solo
+al primo avvio. Poi usare la gestione documenti: nuovi commit non sovrascrivono
+il database. L'archivio `documenti/index.html` mostra tutti i
 PDF, con filtro per anno di riferimento e ricerca in titolo e descrizione.
 La sezione «Gli ultimi documenti» della home mostra soltanto quattro PDF, ordinati per
 `publishedAt` (data ISO `YYYY-MM-DD`, decrescente). A parità di data rimane
@@ -98,7 +110,7 @@ La selezione «Documenti preparatori» resta distinta: mostra soltanto i PDF
 con `assemblyYear` uguale all'anno corrente (Europe/Rome), anche nella pagina
 `assemblea/index.html`. Il relativo anno si imposta separatamente nella gestione.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
-Dopo il salvataggio attendi il deployment di GitHub Pages.
+I salvataggi sul NAS non attendono GitHub Pages.
 
 ## Calendario personalizzato
 
@@ -123,13 +135,9 @@ resta invariato; gli errori di connessione sono nel pannello Informazioni.
 
 I feed e i nomi sono configurati in `calendars/sources.json`. Il browser legge
 soltanto `calendars/events.json`, evitando CORS, token e API key nel sito.
-Il workflow **Sync public calendars** legge i cinque feed ogni ora al minuto
-17 (GitHub può ritardare gli orari), al cambio della configurazione su `main`,
-oppure manualmente dalla scheda Actions. Parte **solo dopo il merge su main**.
-Pubblica un commit con il solo snapshot e richiede una build Pages; ha permessi
-Contents e Pages in scrittura, senza segreti esterni né crediti AI. Regole di
-protezione del branch che vietano il push del bot richiedono un adeguamento
-esplicito dell'amministratore: lo script non aggira tali regole.
+Sul NAS una seconda attivita' DSM esegue `sync-calendars.sh` ogni ora usando
+un container di manutenzione e uno snapshot persistente. Non richiede GitHub
+Actions o commit dello snapshot. Il workflow esistente riguarda soltanto `main`.
 
 La sincronizzazione considera circa un anno passato e due futuri, espande
 ricorrenze, esclusioni, eccezioni e cancellazioni, gestisce eventi giornalieri,
@@ -162,16 +170,16 @@ di accesso per gli eventi > Rendi disponibile pubblicamente**, quindi usa
 l'indirizzo pubblico iCal in **Integra calendario**. Restano i link per aprire
 i calendari originali e per iscriversi al gruppo. La prima lettura reale da
 questo ambiente ha fallito per DNS: lo snapshot incluso riporta gli errori,
-senza inventare eventi. La disponibilità dei feed va verificata dalla prima
-esecuzione Actions dopo il merge.
+senza inventare eventi. Verificare i feed alla prima esecuzione sul NAS.
 
-## Pubblicazione (GitHub Pages)
+## Pubblicazione NAS
 
-In **Settings > Pages**: **Deploy from a branch**, branch `main`, cartella **`/ (root)`**.
-Ogni commit su `main` viene pubblicato in circa 1 minuto. L'indirizzo principale
-del sito mostra normalmente la home del gruppo. Durante l'assemblea reindirizza
-a `area-riservata/assemblea/index.html`, conservando parametri e posizione (`#slide.passo`).
-Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jekyll.
+L'attivita' DSM controlla l'ultimo commit di `NAS` ogni minuto, costruisce la
+release e attende gli healthcheck. Se l'avvio fallisce tenta il ripristino del
+codice precedente; non ripristina il database. Dati e secret restano fuori
+dalle release. Sono necessari prima configurazione e collaudo sul NAS:
+vedere la [guida](docs/ottimizzazione-synology.md). Il branch `main` e la sua
+eventuale pubblicazione GitHub Pages restano separati.
 
 ## Struttura del repository
 
@@ -223,7 +231,7 @@ del patrimonio non cambia.
 **Annulla procedura** scarta soltanto la bozza annuale. Dopo l'applicazione,
 **Annulla** nella barra del setup ripristina tutti i dati all'ultima versione
 caricata/salvata, incluse altre modifiche locali: non è un annullamento limitato
-al cambio anno. **Salva su GitHub** rimane necessario per pubblicare.
+al cambio anno. **Salva sul NAS** rimane necessario per pubblicare.
 
 ## Dashboard dell'area riservata
 

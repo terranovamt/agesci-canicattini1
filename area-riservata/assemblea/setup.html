@@ -1,122 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Setup Assemblea di Gruppo</title>
+    <link rel="icon" href="../../assets/img/logo-grande.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="../../assets/css/theme.css" />
+    <link rel="stylesheet" href="core/setup.css" />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>Setup Assemblea di Gruppo</title>
-  <link rel="icon" href="../../assets/img/logo-grande.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="../../assets/css/theme.css">
-  <link rel="stylesheet" href="core/setup.css">
-</head>
+  <body>
+    <header>
+      <a class="back-link" href="../index.html" aria-label="Torna all'area riservata">←</a>
+      <h1>Setup Assemblea</h1>
+      <span id="stato" class="pill" role="status">Caricamento…</span>
+    </header>
 
-<body>
-  <header>
-    <a class="back-link" href="../index.html" aria-label="Torna all'area riservata">←</a>
-    <h1>Setup Assemblea</h1>
-    <span id="stato" class="pill" role="status">Caricamento…</span>
-  </header>
+    <main id="app" hidden>
+      <nav class="tabs" aria-label="Sezioni del setup">
+        <p class="nav-label">Preparazione assemblea</p>
+        <button data-tab="generale" class="on" aria-pressed="true">Generale<small>Data, luogo e orari</small></button>
+        <button data-tab="ordine" aria-pressed="false">Slide<small>Contenuti e sequenza</small></button>
+        <button data-tab="bilancio" aria-pressed="false">Bilancio<small>Rendiconto e patrimonio</small></button>
+        <button data-tab="json" aria-pressed="false">JSON<small>Editor avanzato dei dati</small></button>
+        <span class="sep"></span>
+        <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
+        <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
+        <div class="year-launch">
+          <p>Un nuovo ciclo per il gruppo</p>
+          <button id="nuovo-anno" type="button" disabled>
+            Setup nuovo anno<small>Compila, controlla e conferma</small>
+          </button>
+        </div>
+        <span class="links"
+          ><a id="apri-regia" target="assemblea-regia">Apri regia ↗</a
+          ><a href="index.html" target="assemblea-pubblico">Vista pubblico ↗</a
+          ><a href="../documenti.html">Gestisci PDF →</a></span
+        >
+      </nav>
+      <section class="workspace" aria-labelledby="workspace-title">
+        <div class="workspace-heading">
+          <p class="workspace-eyebrow">Area di lavoro</p>
+          <h2 id="workspace-title">Informazioni generali</h2>
+          <p id="intro" class="intro"></p>
+        </div>
+        <details class="workflow-note">
+          <summary>Come vengono pubblicate le modifiche?</summary>
+          <p>
+            Il setup modifica i contenuti di base, separatamente dalle modifiche live. Salva i contenuti prima di
+            avviare la diretta.
+          </p>
+        </details>
+        <div id="campi"></div>
+        <div id="json" hidden>
+          <textarea id="json-text" spellcheck="false"></textarea>
+          <div class="row"><button id="json-apply">Applica JSON</button><span id="json-err" class="err"></span></div>
+        </div>
+        <iframe id="doc" title="Guida" hidden></iframe>
+      </section>
+    </main>
 
-  <main id="app" hidden>
-    <nav class="tabs" aria-label="Sezioni del setup">
-      <p class="nav-label">Preparazione assemblea</p>
-      <button data-tab="generale" class="on" aria-pressed="true">Generale<small>Data, luogo e orari</small></button>
-      <button data-tab="ordine" aria-pressed="false">Slide<small>Contenuti e sequenza</small></button>
-      <button data-tab="bilancio" aria-pressed="false">Bilancio<small>Rendiconto e patrimonio</small></button>
-      <button data-tab="json" aria-pressed="false">JSON<small>Editor avanzato dei dati</small></button>
-      <span class="sep"></span>
-      <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
-      <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
-      <div class="year-launch">
-        <p>Un nuovo ciclo per il gruppo</p>
-        <button id="nuovo-anno" type="button" disabled>Setup nuovo anno<small>Compila, controlla e conferma</small></button>
-      </div>
-      <span class="links"><a id="apri-regia" target="assemblea-regia">Apri regia ↗</a><a href="index.html" target="assemblea-pubblico">Vista pubblico ↗</a><a href="../documenti.html">Gestisci PDF →</a></span>
-    </nav>
-    <section class="workspace" aria-labelledby="workspace-title">
-    <div class="workspace-heading">
-      <p class="workspace-eyebrow">Area di lavoro</p>
-      <h2 id="workspace-title">Informazioni generali</h2>
-      <p id="intro" class="intro"></p>
-    </div>
-    <details class="workflow-note">
-      <summary>Come vengono pubblicate le modifiche?</summary>
-      <p>Il setup lavora sui dati locali, senza richieste Firebase e senza leggere le modifiche live della regia. Premi <strong>Salva su GitHub</strong>, attendi la pubblicazione di dati.js, quindi avvia il live dalla regia.</p>
-    </details>
-    <div id="campi"></div>
-    <div id="json" hidden>
-      <textarea id="json-text" spellcheck="false"></textarea>
-      <div class="row"><button id="json-apply">Applica JSON</button><span id="json-err" class="err"></span></div>
-    </div>
-    <iframe id="doc" title="Guida" hidden></iframe>
-    </section>
-  </main>
+    <footer id="bar" hidden>
+      <span id="dirty" role="status" aria-live="polite"></span>
+      <button id="annulla" class="sec" disabled>Annulla</button>
+      <button id="salva-gh" disabled>Salva su GitHub (dati.js)</button>
+      <details class="more">
+        <summary title="Altro" aria-label="Altre azioni">⋯</summary>
+        <div>
+          <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
+          <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
+          <button id="esci-area" class="sec">Esci e torna alla home</button>
+        </div>
+      </details>
+    </footer>
 
-  <footer id="bar" hidden>
-    <span id="dirty" role="status" aria-live="polite"></span>
-    <button id="annulla" class="sec" disabled>Annulla</button>
-    <button id="salva-gh" disabled>Salva su GitHub (dati.js)</button>
-    <details class="more">
-      <summary title="Altro" aria-label="Altre azioni">⋯</summary>
-      <div>
-        <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
-        <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
-        <button id="esci-area" class="sec">Esci e torna alla home</button>
-      </div>
-    </details>
-  </footer>
+    <dialog id="slide-editor">
+      <h2 id="slide-editor-titolo">Modifica slide</h2>
+      <div id="slide-editor-campi"></div>
+      <button id="slide-editor-chiudi" type="button">Fine modifica</button>
+      <p>Modifiche non ancora salvate.</p>
+    </dialog>
 
-  <dialog id="slide-editor">
-    <h2 id="slide-editor-titolo">Modifica slide</h2>
-    <div id="slide-editor-campi"></div>
-    <button id="slide-editor-chiudi" type="button">Fine modifica</button>
-    <p>Le modifiche restano locali: premi Salva su GitHub per pubblicarle.</p>
-  </dialog>
+    <dialog id="gh">
+      <form method="dialog">
+        <h2>Salva su GitHub</h2>
+        <p>
+          Per scrivere <code>dati.js</code> serve un <b>token GitHub</b>. Si crea una volta e resta solo su questo
+          dispositivo.
+        </p>
+        <ol>
+          <li>
+            Apri
+            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener"
+              >github.com → Fine-grained token</a
+            >.
+          </li>
+          <li><b>Repository access</b> → <i>Only select repositories</i> → <code id="gh-repo"></code>.</li>
+          <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>.</li>
+          <li><b>Generate token</b>, copialo e incollalo qui.</li>
+        </ol>
+        <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…" required />
+        <div class="row">
+          <button value="ok">Salva su GitHub</button><button value="no" class="sec" formnovalidate>Annulla</button>
+        </div>
+      </form>
+    </dialog>
 
-  <dialog id="gh">
-    <form method="dialog">
-      <h2>Salva su GitHub</h2>
-      <p>Per scrivere <code>dati.js</code> serve un <b>token GitHub</b>. Si crea una volta e resta solo su questo dispositivo.</p>
-      <ol>
-        <li>Apri <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Fine-grained token</a>.</li>
-        <li><b>Repository access</b> → <i>Only select repositories</i> → <code id="gh-repo"></code>.</li>
-        <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>.</li>
-        <li><b>Generate token</b>, copialo e incollalo qui.</li>
-      </ol>
-      <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…" required>
-      <div class="row"><button value="ok">Salva su GitHub</button><button value="no" class="sec" formnovalidate>Annulla</button></div>
-    </form>
-  </dialog>
+    <dialog id="year-dialog" aria-labelledby="year-title" aria-describedby="year-progress">
+      <form id="year-form">
+        <div class="year-heading">
+          <div>
+            <p id="year-progress" role="status"></p>
+            <h2 id="year-title">Setup nuovo anno</h2>
+          </div>
+          <button id="year-cancel" type="button" class="sec">Annulla procedura</button>
+        </div>
+        <div id="year-scroll">
+          <h3 id="year-step-title" tabindex="-1"></h3>
+          <div id="year-fields"></div>
+        </div>
+        <p id="year-error" class="err" role="alert"></p>
+        <div class="year-actions">
+          <button id="year-back" type="button" class="sec">Indietro</button>
+          <button id="year-next" type="submit">Continua</button>
+        </div>
+        <p class="hint">Bozza fino alla conferma e al salvataggio.</p>
+      </form>
+    </dialog>
 
-  <dialog id="year-dialog" aria-labelledby="year-title" aria-describedby="year-progress">
-    <form id="year-form">
-      <div class="year-heading">
-        <div><p id="year-progress" role="status"></p><h2 id="year-title">Setup nuovo anno</h2></div>
-        <button id="year-cancel" type="button" class="sec">Annulla procedura</button>
-      </div>
-      <div id="year-scroll">
-        <h3 id="year-step-title" tabindex="-1"></h3>
-        <div id="year-fields"></div>
-      </div>
-      <p id="year-error" class="err" role="alert"></p>
-      <div class="year-actions">
-        <button id="year-back" type="button" class="sec">Indietro</button>
-        <button id="year-next" type="submit">Continua</button>
-      </div>
-      <p class="hint">Solo una bozza fino al tuo OK. Dopo l’applicazione, usa Salva su GitHub per pubblicare.</p>
-    </form>
-  </dialog>
-
-  <script src="../../config/site.js"></script>
-  <script src="../../assets/js/shared/accesso.js"></script>
-  <script src="core/salva-dati.js"></script>
-  <script src="core/modifiche.js"></script>
-  <script src="core/nuovo-anno-model.js"></script>
-  <script src="core/nuovo-anno.js"></script>
-  <script src="core/setup.js"></script>
-</body>
-
+    <script src="../../config/site.js"></script>
+    <script src="../../assets/js/nas-telemetry.js"></script>
+    <script src="../../assets/js/shared/accesso.js"></script>
+    <script src="core/salva-dati.js"></script>
+    <script src="core/modifiche.js"></script>
+    <script src="core/nuovo-anno-model.js"></script>
+    <script src="core/nuovo-anno.js"></script>
+    <script src="core/setup.js"></script>
+  </body>
 </html>

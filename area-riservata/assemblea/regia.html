@@ -1,115 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Regia — Assemblea di Gruppo</title>
+    <link rel="icon" href="../../assets/img/logo-grande.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="../../assets/css/theme.css" />
+    <link rel="stylesheet" href="core/regia.css" />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>Regia — Assemblea di Gruppo</title>
-  <link rel="icon" href="../../assets/img/logo-grande.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="../../assets/css/theme.css">
-  <link rel="stylesheet" href="core/regia.css">
-</head>
+  <body>
+    <header>
+      <img src="../../assets/img/logo.png" alt="" />
+      <h1>Regia</h1>
+      <span id="b-assemblea" class="pill">Assemblea…</span>
+      <span id="b-live" class="pill">Live…</span>
+      <span id="b-fb" class="pill">Server...</span>
+      <span class="sp"></span>
+      <button
+        id="schermo"
+        hidden
+        title="Finestra con sole slide: mettila a schermo intero sul secondo schermo o condividila"
+      >
+        ▣ Apri schermo presentazione
+      </button>
+      <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
+      <button id="esci" class="sec" hidden>Esci</button>
+    </header>
 
-<body>
-  <header>
-    <img src="../../assets/img/logo.png" alt="">
-    <h1>Regia</h1>
-    <span id="b-assemblea" class="pill">Assemblea…</span>
-    <span id="b-live" class="pill">Live…</span>
-    <span id="b-fb" class="pill">Firebase…</span>
-    <span class="sp"></span>
-    <button id="schermo" hidden title="Finestra con sole slide: mettila a schermo intero sul secondo schermo o condividila">▣ Apri schermo presentazione</button>
-    <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
-    <button id="esci" class="sec" hidden>Esci</button>
-  </header>
-
-  <section id="login" hidden>
-    <h2>Area riservata</h2>
-    <p>Inserisci la chiave di accesso per aprire la regia.</p>
-    <form id="login-form"><input id="chiave" type="password" autocomplete="current-password" placeholder="Chiave regia" required><button>Entra</button></form>
-    <p id="login-err" class="err" role="alert"></p>
-  </section>
-
-  <section id="avviso" class="avviso" role="status" hidden>
-    <h2>ASSEMBLEA NON INIZIATA</h2>
-    <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
-    <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
-    <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
-  </section>
-
-  <main id="app" hidden>
-    <section class="avvio-live">
-      <button id="inizia" disabled>Avvia live</button>
-      <p id="avvio-stato" role="status" aria-live="polite"></p>
-    </section>
-    <section class="onda">
-      <div class="lbl"><b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span></div>
-      <div class="fit"><div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div></div>
-      <h2 id="titolo">…</h2>
-    </section>
-
-    <section class="lato">
-      <div class="lbl">Prossima <span id="pos-next"></span></div>
-      <div class="fit"><div class="frame"><iframe id="anteprima" title="Prossima slide" tabindex="-1"></iframe><div id="fine" hidden>Fine presentazione</div></div></div>
-      <h3 id="titolo-next">…</h3>
-      <div class="cmd">
-        <button id="prev" class="big-btn sec" aria-label="Slide precedente">‹<small>Indietro</small></button>
-        <button id="next" class="big-btn" aria-label="Slide successiva">›<small>Avanti</small></button>
-      </div>
-      <div class="mini">
-        <button id="home" class="sec">Inizio</button>
-        <button id="odg" class="sec">Ordine del giorno</button>
-        <button id="pdf" class="sec" hidden>PDF</button>
-        <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
-      </div>
-      <p class="tasti">Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd> <kbd>PagSu</kbd> indietro</p>
-    </section>
-
-    <section class="dati-live card">
-      <h3>Presenti e ufficio di presidenza</h3>
-      <details class="note"><summary>Come funziona</summary>Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si aggiornano entro circa 10 secondi. Questi dati sono pubblici.</details>
-      <form id="dati-live-form">
-        <fieldset id="dati-live-campi" disabled></fieldset>
-        <div class="mini">
-          <button id="dati-live-pubblica" type="submit" disabled>Pubblica live</button>
-          <button id="dati-live-ricarica" type="button" class="sec" disabled>Ricarica valori</button>
-        </div>
+    <section id="login" hidden>
+      <h2>Area riservata</h2>
+      <p>Inserisci la chiave di accesso per aprire la regia.</p>
+      <form id="login-form">
+        <input
+          id="chiave"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Chiave regia"
+          required
+        /><button>Entra</button>
       </form>
-      <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
+      <p id="login-err" class="err" role="alert"></p>
     </section>
 
-    <section class="fb card">
-      <h3>Firebase <small>piano gratuito Spark</small></h3>
-      <div class="kpi">
-        <div><b id="k-disp">–</b><span>dispositivi collegati</span><small id="k-ruoli"></small></div>
-        <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
+    <section id="avviso" class="avviso" role="status" hidden>
+      <h2>ASSEMBLEA NON INIZIATA</h2>
+      <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
+      <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
+      <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
+    </section>
+
+    <main id="app" hidden>
+      <section class="avvio-live">
+        <button id="inizia" disabled>Avvia live</button>
+        <p id="avvio-stato" role="status" aria-live="polite"></p>
+      </section>
+      <section class="onda">
+        <div class="lbl">
+          <b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span>
+        </div>
+        <div class="fit">
+          <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
+        </div>
+        <h2 id="titolo">…</h2>
+      </section>
+
+      <section class="lato">
+        <div class="lbl">Prossima <span id="pos-next"></span></div>
+        <div class="fit">
+          <div class="frame">
+            <iframe id="anteprima" title="Prossima slide" tabindex="-1"></iframe>
+            <div id="fine" hidden>Fine presentazione</div>
+          </div>
+        </div>
+        <h3 id="titolo-next">…</h3>
+        <div class="cmd">
+          <button id="prev" class="big-btn sec" aria-label="Slide precedente">‹<small>Indietro</small></button>
+          <button id="next" class="big-btn" aria-label="Slide successiva">›<small>Avanti</small></button>
+        </div>
+        <div class="mini">
+          <button id="home" class="sec">Inizio</button>
+          <button id="odg" class="sec">Ordine del giorno</button>
+          <button id="pdf" class="sec" hidden>PDF</button>
+          <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
+        </div>
+        <p class="tasti">
+          Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd>
+          <kbd>PagSu</kbd> indietro
+        </p>
+      </section>
+
+      <section class="dati-live card">
+        <h3>Presenti e ufficio di presidenza</h3>
+        <details class="note">
+          <summary>Come funziona</summary>
+          Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si
+          aggiornano entro circa 10 secondi. Questi dati sono pubblici.
+        </details>
+        <form id="dati-live-form">
+          <fieldset id="dati-live-campi" disabled></fieldset>
+          <div class="mini">
+            <button id="dati-live-pubblica" type="submit" disabled>Pubblica live</button>
+            <button id="dati-live-ricarica" type="button" class="sec" disabled>Ricarica valori</button>
+          </div>
+        </form>
+        <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
+      </section>
+
+      <section class="fb card">
+        <div id="legacy-service-metrics">
+          <h3>Firebase <small>piano gratuito Spark</small></h3>
+          <div class="kpi">
+            <div><b id="k-disp">–</b><span>dispositivi collegati</span><small id="k-ruoli"></small></div>
+            <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
+          </div>
+          <div class="meter">
+            <span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i>
+          </div>
+          <details class="note">
+            <summary>Quote e consumi reali</summary>
+            <div class="meter">
+              <span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b>
+            </div>
+            <div class="meter">
+              <span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b>
+            </div>
+            360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella
+            console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del
+            database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
+            <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.
+          </details>
+        </div>
+        <div id="nas-monitor" hidden>
+          <div class="monitor-heading">
+            <h3>Monitoraggio NAS</h3>
+            <button id="nas-expand" class="sec" type="button">Apri monitor</button
+            ><button id="nas-refresh" class="sec" type="button">Aggiorna</button>
+          </div>
+          <p id="nas-status" class="monitor-status" role="status" aria-live="polite">Caricamento...</p>
+          <p id="nas-alerts" class="monitor-alert" role="status" hidden></p>
+          <div class="nas-kpi">
+            <div><b id="nas-visits">-</b><span>Visite oggi</span></div>
+            <div><b id="nas-online">-</b><span>Schede visibili online</span></div>
+            <div><b id="nas-cpu">-</b><span>CPU backend / un core</span></div>
+            <div><b id="nas-ram">-</b><span>RAM processo backend</span></div>
+            <div><b id="nas-host-cpu">-</b><span>CPU intero NAS</span></div>
+            <div><b id="nas-host-ram">-</b><span>RAM intero NAS</span></div>
+            <div><b id="nas-latency">-</b><span>Risposta API p95 / 5 min</span></div>
+            <div><b id="nas-errors">-</b><span>Segnalazioni oggi</span></div>
+          </div>
+          <div class="monitor-tabs" role="tablist" aria-label="Monitoraggio">
+            <button
+              id="tab-traffico"
+              type="button"
+              role="tab"
+              data-monitor-tab="traffico"
+              aria-controls="monitor-traffico"
+              aria-selected="true"
+            >
+              Traffico
+            </button>
+            <button
+              id="tab-server"
+              type="button"
+              role="tab"
+              data-monitor-tab="server"
+              aria-controls="monitor-server"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Server
+            </button>
+            <button
+              id="tab-problemi"
+              type="button"
+              role="tab"
+              data-monitor-tab="problemi"
+              aria-controls="monitor-problemi"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Problemi
+            </button>
+          </div>
+          <div id="monitor-traffico" role="tabpanel" aria-labelledby="tab-traffico">
+            <p id="nas-total" class="monitor-status">-</p>
+            <table class="monitor-table">
+              <thead>
+                <tr>
+                  <th>Giorno</th>
+                  <th>Visite</th>
+                  <th>Pagine</th>
+                </tr>
+              </thead>
+              <tbody id="nas-days"></tbody>
+            </table>
+            <details>
+              <summary>Pagine viste oggi</summary>
+              <table class="monitor-table">
+                <thead>
+                  <tr>
+                    <th>Pagina</th>
+                    <th>Viste</th>
+                  </tr>
+                </thead>
+                <tbody id="nas-pages"></tbody>
+              </table>
+            </details>
+          </div>
+          <div id="monitor-server" role="tabpanel" aria-labelledby="tab-server" hidden>
+            <dl class="monitor-details">
+              <dt>Flussi live SSE reali</dt>
+              <dd id="nas-streams">-</dd>
+              <dt>Dispositivi presentazione / 60 s</dt>
+              <dd id="nas-devices">-</dd>
+              <dt>RAM container / limite</dt>
+              <dd id="nas-container">-</dd>
+              <dt>Heap JavaScript</dt>
+              <dd id="nas-heap">-</dd>
+              <dt>Ritardo event loop p95</dt>
+              <dd id="nas-lag">-</dd>
+              <dt>Volume dati</dt>
+              <dd id="nas-disk">-</dd>
+              <dt>Database e WAL</dt>
+              <dd id="nas-db">-</dd>
+              <dt>Errori API 5xx / 5 min</dt>
+              <dd id="nas-api-errors">-</dd>
+              <dt>Richieste limitate / 5 min</dt>
+              <dd id="nas-api-limited">-</dd>
+            </dl>
+            <p id="nas-release" class="monitor-status">-</p>
+          </div>
+          <div id="monitor-problemi" role="tabpanel" aria-labelledby="tab-problemi" hidden>
+            <p id="nas-no-events" class="monitor-status">Nessuna segnalazione recente.</p>
+            <ol id="nas-events" class="monitor-events"></ol>
+            <details>
+              <summary>Ultime schede visibili</summary>
+              <table class="monitor-table">
+                <thead>
+                  <tr>
+                    <th>Pagina</th>
+                    <th>Ping</th>
+                    <th>Ultimo</th>
+                  </tr>
+                </thead>
+                <tbody id="nas-sessions"></tbody>
+              </table>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="lista card">
+        <h3>Slide</h3>
+        <ol id="slide"></ol>
+      </section>
+    </main>
+
+    <dialog id="nas-monitor-dialog" aria-labelledby="nas-dialog-title">
+      <div class="monitor-heading">
+        <h2 id="nas-dialog-title">Monitoraggio NAS</h2>
+        <button id="nas-close" class="sec" type="button">Chiudi</button>
       </div>
-      <div class="meter"><span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i></div>
-      <details class="note">
-        <summary>Quote e consumi reali</summary>
-        <div class="meter"><span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b></div>
-        <div class="meter"><span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b></div>
-        360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
-        <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.
-      </details>
-    </section>
+      <div id="nas-monitor-expanded"></div>
+    </dialog>
 
-    <section class="lista card">
-      <h3>Slide</h3>
-      <ol id="slide"></ol>
-    </section>
-  </main>
-
-  <script src="../../config/site.js"></script>
-  <script src="../../assets/js/shared/accesso.js"></script>
-  <script src="../../assets/js/shared/assemblea.js"></script>
-  <script src="core/presenza.js"></script>
-  <script src="core/modifiche.js"></script>
-  <script src="core/regia-dati.js"></script>
-  <script src="core/regia.js"></script>
-</body>
-
+    <script src="../../config/site.js"></script>
+    <script src="../../assets/js/nas-telemetry.js"></script>
+    <script src="../../assets/js/shared/accesso.js"></script>
+    <script src="../../assets/js/shared/assemblea.js"></script>
+    <script src="core/presenza.js"></script>
+    <script src="core/modifiche.js"></script>
+    <script src="core/regia-dati.js"></script>
+    <script src="core/monitoraggio.js"></script>
+    <script src="core/regia.js"></script>
+  </body>
 </html>

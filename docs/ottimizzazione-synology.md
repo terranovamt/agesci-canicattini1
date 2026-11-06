@@ -1,18 +1,88 @@
-# Ottimizzazione e deployment Synology DS1522+
+# Synology DS1522+: installazione da zero e monitoraggio
 
-[README](../README.md) | [Sviluppo](sviluppo.md) | [Firebase](firebase.md)
+[README](../README.md) | [Sviluppo](sviluppo.md)
+
+## Ordine di installazione
+
+Questa guida riguarda il branch `NAS`, non `main`. Le nuove modifiche devono
+essere pubblicate su GitHub prima di installarle sul NAS. Nessun comando di
+questa guida installa qualcosa sul NAS dal terminale Windows automaticamente.
+
+1. Verificare che la linea Sky WiFi consenta HTTPS in ingresso su IP pubblico.
+2. Registrare il nome gratuito `nomegruppo.synology.me` in DSM.
+3. Preparare DSM, volume, pacchetti e accesso amministrativo.
+4. Clonare `NAS`, creare configurazione e password amministrativa.
+5. Configurare certificato HTTPS, reverse proxy DSM e port forwarding del router.
+6. Creare l'attivita' DSM di deployment ed eseguire il primo avvio.
+7. Collaudare accesso, PDF, diretta e monitoraggio con almeno due dispositivi.
+8. Attivare aggiornamento automatico, calendari e backup.
+9. Controllare periodicamente risorse, log, spazio e aggiornamenti.
+
+La modalita' scelta e' **Synology DDNS + reverse proxy DSM**, senza acquistare
+un dominio e senza Cloudflare. `nomegruppo` e' un esempio: scegliere un nome
+disponibile. Il DDNS non e' un tunnel e non rende raggiungibile una linea
+dietro CGNAT. QuickConnect non sostituisce questa pubblicazione del sito.
+
+## Verifica Sky WiFi prima di aprire porte
+
+Non si puo' stabilire dalla sola marca dell'operatore se la singola linea
+disponga di IPv4 pubblico dedicato e di porte in ingresso utilizzabili.
+La procedura seguente riguarda IPv4 pubblico, anche dinamico; non serve un
+indirizzo statico a pagamento per il solo DDNS.
+
+1. Aprire l'app o il pannello del proprio router Sky e cercare indirizzo WAN,
+   stato connessione e funzioni di inoltro porte. Menu e funzioni dipendono
+   dal modello Hub e dal firmware: non applicare istruzioni di un altro router.
+2. Un indirizzo WAN in `100.64.0.0`-`100.127.255.255` indica uno spazio usato
+   per NAT condiviso. Indirizzi `10.x`, `192.168.x` e `172.16.x`-`172.31.x`
+   non sono IPv4 pubblici. Anche router a monte o meccanismi di condivisione
+   delle porte possono impedire l'accesso diretto.
+3. Confrontare, personalmente, l'IPv4 WAN con l'IPv4 visto da un servizio
+   esterno. Il confronto e' un indizio, non una certificazione che la 443
+   sia utilizzabile. Non e' necessario pubblicare il proprio IP in chat.
+4. Se non e' chiaro, chiedere all'assistenza Sky:
+
+> Uso Sky WiFi e devo pubblicare un sito HTTPS sul mio NAS. La mia linea ha
+> un IPv4 pubblico non condiviso e consente connessioni TCP in ingresso sulla
+> porta 443? Sono presenti CGNAT, MAP-T o limitazioni delle porte? Se necessario,
+> e' possibile abilitare un IPv4 pubblico raggiungibile e a quali condizioni?
+
+Non presumere che una variazione sia disponibile o gratuita: verificarlo
+direttamente con Sky. La disponibilita' di IPv6 da sola non rende il sito
+raggiungibile dai visitatori che hanno solo IPv4.
+
+Se la porta non e' utilizzabile, **fermarsi prima del port forwarding**:
+il DDNS puo' risultare configurato ma il sito non sara' pubblico. Serve
+risolvere la raggiungibilita' con l'operatore o rivalutare la pubblicazione.
+La prova conclusiva si fa dalla rete mobile, a servizio HTTPS effettivamente
+avviato, non con una porta vuota e non soltanto dalla stessa Wi-Fi.
+
+## Passo zero: pubblicare dal PC
+
+1. In VS Code verificare che il branch selezionato sia **NAS**, non `main`.
+2. Aprire **Controllo codice sorgente**, rivedere i file modificati e preparare
+   solo quelli dell'implementazione NAS. Non includere password, token, file
+   `.env` reali o database. Il file `nas.env.example` contiene solo esempi.
+3. Creare un commit con un messaggio riconoscibile e usare **Push/Sincronizza**.
+   Se l'accesso GitHub fallisce, ripristinarlo personalmente, senza condividere
+   credenziali in chat. Non unire questo lavoro a `main` per installarlo sul NAS.
+4. Verificare su GitHub che il branch `NAS` mostri quel commit e i file
+   `server/monitor.cjs`, `deploy/synology/update.sh` e questa guida.
+5. Soltanto dopo passare ai comandi sul NAS. Dopo il primo setup, i successivi
+   commit pubblicati su questo stesso branch saranno rilevati dall'attivita'.
 
 ## Architettura e ambito
 
 Questo progetto serve HTML, CSS, JavaScript, immagini, PDF e snapshot JSON.
-La diretta usa Firebase; i salvataggi usano le API GitHub. Non esistono un
-backend Node/Next, un database SQL o risposte IA. Le pagine sono gia' statiche:
-non occorre introdurre SSR o un framework SSG per pubblicarle.
-
-Il deployment aggiunto in `deploy/synology/` e' alternativo a GitHub Pages,
-non lo sostituisce automaticamente. Implementa Gzip, cache browser prudente,
-limiti di risorse, healthcheck e un tunnel opzionale. Le ottimizzazioni nella
-roadmap seguente sono proposte, non funzionalita' gia' implementate.
+Sul branch `NAS`, diretta, login, contenuti e PDF usano Node 24 e SQLite sul
+NAS, senza Firebase o token GitHub. Nginx serve le pagine statiche e inoltra
+le API al backend. Non occorre SSR. I dati iniziali del repository vengono
+importati soltanto al primo avvio; i nuovi deployment non sovrascrivono
+contenuti e PDF salvati dall'interfaccia. Le presenze sono temporanee.
+GitHub resta la sorgente del codice; Synology DDNS e i feed calendari sono esterni.
+Font e librerie di terze parti non sono stati tutti trasferiti sul NAS:
+questa non e' una versione completamente offline. La roadmap seguente
+riguarda ottimizzazioni ulteriori, non tutte implementate.
 
 ## Roadmap architetturale
 
@@ -37,7 +107,7 @@ solo per URL: due aggiornamenti possono avere significati diversi.
 ### Backend, caching e infrastruttura futuri
 
 Redis, BullMQ e PostgreSQL non sono inclusi nel Compose: aggiungerli ora
-consumerebbe risorse senza velocizzare il sito. Se viene introdotto un backend:
+consumerebbe risorse senza velocizzare il sito. Per eventuali evoluzioni:
 
 - Separare Redis per cache (`allkeys-lru`, TTL) da Redis per code BullMQ
   (`noeviction`, persistenza e backup): l'eviction puo' distruggere dati delle code.
@@ -56,12 +126,93 @@ consumerebbe risorse senza velocizzare il sito. Se viene introdotto un backend:
 
 ## Preparazione NAS
 
-1. Installare Container Manager e creare la cartella condivisa `docker` in DSM.
-2. Copiare o clonare l'intero repository in `/volume1/docker/agesci-canicattini1`
-   (adattare `volume1` al volume reale). Conservare maiuscole/minuscole dei percorsi.
-3. Il Compose e' in `deploy/synology/compose.yaml`; il contesto di build `../..`
-   deve restare la radice del repository. Non copiare soltanto il Compose.
-4. Non usare `tools/preview.cjs` come server pubblico: simula accesso e servizi.
+Questi passi si eseguono **sul NAS**, non su Windows. Prima pubblicare su `NAS`
+i file della nuova implementazione. Non usare la preview come server pubblico.
+
+### DSM e accesso
+
+1. In **Pannello di controllo > Aggiornamento e ripristino**, aggiornare DSM
+   a una versione che supporta Container Manager. Predisporre prima un backup.
+2. In **Gestione archiviazione**, controllare stato del pool/volume e spazio.
+   Le build, le immagini e le release richiedono margine: tenere almeno alcuni
+   GiB liberi, preferibilmente 10 GiB o piu', e monitorarne la crescita.
+3. In **Centro pacchetti**, installare **Container Manager** e, se Git non e'
+   disponibile, **Git Server**. Quest'ultimo fornisce Git; non occorre ospitare
+   un server Git pubblico sul NAS.
+4. In **Pannello di controllo > Cartella condivisa**, creare `docker` sul volume
+   scelto. Permessi di manutenzione agli amministratori, non agli utenti generici.
+5. In **Pannello di controllo > Opzioni regionali > Ora**, configurare NTP.
+   Orari errati compromettono certificati, sessioni e correlazione degli eventi.
+6. In **Terminale e SNMP > Terminale**, abilitare SSH per la configurazione.
+   Dal PC usare `ssh tuo-utente-admin@IP_LOCALE_NAS`, esclusivamente su LAN/VPN.
+   Non aprire la porta SSH sul router. Acquisire personalmente i privilegi
+   amministrativi necessari; se il terminale chiede una password, inserirla
+   nel proprio terminale, mai in chat.
+   Se l'account e' abilitato alla manutenzione amministrativa, eseguire
+   personalmente `sudo -i` sul NAS per i comandi che richiedono root.
+   Non usare quell'accesso per navigare o eseguire codice non verificato.
+7. Verificare questi comandi sul NAS:
+
+```sh
+git --version
+bash --version
+docker compose version
+docker compose up --help
+```
+
+Serve Compose V2 e l'opzione `--wait`. Se manca, fermarsi e aggiornare i
+pacchetti: non sostituire alla cieca lo script con `docker-compose` V1.
+Nel piano di backup salvare anche la configurazione DSM e le attivita' pianificate.
+
+### Cartelle e configurazione
+
+1. Installare Container Manager e creare la cartella condivisa `docker`.
+   Verificare da SSH `git --version`, `bash --version`, `docker compose version`.
+   Git puo' essere fornito da Git Server. Serve Compose V2 con `up --wait`;
+   aggiornare DSM/Container Manager se la versione disponibile non lo supporta.
+2. Usare `/volume1/docker/agesci-nas` come cartella stabile. Adattare il volume
+   in tutti i percorsi, inclusi `nas.env` e le attivita' DSM.
+3. Recuperare gli script iniziali dal branch:
+
+```sh
+mkdir -p /volume1/docker/agesci-nas
+git clone --single-branch --branch NAS https://github.com/terranovamt/agesci-canicattini1.git /volume1/docker/agesci-nas/bootstrap
+cp /volume1/docker/agesci-nas/bootstrap/deploy/synology/update.sh /volume1/docker/agesci-nas/update.sh
+cp /volume1/docker/agesci-nas/bootstrap/deploy/synology/nas.env.example /volume1/docker/agesci-nas/nas.env
+mkdir -p /volume1/docker/agesci-nas/secrets
+```
+
+4. Modificare `nas.env` con l'origine pubblica reale, per esempio
+   `NAS_PUBLIC_ORIGIN=https://nomegruppo.synology.me`, senza slash finale o percorso.
+   Mantenere dati in `agesci-nas/data` e secret in `agesci-nas/secrets`.
+   Lasciare `COMPOSE_PROFILES=` vuoto: Cloudflare non viene avviato.
+   Su un'installazione gia' presente rimuovere il vecchio valore `tunnel`.
+5. Creare `secrets/admin-password.txt` con una password unica di almeno 16
+   caratteri. Non serve alcun token Cloudflare per DDNS. Il file deve contenere
+   solo la password, senza nome di variabile. Inserirla sul NAS, mai in chat o Git.
+   Usare una sola riga, testo UTF-8 senza BOM. Non mettere i valori in comandi
+   `echo` condivisi o nella cronologia del terminale. Modificare i file con un
+   editor locale protetto o caricarli personalmente tramite File Station.
+   Se si lavora da terminale, usare un editor disponibile sul NAS, per esempio
+   `vi /volume1/docker/agesci-nas/nas.env` per la configurazione e gli equivalenti
+   percorsi dei due file secret. In `vi`: `i` per inserire, poi Esc e `:wq` per
+   salvare e uscire. Non mostrare o copiare il contenuto dei secret in log/chat.
+6. Proteggere cartella, configurazione e script: l'updater gestisce Docker come
+   root e non deve essere modificabile da utenti non autorizzati. I file secret
+   devono essere leggibili dai processi non root nei container.
+
+Esempio di permessi POSIX da applicare con un terminale NAS gia' autorizzato:
+
+```sh
+chown root:root /volume1/docker/agesci-nas /volume1/docker/agesci-nas/secrets
+chmod 700 /volume1/docker/agesci-nas /volume1/docker/agesci-nas/secrets
+chmod 600 /volume1/docker/agesci-nas/nas.env /volume1/docker/agesci-nas/update.sh
+chmod 444 /volume1/docker/agesci-nas/secrets/admin-password.txt
+```
+
+I file sono leggibili nei container; la cartella host ne limita l'accesso.
+Verificare anche le ACL DSM. I secrets Compose sono file montati, non un vault
+cifrato; l'amministratore NAS/Docker puo' leggerli.
 
 Non servono cartelle Redis o PostgreSQL. Un volume SSD puo' ridurre latenza I/O,
 non azzerarla; verificare compatibilita' SSD/M.2, versione DSM e backup prima
@@ -69,67 +220,363 @@ di spostare dati. Il DS1522+ deve comunque avere risorse per le altre funzioni N
 
 ## Avvio con Container Manager
 
-Nella sezione Progetto creare `agesci-site`, con percorso
-`/volume1/docker/agesci-canicattini1/deploy/synology`, usando il file Compose
-esistente. Se la versione DSM non accetta `compose.yaml`, selezionarlo nella
-procedura oppure usare i comandi seguenti via SSH dal repository:
+Non creare un secondo progetto manualmente: l'updater usa il nome stabile
+`agesci-nas`. In **Pannello di controllo > Utilita' di pianificazione** creare
+un'attivita' definita dall'utente, eseguita da **root**, con questo script:
 
 ```sh
-docker compose -f deploy/synology/compose.yaml config --quiet
-docker compose -f deploy/synology/compose.yaml up -d --build web
-docker compose -f deploy/synology/compose.yaml ps
-curl -I http://127.0.0.1:8080/
+export PATH=/usr/local/bin:/usr/bin:/bin:/var/packages/Git/target/bin:$PATH
+export NAS_ROOT=/volume1/docker/agesci-nas
+/bin/bash "$NAS_ROOT/update.sh"
 ```
 
-Il listener e' solo loopback sul NAS, non sul PC. La porta 8080 deve essere
-libera. Per una prova dal PC via SSH: `ssh -L 8080:127.0.0.1:8080 utente@IP_NAS`,
-poi aprire `http://127.0.0.1:8080`. Evitare di aprire porte sul router.
+Eseguirla una volta con **Esegui**, poi pianificarla **ogni giorno, ripetuta
+ogni minuto**. Abilitare notifiche per uscita non riuscita e controllare i log.
+In DSM selezionare tutti i giorni, l'intera giornata e l'intervallo di un minuto
+se disponibile. Se la versione DSM permette soltanto intervalli piu' lunghi,
+scegliere il minimo disponibile: il sito si aggiornera' con quella frequenza.
+Il listener 8080 e' solo loopback sul NAS e deve essere libero; il backend
+3000 non e' esposto. Il pubblico passa dal reverse proxy HTTPS di DSM.
 
-Ogni container ha 128 MiB e 0,5 CPU come limiti iniziali, filesystem in sola
-lettura e log ruotati. Verificare consumi e stato healthcheck sotto carico;
-questi valori non sono un dimensionamento certificato. Aggiornare periodicamente
-i tag delle immagini a versioni verificate; per build riproducibili fissare anche
-i digest. La build e il collaudo effettivi richiedono Docker in esecuzione.
+### Primo avvio e verifica
 
-## Pubblicazione con Cloudflare Tunnel
+1. Eseguire manualmente l'attivita' e aspettare il completamento della build.
+2. In Container Manager cercare il progetto/servizi `agesci-nas`: `app` e `web`
+   devono essere healthy. Non e' richiesto un container `cloudflared`.
+3. Dal terminale NAS controllare `curl http://127.0.0.1:8080/healthz`:
+   deve rispondere con `{"ok":true}`. Non e' un test completo del dominio pubblico.
+4. Aprire il dominio HTTPS da telefono su rete mobile, non soltanto dalla Wi-Fi.
+5. Aprire area riservata con la password scelta, caricare un PDF di prova,
+   verificarlo nell'archivio e modificare un contenuto dal setup.
+6. Aprire la regia e una pagina pubblica su un secondo dispositivo; avviare la
+   diretta e verificare la sincronizzazione delle slide.
+7. Aprire **Monitoraggio NAS > Apri monitor**: controllare flussi reali, CPU/RAM,
+   latenza, release e problemi. La prima misura CPU richiede due campioni;
+   attendere almeno 5-10 secondi. I numeri del browser possono aggiornarsi
+   con il heartbeat di 30 secondi.
+8. Pubblicare un piccolo commit su `NAS` e verificare che cambi la release
+   nella regia, ma restino il PDF e il contenuto salvati dall'interfaccia.
+9. Provare un riavvio controllato: i dati persistono, gli amministratori devono
+   riaccedere e il pubblico deve riconnettersi. Non farlo durante un'assemblea.
 
-Un tunnel nominato richiede un account e, per un hostname pubblico stabile,
-normalmente un dominio gestito su Cloudflare. Il servizio puo' rientrare nel
-piano gratuito, ma dominio, NAS, elettricita' e disponibilita' non sono gratis.
-I Quick Tunnel temporanei `trycloudflare.com` non sono una soluzione di
-produzione. Verificare limiti e condizioni correnti del piano.
+Solo dopo questi controlli aggiornare i collegamenti pubblici e dismettere il
+vecchio Firebase. Non fare il primo collaudo con documenti o dati riservati.
 
-1. In Cloudflare Zero Trust creare un tunnel di tipo Cloudflared.
-2. Salvare **solo il token**, localmente sul NAS, in
-   `deploy/synology/tunnel-token.txt`. Non inserirlo nel Compose, nei comandi,
-   nel repository o nei messaggi. Il file e' escluso da Git e dal contesto Docker.
-3. Proteggere il file con le ACL DSM; assicurarsi che il processo non root del
-   container possa leggerlo. I secrets Compose locali sono file montati, non
-   un vault cifrato. Chi ha accesso amministrativo al NAS puo' leggerli.
-4. Avviare il profilo tunnel via SSH (oppure configurare il profilo nella UI
-   se la versione Container Manager lo supporta):
+Limiti iniziali: backend 512 MiB/1 CPU, Nginx e tunnel 128 MiB/0,5 CPU ciascuno,
+job calendari 256 MiB/0,5 CPU. Misurare sotto carico: non e' un dimensionamento
+certificato. I servizi hanno filesystem in sola lettura, volumi espliciti e
+healthcheck; aggiornare versioni delle immagini e verificare i digest.
+
+## Pubblicazione con Synology DDNS
+
+### Registrare il nome gratuito
+
+1. Nel router riservare al NAS un IP LAN stabile tramite DHCP, per esempio
+   `192.168.1.50` se appartiene alla propria rete. Non usare l'esempio se la
+   propria LAN ha un altro intervallo.
+2. In DSM aprire **Pannello di controllo > Accesso esterno > DDNS > Aggiungi**.
+3. Scegliere provider **Synology**, accedere personalmente al proprio account
+   Synology e registrare un nome disponibile, per esempio `nomegruppo.synology.me`.
+4. Usare **Test di connessione** e salvare. Verificare stato normale e indirizzo
+   esterno corretto. Il NAS aggiornera' il DDNS quando cambia l'IP della linea.
+5. Impostare lo stesso nome in `NAS_PUBLIC_ORIGIN`. Non usare l'IP LAN come
+   origine pubblica e non inserire credenziali Synology nella configurazione app.
+
+### Certificato HTTPS
+
+1. Nel wizard DDNS Synology, se disponibile, scegliere l'opzione Let's Encrypt.
+   In alternativa andare in **Sicurezza > Certificato > Aggiungi > Ottieni un
+   certificato da Let's Encrypt**, indicando il nome esatto e la propria e-mail.
+2. Completare la convalida indicata da DSM e verificare certificato, dominio e
+   scadenza. La documentazione generale Synology richiede TCP 80 per la convalida
+   HTTP e il rinnovo Let's Encrypt: se il flusso usato richiede questa porta,
+   predisporre anche l'inoltro TCP 80 al NAS e mantenerlo utilizzabile per i
+   rinnovi, oppure adottare un metodo di convalida supportato alternativo.
+   Non presumere che chiuderla dopo il primo rilascio lasci funzionante il rinnovo.
+3. Assegnare il certificato al servizio di reverse proxy del sito da
+   **Sicurezza > Certificato > Impostazioni/Configura**. Non cambiare senza motivo
+   il certificato di tutti gli altri servizi del NAS.
+4. Verificare da un browser esterno che il certificato sia valido e senza avvisi.
+   Non risolvere un errore HTTPS chiedendo al pubblico di ignorarlo.
+
+### Reverse proxy DSM
+
+In **Pannello di controllo > Portale di accesso > Avanzate > Proxy inverso**
+creare una regola, per esempio `Sito gruppo`:
+
+| Campo                   | Valore                                                   |
+| ----------------------- | -------------------------------------------------------- |
+| Protocollo sorgente     | HTTPS                                                    |
+| Nome host sorgente      | Il nome registrato, per esempio `nomegruppo.synology.me` |
+| Porta sorgente          | 443                                                      |
+| Protocollo destinazione | HTTP                                                     |
+| Nome host destinazione  | `127.0.0.1`                                              |
+| Porta destinazione      | 8080                                                     |
+
+Nelle intestazioni della richiesta personalizzate impostare **X-Real-IP** a
+**`$remote_addr`**. Deve sostituire l'eventuale valore del client, non aggiungersi
+ad esso. Il Nginx dell'app inoltra questo indirizzo al backend per i rate limit.
+Non configurare il proxy verso 3000, 5000 o 5001. Non impostare un limite di
+upload inferiore a 28 MiB: un PDF di 20 MiB viene trasmesso in base64/JSON.
+
+La diretta usa SSE, non richiede WebSocket. Configurare timeout di lettura
+adeguati (almeno 90 secondi) e disabilitare il buffering delle risposte SSE
+se DSM offre l'opzione. Con heartbeat ogni 15 secondi lo stream deve restare
+attivo: verificarlo con due telefoni e una diretta di alcuni minuti.
+Se la versione DSM non espone l'opzione necessaria e gli eventi arrivano a
+blocchi, fermare il collaudo e risolvere il proxy; non modificare alla cieca
+i file Nginx generati da DSM, che gli aggiornamenti possono riscrivere.
+
+### Router Sky WiFi e firewall
+
+1. Solo dopo aver verificato l'IP pubblico, nel proprio router configurare
+   l'inoltro manuale **TCP esterna 443 -> IP LAN del NAS, TCP interna 443**.
+   Il menu puo' chiamarsi inoltro porte/port forwarding; consultare le istruzioni
+   del proprio modello Sky Hub. Non creare regole automatiche UPnP alla cieca.
+2. Se richiesto dal metodo Let's Encrypt adottato, aggiungere TCP 80 -> NAS:80
+   per la convalida. La navigazione del sito e il login devono usare HTTPS.
+3. Non aprire 5000/5001 (DSM), 22 (SSH), 3000 (backend), 8080 (container),
+   porte database o tutta la DMZ verso il NAS. Non attivare amministrazione
+   remota del router solo per pubblicare il sito.
+4. Nel firewall DSM consentire le sole porte necessarie per il sito e per
+   la manutenzione dalla LAN/VPN. Le regole IPv6 sono separate da quelle IPv4:
+   non lasciare altri servizi pubblici tramite IPv6 e non pubblicare un record
+   AAAA se non si e' verificata quella raggiungibilita'.
+5. Con Wi-Fi disattivata sul telefono aprire `https://nomegruppo.synology.me`.
+   Verificare anche che l'indirizzo pubblico non mostri la dashboard DSM.
+   In caso contrario richiudere la pubblicazione e correggere la regola.
+6. Se funziona da rete mobile ma non da casa, verificare NAT loopback/hairpin
+   del router o usare DNS locale coerente; non cambiare l'origine dell'app a caso.
+
+Il DDNS e il certificato possono essere gratuiti; restano elettricita', NAS,
+backup e le eventuali condizioni dell'operatore. Non e' inclusa una CDN.
+Il traffico pubblico raggiunge direttamente la connessione Sky e il reverse
+proxy: servono aggiornamenti, password robusta, backup e controllo dei log.
+
+Fonti ufficiali: [DDNS Synology](https://kb.synology.com/it-it/DSM/help/DSM/AdminCenter/connection_ddns?version=7)
+e [certificati DSM](https://kb.synology.com/it-it/DSM/help/DSM/AdminCenter/connection_certificate?version=7).
+Le condizioni della singola linea Sky e la configurazione reale di router/NAS
+non sono state verificate da questo ambiente.
+
+La sessione usa cookie HttpOnly, Secure e SameSite=Strict, dura otto ore e
+non conserva la password nel browser. Viene invalidata al riavvio del backend,
+anche dopo il deployment: gli amministratori devono accedere di nuovo;
+il pubblico riconnette lo stream. Slide e PDF sono pubblici. Il limite di upload
+e' inferiore a 20 MiB. Non esporre il backend direttamente: si fida dell'IP
+inoltrato da Nginx. Disattivare il vecchio Firebase solo dopo il collaudo e
+il cambio dei link pubblici. Non pubblicare questo branch NAS su GitHub Pages.
+
+## Monitoraggio in regia
+
+Il pannello aggiorna i dati ogni cinque secondi quando la regia e' visibile.
+Usare **Apri monitor** su laptop/telefono per consultare il riepilogo e le
+schede **Traffico**, **Server** e **Problemi** senza lo spazio ridotto delle slide.
+L'endpoint `/api/metrics` richiede una sessione amministrativa: non renderlo pubblico.
+
+| Indicatore                | Significato e limite                                                                                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visite oggi               | Sessioni browser osservate; nuova visita dopo 30 minuti di inattivita'. Non sono persone uniche o accessi certificati                                             |
+| Pagine                    | Caricamenti delle pagine monitorate, con deduplicazione dei retry                                                                                                 |
+| Schede visibili online    | Schede con heartbeat recente e visibili; non tutti i TCP aperti. Scadenza dopo 90 secondi                                                                         |
+| Flussi SSE reali          | Connessioni streaming attualmente aperte sul backend; limite globale 500                                                                                          |
+| Dispositivi presentazione | Heartbeat della presentazione/regia negli ultimi 60 secondi, distinto dal traffico generale                                                                       |
+| CPU backend / un core     | CPU usata dal processo Node nel campione; 100% equivale a un core. Non e' la CPU totale del NAS                                                                   |
+| RAM processo              | RSS reale del processo Node; distinta dal heap JavaScript e dalla memoria cgroup                                                                                  |
+| RAM container             | Utilizzo e limite letto dai cgroup quando disponibili; non include tutti gli altri container                                                                      |
+| CPU/RAM intero NAS        | Lettura dei soli `/proc/stat` e `/proc/meminfo` montati readonly; include gli altri carichi NAS                                                                   |
+| Risposta API p95          | 95esimo percentile delle risposte API osservate negli ultimi cinque minuti, con campione limitato; non include il tempo dell'intera pagina o la rete del telefono |
+| Ping scheda               | Tempo osservato dal browser per la richiesta diagnostica; include rete e proxy, aggiornamento ogni circa 30 secondi                                               |
+| Event loop                | Ritardo p95 nel processo Node; valore elevato puo' indicare lavoro bloccante                                                                                      |
+| Volume dati / database    | Spazio disponibile del filesystem e dimensione database/WAL, non una misura delle prestazioni I/O                                                                 |
+| Segnalazioni              | Categorie di errori browser/server, non errori unici: lo stesso problema puo' produrre piu' segnalazioni                                                          |
+
+Sono disponibili totale storico, ultimi sette giorni e pagine viste oggi.
+La dettagliazione giornaliera viene conservata circa 30 giorni; i totali restano.
+Gli eventi conservano al massimo 500 voci delle ultime 24 ore e il pannello
+mostra le ultime 20. Le righe di scheda sono anonime, senza nome, IP, URL con
+parametri o stack trace; non permettono di identificare una persona specifica.
+
+Ad blocker, JavaScript disabilitato, schede nascoste, bot e reti interrotte
+possono alterare i conteggi osservati. Le riconnessioni non dimostrano da sole
+un guasto del NAS. Se un telefono non raggiunge il server, puo' non riuscire
+neppure a inviare la segnalazione. Un valore `-` significa non disponibile,
+non zero utilizzo. Quando il pannello perde la connessione, svuota i valori
+live e segnala l'errore, invece di presentarli come aggiornati.
+
+### Privacy e opzioni di raccolta
+
+Il browser usa un identificativo casuale condiviso tra schede, rinnovato dopo
+30 minuti di inattivita', e uno separato per caricamento pagina. Il server
+memorizza solo hash temporanei per deduplicare le visite; niente fingerprint,
+nomi o IP nei report. Non vengono raccolti messaggi grezzi di errore, password,
+token, query string o contenuti dei documenti. I log tecnici non sono report
+di visite e devono essere protetti; gli error log possono comunque contenere
+dettagli operativi da rimuovere prima di condividerli.
+
+Prima della raccolta pubblica predisporre informativa e valutare base giuridica
+ed eventuale consenso con il responsabile privacy. Non e' una certificazione
+di conformita'. Per non raccogliere visite o errori browser impostare:
+
+```dotenv
+NAS_TELEMETRY_ENABLED=false
+```
+
+Il monitor di risorse/API e i flussi reali restano attivi per l'amministratore.
+Pubblicare un nuovo commit per ricreare i servizi con la configurazione nuova,
+oppure usare i comandi di manutenzione descritti sotto. Disattivare la raccolta
+non cancella automaticamente lo storico; l'eventuale rimozione va gestita con
+un backup e manutenzione del database, non cancellando l'intero sito.
+
+## Opzioni
+
+### Configurazione disponibile
+
+| Campo di `nas.env`                 | Scelta                                                                  |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `NAS_PUBLIC_ORIGIN`                | Origine HTTPS esatta, obbligatoria, senza percorso/slash finale         |
+| `COMPOSE_PROFILES=`                | Predefinito DDNS Synology: reverse proxy DSM, certificato e IP pubblico |
+| `COMPOSE_PROFILES=tunnel`          | Profilo alternativo conservato, non usato dal percorso DDNS             |
+| `NAS_DATA_DIR`                     | Percorso assoluto dei dati persistenti sul volume scelto                |
+| `NAS_ADMIN_PASSWORD_FILE`          | File secret della password; non la password stessa                      |
+| `NAS_TUNNEL_TOKEN_FILE`            | Solo per il profilo alternativo; non serve con DDNS                     |
+| `NAS_TELEMETRY_ENABLED=true/false` | Visite, schede e segnalazioni browser                                   |
+| `NAS_HOST_PROC=/host/proc`         | CPU/RAM dell'intero NAS tramite i due file readonly                     |
+| `NAS_HOST_PROC=`                   | Non leggere metriche host: restano backend/container                    |
+
+Non fissare `NAS_RELEASE_REVISION` manualmente: viene fornita dall'updater.
+Per impedire anche il mount dei due file host, rimuovere le due righe relative
+a `/proc/stat` e `/proc/meminfo` dal Compose nel branch `NAS`, mantenendo la
+raccolta host disabilitata. Non usare `privileged`, rete host o Docker socket
+per fornire metriche al backend pubblico.
+
+### Solo LAN/VPN, senza Cloudflare
+
+1. Impostare `COMPOSE_PROFILES=` e un'origine HTTPS raggiungibile dai dispositivi.
+2. Configurare il DNS locale/VPN affinche' quell'hostname risolva all'IP NAS.
+3. In **Portale di accesso > Avanzate > Proxy inverso** di DSM creare una regola:
+   sorgente HTTPS, hostname scelto, porta 443; destinazione HTTP,
+   `127.0.0.1`, porta 8080. Non usare come destinazione la porta del backend.
+4. In **Sicurezza > Certificato**, assegnare alla regola un certificato valido
+   per l'hostname. Se si usa una CA locale, tutti i telefoni devono fidarsi
+   di quella CA; non ignorare semplicemente gli avvisi del browser.
+5. Lasciare 443 disponibile solo in LAN/VPN e non aprire porte sul router.
+6. Eseguire l'updater e i test di login/diretta da un dispositivo della LAN/VPN.
+
+Il cookie amministrativo richiede HTTPS anche in LAN. Nginx Proxy Manager non
+e' necessario; aggiungerlo solo per esigenze separate e senza esporne la dashboard.
+Passando da tunnel a LAN, fermare manualmente il vecchio servizio `cloudflared`:
+disattivare un profilo non garantisce la rimozione di container gia' avviati.
+Lo stesso vale passando da tunnel a DDNS pubblico. Se non hai mai installato
+il tunnel, non c'e' nulla da fermare. Il profilo alternativo resta nei sorgenti,
+ma non e' parte della configurazione DDNS: l'inoltro IP attuale si aspetta
+`X-Real-IP` sovrascritto dal reverse proxy DSM. Prima di scegliere un altro
+proxy va verificata nuovamente anche quella catena di fiducia.
+
+### Risorse, volume e monitor esterno
+
+- Per modificare CPU/RAM aggiornare `cpus`, `mem_limit` e il limite heap Node
+  nel Compose del branch `NAS`, poi pubblicare il commit. Non alzare solo il
+  heap oltre il limite del container: lasciare margine per RSS e SQLite.
+- Per cambiare volume fermare deployment e servizi, fare un backup consistente,
+  copiare dati e secret con i permessi corretti e aggiornare tutti i percorsi.
+  Non avviare su un percorso vuoto aspettandosi che contenga i dati precedenti.
+- **Monitor risorse DSM** mostra CPU, RAM, rete e disco dell'intero NAS.
+  **Container Manager** mostra anche carico e log dei singoli container.
+  Questi strumenti completano la regia: il pannello non raccoglie SMART,
+  temperatura dei dischi o ogni metrica di Nginx/Cloudflared.
+- Per storici avanzati/alert esterni si puo' valutare Prometheus/Grafana o un
+  servizio RUM separato, con autenticazione e una nuova valutazione privacy.
+  Non sono installati da questo Compose e non serve aggiungerli al primo avvio.
+
+## Problemi e controlli
+
+| Sintomo                                   | Controllo e azione                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Un solo telefono lento, API e CPU normali | Confrontare ping della scheda, Wi-Fi/mobile, browser, risparmio energetico e orario della segnalazione              |
+| Tutti i telefoni lenti, CPU backend alta  | Controllare event loop, CPU quota e job contemporanei; sospendere build/manutenzione durante la diretta             |
+| NAS carico ma backend poco occupato       | Cercare backup, indicizzazione, altri container e carico disco in DSM                                               |
+| RAM vicina al limite, riavvii             | Controllare OOMKilled e log del container; ridurre carico o assegnare memoria adeguata                              |
+| HTTP 401 nel monitor o nei salvataggi     | Sessione scaduta o backend riavviato: accedere di nuovo                                                             |
+| HTTP 403 nelle scritture                  | Verificare origine HTTPS esatta, hostname e DNS; non disabilitare il controllo origine                              |
+| HTTP 409                                  | Modifiche concorrenti: ricaricare il contenuto prima di salvare                                                     |
+| HTTP 429                                  | Rate limit: controllare traffico condiviso e richieste anomale; non aumentare limiti senza misurare                 |
+| HTTP 502/503                              | Controllare healthcheck app/web, tunnel e spazio; il backend puo' essere fermo o al limite                          |
+| Diretta che riconnette con CPU normale    | Verificare rete del telefono, tunnel, proxy buffering e disconnessioni; non dedurre automaticamente un problema CPU |
+| CPU/RAM NAS mostrate come `-`             | Verificare `NAS_HOST_PROC`, mount readonly e disponibilita' dei file; su Windows non sono metriche NAS              |
+| Conteggio schede diverso dai flussi live  | Schede nascoste, iframe, connessioni streaming e scadenze diverse: sono indicatori distinti                         |
+| Calendario grigio/non aggiornato          | Controllare ultima attivita' DSM, log del job e disponibilita' feed; non cancellare lo snapshot                     |
+| Commit non distribuito                    | Controllare push su `NAS`, attivita' abilitata, Git, DNS, lock, spazio e log build                                  |
+| PDF/titoli tornati ai valori iniziali     | Il database/volume e' cambiato o vuoto: fermare servizi e verificare `NAS_DATA_DIR` e backup                        |
+
+Chiedere a chi ha problemi pagina, orario e tipo di rete/browser, non password.
+Per dettagli JavaScript serve la console di quel browser: la regia non raccoglie
+stack trace grezzi. Nessun pannello puo' conoscere con certezza ogni causa remota.
+
+Per manutenzione da terminale NAS, definire una funzione locale:
 
 ```sh
-docker compose -f deploy/synology/compose.yaml --profile tunnel up -d --build
-docker compose -f deploy/synology/compose.yaml --profile tunnel ps
+export NAS_ROOT=/volume1/docker/agesci-nas
+REVISION=$(cat "$NAS_ROOT/current-revision")
+export NAS_RELEASE_REVISION="$REVISION"
+compose() {
+  docker compose --project-name agesci-nas --env-file "$NAS_ROOT/nas.env" \
+   -f "$NAS_ROOT/releases/$REVISION/deploy/synology/compose.yaml" "$@"
+}
+compose ps
+compose logs --tail=100 app web
+APP=$(compose ps -q app)
+docker stats --no-stream "$APP"
+docker inspect --format '{{.State.OOMKilled}}' "$APP"
 ```
 
-5. Configurare l'hostname, per esempio `gruppo.example.org`, con servizio
-   `http://web:8080`: Cloudflared raggiunge Nginx nella rete Compose, non
-   `localhost` del proprio container. TLS e' terminato da Cloudflare;
-   questo collegamento HTTP interno non equivale a TLS fino all'origine.
-6. Verificare HTTPS, home, `/setup`, archivio, PDF, login e diretta da una rete
-   esterna. La sincronizzazione Firebase resta esterna al NAS.
+I log del tunnel si consultano con `compose logs --tail=100 cloudflared` solo
+se attivo. Non pubblicare `docker inspect` completo o l'intera configurazione:
+possono contenere valori operativi sensibili. I log Nginx di accesso includono
+solo metodo, percorso senza query, stato e durata, non sono visite uniche.
+Gli error log vanno comunque controllati e redatti prima di condividerli.
 
-Cloudflared usa connessioni in uscita: non occorrono IP statico o port forwarding;
-il firewall deve consentire le connessioni richieste dal servizio. Non esporre
-la dashboard DSM. Nginx Proxy Manager non e' necessario per questo percorso:
-aggiungerlo solo se serve a gestire altri host, con dashboard limitata a LAN/VPN.
+## Backup e ripristino
 
-Il cambio hostname cambia anche l'origine di `sessionStorage`: rifare il login
-e verificare eventuali vincoli di dominio dei servizi. I documenti e il codice
-restano pubblici. La chiave condivisa non e' un controllo di accesso ai file
-statici: protezioni aggiuntive richiedono un progetto di autenticazione dedicato.
+1. Creare una destinazione di backup distinta dal volume del sito, per esempio
+   USB o altro NAS; valutare Hyper Backup e cifratura della destinazione.
+2. Con la funzione `compose` precedente creare una copia consistente SQLite:
+
+```sh
+compose exec -T app node -e "const fs=require('node:fs');const {DatabaseSync,backup}=require('node:sqlite');fs.mkdirSync('/data/backups',{recursive:true});const db=new DatabaseSync('/data/site.sqlite');backup(db,'/data/backups/site-'+Date.now()+'.sqlite').finally(()=>db.close()).catch(e=>{console.error(e.message);process.exitCode=1})"
+```
+
+3. Salvare quella copia, `data/calendars`, `nas.env` e secret protetti/cifrati
+   sulla destinazione esterna. Il database contiene anche i PDF: non basta
+   copiare quelli iniziali dal repository. Non copiare soltanto il database
+   attivo mentre SQLite usa WAL.
+4. Pianificare il backup, applicare una politica di conservazione e controllare
+   spazio/esito. Non lasciare accumulare copie e release senza limiti.
+5. Per ripristinare, disabilitare temporaneamente le attivita' di aggiornamento
+   e calendario, fermare `app`, conservare una copia dell'attuale cartella dati
+   e sostituire il database con una copia verificata. Non lasciare il vecchio
+   WAL/SHM accanto a un database ripristinato: conservarli separatamente con la
+   vecchia copia, a servizi fermi. Ripristinare calendari e permessi.
+6. Riavviare il progetto con `compose up -d --wait --force-recreate`, verificare
+   login, PDF, contenuti e diretta e solo allora riabilitare le attivita'.
+
+Il rollback del codice non e' il ripristino dei dati. Eseguire una prova di
+ripristino prima dell'uso pubblico; un backup mai verificato non e' una garanzia.
+
+## Calendari ogni ora
+
+Dopo il primo avvio creare una seconda attivita' DSM, eseguita da root e
+ripetuta ogni ora (per esempio al minuto 17), con questo script:
+
+```sh
+export PATH=/usr/local/bin:/usr/bin:/bin:$PATH
+export NAS_ROOT=/volume1/docker/agesci-nas
+/bin/bash "$NAS_ROOT/sync-calendars.sh"
+```
+
+Eseguirla una volta manualmente. Il job usa la release corrente, i suoi feed,
+un timeout di dieci minuti e uno snapshot persistente. Un errore di feed
+conserva i dati precedenti e segnala il problema. Non servono GitHub Actions
+o commit dello snapshot. Non lanciare copie sovrapposte manualmente.
 
 ## Compressione e cache
 
@@ -139,8 +586,8 @@ automaticamente in tutte le immagini Nginx/Nginx Proxy Manager: aggiungere
 compressione al bordo secondo piano e impostazioni; verificarla via HTTPS,
 non dichiararla attiva solo perche' il tunnel funziona.
 
-- HTML, JSON, manifest, PDF, `config/site.js` e tutti i `dati.js`: `no-cache`,
-  cioe' rivalidazione prima del riuso, non divieto assoluto di memorizzazione.
+- Le API e i dati del backend usano `no-store`. HTML e manifest statici usano
+  `no-cache`, cioe' rivalidazione prima del riuso.
 - CSS, JS restanti, immagini e font: cache pubblica di un'ora, con rivalidazione
   alla scadenza. Non sono file con hash: niente `immutable` di un anno.
 - Le risposte 404 non diventano la home: non e' una SPA. Sono supportati
@@ -164,39 +611,77 @@ curl -I http://127.0.0.1:8080/assets/css/home.css
 curl -I -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/assets/css/home.css
 ```
 
-Controllare rispettivamente `Cache-Control: no-cache`, cache di 3600 secondi
+Controllare `Cache-Control: no-store` per i dati, cache di 3600 secondi
 per CSS e `Content-Encoding: gzip` quando la risorsa supera la soglia.
 Ripetere sul dominio pubblico; verificare 404, MIME e navigazione sul telefono.
 
 ## Aggiornamenti e rollback
 
-I commit dal setup e dalla gestione PDF continuano a essere pubblicati su GitHub,
-**non sul NAS**. Anche lo snapshot calendario e' aggiornato da GitHub Actions.
-Per renderli visibili sul NAS occorre aggiornare la copia locale del repository
-e ricostruire l'immagine. Nessun auto-deploy NAS e' incluso:
+L'updater controlla solo `refs/heads/NAS`, mai `main`. Una nuova versione viene
+estratta separatamente, costruita e avviata con `up --wait`. Solo dopo gli
+healthcheck registra `current-revision`. Un errore di avvio tenta il ripristino
+del codice precedente. I launcher stabili vengono aggiornati dalla release
+riuscita. Un lock limita le sovrapposizioni e recupera un PID non piu' attivo.
 
-```sh
-git pull --ff-only
-docker compose -f deploy/synology/compose.yaml --profile tunnel up -d --build
+La latenza e' fino a circa un minuto di controllo, piu' build e avvio. Piu'
+commit tra due controlli producono il deployment dell'ultimo, non di ogni
+versione intermedia. Puo' esserci una breve interruzione. Il controllo del
+tunnel non certifica che il dominio esterno sia configurato correttamente.
+
+```text
+/volume1/docker/agesci-nas/
+  nas.env, update.sh, sync-calendars.sh  Configurazione e attivita' stabili
+  secrets/                            Password e token, mai nel repository
+  repository.git/                     Copia Git bare del branch NAS
+  releases/<commit>/                  Versioni del codice
+  current-revision                     Ultima release riuscita
+  data/site.sqlite                    Contenuti, PDF e stato persistenti
+  data/calendars/                      Snapshot calendario persistente
 ```
 
-Usare `--profile tunnel` solo se configurato. Prima di aggiornare salvare commit
-e identificativo dell'immagine precedente, verificare che non ci siano modifiche
-locali e predisporre un backup. Per rollback distribuire il commit precedente
-da una copia separata, senza cancellare modifiche locali o il file token.
-Rispettare la finestra di cache degli asset; se necessario invalidare la cache
-CDN dopo il deployment. Ruotare immediatamente un token esposto.
+Le modifiche da setup e gestione documenti non generano commit: salvano subito
+in SQLite. Nuovi commit aggiornano codice, pagine e asset, **non sovrascrivono
+contenuti o PDF gia' salvati sul NAS**, neppure se cambiano i dati iniziali nel
+repository. Limitare chi puo' scrivere su `NAS`: il suo codice viene eseguito
+sul NAS. Non modificare i launcher generati; tenere la configurazione in `nas.env`.
+
+SQLite usa WAL: non copiare solo `site.sqlite` mentre e' aperto. Predisporre un
+backup consistente tramite l'API backup di SQLite, oppure arrestare il backend
+prima di copiare la cartella dati. Conservare backup, calendari e secret protetti
+su una destinazione distinta e verificare il ripristino. Non aggiungerli a Git.
+Il rollback ripristina **solo il codice**, non il database: future migrazioni
+distruttive richiederanno un piano dedicato. Per tornare stabilmente indietro
+pubblicare un commit di revert su `NAS`, altrimenti l'updater riproporra' l'ultimo.
+Conservare almeno release corrente e precedente; controllare lo spazio delle
+release, delle immagini e dei backup. Non cancellare `data/` per aggiornare.
+Ruotare immediatamente secret esposti e riavviare i servizi interessati.
 
 ## Verifiche locali
 
-Con Node 22 o successivo:
+Per provare le vere API e il monitor senza Docker, con un database temporaneo:
 
 ```sh
-node --test tests/synology.test.cjs tests/site-structure.test.cjs
-docker compose -f deploy/synology/compose.yaml config --quiet
-docker compose -f deploy/synology/compose.yaml build web
+node tools/nas-dev.cjs
 ```
 
-I test Node verificano i vincoli dei file, non eseguono Nginx o Cloudflared.
+Il comando stampa un URL casuale su `127.0.0.1` e una password di solo test.
+Aprire l'URL seguito da `/area-riservata/assemblea/regia.html`. Nessun dato del
+NAS viene modificato; il database temporaneo viene rimosso all'arresto normale.
+Se il processo viene terminato forzatamente, possono restare file temporanei.
+Non pubblicare questo server locale o usare la sua password sul NAS.
+In Windows CPU/RAM dell'intero NAS restano non disponibili: serve il collaudo
+dei mount Linux reali. La preview tradizionale resta una simulazione separata.
+
+Con Node 24 (Node 22 nei test segnala SQLite come sperimentale):
+
+```sh
+node --test tests/nas-server.test.cjs tests/nas-monitor.test.cjs tests/nas-telemetry.test.cjs tests/nas-panel.test.cjs tests/nas-update.test.cjs tests/synology.test.cjs
+docker compose --env-file deploy/synology/nas.env.example -f deploy/synology/compose.yaml --profile maintenance config --quiet
+docker compose --env-file deploy/synology/nas.env.example -f deploy/synology/compose.yaml --profile maintenance build app web calendar-sync
+```
+
+I test Node eseguono il backend via HTTP con dati temporanei e verificano
+persistenza, sessioni, conflitti e SSE. I test di configurazione non eseguono
+Docker, il deployment o il rollback reale sul NAS.
 La build, gli header HTTP effettivi, i permessi del secret, il tunnel e le
 misure RUM devono essere collaudati nell'ambiente di destinazione.
