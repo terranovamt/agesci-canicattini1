@@ -3,6 +3,29 @@
   const nativeFetch = window.fetch.bind(window);
   const route = location.pathname.toLowerCase();
   const basePath = route.startsWith("/agesci-canicattini1/") ? "/agesci-canicattini1" : "";
+  function visitorId() {
+    const key = "nas-live-visitor-id";
+    try {
+      let value = localStorage.getItem(key);
+      if (!/^[a-f0-9-]{36}$/i.test(value || "")) {
+        value = crypto.randomUUID();
+        localStorage.setItem(key, value);
+      }
+      return value;
+    } catch {
+      try {
+        let value = sessionStorage.getItem(key);
+        if (!/^[a-f0-9-]{36}$/i.test(value || "")) {
+          value = crypto.randomUUID();
+          sessionStorage.setItem(key, value);
+        }
+        return value;
+      } catch {
+        return null;
+      }
+    }
+  }
+  window.NAS_VISITOR = { id: visitorId };
   const page = route.endsWith("/statistiche.html")
     ? "statistiche"
     : route.endsWith("/regia.html")

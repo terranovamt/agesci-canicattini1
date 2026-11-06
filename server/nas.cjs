@@ -116,7 +116,16 @@ async function createNasServer({
   const streams = new Map();
   const presence = new Map();
   const attempts = new Map();
-  const monitor = createMonitor(database, { dataDir, telemetryEnabled, hostProc, release });
+  const monitor = createMonitor(database, {
+    dataDir,
+    telemetryEnabled,
+    hostProc,
+    release,
+    liveCounts: () => ({
+      streams: streams.size,
+      devices: [...presence.values()].filter((value) => value.t > Date.now() - 60000).length,
+    }),
+  });
   const rateLimit = (key, limit, period) => {
     const now = Date.now();
     const current = attempts.get(key);
@@ -278,7 +287,7 @@ async function createNasServer({
             ["/live/stato", "/modifiche/patch"].includes(route)
           ) {
             if (streams.size >= 500) fail(503, "Limite connessioni live raggiunto");
-            monitor.connection();
+            monitor.connection(route === "/live/stato" ? url.searchParams.get("visitor") : null);
             response.writeHead(200, {
               "Content-Type": "text/event-stream",
               "Cache-Control": "no-store, no-transform",

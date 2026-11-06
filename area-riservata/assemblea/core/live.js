@@ -232,7 +232,10 @@
   deviceUi();
 
   /* SSE invia anche lo stato iniziale; REST serve solo quando il flusso cade. */
-  const es = new EventSource(U + "/live/stato.json");
+  const visitor = L.nas ? window.NAS_VISITOR?.id() : null;
+  const es = new EventSource(
+    U + "/live/stato.json" + (visitor ? "?visitor=" + encodeURIComponent(visitor) : ""),
+  );
   let connesso = false,
     lettura = false,
     versione = 0;

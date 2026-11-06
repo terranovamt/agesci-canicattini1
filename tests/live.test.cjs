@@ -51,7 +51,7 @@ test("only an explicit, nonempty regia parameter selects the presenter", () => {
   assert.equal(role("?regia=test-key").chiave, "test-key");
 });
 
-function viewer(isMobile, read) {
+function viewer(isMobile, read, visitorId) {
   const elements = {};
   const listeners = {};
   const streams = {};
@@ -60,6 +60,7 @@ function viewer(isMobile, read) {
   const navigations = [];
   const intervals = [];
   const reads = [];
+  let eventSourceUrl;
   const element = () => {
     const el = {
       classes: new Set(),
@@ -81,6 +82,7 @@ function viewer(isMobile, read) {
   const context = {
     window: {
       LIVE: role(""),
+      NAS_VISITOR: visitorId ? { id: () => visitorId } : undefined,
       mobileLayout: {
         rotate(value) {
           rotations.push(value);
@@ -111,6 +113,9 @@ function viewer(isMobile, read) {
       return read ? read() : { ok: true, json: async () => ({ pos: 1001, max: 2000 }) };
     },
     EventSource: class {
+      constructor(url) {
+        eventSourceUrl = url;
+      }
       addEventListener(name, handler) {
         streams[name] = handler;
       }
@@ -125,10 +130,16 @@ function viewer(isMobile, read) {
   context.prev = () => context.go(context.si, context.sk - 1);
   vm.runInNewContext(sync, context);
   streams.put({ data: JSON.stringify({ path: "/", data: { pos: 1001, max: 2000 } }) });
-  return { context, elements, listeners, writes, rotations, navigations, streams, intervals, reads };
+  return { context, elements, listeners, writes, rotations, navigations, streams, intervals, reads, eventSourceUrl };
 }
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+test("live presentation identifies a stable browser without exposing it in telemetry", () => {
+  const visitor = "12345678-1234-1234-1234-123456789abc";
+  const v = viewer(false, undefined, visitor);
+  assert.equal(v.eventSourceUrl, "https://site.test/api/state/live/stato.json?visitor=" + visitor);
+});
 
 test("healthy SSE uses no initial or periodic REST reads, fallback stops on recovery", async () => {
   const v = viewer(false);
