@@ -41,6 +41,10 @@ test("static build publishes only site files and refuses to overwrite source dir
   const directory = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agesci-static-'));
   try {
     buildSite(directory);
+    const home = fs.readFileSync(path.join(directory, 'index.html'), 'utf8');
+    assert.match(home, /home-documents\.js\?v=[a-f0-9]{12}/);
+    assert.match(home, /home\.css\?v=[a-f0-9]{12}/);
+    assert.match(home, /src="config\/site\.js"/);
     for (const file of ['index.html', 'assets/fonts/montserrat-latin.woff2', 'assets/img/foto-gruppo.avif', 'area-riservata/statistiche.html'])
       assert.ok(fs.existsSync(path.join(directory, file)), file);
     for (const file of ['server', 'tools', '.git', 'README.md', 'nas.env'])
