@@ -29,7 +29,7 @@
   }
   function lock(value) {
     busy = value;
-    $('managed-documents').setAttribute('aria-busy', String(value));
+    $("managed-documents").setAttribute("aria-busy", String(value));
     $("document-form")
       .querySelectorAll("input,textarea,button")
       .forEach((element) => {
@@ -98,7 +98,9 @@
       open.target = "_blank";
       open.rel = "noopener";
       open.textContent = "Apri " + item.file;
-      open.onclick = event => { if (busy) event.preventDefault() };
+      open.onclick = (event) => {
+        if (busy) event.preventDefault();
+      };
       const actions = document.createElement("div");
       actions.className = "actions";
       const edit = document.createElement("button");
@@ -127,12 +129,12 @@
     lock(true);
     message("Caricamento dei documenti…");
     if (!ready) {
-      const list = $('managed-documents');
+      const list = $("managed-documents");
       list.replaceChildren();
       for (let index = 0; index < 3; index++) {
-        const placeholder = document.createElement('article');
-        placeholder.className = 'loading-skeleton';
-        placeholder.setAttribute('aria-hidden', 'true');
+        const placeholder = document.createElement("article");
+        placeholder.className = "loading-skeleton";
+        placeholder.setAttribute("aria-hidden", "true");
         list.append(placeholder);
       }
     }

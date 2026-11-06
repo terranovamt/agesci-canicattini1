@@ -109,20 +109,20 @@ sovrascrive SQLite o i PDF caricati. Non viene generata una copia statica dei
 dati persistenti che rischierebbe di diventare obsoleta.
 
 - Skeleton durante il caricamento di documenti e calendari, con `aria-busy`
-	e animazioni disattivate quando e' richiesta una riduzione del movimento.
+  e animazioni disattivate quando e' richiesta una riduzione del movimento.
 - Salvataggi PDF ottimistici: lista aggiornata subito, conferma dal server e
-	rollback su errore. Il modulo resta disponibile per riprovare.
+  rollback su errore. Il modulo resta disponibile per riprovare.
 - Archivio iniziale di 48 elementi, caricamento a blocchi e `content-visibility`
-	per saltare il rendering delle righe fuori schermo. E' rendering differito
-	nativo con caricamento progressivo, non virtualizzazione DOM React.
+  per saltare il rendering delle righe fuori schermo. E' rendering differito
+  nativo con caricamento progressivo, non virtualizzazione DOM React.
 - Filtri invariati non ricostruiscono le schede. Script separati per pagina
-	con `defer`, in ordine di dipendenza; immagini fuori dal primo schermo lazy.
+  con `defer`, in ordine di dipendenza; immagini fuori dal primo schermo lazy.
 - La build versiona CSS e JavaScript statici con hash del contenuto, evitando
-	asset vecchi dopo gli aggiornamenti senza rinunciare alla cache del browser.
+  asset vecchi dopo gli aggiornamenti senza rinunciare alla cache del browser.
 - Loghi e icone WebP lossless; foto AVIF con fallback WebP, richiesta soltanto
-	dalle slide fotografiche. Favicon e QR rimangono PNG.
+  dalle slide fotografiche. Favicon e QR rimangono PNG.
 - Montserrat e Caveat WOFF2 locali, soli caratteri latini e stile normale,
-	`font-display: swap`; nessuna richiesta runtime a Google Fonts.
+  `font-display: swap`; nessuna richiesta runtime a Google Fonts.
 
 Non e' stata aggiunta una chat IA: lo streaming token-by-token e' escluso
 per scelta, perche' il sito attuale non contiene un servizio IA.

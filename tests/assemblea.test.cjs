@@ -44,10 +44,13 @@ test("read and write failures are explicit, not inactive or success fallbacks", 
 });
 
 test("group photo is loaded only by photographic slides and selects modern formats", () => {
-  const background = { backgroundImage: '' };
+  const background = { backgroundImage: "" };
   const context = { LANDSCAPE: {}, cnt: {}, ph: { style: background }, CSS: { supports: () => true } };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/slides/landscape/foto_gruppo.js'), 'utf8'), context);
-  assert.equal(background.backgroundImage, '');
+  vm.runInNewContext(
+    fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/slides/landscape/foto_gruppo.js"), "utf8"),
+    context,
+  );
+  assert.equal(background.backgroundImage, "");
   context.LANDSCAPE.slide_foto_gruppo({})({ classList: { add() {} } });
   assert.match(background.backgroundImage, /foto-gruppo.avif/);
   assert.match(background.backgroundImage, /foto-gruppo.webp/);

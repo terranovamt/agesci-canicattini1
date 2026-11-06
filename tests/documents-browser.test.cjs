@@ -1,18 +1,19 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const { test } = require('node:test');
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+const { test } = require("node:test");
 
-const root = path.join(__dirname, '..');
-const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
-  spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
-const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const root = path.join(__dirname, "..");
+const chrome = ["google-chrome", "chromium", "chromium-browser"].find(
+  (command) => spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0,
+);
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 function fixture(file, css, scripts) {
-  const index = read('documents/index.json');
-  const calendars = read('calendars/events.json');
+  const index = read("documents/index.json");
+  const calendars = read("calendars/events.json");
   const mock = `
     window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
     window.LIVE = { github: { repo: 'test/repo', ramo: 'test' } };
@@ -40,67 +41,122 @@ function fixture(file, css, scripts) {
     const append = document.head.append.bind(document.head);
     document.head.append = element => {
       if (element.tagName === 'SCRIPT' && element.src.includes('dati.js')) {
-        ${read('area-riservata/assemblea/dati.js')}
+        ${read("area-riservata/assemblea/dati.js")}
         element.onload();
       } else append(element);
     };
   `;
-  return read(file).replace(/<link\b[^>]*>/g, '')
-    .replace(/<iframe\b[\s\S]*?<\/iframe>/g, original => file === 'index.html' ? '' : original)
+  return read(file)
+    .replace(/<link\b[^>]*>/g, "")
+    .replace(/<iframe\b[\s\S]*?<\/iframe>/g, (original) => (file === "index.html" ? "" : original))
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
       const source = path.normalize(path.join(path.dirname(file), src));
-      return scripts.includes(source) ? '<script>' + read(source) + '</script>' : '';
+      return scripts.includes(source) ? "<script>" + read(source) + "</script>" : "";
     })
-    .replace('</head>', '<style>' + read('assets/css/theme.css') + read(css) + '</style><script>' + mock + '</script></head>');
+    .replace(
+      "</head>",
+      "<style>" + read("assets/css/theme.css") + read(css) + "</style><script>" + mock + "</script></head>",
+    );
 }
 
-test('document deletion updates immediately and rolls back when the server rejects it', async () => {
+test("document deletion updates immediately and rolls back when the server rejects it", async () => {
   const nodes = new Map();
   const element = () => ({
-    children: [], value: '', hidden: false, disabled: false, textContent: '',
-    append(...children) { this.children.push(...children) },
-    replaceChildren(...children) { this.children = children },
-    querySelectorAll() { return [] },
-    setAttribute() {}, focus() {}, scrollIntoView() {}
+    children: [],
+    value: "",
+    hidden: false,
+    disabled: false,
+    textContent: "",
+    append(...children) {
+      this.children.push(...children);
+    },
+    replaceChildren(...children) {
+      this.children = children;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    setAttribute() {},
+    focus() {},
+    scrollIntoView() {},
   });
-  const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id) };
+  const get = (id) => {
+    if (!nodes.has(id)) nodes.set(id, element());
+    return nodes.get(id);
+  };
   const document = { getElementById: get, createElement: element };
   let rejectSave;
-  const items = [{ file: 'test.pdf', title: 'Test PDF', description: 'Documento' }];
+  const items = [{ file: "test.pdf", title: "Test PDF", description: "Documento" }];
   const context = {
-    window: { ACCESSO: { verificata: () => true }, LIVE: { nas: true }, DOCUMENTS: {
-      tokenKey: 'test-token', load: async () => items,
-      apply: () => [], save: () => new Promise((resolve, reject) => { rejectSave = reject })
-    } },
-    document, localStorage: { getItem: () => '', setItem() {} },
-    confirm: () => true, Date, location: { replace() {} }, addEventListener() {}
+    window: {
+      ACCESSO: { verificata: () => true },
+      LIVE: { nas: true },
+      DOCUMENTS: {
+        tokenKey: "test-token",
+        load: async () => items,
+        apply: () => [],
+        save: () =>
+          new Promise((resolve, reject) => {
+            rejectSave = reject;
+          }),
+      },
+    },
+    document,
+    localStorage: { getItem: () => "", setItem() {} },
+    confirm: () => true,
+    Date,
+    location: { replace() {} },
+    addEventListener() {},
   };
-  require('node:vm').runInNewContext(read('assets/js/gestione-documenti.js'), context);
-  await new Promise(resolve => setImmediate(resolve));
-  const remove = get('managed-documents').children[0].children[3].children[1];
+  require("node:vm").runInNewContext(read("assets/js/gestione-documenti.js"), context);
+  await new Promise((resolve) => setImmediate(resolve));
+  const remove = get("managed-documents").children[0].children[3].children[1];
   const pending = remove.onclick();
-  assert.equal(get('managed-documents').children[0].textContent.startsWith('Nessun PDF'), true);
-  assert.equal(get('save-document').disabled, true);
-  rejectSave(new Error('Server non disponibile'));
+  assert.equal(get("managed-documents").children[0].textContent.startsWith("Nessun PDF"), true);
+  assert.equal(get("save-document").disabled, true);
+  rejectSave(new Error("Server non disponibile"));
   await pending;
-  assert.equal(get('managed-documents').children[0].children[0].textContent, 'Test PDF');
-  assert.equal(get('documents-message').textContent, 'Server non disponibile');
-  assert.equal(get('save-document').disabled, false);
+  assert.equal(get("managed-documents").children[0].children[0].textContent, "Test PDF");
+  assert.equal(get("documents-message").textContent, "Server non disponibile");
+  assert.equal(get("save-document").disabled, false);
 });
 
-test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
+test("public documents and management work in a browser at all required widths", { skip: !chrome }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "group-documents-"));
   const pages = [
-    fixture('index.html', 'assets/css/home.css', ['assets/js/documents-model.js', 'assets/js/home-documents.js', 'assets/js/calendar-model.js', 'assets/js/home-calendars.js']),
-    fixture('area-riservata/documenti.html', 'assets/css/gestione-documenti.css', ['assets/js/documents-model.js', 'assets/js/documents-store.js', 'assets/js/gestione-documenti.js']),
-    fixture('area-riservata/assemblea/setup.html', 'area-riservata/assemblea/core/setup.css',
-      ['area-riservata/assemblea/core/salva-dati.js', 'area-riservata/assemblea/core/modifiche.js', 'area-riservata/assemblea/core/nuovo-anno-model.js', 'area-riservata/assemblea/core/nuovo-anno.js', 'area-riservata/assemblea/core/setup.js']),
-    fixture('area-riservata/index.html', 'assets/css/home.css', ['assets/js/area-dashboard.js', 'assets/js/area-riservata.js']),
-    fixture('assemblea/index.html', 'assets/css/home.css', ['assets/js/documents-model.js', 'assets/js/home-documents.js']),
-    fixture('documenti/index.html', 'assets/css/home.css', ['assets/js/documents-model.js', 'assets/js/home-documents.js'])
+    fixture("index.html", "assets/css/home.css", [
+      "assets/js/documents-model.js",
+      "assets/js/home-documents.js",
+      "assets/js/calendar-model.js",
+      "assets/js/home-calendars.js",
+    ]),
+    fixture("area-riservata/documenti.html", "assets/css/gestione-documenti.css", [
+      "assets/js/documents-model.js",
+      "assets/js/documents-store.js",
+      "assets/js/gestione-documenti.js",
+    ]),
+    fixture("area-riservata/assemblea/setup.html", "area-riservata/assemblea/core/setup.css", [
+      "area-riservata/assemblea/core/salva-dati.js",
+      "area-riservata/assemblea/core/modifiche.js",
+      "area-riservata/assemblea/core/nuovo-anno-model.js",
+      "area-riservata/assemblea/core/nuovo-anno.js",
+      "area-riservata/assemblea/core/setup.js",
+    ]),
+    fixture("area-riservata/index.html", "assets/css/home.css", [
+      "assets/js/area-dashboard.js",
+      "assets/js/area-riservata.js",
+    ]),
+    fixture("assemblea/index.html", "assets/css/home.css", [
+      "assets/js/documents-model.js",
+      "assets/js/home-documents.js",
+    ]),
+    fixture("documenti/index.html", "assets/css/home.css", [
+      "assets/js/documents-model.js",
+      "assets/js/home-documents.js",
+    ]),
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
-    const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
+    const pages = ${JSON.stringify(pages).replace(/</g, "\\u003c")};
     const results = [];
     (async () => {
       for (let page = 0; page < pages.length; page++) {
@@ -207,7 +263,7 @@ test('public documents and management work in a browser at all required widths',
           results.push({ calendarFailure: !doc.querySelector('#calendar-retry').hidden,
             calendarFailureText: doc.querySelector('#calendar-status').textContent,
             warningVisible: !doc.querySelector('#calendar-info-warning').hidden });
-          const errorSnapshot = ${JSON.stringify(JSON.parse(read('calendars/events.json'))).replace(/</g, '\\u003c')};
+          const errorSnapshot = ${JSON.stringify(JSON.parse(read("calendars/events.json"))).replace(/</g, "\\u003c")};
           errorSnapshot.calendars.forEach(calendar => { calendar.status = 'error' });
           frame.contentWindow.fetch = async () => ({ ok: true, json: async () => errorSnapshot });
           await doc.querySelector('#calendar-retry').onclick();
@@ -337,112 +393,142 @@ test('public documents and management work in a browser at all required widths',
     })().catch(error => { const out = document.createElement('pre'); out.id = 'error'; out.textContent = error.stack; document.body.append(out) });
   </script>`;
   try {
-    const file = path.join(dir, 'browser.html');
+    const file = path.join(dir, "browser.html");
     fs.writeFileSync(file, html);
-    const result = spawnSync(chrome, [
-      '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-      '--no-first-run', '--no-default-browser-check', '--no-proxy-server',
-      '--host-resolver-rules=MAP * ~NOTFOUND', '--virtual-time-budget=20000', '--timeout=15000',
-      '--user-data-dir=' + path.join(dir, 'profile'), '--dump-dom', 'file://' + file
-    ], { encoding: 'utf8', timeout: 30000, maxBuffer: 5 * 1024 * 1024 });
+    const result = spawnSync(
+      chrome,
+      [
+        "--headless",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--no-proxy-server",
+        "--host-resolver-rules=MAP * ~NOTFOUND",
+        "--virtual-time-budget=20000",
+        "--timeout=15000",
+        "--user-data-dir=" + path.join(dir, "profile"),
+        "--dump-dom",
+        "file://" + file,
+      ],
+      { encoding: "utf8", timeout: 30000, maxBuffer: 5 * 1024 * 1024 },
+    );
     assert.equal(result.status, 0, result.stderr);
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
     assert.ok(match, result.stdout.slice(-6000));
     const results = JSON.parse(match[1]);
-    assert.deepEqual(results.find(item => 'latestTitles' in item).latestTitles, ['Nuovissimo', 'Secondo', 'Terzo', 'Quarto']);
-    assert.equal(results.find(item => 'editedYear' in item).editedYear, '2027');
-    assert.equal(results.find(item => 'editedDate' in item).editedDate, '2027-02-03');
-    assert.equal(results.find(item => 'archiveCards' in item).archiveCards, 4);
-    assert.deepEqual(results.find(item => 'archiveYear' in item).archiveYear, ['', '2026']);
-    assert.deepEqual(results.find(item => 'archiveYears' in item).archiveYears, ['', '2027', '2026', 'undated']);
-    assert.deepEqual(results.find(item => 'archiveAll' in item).archiveAll, ['Nuovo bilancio', 'Convocazione', 'Storico']);
-    assert.deepEqual(results.find(item => 'archive2026' in item).archive2026, ['Convocazione']);
-    assert.deepEqual(results.find(item => 'archiveText' in item).archiveText, ['Convocazione']);
-    assert.deepEqual(results.find(item => 'archiveEmpty' in item).archiveEmpty, []);
-    assert.match(results.find(item => 'archiveMessage' in item).archiveMessage, /Nessun documento/);
-    assert.deepEqual(results.find(item => 'archiveUndated' in item).archiveUndated, ['Storico']);
-    assert.deepEqual(results.find(item => 'archiveDescription' in item).archiveDescription, ['Nuovo bilancio']);
-    const publicAssembly = results.find(item => 'publicAssembly' in item);
-    assert.equal(publicAssembly.publicAssembly, 4);
-    assert.equal(publicAssembly.publicPeg, '../peg/index.html');
-    assert.equal(publicAssembly.publicPdfs, true);
-    for (const item of results.filter(item => 'overflow' in item)) {
-      assert.equal(item.overflow, false, 'page ' + item.page + ' must fit width ' + item.width);
-    }
-    assert.equal(results.find(item => 'cards' in item).cards, 4);
-    assert.equal(results.find(item => 'cards' in item).preparatoryCards, 4);
-    assert.equal(results.find(item => 'assemblyYear' in item).assemblyYear, '2026');
-    assert.equal(results.find(item => 'cards' in item).links, true);
-    assert.equal(results.find(item => 'cards' in item).pdfLinks, true);
-    assert.equal(results.find(item => 'cards' in item).icons, 4);
-    assert.equal(results.find(item => 'cards' in item).pegLink, 'peg/index.html');
-    assert.deepEqual(results.find(item => 'cards' in item).titles, [
-      'PEG 2026-2028', 'Bilancio 2026 · Modello D', 'Convocazione assemblea 2026', 'Regolamento assembleare'
+    assert.deepEqual(results.find((item) => "latestTitles" in item).latestTitles, [
+      "Nuovissimo",
+      "Secondo",
+      "Terzo",
+      "Quarto",
     ]);
-    assert.ok(results.find(item => 'cards' in item).description.length > 10);
-    assert.equal(results.find(item => 'errorVisible' in item).errorVisible, true);
-    assert.match(results.find(item => 'error' in item).error, /503/);
-    assert.match(results.find(item => 'empty' in item).empty, /Non ci sono ancora/);
-    assert.equal(results.find(item => 'retryHidden' in item).retryHidden, true);
-    assert.equal(results.find(item => 'uploaded' in item).uploaded, 5, JSON.stringify(results));
-    assert.match(results.find(item => 'uploaded' in item).status, /Salvato/);
-    assert.equal(results.find(item => 'edited' in item).edited, 'Titolo modificato');
-    assert.equal(results.find(item => 'remaining' in item).remaining, 4);
-    for (const item of results.filter(item => 'reachable' in item)) {
-      assert.equal(item.reachable, true, 'setup fields must be reachable above the action bar at width ' + item.width);
+    assert.equal(results.find((item) => "editedYear" in item).editedYear, "2027");
+    assert.equal(results.find((item) => "editedDate" in item).editedDate, "2027-02-03");
+    assert.equal(results.find((item) => "archiveCards" in item).archiveCards, 4);
+    assert.deepEqual(results.find((item) => "archiveYear" in item).archiveYear, ["", "2026"]);
+    assert.deepEqual(results.find((item) => "archiveYears" in item).archiveYears, ["", "2027", "2026", "undated"]);
+    assert.deepEqual(results.find((item) => "archiveAll" in item).archiveAll, [
+      "Nuovo bilancio",
+      "Convocazione",
+      "Storico",
+    ]);
+    assert.deepEqual(results.find((item) => "archive2026" in item).archive2026, ["Convocazione"]);
+    assert.deepEqual(results.find((item) => "archiveText" in item).archiveText, ["Convocazione"]);
+    assert.deepEqual(results.find((item) => "archiveEmpty" in item).archiveEmpty, []);
+    assert.match(results.find((item) => "archiveMessage" in item).archiveMessage, /Nessun documento/);
+    assert.deepEqual(results.find((item) => "archiveUndated" in item).archiveUndated, ["Storico"]);
+    assert.deepEqual(results.find((item) => "archiveDescription" in item).archiveDescription, ["Nuovo bilancio"]);
+    const publicAssembly = results.find((item) => "publicAssembly" in item);
+    assert.equal(publicAssembly.publicAssembly, 4);
+    assert.equal(publicAssembly.publicPeg, "../peg/index.html");
+    assert.equal(publicAssembly.publicPdfs, true);
+    for (const item of results.filter((item) => "overflow" in item)) {
+      assert.equal(item.overflow, false, "page " + item.page + " must fit width " + item.width);
     }
-    for (const item of results.filter(item => 'wizardOpened' in item)) assert.equal(item.wizardOpened, true);
-    for (const item of results.filter(item => 'fits' in item)) {
-      assert.equal(item.fits, true, 'wizard fits at ' + item.wizardWidth + ', step ' + item.step);
-      assert.equal(item.actionsVisible, true, 'wizard actions visible at ' + item.wizardWidth + ', step ' + item.step);
+    assert.equal(results.find((item) => "cards" in item).cards, 4);
+    assert.equal(results.find((item) => "cards" in item).preparatoryCards, 4);
+    assert.equal(results.find((item) => "assemblyYear" in item).assemblyYear, "2026");
+    assert.equal(results.find((item) => "cards" in item).links, true);
+    assert.equal(results.find((item) => "cards" in item).pdfLinks, true);
+    assert.equal(results.find((item) => "cards" in item).icons, 4);
+    assert.equal(results.find((item) => "cards" in item).pegLink, "peg/index.html");
+    assert.deepEqual(results.find((item) => "cards" in item).titles, [
+      "PEG 2026-2028",
+      "Bilancio 2026 · Modello D",
+      "Convocazione assemblea 2026",
+      "Regolamento assembleare",
+    ]);
+    assert.ok(results.find((item) => "cards" in item).description.length > 10);
+    assert.equal(results.find((item) => "errorVisible" in item).errorVisible, true);
+    assert.match(results.find((item) => "error" in item).error, /503/);
+    assert.match(results.find((item) => "empty" in item).empty, /Non ci sono ancora/);
+    assert.equal(results.find((item) => "retryHidden" in item).retryHidden, true);
+    assert.equal(results.find((item) => "uploaded" in item).uploaded, 5, JSON.stringify(results));
+    assert.match(results.find((item) => "uploaded" in item).status, /Salvato/);
+    assert.equal(results.find((item) => "edited" in item).edited, "Titolo modificato");
+    assert.equal(results.find((item) => "remaining" in item).remaining, 4);
+    for (const item of results.filter((item) => "reachable" in item)) {
+      assert.equal(item.reachable, true, "setup fields must be reachable above the action bar at width " + item.width);
+    }
+    for (const item of results.filter((item) => "wizardOpened" in item)) assert.equal(item.wizardOpened, true);
+    for (const item of results.filter((item) => "fits" in item)) {
+      assert.equal(item.fits, true, "wizard fits at " + item.wizardWidth + ", step " + item.step);
+      assert.equal(item.actionsVisible, true, "wizard actions visible at " + item.wizardWidth + ", step " + item.step);
       assert.equal(item.valid, true);
     }
-    for (const item of results.filter(item => 'review' in item)) {
-      assert.equal(item.review, 'Riepilogo');
-      assert.equal(item.error, '');
+    for (const item of results.filter((item) => "review" in item)) {
+      assert.equal(item.review, "Riepilogo");
+      assert.equal(item.error, "");
       assert.equal(item.reviewFits, true);
-      assert.equal(item.unchanged, true, 'data must stay unchanged before confirmation');
+      assert.equal(item.unchanged, true, "data must stay unchanged before confirmation");
     }
-    for (const item of results.filter(item => 'cancelUnchanged' in item)) assert.equal(item.cancelUnchanged, true);
-    const annual = results.find(item => 'applied' in item);
+    for (const item of results.filter((item) => "cancelUnchanged" in item)) assert.equal(item.cancelUnchanged, true);
+    const annual = results.find((item) => "applied" in item);
     assert.equal(annual.applied, 2027);
-    assert.equal(annual.writtenDate, '20 Novembre 2027');
-    assert.equal(annual.qrDate, '2027-11-20T20:30');
+    assert.equal(annual.writtenDate, "20 Novembre 2027");
+    assert.equal(annual.qrDate, "2027-11-20T20:30");
     assert.equal(annual.archived, 100);
     assert.equal(annual.newAmount, 10);
     assert.equal(annual.previousAmount, 9665);
     assert.equal(annual.dirty, true);
     assert.equal(annual.wizardClosed, true);
-    const dashboard = results.find(item => 'dashboard' in item);
+    const dashboard = results.find((item) => "dashboard" in item);
     assert.equal(dashboard.dashboard, true);
     assert.match(dashboard.assembly, /Assemblea/);
     assert.equal(dashboard.documents, 3);
     assert.equal(dashboard.tools, 3);
-    assert.equal(results.find(item => 'dashboardError' in item).dashboardError, true);
-    assert.equal(results.find(item => 'assemblyError' in item).assemblyError, true);
-    assert.match(results.find(item => 'assemblyErrorText' in item).assemblyErrorText, /Impossibile/);
-    assert.equal(results.find(item => 'calendarFilters' in item).calendarFilters, 5);
-    assert.equal(results.find(item => 'agendaCount' in item).agendaCount, 5);
-    assert.equal(results.find(item => 'safeText' in item).safeText, true);
-    assert.equal(results.find(item => 'injected' in item).injected, false);
-    assert.match(results.find(item => 'noneSelected' in item).noneSelected, /Seleziona almeno/);
-    assert.equal(results.find(item => 'branchCount' in item).branchCount, 1);
-    assert.equal(results.find(item => 'branch' in item).branch, 'Branca E/G');
-    assert.equal(results.find(item => 'changedMonth' in item).changedMonth, true);
-    assert.equal(results.find(item => 'calendarFailure' in item).calendarFailure, true);
-    assert.match(results.find(item => 'calendarFailureText' in item).calendarFailureText, /503/);
-    assert.equal(results.find(item => 'infoClosed' in item).infoClosed, true);
-    assert.equal(results.find(item => 'bannerHidden' in item).bannerHidden, true);
-    assert.equal(results.find(item => 'infoFits' in item).infoFits, true);
-    assert.equal(results.find(item => 'compactLabels' in item).compactLabels, 'Canicattini 1,E/G,L/C,R/S,Zona');
-    assert.equal(results.find(item => 'warningVisible' in item).warningVisible, true);
-    assert.equal(results.find(item => 'unavailableFilters' in item).unavailableFilters, 5);
-    assert.equal(results.find(item => 'errorBannerHidden' in item).errorBannerHidden, true);
-    assert.equal(results.find(item => 'upcomingAssemblyVisible' in item).upcomingAssemblyVisible, true);
-    assert.match(results.find(item => 'upcomingAssemblyText' in item).upcomingAssemblyText, /Assemblea di Gruppo.*Tra 5 giorni/);
-    for (const item of results.filter(item => 'dateTimeFields' in item)) {
+    assert.equal(results.find((item) => "dashboardError" in item).dashboardError, true);
+    assert.equal(results.find((item) => "assemblyError" in item).assemblyError, true);
+    assert.match(results.find((item) => "assemblyErrorText" in item).assemblyErrorText, /Impossibile/);
+    assert.equal(results.find((item) => "calendarFilters" in item).calendarFilters, 5);
+    assert.equal(results.find((item) => "agendaCount" in item).agendaCount, 5);
+    assert.equal(results.find((item) => "safeText" in item).safeText, true);
+    assert.equal(results.find((item) => "injected" in item).injected, false);
+    assert.match(results.find((item) => "noneSelected" in item).noneSelected, /Seleziona almeno/);
+    assert.equal(results.find((item) => "branchCount" in item).branchCount, 1);
+    assert.equal(results.find((item) => "branch" in item).branch, "Branca E/G");
+    assert.equal(results.find((item) => "changedMonth" in item).changedMonth, true);
+    assert.equal(results.find((item) => "calendarFailure" in item).calendarFailure, true);
+    assert.match(results.find((item) => "calendarFailureText" in item).calendarFailureText, /503/);
+    assert.equal(results.find((item) => "infoClosed" in item).infoClosed, true);
+    assert.equal(results.find((item) => "bannerHidden" in item).bannerHidden, true);
+    assert.equal(results.find((item) => "infoFits" in item).infoFits, true);
+    assert.equal(results.find((item) => "compactLabels" in item).compactLabels, "Canicattini 1,E/G,L/C,R/S,Zona");
+    assert.equal(results.find((item) => "warningVisible" in item).warningVisible, true);
+    assert.equal(results.find((item) => "unavailableFilters" in item).unavailableFilters, 5);
+    assert.equal(results.find((item) => "errorBannerHidden" in item).errorBannerHidden, true);
+    assert.equal(results.find((item) => "upcomingAssemblyVisible" in item).upcomingAssemblyVisible, true);
+    assert.match(
+      results.find((item) => "upcomingAssemblyText" in item).upcomingAssemblyText,
+      /Assemblea di Gruppo.*Tra 5 giorni/,
+    );
+    for (const item of results.filter((item) => "dateTimeFields" in item)) {
       assert.equal(item.dateTimeFields, 1);
       assert.equal(item.duplicateDate, false);
     }
-  } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
