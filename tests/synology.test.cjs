@@ -74,6 +74,12 @@ test("NAS does not publish a public listener or embed a tunnel token", () => {
   assert.match(compose, /mem_limit: 128m/);
 });
 
+test("Synology deployment avoids unsupported CFS CPU quotas while retaining memory limits", () => {
+  const compose = read("deploy/synology/compose.yaml");
+  assert.doesNotMatch(compose, /^\s*(?:cpus|cpu_quota|cpu_period):/m);
+  for (const limit of ["512m", "128m", "256m"]) assert.ok(compose.includes("mem_limit: " + limit));
+});
+
 test("NAS stores runtime data outside images and proxies dynamic content without SSE buffering", () => {
   const compose = read("deploy/synology/compose.yaml");
   const nginx = read("deploy/synology/nginx.conf");

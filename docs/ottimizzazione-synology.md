@@ -264,9 +264,11 @@ Il listener 8080 e' solo loopback sul NAS e deve essere libero; il backend
 Solo dopo questi controlli aggiornare i collegamenti pubblici e dismettere il
 vecchio Firebase. Non fare il primo collaudo con documenti o dati riservati.
 
-Limiti iniziali: backend 512 MiB/1 CPU, Nginx e tunnel 128 MiB/0,5 CPU ciascuno,
-job calendari 256 MiB/0,5 CPU. Misurare sotto carico: non e' un dimensionamento
-certificato. I servizi hanno filesystem in sola lettura, volumi espliciti e
+Limiti RAM iniziali: backend 512 MiB, Nginx e tunnel 128 MiB ciascuno,
+job calendari 256 MiB. Il kernel del DS1522+ verificato ha rifiutato le quote
+CPU CFS (`NanoCPUs can not be set`): il Compose non imposta `cpus` o quote CFS.
+Il carico CPU resta misurato, ma non limitato per container. Misurare sotto
+carico: non e' un dimensionamento certificato. I servizi hanno filesystem in sola lettura, volumi espliciti e
 healthcheck; aggiornare versioni delle immagini e verificare i digest.
 
 ## Pubblicazione con Synology DDNS
@@ -476,9 +478,10 @@ proxy va verificata nuovamente anche quella catena di fiducia.
 
 ### Risorse, volume e monitor esterno
 
-- Per modificare CPU/RAM aggiornare `cpus`, `mem_limit` e il limite heap Node
-  nel Compose del branch `NAS`, poi pubblicare il commit. Non alzare solo il
-  heap oltre il limite del container: lasciare margine per RSS e SQLite.
+- Per modificare RAM aggiornare `mem_limit` e il limite heap Node nel Compose
+   del branch `NAS`, poi pubblicare il commit. Non alzare solo il heap oltre il
+   limite del container: lasciare margine per RSS e SQLite. Non aggiungere quote
+   CPU senza aver verificato il supporto CFS del kernel: possono impedire l'avvio.
 - Per cambiare volume fermare deployment e servizi, fare un backup consistente,
   copiare dati e secret con i permessi corretti e aggiornare tutti i percorsi.
   Non avviare su un percorso vuoto aspettandosi che contenga i dati precedenti.
