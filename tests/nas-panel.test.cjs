@@ -226,6 +226,7 @@ test("statistics page is guarded and renders tracking separately from the live r
       today: { visits: 2, views: 21, liveUnique: 4, connections: 4, errors: 0 },
       totals: { visits: 5, views: 6, connections: 7, started: "2026-11-06" },
       online: 1,
+      visible: 1,
       liveStreams: 2,
       presentationDevices: 3,
       daily: [{ day: "2026-11-06", visits: 2, views: 3, liveUnique: 4, connections: 4 }],
@@ -245,7 +246,9 @@ test("statistics page is guarded and renders tracking separately from the live r
   await new Promise(setImmediate);
   assert.equal(get("stats-visits").textContent, "2");
   assert.equal(get("stats-live-unique").textContent, "4");
-  assert.equal(get("stats-online").textContent, "3");
+  assert.equal(get("stats-online").textContent, "1");
+  assert.equal(get("stats-site-visible").textContent, "1");
+  assert.equal(get("stats-presentation").textContent, "3");
   assert.equal(get("stats-days").children[0].children.length, 4);
   assert.equal(get("stats-distribution-title").textContent, "Home e Presentazione raccolgono il 71% delle pagine viste.");
   assert.equal(get("stats-release-commit").textContent, "a".repeat(12));

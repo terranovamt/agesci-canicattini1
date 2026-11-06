@@ -62,8 +62,8 @@
   addEventListener("error", (error) => event(error.target?.tagName ? "resource-error" : "js-error"), true);
   addEventListener("unhandledrejection", () => event("js-error"));
   addEventListener("offline", () => event("offline"));
-  async function send(type) {
-    if (!enabled || (sending && type !== "leave")) return;
+  async function send(type, urgent = type === "leave") {
+    if (!enabled || (sending && !urgent)) return;
     const events = pending.splice(0, 8);
     try {
       localStorage.setItem("nas-visit-time", String(Date.now()));
@@ -84,7 +84,7 @@
     try {
       const response = await nativeFetch(basePath + "/api/telemetry", {
         method: "POST",
-        keepalive: type === "leave",
+        keepalive: urgent,
         signal: abort.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -138,14 +138,12 @@
       const first = () => send("view");
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", first, { once: true });
       else first();
-      setInterval(() => {
-        if (document.visibilityState !== "hidden") send(viewSent ? "heartbeat" : "view");
-      }, 30000);
-      addEventListener("visibilitychange", () =>
-        send(document.visibilityState === "hidden" ? "leave" : viewSent ? "heartbeat" : "view"),
-      );
+      const beat = (urgent = false) => send(viewSent ? "heartbeat" : "view", urgent);
+      setInterval(() => beat(), 30000);
+      addEventListener("visibilitychange", () => beat(document.visibilityState === "hidden"));
       addEventListener("pagehide", () => send("leave"));
-      addEventListener("online", () => send(viewSent ? "heartbeat" : "view"));
+      addEventListener("pageshow", (event) => event.persisted && beat());
+      addEventListener("online", () => beat());
     })
     .catch(() => {
       enabled = false;

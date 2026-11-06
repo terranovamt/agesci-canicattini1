@@ -121,10 +121,6 @@ async function createNasServer({
     telemetryEnabled,
     hostProc,
     release,
-    liveCounts: () => ({
-      streams: streams.size,
-      devices: [...presence.values()].filter((value) => value.t > Date.now() - 60000).length,
-    }),
   });
   const rateLimit = (key, limit, period) => {
     const now = Date.now();

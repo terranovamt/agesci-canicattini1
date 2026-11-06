@@ -49,7 +49,7 @@
             <div><dt>Visite al sito</dt><dd id="stats-visits">-</dd></div>
             <div><dt>Pagine viste</dt><dd id="stats-views">-</dd></div>
             <div><dt>Connessioni live uniche</dt><dd id="stats-live-unique">-</dd></div>
-            <div><dt>Spettatori live adesso</dt><dd id="stats-online">-</dd></div>
+            <div><dt>Connessioni attive ora</dt><dd id="stats-online">-</dd></div>
             <div><dt>Segnalazioni oggi</dt><dd id="stats-errors">-</dd></div>
           </dl>
         </section>
@@ -103,9 +103,9 @@
           </div>
           <div class="statistics-hourly-grid">
             <article class="statistics-hour-card" data-hourly="online">
-              <h3>Presenze live</h3><p>Spettatori simultanei</p>
+              <h3>Presenze live</h3><p>Connessioni attive sull’intero sito</p>
               <div class="statistics-hour-values"><strong id="stats-hour-online-current">-</strong><span id="stats-hour-online-peak">-</span></div>
-              <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Spettatori simultanei della diretta nell’ultima ora"></svg>
+              <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Connessioni attive sull’intero sito nell’ultima ora"></svg>
             </article>
             <article class="statistics-hour-card" data-hourly="latency">
               <h3>Risposta API</h3><p>Tempo p95 su 5 minuti · ms</p>
@@ -135,17 +135,18 @@
               <div><dt>Risposta API p95 / 5 min</dt><dd id="stats-latency">-</dd></div>
               <div><dt>Errori API 5xx / 5 min</dt><dd id="stats-api-errors">-</dd></div>
               <div><dt>Richieste limitate / 5 min</dt><dd id="stats-limited">-</dd></div>
-              <div><dt>Schede visibili nell’intero sito</dt><dd id="stats-site-online">-</dd></div>
+              <div><dt>Schede in primo piano</dt><dd id="stats-site-visible">-</dd></div>
+              <div><dt>Spettatori presentazione</dt><dd id="stats-presentation">-</dd></div>
               <div><dt>Flussi SSE tecnici attivi</dt><dd id="stats-streams">-</dd></div>
             </dl>
             <ol id="stats-events" class="metrics-events"></ol>
           </section>
-          <section class="metrics-section statistics-release-details" aria-label="Totali del sito e schede online">
+          <section class="metrics-section statistics-release-details" aria-label="Totali del sito e connessioni attive">
             <p id="stats-totals" class="metrics-status">-</p>
             <details class="statistics-sessions">
-              <summary>Ultime schede visibili</summary>
+              <summary>Connessioni attive</summary>
               <table class="metrics-table">
-                <thead><tr><th scope="col">Pagina</th><th scope="col">Risposta browser</th><th scope="col">Ultimo segnale</th></tr></thead>
+                <thead><tr><th scope="col">Pagina</th><th scope="col">Stato</th><th scope="col">Risposta browser</th><th scope="col">Ultimo segnale</th></tr></thead>
                 <tbody id="stats-sessions"></tbody>
               </table>
             </details>

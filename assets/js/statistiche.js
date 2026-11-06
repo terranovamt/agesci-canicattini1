@@ -37,7 +37,8 @@
     "stats-live-unique",
     "stats-online",
     "stats-errors",
-    "stats-site-online",
+    "stats-site-visible",
+    "stats-presentation",
     "stats-streams",
     "stats-latency",
     "stats-api-errors",
@@ -49,7 +50,7 @@
     new Date(value).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", timeZone: "Europe/Rome" });
   const chartNamespace = "http://www.w3.org/2000/svg";
   const performanceSeries = [
-    { key: "online", id: "online", name: "Spettatori simultanei", color: "online", unit: "", peakUnit: "" },
+    { key: "online", id: "online", name: "Connessioni attive sul sito", color: "online", unit: "", peakUnit: "" },
     { key: "p95Ms", id: "latency", name: "Tempo di risposta API p95", color: "latency", unit: " ms", peakUnit: " ms" },
     { key: "cpuPercent", id: "cpu", name: "Utilizzo CPU del NAS", color: "cpu", unit: "%", peakUnit: "%" },
     { key: "memoryPercent", id: "ram", name: "Utilizzo RAM del NAS", color: "ram", unit: "%", peakUnit: "%" },
@@ -488,9 +489,10 @@
         "stats-visits": traffic.today.visits,
         "stats-views": traffic.today.views,
         "stats-live-unique": traffic.today.liveUnique,
-        "stats-online": traffic.presentationDevices,
+        "stats-online": data.enabled ? traffic.online : null,
         "stats-errors": traffic.today.errors,
-        "stats-site-online": data.enabled ? traffic.online : null,
+        "stats-site-visible": data.enabled ? traffic.visible : null,
+        "stats-presentation": traffic.presentationDevices,
         "stats-streams": traffic.liveStreams,
         "stats-api-errors": api.errors5xx,
         "stats-limited": api.limited,
@@ -516,6 +518,7 @@
       renderPerformance(data.performance?.hourly);
       const sessions = traffic.sessions.map((session) => [
         labels[session.page] || session.page,
+        session.visible ? "In primo piano" : "In background",
         Number.isFinite(session.latencyMs) ? Math.round(session.latencyMs) + " ms" : "-",
         time(session.lastSeen),
       ]);

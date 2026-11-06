@@ -124,10 +124,7 @@ function createResources({ hostProc = "", cgroupRoot = "/sys/fs/cgroup", dataDir
   return { sample, stop: () => lag.disable() };
 }
 
-function createMonitor(
-  database,
-  { dataDir, hostProc = "", telemetryEnabled = true, release = "manual", liveCounts = () => ({ streams: 0, devices: 0 }) } = {},
-) {
+function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = true, release = "manual" } = {}) {
   database.exec(
     "CREATE TABLE IF NOT EXISTS monitor_totals (id INTEGER PRIMARY KEY, visits INTEGER NOT NULL, views INTEGER NOT NULL, started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_days (day TEXT PRIMARY KEY, visits INTEGER NOT NULL DEFAULT 0, views INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS monitor_pages (day TEXT NOT NULL, page TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,page)); CREATE TABLE IF NOT EXISTS monitor_sessions (id TEXT PRIMARY KEY, seen INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS monitor_events (time INTEGER NOT NULL, kind TEXT NOT NULL, page TEXT NOT NULL, status INTEGER); CREATE INDEX IF NOT EXISTS monitor_event_time ON monitor_events(time);",
   );
@@ -145,6 +142,10 @@ function createMonitor(
   database.prepare("INSERT OR IGNORE INTO monitor_live_tracking VALUES (1,?)").run(recordedDay);
   const clients = new Map(),
     requests = [];
+  // Background tabs are throttled to about one heartbeat per minute, so they need a wider window than visible ones.
+  const OPEN_TAB_MS = 150000,
+    VISIBLE_TAB_MS = 90000;
+  const openTabs = (now) => [...clients.values()].filter((value) => value.seen > now - OPEN_TAB_MS);
   let lastPerformanceMinute = -1;
   const resources = createResources({ dataDir, hostProc });
   let sample = resources.sample();
@@ -262,12 +263,11 @@ function createMonitor(
     lastPerformanceMinute = minute;
     const recent = requests.filter((value) => value.time > now - 300000);
     const durations = recent.map((value) => value.ms).sort((left, right) => left - right);
-    const { devices } = liveCounts();
     database
       .prepare("INSERT OR REPLACE INTO monitor_performance VALUES (?,?,?,?,?)")
       .run(
         minute,
-        devices,
+        openTabs(now).length,
         durations.length ? durations[Math.ceil(durations.length * 0.95) - 1] : null,
         sample.host?.cpuPercent ?? null,
         sample.host?.memoryPercent ?? null,
@@ -280,9 +280,10 @@ function createMonitor(
       day = dayOf(new Date(now));
     const recent = requests.filter((value) => value.time > now - 300000);
     const durations = recent.map((value) => value.ms).sort((left, right) => left - right);
-    const online = [...clients.values()].filter((value) => value.visible && value.seen > now - 90000);
+    const online = openTabs(now).sort((left, right) => right.seen - left.seen);
+    const visible = online.filter((value) => value.visible && value.seen > now - VISIBLE_TAB_MS).length;
     const missing = [...clients.values()].filter(
-      (value) => value.visible && value.seen <= now - 90000 && value.seen > now - 300000,
+      (value) => value.visible && value.seen <= now - OPEN_TAB_MS && value.seen > now - 300000,
     ).length;
     const warnings = [];
     if (sample.process.cpuQuotaPercent >= 85) warnings.push("CPU backend vicina al limite");
@@ -305,6 +306,7 @@ function createMonitor(
       service: { release, startedAt: initialized, uptimeSeconds: Math.floor((now - initialized) / 1000) },
       traffic: {
         online: online.length,
+        visible,
         missing,
         liveStreams: streams,
         liveLimit: 500,
@@ -376,7 +378,7 @@ function createMonitor(
       .all(day);
     result.traffic.sessions = online
       .slice(0, 20)
-      .map((value) => ({ page: value.page, lastSeen: value.seen, latencyMs: value.latencyMs }));
+      .map((value) => ({ page: value.page, lastSeen: value.seen, latencyMs: value.latencyMs, visible: value.visible }));
     result.api = {
       sampleCount: recent.length,
       windowSeconds: 300,

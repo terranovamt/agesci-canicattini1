@@ -36,21 +36,29 @@
   function renderAssembly() {
     const banner = $("stato");
     if (!banner) return;
-    const upcoming = M.nextAssembly(data, new Date());
+    const upcoming = data ? M.nextAssembly(data, new Date()) : null;
     banner.hidden = !upcoming;
-    banner.textContent = "";
+    banner.replaceChildren();
     if (upcoming) {
-      const { event, remaining } = upcoming;
+      const { event } = upcoming;
       const date = event.allDay ? new Date(event.start + "T12:00:00Z") : new Date(event.start);
-      const days = Math.ceil(remaining);
-      banner.textContent =
-        event.title +
-        " · " +
-        format(date, { day: "numeric", month: "long", year: "numeric" }) +
-        (M.dateKey(date) === M.dateKey(new Date())
-          ? " · Oggi"
-          : " · Tra " + days + (days === 1 ? " giorno" : " giorni"));
+      const days = M.calendarDaysUntil(event, new Date());
+      const title = /^assemblea di gruppo$/i.test(event.title.trim()) ? "Assemblea di Gruppo" : event.title;
+      banner.append(
+        element("strong", title, "assembly-status-title"),
+        element("span", " · ", "visually-hidden"),
+        element(
+          "span",
+          format(date, { day: "numeric", month: "long", year: "numeric" }) +
+            (days <= 0 ? " · Oggi" : " · Tra " + days + (days === 1 ? " giorno" : " giorni")),
+          "assembly-status-meta",
+        ),
+      );
     }
+  }
+  function renderPreparatory() {
+    const section = $("documenti-preparatori");
+    if (section) section.hidden = !(data && M.preparatoryAssembly(data, new Date()));
   }
   function renderStatus() {
     const messages = data.calendars
@@ -308,6 +316,7 @@
       renderStatus();
       refresh();
       renderAssembly();
+      renderPreparatory();
       $("calendar-app").hidden = false;
       $("calendar-all").disabled = false;
     } catch (error) {
@@ -317,8 +326,9 @@
       warning(true);
       if ($("stato")) {
         $("stato").hidden = true;
-        $("stato").textContent = "";
+        $("stato").replaceChildren();
       }
+      renderPreparatory();
       console.error("Caricamento calendari", error);
     } finally {
       agenda.setAttribute("aria-busy", "false");

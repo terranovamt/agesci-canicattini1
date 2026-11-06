@@ -60,3 +60,25 @@ test('assembly notice is limited to a fresh group event strictly within 30 days'
   assert.equal(M.nextAssembly({ ...data, generatedAt: '2027-05-30T00:00:00Z' }, now), null);
   assert.ok(M.nextAssembly({ ...data, events: [{ ...assembly, allDay: true, start: '2027-06-01', end: '2027-06-02' }] }, now));
 });
+
+test('preparatory documents open 15 Rome calendar days before the assembly and close when it ends', () => {
+  const assembly = { ...event, calendar: 'gruppo', title: 'Assemblea di gruppo',
+    start: '2027-06-20T18:30:00Z', end: '2027-06-20T21:00:00Z' };
+  const data = { generatedAt: '2020-01-01T00:00:00Z', calendars: [{ id: 'gruppo', status: 'error' }], events: [assembly] };
+  assert.equal(M.PREPARATORY_DAYS, 15);
+  assert.equal(M.preparatoryAssembly(data, new Date('2027-06-04T21:59:59Z')), null);
+  assert.equal(M.preparatoryAssembly(data, new Date('2027-06-04T22:00:00Z')).remaining, 15);
+  assert.equal(M.preparatoryAssembly(data, new Date('2027-06-20T20:59:59Z')).remaining, 0);
+  assert.equal(M.preparatoryAssembly(data, new Date('2027-06-20T21:00:00Z')), null);
+  const now = new Date('2027-06-10T10:00:00Z');
+  assert.equal(M.preparatoryAssembly({ ...data, events: [{ ...assembly, calendar: 'zona' }] }, now), null);
+  assert.equal(M.preparatoryAssembly({ ...data, events: [{ ...assembly, title: 'Riunione capi' }] }, now), null);
+  assert.equal(M.preparatoryAssembly({ ...data, events: [{ ...assembly, title: 'Preparazione assemblea' }] }, now), null);
+  const allDay = { ...assembly, allDay: true, start: '2027-06-20', end: '2027-06-21' };
+  assert.equal(M.preparatoryAssembly({ ...data, events: [allDay] }, new Date('2027-06-20T21:59:59Z')).remaining, 0);
+  assert.equal(M.preparatoryAssembly({ ...data, events: [allDay] }, new Date('2027-06-20T22:00:00Z')), null);
+  const later = { ...assembly, start: '2027-06-25T18:30:00Z', end: '2027-06-25T21:00:00Z' };
+  assert.equal(M.preparatoryAssembly({ ...data, events: [later, assembly] }, now).event, assembly);
+  assert.equal(M.calendarDaysUntil(assembly, new Date('2027-06-18T21:59:59Z')), 2);
+  assert.equal(M.calendarDaysUntil(assembly, new Date('2027-06-18T22:00:00Z')), 1);
+});

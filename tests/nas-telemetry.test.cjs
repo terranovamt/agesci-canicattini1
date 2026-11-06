@@ -65,7 +65,22 @@ test("browser telemetry counts a view and heartbeat and never includes query str
   app.context.document.visibilityState = "hidden";
   app.events.get("visibilitychange")();
   await flush();
+  let hidden = app.calls.at(-1);
+  assert.equal(JSON.parse(hidden.options.body).type, "heartbeat");
+  assert.equal(JSON.parse(hidden.options.body).visible, false);
+  assert.equal(hidden.options.keepalive, true);
+  app.intervals[0]();
+  await flush();
+  hidden = JSON.parse(app.calls.at(-1).options.body);
+  assert.equal(hidden.type, "heartbeat");
+  assert.equal(hidden.visible, false);
+  app.events.get("pagehide")({ persisted: true });
+  await flush();
   assert.equal(JSON.parse(app.calls.at(-1).options.body).type, "leave");
+  app.context.document.visibilityState = "visible";
+  app.events.get("pageshow")({ persisted: true });
+  await flush();
+  assert.equal(JSON.parse(app.calls.at(-1).options.body).type, "heartbeat");
 });
 
 test("disabled telemetry and preview do not create visitor IDs or periodic beacons", async () => {

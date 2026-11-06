@@ -24,8 +24,9 @@ presentazione e le connessioni SSE tecniche separatamente, oltre a CPU/RAM di
 backend e NAS. Si aggiorna automaticamente, senza pulsante Aggiorna. La pagina
 **Statistiche sito** mostra visite giornaliere, pagine viste, spettatori unici
 della diretta al giorno, distribuzione delle pagine e segnalazioni; la dashboard
-ne mostra un riepilogo. Include grafici dell'ultima ora per spettatori
-simultanei, risposta API p95, CPU e RAM, oltre allo storico giornaliero
+ne mostra un riepilogo. Include grafici dell'ultima ora per le presenze live
+(connessioni attive sull'intero sito, schede in background comprese),
+risposta API p95, CPU e RAM, oltre allo storico giornaliero
 aggregato conservato sul NAS per 365 giorni. Gli unici della diretta partono dal
 deploy che attiva il conteggio e i campioni dell'ultima ora si accumulano al
 ritmo di uno al minuto; i dati precedenti sono indicati come non raccolti.
@@ -161,6 +162,12 @@ e vengono dopo quelle datate nella home. Ordine, icone e collegamento al PEG son
 La selezione «Documenti preparatori» resta distinta: mostra soltanto i PDF
 con `assemblyYear` uguale all'anno corrente (Europe/Rome), anche nella pagina
 `assemblea/index.html`. Il relativo anno si imposta separatamente nella gestione.
+Nella home la sezione compare solo dai 15 giorni di calendario (Europe/Rome)
+precedenti un evento «Assemblea di Gruppo» del calendario del gruppo fino alla
+sua fine, in linea con l'invio del bilancio previsto dall'art. 3 del Regolamento
+assembleare; resta nascosta se i calendari non si caricano. Contiene anche la
+card «Cos'è l'Assemblea di Gruppo?», scritta in `index.html` con i riferimenti
+agli articoli di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 I salvataggi sul NAS non attendono GitHub Pages.
 
@@ -181,7 +188,8 @@ originali, conteggio selezioni e **Mostra tutti** sono nel pannello
 **Informazioni** (icona **i** in alto), normalmente chiuso.
 La home non mostra un messaggio quando l'assemblea è inattiva: evidenzia
 soltanto il prossimo evento con “assemblea” nel titolo del calendario del gruppo,
-se futuro e a meno di 30 giorni. L'avviso non dipende dai filtri; viene omesso
+se futuro e a meno di 30 giorni, con titolo e conto alla rovescia (in giorni di
+calendario) in evidenza. L'avviso non dipende dai filtri; viene omesso
 se i dati del gruppo non sono aggiornati. L'accesso alla diretta quando attiva
 resta invariato; gli errori di connessione sono nel pannello Informazioni.
 

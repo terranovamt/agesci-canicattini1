@@ -277,7 +277,15 @@ test("public documents and management work in a browser at all required widths",
             allDay: false, location: '' }];
           await doc.querySelector('#calendar-retry').onclick();
           results.push({ upcomingAssemblyVisible: !doc.querySelector('#stato').hidden,
-            upcomingAssemblyText: doc.querySelector('#stato').textContent });
+            upcomingAssemblyText: doc.querySelector('#stato').textContent,
+            upcomingAssemblyTitle: doc.querySelector('#stato .assembly-status-title').textContent,
+            preparatoryVisible: !doc.querySelector('#documenti-preparatori').hidden,
+            explainerArticles: [...doc.querySelectorAll('.assembly-explainer-ref')].map(e => e.textContent).join(',') });
+          errorSnapshot.events[0].start = new Date(Date.now() + 20 * 86400000).toISOString();
+          errorSnapshot.events[0].end = new Date(Date.now() + 20 * 86400000 + 3600000).toISOString();
+          await doc.querySelector('#calendar-retry').onclick();
+          results.push({ farPreparatoryHidden: doc.querySelector('#documenti-preparatori').hidden,
+            farBannerVisible: !doc.querySelector('#stato').hidden });
           const cards = [...doc.querySelectorAll('#documents-list .document-card')];
           results.push({ cards: cards.length, title: cards[0].querySelector('h3').textContent,
             description: cards[0].querySelector('p').textContent,
@@ -524,6 +532,11 @@ test("public documents and management work in a browser at all required widths",
       results.find((item) => "upcomingAssemblyText" in item).upcomingAssemblyText,
       /Assemblea di Gruppo.*Tra 5 giorni/,
     );
+    assert.equal(results.find((item) => "upcomingAssemblyTitle" in item).upcomingAssemblyTitle, "Assemblea di Gruppo");
+    assert.equal(results.find((item) => "preparatoryVisible" in item).preparatoryVisible, true);
+    assert.match(results.find((item) => "explainerArticles" in item).explainerArticles, /^Art\. 1,/);
+    assert.equal(results.find((item) => "farPreparatoryHidden" in item).farPreparatoryHidden, true);
+    assert.equal(results.find((item) => "farBannerVisible" in item).farBannerVisible, true);
     for (const item of results.filter((item) => "dateTimeFields" in item)) {
       assert.equal(item.dateTimeFields, 1);
       assert.equal(item.duplicateDate, false);

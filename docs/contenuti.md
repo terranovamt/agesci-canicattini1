@@ -23,6 +23,14 @@ Nella gestione, «Anno di riferimento» (`year`) serve al filtro dell’archivio
 l’ordine cronologico. Sono metadati distinti da `assemblyYear`, che decide
 soltanto l’inclusione nei preparatori dell’anno corrente.
 
+In home la sezione «Documenti preparatori» è visibile solo negli ultimi 15
+giorni prima dell’evento «Assemblea di Gruppo» del calendario del gruppo e fino
+alla sua conclusione: per mostrarla basta che l’evento sia nel calendario
+Outlook del gruppo con quel titolo. La sezione include la card «Cos’è
+l’Assemblea di Gruppo?», che spiega l’assemblea a chi partecipa per la prima
+volta citando gli articoli del Regolamento assembleare; se il Regolamento
+cambia, aggiornare il testo e i numeri degli articoli in `index.html`.
+
 ## Progetto Educativo di Gruppo
 
 La home rimanda a `peg/index.html`, pagina d’ingresso che reindirizza al progetto

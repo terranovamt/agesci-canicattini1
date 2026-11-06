@@ -38,11 +38,14 @@
     });
     return data;
   }
+  const isAssembly = event => event.calendar === 'gruppo' && /\bassemblea\b/i.test(event.title);
+  const calendarDaysUntil = (event, now) =>
+    (Date.parse(event.allDay ? event.start : dateKey(new Date(event.start))) - Date.parse(dateKey(now))) / 86400000;
   function nextAssembly(data, now) {
     const group = data.calendars.find(calendar => calendar.id === 'gruppo');
     if (group?.status !== 'ok' || now - new Date(data.generatedAt) > 3 * 60 * 60 * 1000) return null;
     const day = 86400000;
-    return data.events.filter(event => event.calendar === 'gruppo' && /\bassemblea\b/i.test(event.title))
+    return data.events.filter(isAssembly)
       .map(event => {
         const remaining = event.allDay
           ? (Date.parse(event.start) - Date.parse(dateKey(now))) / day
@@ -51,7 +54,17 @@
       }).filter(item => item.remaining >= 0 && item.remaining < 30)
       .sort((a, b) => a.remaining - b.remaining)[0] || null;
   }
-  const model = { dateKey, onDay, upcoming, validate, nextAssembly };
+  const PREPARATORY_DAYS = 15;
+  // Open from 15 calendar days (Europe/Rome) before the assembly until it ends.
+  function preparatoryAssembly(data, now) {
+    const today = dateKey(now);
+    return data.events.filter(event => isAssembly(event) && /\bassemblea\s+di\s+gruppo\b/i.test(event.title)
+      && (event.allDay ? event.end > today : new Date(event.end) > now))
+      .map(event => ({ event, remaining: calendarDaysUntil(event, now) }))
+      .filter(item => item.remaining <= PREPARATORY_DAYS)
+      .sort((a, b) => a.remaining - b.remaining)[0] || null;
+  }
+  const model = { dateKey, onDay, upcoming, validate, nextAssembly, calendarDaysUntil, preparatoryAssembly, PREPARATORY_DAYS };
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   else window.CALENDAR_MODEL = model;
 })();
