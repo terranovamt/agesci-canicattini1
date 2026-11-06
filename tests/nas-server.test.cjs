@@ -179,27 +179,42 @@ test("NAS atomically persists document metadata, PDFs and optimistic content rev
 test("NAS streams live state in the event format expected by the presentation", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-stream-"));
   let app = await start(directory);
-  const abort = new AbortController();
+  const abort = new AbortController(),
+    sameVisitorAbort = new AbortController(),
+    anotherVisitorAbort = new AbortController();
   try {
-    const response = await fetch(app.origin + "/api/state/live/stato.json", {
+    const visitor = "12345678-1234-1234-1234-123456789abc";
+    const response = await fetch(app.origin + "/api/state/live/stato.json?visitor=" + visitor, {
       headers: { Accept: "text/event-stream" },
       signal: abort.signal,
     });
     assert.equal(response.headers.get("x-accel-buffering"), "no");
     const reader = response.body.getReader();
     assert.match(new TextDecoder().decode((await reader.read()).value), /event: put\ndata: .*"pos":0/);
+    await fetch(app.origin + "/api/state/live/stato.json?visitor=" + visitor, {
+      headers: { Accept: "text/event-stream" },
+      signal: sameVisitorAbort.signal,
+    });
+    await fetch(app.origin + "/api/state/live/stato.json?visitor=aaaaaaaa-1234-1234-1234-123456789abc", {
+      headers: { Accept: "text/event-stream" },
+      signal: anotherVisitorAbort.signal,
+    });
     await app.login();
     await app.request("/api/state/live.json", "PUT", { stato: { pos: 2000, max: 2000 } });
     const complete = await (await app.request("/api/metrics")).json();
-    assert.equal(complete.traffic.liveStreams, 1);
-    assert.equal(complete.traffic.today.connections, 1);
+    assert.equal(complete.traffic.liveStreams, 3);
+    assert.equal(complete.traffic.today.connections, 3);
+    assert.equal(complete.traffic.today.liveUnique, 2);
+    assert.equal(complete.traffic.daily[0].liveUnique, 2);
+    assert.equal(complete.performance.hourly.length, 60);
+    assert.ok(complete.performance.hourly.at(-1).sampledAt);
     const live = await (await app.request("/api/metrics?view=live")).json();
-    assert.equal(live.traffic.liveStreams, 1);
+    assert.equal(live.traffic.liveStreams, 3);
     for (const field of ["today", "daily", "pages", "totals", "sessions"]) assert.equal(live.traffic[field], undefined);
     assert.equal(live.events, undefined);
     assert.equal(live.api, undefined);
     const summary = await (await app.request("/api/metrics?view=summary")).json();
-    assert.equal(summary.traffic.today.connections, 1);
+    assert.equal(summary.traffic.today.connections, 3);
     assert.equal(summary.traffic.daily, undefined);
     assert.equal((await app.request("/api/metrics?view=unknown")).status, 400);
     assert.match(new TextDecoder().decode((await reader.read()).value), /"pos":2000/);
@@ -209,10 +224,13 @@ test("NAS streams live state in the event format expected by the presentation", 
     await app.login();
     const restored = await (await app.request("/api/metrics")).json();
     assert.equal(restored.traffic.liveStreams, 0);
-    assert.equal(restored.traffic.today.connections, 1);
-    assert.equal(restored.traffic.totals.connections, 1);
+    assert.equal(restored.traffic.today.connections, 3);
+    assert.equal(restored.traffic.totals.connections, 3);
+    assert.equal(restored.traffic.today.liveUnique, 2);
   } finally {
     abort.abort();
+    sameVisitorAbort.abort();
+    anotherVisitorAbort.abort();
     await app.close();
     await fs.rm(directory, { recursive: true, force: true });
   }
@@ -246,6 +264,14 @@ test("NAS metrics are private, count visits separately from views, redact report
     const metrics = await (await app.request("/api/metrics")).json();
     assert.equal(metrics.traffic.today.visits, 1);
     assert.equal(metrics.traffic.today.views, 2);
+    assert.equal(metrics.traffic.daily.length, 365);
+    assert.equal(
+      metrics.traffic.daily[0].day,
+      new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()),
+    );
+    assert.equal(metrics.traffic.daily[0].visits, 1);
+    assert.equal(metrics.traffic.daily.at(-1).visits, null);
+    assert.equal(metrics.service.release, "manual");
     assert.equal(metrics.traffic.online, 1);
     assert.equal(metrics.traffic.today.errors, 1);
     assert.equal(metrics.resources.host, null);

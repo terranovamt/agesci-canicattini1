@@ -14,13 +14,13 @@
   const milliseconds = (value) => (numeric(value) ? Math.round(value).toLocaleString("it-IT") + " ms" : "-");
   function render(data) {
     const { traffic, resources } = data;
-    $("nas-online").textContent = data.enabled ? traffic.online.toLocaleString("it-IT") : "-";
+    $("nas-online").textContent = traffic.presentationDevices.toLocaleString("it-IT");
     $("nas-cpu").textContent = percent(resources.process.cpuCorePercent);
     $("nas-ram").textContent = bytes(resources.process.rssBytes);
     $("nas-host-cpu").textContent = percent(resources.host?.cpuPercent);
     $("nas-host-ram").textContent = percent(resources.host?.memoryPercent);
     $("nas-streams").textContent = traffic.liveStreams + " / " + traffic.liveLimit;
-    $("nas-devices").textContent = traffic.presentationDevices;
+    $("nas-devices").textContent = (data.enabled ? traffic.online : 0).toLocaleString("it-IT");
     $("nas-container").textContent =
       bytes(resources.container.memoryBytes) + " / " + bytes(resources.container.memoryLimitBytes);
     $("nas-lag").textContent = milliseconds(resources.process.eventLoopP95Ms);

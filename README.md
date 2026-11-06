@@ -19,12 +19,19 @@ in ingresso su un IP pubblico. Il solo DDNS non supera CGNAT o porte condivise.
 **Installazione DDNS, configurazione Sky WiFi, aggiornamenti e backup:**
 [guida Synology](docs/ottimizzazione-synology.md).
 
-In regia, **Server live > Apri monitor** mostra soltanto connessioni attuali,
-CPU/RAM backend e NAS e risorse correnti. Si aggiorna automaticamente, senza
-pulsante Aggiorna. Visite giornaliere, pagine viste, connessioni aperte nel
-giorno e segnalazioni sono nella pagina **Statistiche sito** dell'area riservata;
-la dashboard ne mostra un riepilogo. La raccolta browser e' disattivabile e le
-API dei report richiedono una sessione amministrativa.
+In regia, **Server live > Apri monitor** mostra gli spettatori simultanei della
+presentazione e le connessioni SSE tecniche separatamente, oltre a CPU/RAM di
+backend e NAS. Si aggiorna automaticamente, senza pulsante Aggiorna. La pagina
+**Statistiche sito** mostra visite giornaliere, pagine viste, spettatori unici
+della diretta al giorno, distribuzione delle pagine e segnalazioni; la dashboard
+ne mostra un riepilogo. Include grafici dell'ultima ora per spettatori
+simultanei, risposta API p95, CPU e RAM, oltre allo storico giornaliero
+aggregato conservato sul NAS per 365 giorni. Gli unici della diretta partono dal
+deploy che attiva il conteggio e i campioni dell'ultima ora si accumulano al
+ritmo di uno al minuto; i dati precedenti sono indicati come non raccolti.
+La pagina mostra anche il commit deployato e permette di confrontarlo con
+l'ultimo commit del branch `NAS`. La raccolta browser e' disattivabile e le API
+dei report richiedono una sessione amministrativa.
 
 > 📘 Guida illustrata (stesso stile della presentazione):
 > https://terranovamt.github.io/agesci-canicattini1/area-riservata/assemblea/guida.html

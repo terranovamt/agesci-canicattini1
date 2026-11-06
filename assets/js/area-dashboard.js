@@ -19,7 +19,7 @@
       view: "summary",
       render(data) {
         $("dashboard-visits").textContent = count(data.traffic.today.visits);
-        $("dashboard-connections").textContent = count(data.traffic.today.connections);
+        $("dashboard-connections").textContent = count(data.traffic.today.liveUnique);
         $("dashboard-streams").textContent = count(data.traffic.liveStreams);
         $("dashboard-errors").textContent = count(data.traffic.today.errors);
         $("dashboard-cpu").textContent = percent(data.resources.host?.cpuPercent);

@@ -124,7 +124,10 @@ function createResources({ hostProc = "", cgroupRoot = "/sys/fs/cgroup", dataDir
   return { sample, stop: () => lag.disable() };
 }
 
-function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = true, release = "manual" } = {}) {
+function createMonitor(
+  database,
+  { dataDir, hostProc = "", telemetryEnabled = true, release = "manual", liveCounts = () => ({ streams: 0, devices: 0 }) } = {},
+) {
   database.exec(
     "CREATE TABLE IF NOT EXISTS monitor_totals (id INTEGER PRIMARY KEY, visits INTEGER NOT NULL, views INTEGER NOT NULL, started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_days (day TEXT PRIMARY KEY, visits INTEGER NOT NULL DEFAULT 0, views INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS monitor_pages (day TEXT NOT NULL, page TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,page)); CREATE TABLE IF NOT EXISTS monitor_sessions (id TEXT PRIMARY KEY, seen INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS monitor_events (time INTEGER NOT NULL, kind TEXT NOT NULL, page TEXT NOT NULL, status INTEGER); CREATE INDEX IF NOT EXISTS monitor_event_time ON monitor_events(time);",
   );
@@ -134,8 +137,15 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     "CREATE TABLE IF NOT EXISTS monitor_connections (day TEXT PRIMARY KEY, opens INTEGER NOT NULL DEFAULT 0);",
   );
   database.prepare("INSERT OR IGNORE INTO monitor_connections VALUES ('total',0)").run();
+  database.exec(
+    "CREATE TABLE IF NOT EXISTS monitor_live_visitors (day TEXT NOT NULL, visitor TEXT NOT NULL, PRIMARY KEY(day,visitor)); CREATE INDEX IF NOT EXISTS monitor_live_visitor_day ON monitor_live_visitors(day); CREATE TABLE IF NOT EXISTS monitor_live_tracking (id INTEGER PRIMARY KEY CHECK(id=1), started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_performance (minute INTEGER PRIMARY KEY, online INTEGER NOT NULL, p95_ms REAL, cpu_percent REAL, memory_percent REAL);",
+  );
+  let recordedDay = dayOf(new Date());
+  database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(recordedDay);
+  database.prepare("INSERT OR IGNORE INTO monitor_live_tracking VALUES (1,?)").run(recordedDay);
   const clients = new Map(),
     requests = [];
+  let lastPerformanceMinute = -1;
   const resources = createResources({ dataDir, hostProc });
   let sample = resources.sample();
   const initialized = Date.now();
@@ -224,8 +234,12 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     if (requests.length > 2000) requests.shift();
     if (status >= 500) recordEvent("server-error", "server", status, now);
   }
-  function connection() {
+  function connection(visitor) {
     const day = dayOf(new Date());
+    const visitorHash =
+      typeof visitor === "string" && /^[a-f0-9-]{36}$/i.test(visitor)
+        ? crypto.createHash("sha256").update(visitor.toLowerCase()).digest("hex")
+        : null;
     database.exec("BEGIN IMMEDIATE");
     try {
       database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(day);
@@ -234,12 +248,33 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       );
       increment.run(day);
       increment.run("total");
+      if (visitorHash)
+        database.prepare("INSERT OR IGNORE INTO monitor_live_visitors VALUES (?,?)").run(day, visitorHash);
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
       throw error;
     }
   }
+  function samplePerformance(now) {
+    const minute = Math.floor(now / 60000);
+    if (minute === lastPerformanceMinute) return;
+    lastPerformanceMinute = minute;
+    const recent = requests.filter((value) => value.time > now - 300000);
+    const durations = recent.map((value) => value.ms).sort((left, right) => left - right);
+    const { devices } = liveCounts();
+    database
+      .prepare("INSERT OR REPLACE INTO monitor_performance VALUES (?,?,?,?,?)")
+      .run(
+        minute,
+        devices,
+        durations.length ? durations[Math.ceil(durations.length * 0.95) - 1] : null,
+        sample.host?.cpuPercent ?? null,
+        sample.host?.memoryPercent ?? null,
+      );
+    database.prepare("DELETE FROM monitor_performance WHERE minute<?").run(minute - 1440);
+  }
+  samplePerformance(Date.now());
   function snapshot(streams, devices, view = "full") {
     const now = Date.now(),
       day = dayOf(new Date(now));
@@ -279,6 +314,11 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       warnings,
     };
     if (view === "live") return result;
+    const trackingSince = database.prepare("SELECT started FROM monitor_live_tracking WHERE id=1").get().started;
+    const liveVisitors = database
+      .prepare("SELECT day,COUNT(*) AS visitors FROM monitor_live_visitors WHERE day>=? GROUP BY day")
+      .all(trackingSince);
+    const liveVisitorsByDay = new Map(liveVisitors.map((value) => [value.day, value.visitors]));
     result.traffic.today = {
       ...(database.prepare("SELECT visits,views,errors FROM monitor_days WHERE day=?").get(day) || {
         visits: 0,
@@ -286,17 +326,51 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
         errors: 0,
       }),
       connections: database.prepare("SELECT opens FROM monitor_connections WHERE day=?").get(day)?.opens || 0,
+      liveUnique: liveVisitorsByDay.get(day) || 0,
     };
     if (view === "summary") return result;
     result.traffic.totals = {
       ...database.prepare("SELECT visits,views,started FROM monitor_totals WHERE id=1").get(),
       connections: database.prepare("SELECT opens FROM monitor_connections WHERE day='total'").get().opens,
     };
-    result.traffic.daily = database
+    const recordedDays = database
       .prepare(
-        "SELECT d.*,COALESCE(c.opens,0) AS connections FROM monitor_days d LEFT JOIN monitor_connections c ON c.day=d.day ORDER BY d.day DESC LIMIT 7",
+        "SELECT d.*,COALESCE(c.opens,0) AS connections FROM monitor_days d LEFT JOIN monitor_connections c ON c.day=d.day ORDER BY d.day DESC LIMIT 365",
       )
       .all();
+    const daysByDate = new Map(recordedDays.map((value) => [value.day, value]));
+    const todayUtc = new Date(`${day}T00:00:00.000Z`).getTime();
+    result.traffic.daily = Array.from({ length: 365 }, (_, offset) => {
+      const date = new Date(todayUtc - offset * 86400000).toISOString().slice(0, 10);
+      const value = daysByDate.get(date);
+      return {
+        day: date,
+        visits: value?.visits ?? null,
+        views: value?.views ?? null,
+        errors: value?.errors ?? null,
+        connections: value?.connections ?? null,
+        liveUnique: date < trackingSince ? null : liveVisitorsByDay.get(date) || 0,
+      };
+    });
+    const minute = Math.floor(now / 60000);
+    const performanceRows = database
+      .prepare("SELECT minute,online,p95_ms,cpu_percent,memory_percent FROM monitor_performance WHERE minute>=? ORDER BY minute")
+      .all(minute - 59);
+    const performanceByMinute = new Map(performanceRows.map((value) => [value.minute, value]));
+    result.performance = {
+      trackingSince: Math.max(minute - 59, performanceRows[0]?.minute ?? minute),
+      hourly: Array.from({ length: 60 }, (_, index) => {
+        const sampledMinute = minute - 59 + index;
+        const value = performanceByMinute.get(sampledMinute);
+        return {
+          sampledAt: sampledMinute * 60000,
+          online: value?.online ?? null,
+          p95Ms: value?.p95_ms ?? null,
+          cpuPercent: value?.cpu_percent ?? null,
+          memoryPercent: value?.memory_percent ?? null,
+        };
+      }),
+    };
     result.traffic.pages = database
       .prepare("SELECT page,views FROM monitor_pages WHERE day=? ORDER BY views DESC")
       .all(day);
@@ -318,6 +392,11 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
   }
   const timer = setInterval(() => {
     const now = Date.now();
+    const currentDay = dayOf(new Date(now));
+    if (currentDay !== recordedDay) {
+      database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(currentDay);
+      recordedDay = currentDay;
+    }
     sample = resources.sample();
     for (const [id, client] of clients) if (client.seen < now - 1800000) clients.delete(id);
     while (requests[0]?.time < now - 300000) requests.shift();
@@ -328,16 +407,19 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
         "DELETE FROM monitor_events WHERE time<? OR rowid NOT IN (SELECT rowid FROM monitor_events ORDER BY time DESC LIMIT 500)",
       )
       .run(now - 86400000);
-    const oldest = dayOf(new Date(now - 30 * 86400000));
+    const oldest = dayOf(new Date(now - 365 * 86400000));
     database.prepare("DELETE FROM monitor_days WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_pages WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_connections WHERE day<?").run(oldest);
+    database.prepare("DELETE FROM monitor_live_visitors WHERE day<?").run(oldest);
+    samplePerformance(now);
   }, 5000);
   timer.unref();
   return {
     telemetry,
     request,
     connection,
+    samplePerformance,
     snapshot,
     enabled: telemetryEnabled,
     stop() {

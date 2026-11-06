@@ -146,7 +146,7 @@ test("metrics polling never overlaps and resumes automatically after returning t
   assert.equal(calls, 3);
 });
 
-test("statistics page is guarded and renders tracking separately from the live regia", () => {
+test("statistics page is guarded and renders tracking separately from the live regia", async () => {
   const statistics = fs.readFileSync(path.join(__dirname, "../assets/js/statistiche.js"), "utf8");
   let redirected;
   vm.runInNewContext(statistics, {
@@ -165,15 +165,41 @@ test("statistics page is guarded and renders tracking separately from the live r
         textContent: "",
         hidden: false,
         children: [],
-        append(value) {
-          this.children.push(value);
+        attributes: {},
+        dataset: {},
+        style: {},
+        append(...values) {
+          this.children.push(...values);
         },
+        setAttribute(name, value) {
+          this.attributes[name] = value;
+        },
+        addEventListener() {},
         replaceChildren() {
           this.children = [];
         },
       });
     return elements.get(id);
   };
+  const rangeButtons = [7, 30, 90, 365].map((days) => ({
+    attributes: { "data-history-days": String(days) },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    getAttribute(name) {
+      return this.attributes[name];
+    },
+    addEventListener(_name, listener) {
+      this.listener = listener;
+    },
+  }));
+  const hourly = Array.from({ length: 60 }, (_, index) => ({
+    sampledAt: Date.now() - (59 - index) * 60000,
+    online: index === 59 ? 4 : 2,
+    p95Ms: index === 59 ? 27 : 20,
+    cpuPercent: index === 59 ? 33 : 15,
+    memoryPercent: index === 59 ? 70 : 60,
+  }));
   let subscriber;
   vm.runInNewContext(statistics, {
     window: {
@@ -185,27 +211,55 @@ test("statistics page is guarded and renders tracking separately from the live r
         },
       },
     },
-    document: { getElementById: get, createElement: () => get(Symbol()) },
+    document: {
+      getElementById: get,
+      createElement: () => get(Symbol()),
+      createElementNS: () => get(Symbol()),
+      querySelectorAll: () => rangeButtons,
+    },
+    fetch: async () => ({ ok: true, json: async () => ({ sha: "a".repeat(40) }) }),
   });
   subscriber.render({
     enabled: true,
     sampledAt: Date.now(),
     traffic: {
-      today: { visits: 2, views: 3, connections: 4, errors: 0 },
+      today: { visits: 2, views: 21, liveUnique: 4, connections: 4, errors: 0 },
       totals: { visits: 5, views: 6, connections: 7, started: "2026-11-06" },
       online: 1,
       liveStreams: 2,
-      daily: [{ day: "2026-11-06", visits: 2, views: 3, connections: 4 }],
-      pages: [{ page: "statistiche", views: 1 }],
+      presentationDevices: 3,
+      daily: [{ day: "2026-11-06", visits: 2, views: 3, liveUnique: 4, connections: 4 }],
+      pages: [
+        { page: "home", views: 9 },
+        { page: "assemblea", views: 6 },
+        { page: "statistiche", views: 3 },
+        { page: "peg", views: 3 },
+      ],
       sessions: [],
     },
+    service: { release: "a".repeat(40) },
     api: { p95Ms: 20, errors5xx: 0, limited: 0 },
+    performance: { hourly },
     events: [],
   });
+  await new Promise(setImmediate);
   assert.equal(get("stats-visits").textContent, "2");
-  assert.equal(get("stats-connections").textContent, "4");
+  assert.equal(get("stats-live-unique").textContent, "4");
+  assert.equal(get("stats-online").textContent, "3");
   assert.equal(get("stats-days").children[0].children.length, 4);
-  assert.equal(get("stats-pages").children[0].children[0].textContent, "Statistiche");
+  assert.equal(get("stats-distribution-title").textContent, "Home e Presentazione raccolgono il 71% delle pagine viste.");
+  assert.equal(get("stats-release-commit").textContent, "a".repeat(12));
+  assert.equal(get("stats-release-status").textContent, "Il NAS è all’ultimo commit del branch NAS.");
+  assert.equal(get("stats-hour-online-current").textContent, "4");
+  assert.equal(get("stats-hour-online-peak").textContent, "Picco 4");
+  assert.match(get("stats-hour-note").textContent, /uno al minuto/);
+  assert.equal(
+    get("stats-history-chart").children.filter((child) => child.attributes.class?.includes("chart-series")).length,
+    3,
+  );
+  rangeButtons[0].listener();
+  assert.equal(rangeButtons[0].attributes["aria-pressed"], "true");
   subscriber.error("Offline");
-  assert.equal(get("stats-connections").textContent, "-");
+  assert.equal(get("stats-live-unique").textContent, "-");
+  assert.equal(get("stats-hour-online-current").textContent, "-");
 });

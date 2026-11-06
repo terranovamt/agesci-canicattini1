@@ -29,96 +29,128 @@
       </div>
       <p id="statistics-status" class="metrics-status" role="status" aria-live="polite">Verifica accesso...</p>
       <div id="statistics-content" hidden>
-        <section class="metrics-section" aria-labelledby="statistics-today">
-          <h2 id="statistics-today">Oggi</h2>
-          <dl class="metrics-overview">
+        <section class="statistics-release" aria-labelledby="statistics-release-title">
+          <div class="statistics-release-heading">
             <div>
-              <dt>Visite</dt>
-              <dd id="stats-visits">-</dd>
+              <h2 id="statistics-release-title">Versione NAS</h2>
+              <p id="stats-release-branch" class="metrics-status">Branch NAS</p>
             </div>
-            <div>
-              <dt>Pagine viste</dt>
-              <dd id="stats-views">-</dd>
-            </div>
-            <div>
-              <dt>Connessioni live aperte</dt>
-              <dd id="stats-connections">-</dd>
-            </div>
-            <div>
-              <dt>Schede visibili ora</dt>
-              <dd id="stats-online">-</dd>
-            </div>
-            <div>
-              <dt>Flussi SSE attuali</dt>
-              <dd id="stats-streams">-</dd>
-            </div>
-            <div>
-              <dt>Segnalazioni</dt>
-              <dd id="stats-errors">-</dd>
-            </div>
-          </dl>
-          <p id="stats-totals" class="metrics-status">-</p>
+            <button id="stats-release-check" type="button">Verifica aggiornamento</button>
+          </div>
+          <p class="statistics-release-version">Commit deployato: <a id="stats-release-commit" hidden></a></p>
+          <p id="stats-release-status" class="metrics-status" role="status" aria-live="polite">In attesa della versione del server…</p>
+          <p id="stats-release-latest" class="metrics-status" hidden>
+            Ultimo commit NAS: <a id="stats-release-latest-commit" target="_blank" rel="noopener"></a>
+          </p>
         </section>
-        <div class="statistics-columns">
-          <section class="metrics-section" aria-labelledby="statistics-days">
-            <h2 id="statistics-days">Ultimi sette giorni</h2>
-            <table class="metrics-table">
-              <thead>
-                <tr>
-                  <th>Giorno</th>
-                  <th>Visite</th>
-                  <th>Pagine</th>
-                  <th>Connessioni live</th>
-                </tr>
-              </thead>
-              <tbody id="stats-days"></tbody>
-            </table>
+        <section class="metrics-section" aria-labelledby="statistics-today">
+          <h2 id="statistics-today">Il sito oggi</h2>
+          <dl class="metrics-overview statistics-kpis">
+            <div><dt>Visite al sito</dt><dd id="stats-visits">-</dd></div>
+            <div><dt>Pagine viste</dt><dd id="stats-views">-</dd></div>
+            <div><dt>Connessioni live uniche</dt><dd id="stats-live-unique">-</dd></div>
+            <div><dt>Spettatori live adesso</dt><dd id="stats-online">-</dd></div>
+            <div><dt>Segnalazioni oggi</dt><dd id="stats-errors">-</dd></div>
+          </dl>
+        </section>
+        <div class="statistics-main">
+          <section class="metrics-section statistics-history" aria-labelledby="statistics-history">
+            <div class="statistics-history-heading">
+              <div>
+                <h2 id="statistics-history">Andamento del sito</h2>
+                <p id="stats-history-description" class="metrics-status">Visite, pagine viste e spettatori unici della diretta.</p>
+              </div>
+              <div class="statistics-range" role="group" aria-label="Intervallo dello storico">
+                <button type="button" data-history-days="7" aria-pressed="false">7 giorni</button>
+                <button type="button" data-history-days="30" aria-pressed="true">30 giorni</button>
+                <button type="button" data-history-days="90" aria-pressed="false">90 giorni</button>
+                <button type="button" data-history-days="365" aria-pressed="false">12 mesi</button>
+              </div>
+            </div>
+            <div class="statistics-chart-legend" aria-hidden="true">
+              <span class="statistics-legend-visits">Visite sito</span>
+              <span class="statistics-legend-views">Pagine viste</span>
+              <span class="statistics-legend-connections">Unici diretta</span>
+            </div>
+            <svg id="stats-history-chart" class="statistics-chart" viewBox="0 0 720 280" role="img"
+              aria-label="Andamento giornaliero delle visite, delle pagine viste e degli spettatori unici della diretta. Dati anche nella tabella sottostante.">
+              <title>Andamento del sito</title>
+            </svg>
+            <p id="stats-history-note" class="metrics-status" role="status"></p>
+            <details class="statistics-history-table">
+              <summary>Consulta i dati giornalieri</summary>
+              <table class="metrics-table">
+                <thead><tr><th scope="col">Giorno</th><th scope="col">Visite sito</th><th scope="col">Pagine viste</th><th scope="col">Unici diretta</th></tr></thead>
+                <tbody id="stats-days"></tbody>
+              </table>
+            </details>
           </section>
-          <section class="metrics-section" aria-labelledby="statistics-pages">
-            <h2 id="statistics-pages">Pagine viste oggi</h2>
-            <table class="metrics-table">
-              <thead>
-                <tr>
-                  <th>Pagina</th>
-                  <th>Viste</th>
-                </tr>
-              </thead>
-              <tbody id="stats-pages"></tbody>
-            </table>
+          <section class="metrics-section statistics-distribution" aria-labelledby="statistics-distribution-title">
+            <p class="eyebrow">La distribuzione di oggi</p>
+            <h2 id="stats-distribution-title">Caricamento…</h2>
+            <p id="stats-distribution-total" class="metrics-status"></p>
+            <div id="stats-pages" class="statistics-page-bars"></div>
+            <p class="metrics-status">Visualizzazioni di pagina, non persone uniche.</p>
           </section>
         </div>
-        <section class="metrics-section" aria-labelledby="statistics-sessions">
-          <h2 id="statistics-sessions">Ultime schede visibili</h2>
-          <table class="metrics-table">
-            <thead>
-              <tr>
-                <th>Pagina</th>
-                <th>Risposta browser</th>
-                <th>Ultimo segnale</th>
-              </tr>
-            </thead>
-            <tbody id="stats-sessions"></tbody>
-          </table>
+        <section class="metrics-section statistics-hourly" aria-labelledby="statistics-hourly-title">
+          <div class="statistics-history-heading">
+            <div>
+              <h2 id="statistics-hourly-title">L’ultima ora, in quattro grafici</h2>
+              <p class="metrics-status">Presenze live, risposta API, CPU e RAM del NAS · campioni ogni minuto</p>
+            </div>
+            <span class="metrics-live-badge"><i></i> Ultimi 60 minuti</span>
+          </div>
+          <div class="statistics-hourly-grid">
+            <article class="statistics-hour-card" data-hourly="online">
+              <h3>Presenze live</h3><p>Spettatori simultanei</p>
+              <div class="statistics-hour-values"><strong id="stats-hour-online-current">-</strong><span id="stats-hour-online-peak">-</span></div>
+              <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Spettatori simultanei della diretta nell’ultima ora"></svg>
+            </article>
+            <article class="statistics-hour-card" data-hourly="latency">
+              <h3>Risposta API</h3><p>Tempo p95 su 5 minuti · ms</p>
+              <div class="statistics-hour-values"><strong id="stats-hour-latency-current">-</strong><span id="stats-hour-latency-peak">-</span></div>
+              <svg id="stats-hour-latency" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Tempo di risposta API p95 nell’ultima ora, in millisecondi"></svg>
+            </article>
+            <article class="statistics-hour-card" data-hourly="cpu">
+              <h3>CPU NAS</h3><p>Utilizzo processore · %</p>
+              <div class="statistics-hour-values"><strong id="stats-hour-cpu-current">-</strong><span id="stats-hour-cpu-peak">-</span></div>
+              <svg id="stats-hour-cpu" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Utilizzo CPU del NAS nell’ultima ora, in percentuale"></svg>
+            </article>
+            <article class="statistics-hour-card" data-hourly="ram">
+              <h3>RAM NAS</h3><p>Memoria utilizzata · %</p>
+              <div class="statistics-hour-values"><strong id="stats-hour-ram-current">-</strong><span id="stats-hour-ram-peak">-</span></div>
+              <svg id="stats-hour-ram" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Utilizzo RAM del NAS nell’ultima ora, in percentuale"></svg>
+            </article>
+          </div>
+          <p id="stats-hour-note" class="metrics-status" role="status"></p>
         </section>
-        <section class="metrics-section" aria-labelledby="statistics-diagnostics">
-          <h2 id="statistics-diagnostics">Diagnostica</h2>
-          <dl class="metrics-overview">
-            <div>
-              <dt>Risposta API p95 / 5 min</dt>
-              <dd id="stats-latency">-</dd>
+        <div class="statistics-bottom">
+          <section class="metrics-section statistics-alerts" aria-labelledby="statistics-diagnostics">
+            <div class="statistics-history-heading">
+              <h2 id="statistics-diagnostics">Segnalazioni</h2>
+              <p id="stats-no-events" class="metrics-status">Nessuna segnalazione recente.</p>
             </div>
-            <div>
-              <dt>Errori API 5xx / 5 min</dt>
-              <dd id="stats-api-errors">-</dd>
-            </div>
-            <div>
-              <dt>Richieste limitate / 5 min</dt>
-              <dd id="stats-limited">-</dd>
-            </div>
-          </dl>
-          <p id="stats-no-events" class="metrics-status">Nessuna segnalazione recente.</p>
-          <ol id="stats-events" class="metrics-events"></ol>
-        </section>
+            <dl class="metrics-overview statistics-diagnostic-counters">
+              <div><dt>Risposta API p95 / 5 min</dt><dd id="stats-latency">-</dd></div>
+              <div><dt>Errori API 5xx / 5 min</dt><dd id="stats-api-errors">-</dd></div>
+              <div><dt>Richieste limitate / 5 min</dt><dd id="stats-limited">-</dd></div>
+              <div><dt>Schede visibili nell’intero sito</dt><dd id="stats-site-online">-</dd></div>
+              <div><dt>Flussi SSE tecnici attivi</dt><dd id="stats-streams">-</dd></div>
+            </dl>
+            <ol id="stats-events" class="metrics-events"></ol>
+          </section>
+          <section class="metrics-section statistics-release-details" aria-label="Totali del sito e schede online">
+            <p id="stats-totals" class="metrics-status">-</p>
+            <details class="statistics-sessions">
+              <summary>Ultime schede visibili</summary>
+              <table class="metrics-table">
+                <thead><tr><th scope="col">Pagina</th><th scope="col">Risposta browser</th><th scope="col">Ultimo segnale</th></tr></thead>
+                <tbody id="stats-sessions"></tbody>
+              </table>
+            </details>
+          </section>
+        </div>
       </div>
     </main>
     <footer>AGESCI Canicattini 1</footer>

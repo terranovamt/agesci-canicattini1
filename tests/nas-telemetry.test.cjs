@@ -25,6 +25,7 @@ function browser(enabled = true, preview = false, storage = new Map(), route = "
   window.top = window.self = window;
   const context = {
     window,
+    crypto: window.crypto,
     URL,
     location: { pathname: route, origin: "https://site.test", href: "https://site.test" + route },
     document: { readyState: "complete", visibilityState: "visible" },
@@ -109,4 +110,14 @@ test("another tab shares a recent visit ID but renews one after inactivity", asy
   const expired = browser(true, false, storage);
   await flush();
   assert.notEqual(JSON.parse(expired.calls[1].options.body).id, "aaaaaaaa-1234-1234-1234-123456789abc");
+});
+
+test("live visitor ID remains anonymous and stable across tabs", () => {
+  const storage = new Map();
+  const first = browser(false, false, storage);
+  const visitor = first.window.NAS_VISITOR.id();
+  assert.match(visitor, /^[a-f0-9-]{36}$/i);
+  assert.equal(storage.get("nas-live-visitor-id"), visitor);
+  const anotherTab = browser(false, false, storage);
+  assert.equal(anotherTab.window.NAS_VISITOR.id(), visitor);
 });
