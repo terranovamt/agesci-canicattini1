@@ -1,35 +1,45 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const { test } = require('node:test');
-const vm = require('node:vm');
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+const { test } = require("node:test");
+const vm = require("node:vm");
 
-const root = path.join(__dirname, '..');
-const currentPegPath = 'peg/edizioni/2026-2028.html';
-const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
-  spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
+const root = path.join(__dirname, "..");
+const currentPegPath = "peg/edizioni/2026-2028.html";
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const chrome = ["google-chrome", "chromium", "chromium-browser"].find(
+  (command) => spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0,
+);
 
-test('home introduces the dedicated PEG page and the original PDF stays available', () => {
-  assert.match(read('index.html'), /class="peg-home-link" href="peg\/index\.html">Consulta il PEG 26-28/);
-  assert.match(read('peg/index.html'), /location\.replace\('edizioni\/2026-2028\.html' \+ location\.search \+ location\.hash\)/);
-  assert.match(read('peg/index.html'), /href="edizioni\/2026-2028\.html"/);
+test("home introduces the dedicated PEG page and the original PDF stays available", () => {
+  assert.match(read("index.html"), /class="peg-home-link" href="peg\/index\.html">Consulta il PEG 26-28/);
+  assert.match(
+    read("peg/index.html"),
+    /location\.replace\('edizioni\/2026-2028\.html' \+ location\.search \+ location\.hash\)/,
+  );
+  assert.match(read("peg/index.html"), /href="edizioni\/2026-2028\.html"/);
   assert.match(read(currentPegPath), /href="\.\.\/\.\.\/documents\/pdf\/PEG26-28\.pdf" download/);
-  assert.ok(fs.existsSync(path.join(root, 'documents/pdf/PEG26-28.pdf')));
+  assert.ok(fs.existsSync(path.join(root, "documents/pdf/PEG26-28.pdf")));
   assert.doesNotMatch(read(currentPegPath), /home.js|assemblea.js|iframe|peg-trail/);
   assert.equal((read(currentPegPath).match(/<dt>/g) || []).length, 8);
-  assert.match(read('index.html'), /src="assets\/js\/site-menu\.js"/);
+  assert.match(read("index.html"), /src="assets\/js\/site-menu\.js"/);
   assert.match(read(currentPegPath), /src="\.\.\/\.\.\/assets\/js\/site-menu\.js"/);
   assert.match(read(currentPegPath), /src="\.\.\/\.\.\/assets\/js\/peg\.js"/);
-  assert.match(read('index.html'), /href="assets\/css\/home\.css"/);
+  assert.match(read("index.html"), /href="assets\/css\/home\.css"/);
   assert.match(read(currentPegPath), /href="\.\.\/\.\.\/assets\/css\/home\.css"/);
   assert.match(read(currentPegPath), /href="\.\.\/\.\.\/assets\/css\/peg\.css"/);
   for (const page of [
-    'index.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'peg/index.html', 'setup.html',
-    currentPegPath, 'area-riservata/assemblea/index.html', 'area-riservata/assemblea/regia.html',
-    'area-riservata/assemblea/setup.html', 'area-riservata/assemblea/guida.html'
+    "index.html",
+    "area-riservata/index.html",
+    "area-riservata/documenti.html",
+    "peg/index.html",
+    currentPegPath,
+    "area-riservata/assemblea/index.html",
+    "area-riservata/assemblea/regia.html",
+    "area-riservata/assemblea/setup.html",
+    "area-riservata/assemblea/guida.html",
   ]) {
     const html = read(page);
     for (const [, resource] of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
@@ -37,7 +47,7 @@ test('home introduces the dedicated PEG page and the original PDF stays availabl
       assert.ok(fs.existsSync(path.resolve(root, path.dirname(page), resource)), `${page}: ${resource}`);
     }
   }
-  for (const stylesheet of ['assets/css/home.css', 'assets/css/peg.css', 'assets/css/gestione-documenti.css']) {
+  for (const stylesheet of ["assets/css/home.css", "assets/css/peg.css", "assets/css/gestione-documenti.css"]) {
     const css = read(stylesheet);
     for (const [, resource] of css.matchAll(/url\(["']?([^)"']+)["']?\)/g)) {
       if (/^(?:data:|https?:|#)/.test(resource)) continue;
@@ -46,69 +56,107 @@ test('home introduces the dedicated PEG page and the original PDF stays availabl
   }
   const areas = read(currentPegPath).match(/<article class="peg-area[\s\S]*?<\/article>/g);
   for (const area of areas) {
-    assert.ok(area.indexOf('<blockquote') < area.indexOf('class="peg-goals-labels"'));
+    assert.ok(area.indexOf("<blockquote") < area.indexOf('class="peg-goals-labels"'));
     assert.match(area, /<\/p>\s*<blockquote[\s\S]*?<\/blockquote>\s*<div class="peg-goals-labels"/);
   }
   for (const image of read(currentPegPath).matchAll(/src="(\.\.\/assets\/peg\/[^"]+)"/g))
-    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, '..', image[1])));
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", image[1])));
   for (const link of read(currentPegPath).matchAll(/(?:href|src)="(\.\.\/[^"#]+)"/g))
-    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, '..', link[1])), link[1]);
-  assert.ok(fs.existsSync(path.join(root, 'assets/fonts/caveat.ttf')));
-  assert.match(read('assets/fonts/OFL-Caveat.txt'), /SIL OPEN FONT LICENSE/);
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", link[1])), link[1]);
+  assert.ok(fs.existsSync(path.join(root, "assets/fonts/caveat.ttf")));
+  assert.match(read("assets/fonts/OFL-Caveat.txt"), /SIL OPEN FONT LICENSE/);
 });
 
-test('reading index follows all sections on scroll, resize, load and return to top', () => {
-  const ids = ['premessa', 'analisi-esterna', 'analisi-interna', 'fondamenta', 'strutturazione', 'scelta', 'custodi', 'cittadini'];
+test("reading index follows all sections on scroll, resize, load and return to top", () => {
+  const ids = [
+    "premessa",
+    "analisi-esterna",
+    "analisi-interna",
+    "fondamenta",
+    "strutturazione",
+    "scelta",
+    "custodi",
+    "cittadini",
+  ];
   const attributes = ids.map(() => ({}));
   const links = ids.map((id, i) => ({
-    hash: '#' + id,
-    setAttribute: (name, value) => { attributes[i][name] = value },
-    removeAttribute: name => { delete attributes[i][name] }
+    hash: "#" + id,
+    setAttribute: (name, value) => {
+      attributes[i][name] = value;
+    },
+    removeAttribute: (name) => {
+      delete attributes[i][name];
+    },
   }));
   const events = {};
   const window = {
-    innerHeight: 900, scrollY: 0,
-    addEventListener: (name, callback) => { events[name] = callback },
-    requestAnimationFrame: callback => { events.frame = callback }
+    innerHeight: 900,
+    scrollY: 0,
+    addEventListener: (name, callback) => {
+      events[name] = callback;
+    },
+    requestAnimationFrame: (callback) => {
+      events.frame = callback;
+    },
   };
-  vm.runInNewContext(read('assets/js/peg.js'), {
+  vm.runInNewContext(read("assets/js/peg.js"), {
     window,
     document: {
       querySelectorAll: () => links,
-      getElementById: id => ({ getBoundingClientRect: () => ({ top: 500 + ids.indexOf(id) * 1000 - window.scrollY }) }),
-      documentElement: { scrollHeight: 9000 }
-    }
+      getElementById: (id) => ({
+        getBoundingClientRect: () => ({ top: 500 + ids.indexOf(id) * 1000 - window.scrollY }),
+      }),
+      documentElement: { scrollHeight: 9000 },
+    },
   });
-  const current = () => attributes.flatMap((attrs, i) => attrs['aria-current'] === 'location' ? [ids[i]] : []);
-  assert.deepEqual(current(), ['premessa']);
+  const current = () => attributes.flatMap((attrs, i) => (attrs["aria-current"] === "location" ? [ids[i]] : []));
+  assert.deepEqual(current(), ["premessa"]);
   for (const [i, id] of ids.entries()) {
     window.scrollY = 500 + i * 1000 - 100;
-    events.scroll(); events.frame();
+    events.scroll();
+    events.frame();
     assert.deepEqual(current(), [id]);
   }
   window.scrollY = 8100;
-  events.scroll(); events.frame();
-  assert.deepEqual(current(), ['cittadini']);
+  events.scroll();
+  events.frame();
+  assert.deepEqual(current(), ["cittadini"]);
   window.scrollY = 0;
-  events.resize(); events.frame();
-  assert.deepEqual(current(), ['premessa']);
+  events.resize();
+  events.frame();
+  assert.deepEqual(current(), ["premessa"]);
   window.scrollY = 3500;
-  events.load(); events.frame();
-  assert.deepEqual(current(), ['fondamenta']);
+  events.load();
+  events.frame();
+  assert.deepEqual(current(), ["fondamenta"]);
 });
 
-test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigation', { skip: !chrome }, () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'peg-layout-'));
-  const pages = [currentPegPath, 'index.html'].map(file => read(file)
-    .replace(/<link\b[^>]*>/g, '')
-    .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, '')
-    .replace('</head>', '<base href="file://' + path.dirname(path.join(root, file)) + '/"><style>' + read('assets/css/theme.css') +
-      read('assets/css/home.css') + (file === currentPegPath ? read('assets/css/peg.css') : '') +
-      '</style></head>')
-    .replace('</body>', '<script>' + read('assets/js/site-menu.js') +
-      (file === currentPegPath ? read('assets/js/peg.js') : '') + '</script></body>'));
+test("PEG and home fit mobile, tablet, laptop and desktop, with usable navigation", { skip: !chrome }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "peg-layout-"));
+  const pages = [currentPegPath, "index.html"].map((file) =>
+    read(file)
+      .replace(/<link\b[^>]*>/g, "")
+      .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, "")
+      .replace(
+        "</head>",
+        '<base href="file://' +
+          path.dirname(path.join(root, file)) +
+          '/"><style>' +
+          read("assets/css/theme.css") +
+          read("assets/css/home.css") +
+          (file === currentPegPath ? read("assets/css/peg.css") : "") +
+          "</style></head>",
+      )
+      .replace(
+        "</body>",
+        "<script>" +
+          read("assets/js/site-menu.js") +
+          (file === currentPegPath ? read("assets/js/peg.js") : "") +
+          "</script></body>",
+      ),
+  );
   const html = `<!doctype html><meta charset="utf-8"><body><script>
-    const pages = ${JSON.stringify(pages).replace(/</g, '\\u003c')};
+    const pages = ${JSON.stringify(pages).replace(/</g, "\\u003c")};
     const results = [];
     (async () => {
       for (let page = 0; page < pages.length; page++) {
@@ -157,14 +205,25 @@ test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
     });
     </script></body>`;
   try {
-    const file = path.join(dir, 'layout.html');
+    const file = path.join(dir, "layout.html");
     fs.writeFileSync(file, html);
-    const result = spawnSync(chrome, [
-      '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-      '--no-first-run', '--no-default-browser-check', '--no-proxy-server',
-      '--user-data-dir=' + path.join(dir, 'profile'), '--virtual-time-budget=15000',
-      '--dump-dom', 'file://' + file
-    ], { encoding: 'utf8', timeout: 30000, maxBuffer: 5 * 1024 * 1024 });
+    const result = spawnSync(
+      chrome,
+      [
+        "--headless",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--no-proxy-server",
+        "--user-data-dir=" + path.join(dir, "profile"),
+        "--virtual-time-budget=15000",
+        "--dump-dom",
+        "file://" + file,
+      ],
+      { encoding: "utf8", timeout: 30000, maxBuffer: 5 * 1024 * 1024 },
+    );
     assert.equal(result.status, 0, result.stderr);
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
     assert.ok(match, result.stdout.slice(-3000));
@@ -180,7 +239,7 @@ test('PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
       if (row.page === 0) {
         assert.equal(row.areas, 3, label);
         assert.equal(row.goalColumns, row.width <= 640 ? 1 : 2, label);
-        assert.equal(row.indexPosition, row.width <= 900 ? 'static' : 'sticky', label);
+        assert.equal(row.indexPosition, row.width <= 900 ? "static" : "sticky", label);
       }
       if (row.width <= 640) {
         assert.equal(row.menuOpen, true, label);

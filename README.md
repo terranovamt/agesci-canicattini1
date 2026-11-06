@@ -8,34 +8,35 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 ## Documentazione
 
-| Documento | Contenuto |
-| --- | --- |
-| [docs/assemblea.md](docs/assemblea.md) | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
-| [docs/contenuti.md](docs/contenuti.md) | setup solo GitHub, `dati.js`, Salva su GitHub |
-| [docs/firebase.md](docs/firebase.md) | nodi, configurazione da zero, regole, limiti del piano gratuito |
-| [docs/sviluppo.md](docs/sviluppo.md) | struttura del codice e dei tipi di slide |
-| [docs/struttura-repository.md](docs/struttura-repository.md) | gerarchia completa del repository e criteri di organizzazione |
-| [docs/audit-ui-ux.md](docs/audit-ui-ux.md) | audit UI/UX e priorità di manutenzione |
+| Documento                                                          | Contenuto                                                                    |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| [docs/assemblea.md](docs/assemblea.md)                             | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
+| [docs/contenuti.md](docs/contenuti.md)                             | setup solo GitHub, `dati.js`, Salva su GitHub                                |
+| [docs/firebase.md](docs/firebase.md)                               | nodi, configurazione da zero, regole, limiti del piano gratuito              |
+| [docs/sviluppo.md](docs/sviluppo.md)                               | struttura del codice e dei tipi di slide                                     |
+| [docs/struttura-repository.md](docs/struttura-repository.md)       | gerarchia completa del repository e criteri di organizzazione                |
+| [docs/audit-ui-ux.md](docs/audit-ui-ux.md)                         | audit UI/UX e priorità di manutenzione                                       |
+| [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | roadmap prestazioni e deployment statico su Synology con Cloudflare Tunnel   |
 
 ## Indirizzi
 
-| Chi | Indirizzo |
-| --- | --- |
-| Home / pubblico | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
-| Area riservata | `.../area-riservata/index.html` (accesso con chiave) |
-| Gestione PDF | `.../area-riservata/documenti.html` |
-| Documenti pubblici assemblea | `.../assemblea/` (nessun login) |
-| Archivio documenti | `.../documenti/` (pubblico, ricerca per anno e testo) |
-| PEG corrente | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
-| Regia (dashboard) | `.../area-riservata/assemblea/regia.html` (chiede la chiave) |
-| Setup (solo GitHub) | https://terranovamt.github.io/agesci-canicattini1/setup (nessun accesso Firebase) |
-| Guida | `.../area-riservata/assemblea/guida.html` |
+| Chi                          | Indirizzo                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| Home / pubblico              | https://terranovamt.github.io/agesci-canicattini1/ (presentazione solo durante l'assemblea) |
+| Area riservata               | `.../area-riservata/index.html` (accesso con chiave)                                        |
+| Gestione PDF                 | `.../area-riservata/documenti.html`                                                         |
+| Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                                             |
+| Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)                                       |
+| PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`)                              |
+| Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (chiede la chiave)                                |
+| Setup (solo GitHub)          | `.../area-riservata/assemblea/setup.html` (nessun accesso Firebase)                         |
+| Guida                        | `.../area-riservata/assemblea/guida.html`                                                   |
 
 La home propone **Area riservata**: dopo la verifica della chiave
 su Firebase compare **Regia Assemblea di Gruppo**, con **Avvia live** e
 **Termina assemblea**. Dall'area riservata si apre anche il setup: richiede
 un accesso già verificato nella sessione della scheda, senza ripetere
-richieste Firebase. Il link diretto `/setup` rimanda al login se manca la sessione.
+richieste Firebase. Il setup in `area-riservata/assemblea/setup.html` rimanda al login se manca la sessione.
 Modifica solo `dati.js` e richiede un token GitHub autorizzato per
 fare il commit. Non legge né scrive Firebase, non conta presenze e non legge
 le modifiche live pubblicate dalla regia.
@@ -173,6 +174,12 @@ a `area-riservata/assemblea/index.html`, conservando parametri e posizione (`#sl
 Il file `.nojekyll` fa pubblicare i file così come sono, senza elaborazione Jekyll.
 
 ## Struttura del repository
+
+`index.html` e' l'unico file HTML alla radice. I vecchi HTML di ingresso
+e le cartelle di compatibilita' sono stati rimossi: sul NAS i loro indirizzi sono reindirizzati da Nginx,
+mentre su GitHub Pages e nella preview occorre usare i percorsi attuali.
+Esistono soltanto `peg/` per il PEG e `assemblea/` per i documenti pubblici;
+regia, setup e guida restano in `area-riservata/assemblea/`.
 
 La home resta in `index.html`; le altre pagine sono raggruppate per funzione:
 `assemblea/` per i documenti preparatori pubblici, `peg/edizioni/` per i

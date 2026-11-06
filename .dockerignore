@@ -1,0 +1,13 @@
+.git
+.github
+.venv-calendar
+**/__pycache__
+**/node_modules
+**/.env
+**/.env.*
+**/tunnel-token.txt
+tests
+tools
+docs
+design-system
+firebase
