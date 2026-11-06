@@ -6,7 +6,7 @@ const { once } = require("node:events");
 const { test } = require("node:test");
 const { createNasServer } = require("../server/nas.cjs");
 
-const password = "test-password-not-for-production";
+const password = "Nas-test-password1-not-for-production";
 const publicOrigin = "http://localhost";
 
 async function start(dataDir, options = {}) {
@@ -32,7 +32,7 @@ async function start(dataDir, options = {}) {
     request,
     origin,
     async login() {
-      const response = await request("/api/state/modifiche/k.json", "PUT", password);
+      const response = await request("/api/state/modifiche/k.json", "PUT", options.password ?? password);
       assert.equal(response.status, 200);
       assert.match(response.headers.get("set-cookie"), /HttpOnly; SameSite=Strict/);
     },
@@ -42,6 +42,18 @@ async function start(dataDir, options = {}) {
     },
   };
 }
+
+test("NAS password requires at least eight characters with uppercase, lowercase and a digit", async () => {
+  for (const invalid of [undefined, null, "Abc1234", "abcdefgh1", "ABCDEFGH1", "Abcdefgh", "12345678"]) {
+    await assert.rejects(createNasServer({ password: invalid, publicOrigin, secureCookie: false }), /almeno 8 caratteri/);
+  }
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-password-"));
+  const app = await start(directory, { password: "Abcdefg1" });
+  try {
+    await app.login();
+    assert.equal((await (await app.request("/api/session")).json()).authenticated, true);
+  } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }) }
+});
 
 test("NAS requires session and same-origin writes, hides secrets and preserves state across restarts", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-state-"));
