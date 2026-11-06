@@ -37,20 +37,25 @@ const retiredPages = [
 ];
 
 test("static build publishes only site files and refuses to overwrite source directories", () => {
-  const { buildSite } = require('../tools/build-site.cjs');
-  const directory = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agesci-static-'));
+  const { buildSite } = require("../tools/build-site.cjs");
+  const directory = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "agesci-static-"));
   try {
     buildSite(directory);
-    const home = fs.readFileSync(path.join(directory, 'index.html'), 'utf8');
+    const home = fs.readFileSync(path.join(directory, "index.html"), "utf8");
     assert.match(home, /home-documents\.js\?v=[a-f0-9]{12}/);
     assert.match(home, /home\.css\?v=[a-f0-9]{12}/);
     assert.match(home, /src="config\/site\.js"/);
-    for (const file of ['index.html', 'assets/fonts/montserrat-latin.woff2', 'assets/img/foto-gruppo.avif', 'area-riservata/statistiche.html'])
+    for (const file of [
+      "index.html",
+      "assets/fonts/montserrat-latin.woff2",
+      "assets/img/foto-gruppo.avif",
+      "area-riservata/statistiche.html",
+    ])
       assert.ok(fs.existsSync(path.join(directory, file)), file);
-    for (const file of ['server', 'tools', '.git', 'README.md', 'nas.env'])
+    for (const file of ["server", "tools", ".git", "README.md", "nas.env"])
       assert.equal(fs.existsSync(path.join(directory, file)), false, file);
     assert.throws(() => buildSite(root), /sovrascrivere/);
-    assert.throws(() => buildSite(path.join(root, 'assets')), /sovrascrivere/);
+    assert.throws(() => buildSite(path.join(root, "assets")), /sovrascrivere/);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
