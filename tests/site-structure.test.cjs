@@ -36,6 +36,22 @@ const retiredPages = [
   "Assemblea-di-Gruppo/guida.html",
 ];
 
+test("static build publishes only site files and refuses to overwrite source directories", () => {
+  const { buildSite } = require('../tools/build-site.cjs');
+  const directory = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'agesci-static-'));
+  try {
+    buildSite(directory);
+    for (const file of ['index.html', 'assets/fonts/montserrat-latin.woff2', 'assets/img/foto-gruppo.avif', 'area-riservata/statistiche.html'])
+      assert.ok(fs.existsSync(path.join(directory, file)), file);
+    for (const file of ['server', 'tools', '.git', 'README.md', 'nas.env'])
+      assert.equal(fs.existsSync(path.join(directory, file)), false, file);
+    assert.throws(() => buildSite(root), /sovrascrivere/);
+    assert.throws(() => buildSite(path.join(root, 'assets')), /sovrascrivere/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("the root contains only the home HTML page", () => {
   assert.deepEqual(
     fs.readdirSync(root).filter((file) => file.endsWith(".html")),

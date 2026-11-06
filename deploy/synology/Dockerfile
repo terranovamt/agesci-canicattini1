@@ -1,15 +1,21 @@
+FROM node:24-alpine AS static-site
+WORKDIR /source
+COPY index.html manifest.webmanifest ./
+COPY assets/ assets/
+COPY config/ config/
+COPY calendars/ calendars/
+COPY documents/ documents/
+COPY documenti/ documenti/
+COPY area-riservata/ area-riservata/
+COPY assemblea/ assemblea/
+COPY peg/ peg/
+COPY tools/build-site.cjs tools/build-site.cjs
+RUN node tools/build-site.cjs /site
+
 FROM nginxinc/nginx-unprivileged:1.28-alpine
 
 COPY deploy/synology/nginx.conf /etc/nginx/conf.d/default.conf
-COPY *.html *.webmanifest /usr/share/nginx/html/agesci-canicattini1/
-COPY assets/ /usr/share/nginx/html/agesci-canicattini1/assets/
-COPY config/ /usr/share/nginx/html/agesci-canicattini1/config/
-COPY calendars/ /usr/share/nginx/html/agesci-canicattini1/calendars/
-COPY documents/ /usr/share/nginx/html/agesci-canicattini1/documents/
-COPY documenti/ /usr/share/nginx/html/agesci-canicattini1/documenti/
-COPY area-riservata/ /usr/share/nginx/html/agesci-canicattini1/area-riservata/
-COPY assemblea/ /usr/share/nginx/html/agesci-canicattini1/assemblea/
-COPY peg/ /usr/share/nginx/html/agesci-canicattini1/peg/
+COPY --from=static-site /site/ /usr/share/nginx/html/agesci-canicattini1/
 
 ENTRYPOINT ["nginx"]
 CMD ["-g", "daemon off;"]

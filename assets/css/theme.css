@@ -1,3 +1,38 @@
+@font-face {
+  font-family: "Montserrat";
+  src: url("../fonts/montserrat-latin.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+.loading-skeleton {
+  min-block-size: 180px;
+  padding: 24px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vl) 15%, var(--w));
+  overflow: hidden;
+}
+.loading-skeleton::before, .loading-skeleton::after {
+  content: "";
+  display: block;
+  height: 16px;
+  margin: 16px 0;
+  width: 75%;
+  background: color-mix(in srgb, var(--vl) 55%, var(--w));
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+.loading-skeleton::after { width: 92%; height: 48px }
+@keyframes skeleton-pulse { to { opacity: .35 } }
+@media (prefers-reduced-motion: reduce) {
+  .loading-skeleton::before, .loading-skeleton::after { animation: none }
+}
+.document-card, .managed-document, .agenda-day {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 280px;
+}
+.managed-document[aria-busy="true"] a,
+#managed-documents[aria-busy="true"] a { pointer-events: none }
+
 :root {
   --y: #FDC500;
   --vd: #211638;

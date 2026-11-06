@@ -99,7 +99,33 @@ nessuna modifica viene inviata ai servizi reali. Il server ascolta solo su
 Le modifiche ai PDF della simulazione sono visibili ricaricando la home e si
 perdono al riavvio del server: i file del repository non vengono modificati.
 
-## Documenti pubblici
+## Prestazioni e build statica
+
+`node tools/build-site.cjs` produce la cartella `dist/` con soli file pubblicabili.
+Il container Nginx usa questa build in uno stage Node separato: le pagine sono
+HTML statico gia' renderizzato, senza framework o SSR per richiesta. Documenti,
+calendari e dati modificabili continuano a essere letti dal NAS; la build non
+sovrascrive SQLite o i PDF caricati. Non viene generata una copia statica dei
+dati persistenti che rischierebbe di diventare obsoleta.
+
+- Skeleton durante il caricamento di documenti e calendari, con `aria-busy`
+	e animazioni disattivate quando e' richiesta una riduzione del movimento.
+- Salvataggi PDF ottimistici: lista aggiornata subito, conferma dal server e
+	rollback su errore. Il modulo resta disponibile per riprovare.
+- Archivio iniziale di 48 elementi, caricamento a blocchi e `content-visibility`
+	per saltare il rendering delle righe fuori schermo. E' rendering differito
+	nativo con caricamento progressivo, non virtualizzazione DOM React.
+- Filtri invariati non ricostruiscono le schede. Script separati per pagina
+	con `defer`, in ordine di dipendenza; immagini fuori dal primo schermo lazy.
+- Loghi e icone WebP lossless; foto AVIF con fallback WebP, richiesta soltanto
+	dalle slide fotografiche. Favicon e QR rimangono PNG.
+- Montserrat e Caveat WOFF2 locali, soli caratteri latini e stile normale,
+	`font-display: swap`; nessuna richiesta runtime a Google Fonts.
+
+Non e' stata aggiunta una chat IA: lo streaming token-by-token e' escluso
+per scelta, perche' il sito attuale non contiene un servizio IA.
+
+## Gestione documenti
 
 Nell'area riservata apri **Gestisci documenti PDF**. Dopo l'accesso puoi caricare,
 modificare o eliminare PDF inferiori a 20 MiB. File e metadati vengono salvati

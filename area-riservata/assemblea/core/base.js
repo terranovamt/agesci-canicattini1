@@ -9,7 +9,16 @@ const V = n => getComputedStyle(document.documentElement).getPropertyValue(n).tr
 const C = [1, 2, 3, 4, 5, 6].map(i => V('--c' + i));
 const fmt = n => n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−') + '€';
 const sum = a => a.reduce((s, x) => s + x, 0), NS = 'http://www.w3.org/2000/svg';
-const h = s => { const d = document.createElement('div'); d.innerHTML = s.trim(); return d.firstElementChild };
+const h = s => {
+  const d = document.createElement('div');
+  d.innerHTML = s.trim();
+  d.querySelectorAll('img').forEach(image => {
+    const source = image.getAttribute('src') || '';
+    image.setAttribute('src', source.replace(/^(\.\.\/\.\.\/assets\/img\/(?:casa|cc|coca|eg|lc|rs|logo|logo-grande))\.png$/, '$1.webp'));
+    image.decoding = 'async';
+  });
+  return d.firstElementChild;
+};
 const fitTitle = (el, max, min, lines = 2, maxH = 1e9) => {
   for (let f = max; f >= min; f--) {
     el.style.fontSize = f + 'px';

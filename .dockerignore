@@ -1,4 +1,5 @@
 .git
+dist
 .github
 .venv-calendar
 **/__pycache__

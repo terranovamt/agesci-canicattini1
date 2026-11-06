@@ -54,6 +54,40 @@ function fixture(file, css, scripts) {
     .replace('</head>', '<style>' + read('assets/css/theme.css') + read(css) + '</style><script>' + mock + '</script></head>');
 }
 
+test('document deletion updates immediately and rolls back when the server rejects it', async () => {
+  const nodes = new Map();
+  const element = () => ({
+    children: [], value: '', hidden: false, disabled: false, textContent: '',
+    append(...children) { this.children.push(...children) },
+    replaceChildren(...children) { this.children = children },
+    querySelectorAll() { return [] },
+    setAttribute() {}, focus() {}, scrollIntoView() {}
+  });
+  const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id) };
+  const document = { getElementById: get, createElement: element };
+  let rejectSave;
+  const items = [{ file: 'test.pdf', title: 'Test PDF', description: 'Documento' }];
+  const context = {
+    window: { ACCESSO: { verificata: () => true }, LIVE: { nas: true }, DOCUMENTS: {
+      tokenKey: 'test-token', load: async () => items,
+      apply: () => [], save: () => new Promise((resolve, reject) => { rejectSave = reject })
+    } },
+    document, localStorage: { getItem: () => '', setItem() {} },
+    confirm: () => true, Date, location: { replace() {} }, addEventListener() {}
+  };
+  require('node:vm').runInNewContext(read('assets/js/gestione-documenti.js'), context);
+  await new Promise(resolve => setImmediate(resolve));
+  const remove = get('managed-documents').children[0].children[3].children[1];
+  const pending = remove.onclick();
+  assert.equal(get('managed-documents').children[0].textContent.startsWith('Nessun PDF'), true);
+  assert.equal(get('save-document').disabled, true);
+  rejectSave(new Error('Server non disponibile'));
+  await pending;
+  assert.equal(get('managed-documents').children[0].children[0].textContent, 'Test PDF');
+  assert.equal(get('documents-message').textContent, 'Server non disponibile');
+  assert.equal(get('save-document').disabled, false);
+});
+
 test('public documents and management work in a browser at all required widths', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'group-documents-'));
   const pages = [

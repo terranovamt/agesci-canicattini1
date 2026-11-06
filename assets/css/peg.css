@@ -1,4 +1,4 @@
-@font-face { font-family: "Caveat"; src: url("../fonts/caveat.ttf") format("truetype"); font-style: normal; font-weight: 400 700; font-display: swap }
+@font-face { font-family: "Caveat"; src: url("../fonts/caveat-latin.woff2") format("woff2"); font-style: normal; font-weight: 400 700; font-display: swap }
 .peg-page { --peg-line: color-mix(in srgb, var(--vl) 45%, var(--w)) }
 .site-header nav a[aria-current="page"] { color: var(--v); text-decoration: underline; text-underline-offset: 6px }
 .peg-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: 48px; align-items: center; overflow: hidden; padding: clamp(32px, 5vw, 64px); border-radius: var(--radius-xl); background: var(--v); color: var(--w) }

@@ -5,6 +5,8 @@
   const siteRoot = list.dataset.siteRoot || '';
   const yearFilter = document.getElementById('documents-year');
   const search = document.getElementById('documents-search');
+  const more = document.getElementById('documents-more');
+  let visibleCount = 48;
   const currentYear = Number(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', year: 'numeric' }).format(new Date()));
   const panels = [{ list, status, retry, onlyPreparatory: list.dataset.preparatory === 'current' }];
   const preparatoryList = document.getElementById('preparatory-list');
@@ -52,6 +54,14 @@
       panel.retry.hidden = true;
       panel.status.textContent = 'Caricamento dei documenti…';
       panel.list.replaceChildren();
+      panel.lastRender = null;
+      panel.list.setAttribute('aria-busy', 'true');
+      for (let index = 0; index < 3; index++) {
+        const placeholder = document.createElement('article');
+        placeholder.className = 'loading-skeleton';
+        placeholder.setAttribute('aria-hidden', 'true');
+        panel.list.append(placeholder);
+      }
     });
     files = [];
     if (yearFilter) { yearFilter.disabled = true; search.disabled = true }
@@ -79,29 +89,37 @@
       render();
     } catch (error) {
       panels.forEach(panel => {
+        panel.list.replaceChildren();
         panel.status.textContent = error.message + '. Riprova tra poco.';
         panel.retry.hidden = false;
       });
       console.error('Caricamento PDF non riuscito', error);
+    } finally {
+      panels.forEach(panel => panel.list.setAttribute('aria-busy', 'false'));
     }
   }
   function render() {
     panels.forEach(panel => {
       const { list, status } = panel;
-      list.replaceChildren();
       const query = (search?.value || '').trim().toLocaleLowerCase('it');
       const year = yearFilter?.value || '';
+      const renderKey = query + '/' + year + '/' + visibleCount;
+      if (panel.lastRender === renderKey) return;
+      panel.lastRender = renderKey;
+      list.replaceChildren();
       const available = panel.onlyPreparatory ? window.DOCUMENTS_MODEL.preparatory(files, currentYear) : files;
       let shown = available.filter(file => (!year || (year === 'undated' ? !file.year : String(file.year) === year))
         && (!query || [file.title, file.description, file.file].join(' ').toLocaleLowerCase('it').includes(query)));
       const total = shown.length;
       if (list.dataset.limit) shown = shown.slice(0, Number(list.dataset.limit));
+      else if (more && panel === panels[0]) shown = shown.slice(0, visibleCount);
+      if (more && panel === panels[0]) more.hidden = shown.length >= total;
       status.textContent = panel.onlyPreparatory
         ? (shown.length ? shown.length + ' documenti preparatori per l’assemblea ' + currentYear + '.'
           : 'Non sono ancora stati pubblicati documenti preparatori per l’assemblea ' + currentYear + '.')
         : !files.length ? 'Non ci sono ancora documenti PDF pubblicati.'
         : !total ? 'Nessun documento corrisponde alla ricerca.'
-        : shown.length < total ? 'Gli ultimi ' + shown.length + ' documenti su ' + total + ' disponibili nell’archivio.'
+        : shown.length < total ? shown.length + ' documenti su ' + total + ' disponibili nell’archivio.'
         : shown.length + ' documenti PDF disponibili.';
       shown.forEach(file => {
         const detail = preparatory.find(item => item.file === file.file);
@@ -144,8 +162,10 @@
         });
       });
   }
-  if (yearFilter) yearFilter.onchange = render;
-  if (search) search.oninput = render;
+  const filter = () => { visibleCount = 48; render() };
+  if (yearFilter) yearFilter.onchange = filter;
+  if (search) search.oninput = filter;
+  if (more) more.onclick = () => { visibleCount += 48; render() };
   panels.forEach(panel => { panel.retry.onclick = load });
   load();
 })();
