@@ -2,21 +2,28 @@
   if (window.DOCUMENTS_PREVIEW || window.top !== window.self) return;
   const nativeFetch = window.fetch.bind(window);
   const route = location.pathname.toLowerCase();
-  const page = route.endsWith("/regia.html")
-    ? "regia"
-    : route.endsWith("/setup.html")
-      ? "setup"
-      : route.endsWith("/guida.html")
-        ? "guida"
-        : route.includes("/peg/")
-          ? "peg"
-          : route.includes("/area-riservata/assemblea/") || route.includes("/assemblea/")
-            ? "assemblea"
-            : route.includes("/area-riservata/documenti.html") || route.includes("/documenti/")
-              ? "documenti"
-              : route.includes("/area-riservata/")
-                ? "area"
-                : "home";
+  const basePath = route.startsWith("/agesci-canicattini1/") ? "/agesci-canicattini1" : "";
+  const page = route.endsWith("/statistiche.html")
+    ? "statistiche"
+    : route.endsWith("/regia.html")
+      ? "regia"
+      : route.endsWith("/setup.html")
+        ? "setup"
+        : route.endsWith("/guida.html")
+          ? "guida"
+          : route.includes("/peg/")
+            ? "peg"
+            : route.includes("/area-riservata/assemblea/")
+              ? "assemblea"
+              : route.includes("/assemblea/")
+                ? "assemblea-documenti"
+                : route.includes("/area-riservata/documenti.html")
+                  ? "gestione-documenti"
+                  : route.includes("/documenti/")
+                    ? "documenti"
+                    : route.includes("/area-riservata/")
+                      ? "area"
+                      : "home";
   const kinds = new Set(["offline", "network-error", "http-error", "resource-error", "js-error", "stream-reconnect"]);
   let enabled = false,
     initializing = true,
@@ -52,7 +59,7 @@
     const timeout = setTimeout(() => abort.abort(), 8000);
     sending = true;
     try {
-      const response = await nativeFetch("/api/telemetry", {
+      const response = await nativeFetch(basePath + "/api/telemetry", {
         method: "POST",
         keepalive: type === "leave",
         signal: abort.signal,
@@ -69,7 +76,7 @@
       sending = false;
     }
   }
-  nativeFetch("/api/telemetry/config", { cache: "no-store" })
+  nativeFetch(basePath + "/api/telemetry/config", { cache: "no-store" })
     .then(async (response) => {
       enabled = response.ok && (await response.json()).enabled === true;
       initializing = false;
@@ -94,7 +101,7 @@
         try {
           const input = args[0];
           const address = new URL(typeof input === "string" ? input : input.url || input.href, location.href);
-          report = address.origin === location.origin && !address.pathname.startsWith("/api/telemetry");
+          report = address.origin === location.origin && !address.pathname.startsWith(basePath + "/api/telemetry");
         } catch {}
         try {
           const response = await nativeFetch(...args);

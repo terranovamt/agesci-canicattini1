@@ -252,7 +252,7 @@ Il listener 8080 e' solo loopback sul NAS e deve essere libero; il backend
    verificarlo nell'archivio e modificare un contenuto dal setup.
 6. Aprire la regia e una pagina pubblica su un secondo dispositivo; avviare la
    diretta e verificare la sincronizzazione delle slide.
-7. Aprire **Monitoraggio NAS > Apri monitor**: controllare flussi reali, CPU/RAM,
+7. Aprire **Server live > Apri monitor** in regia: controllare flussi reali, CPU/RAM,
    latenza, release e problemi. La prima misura CPU richiede due campioni;
    attendere almeno 5-10 secondi. I numeri del browser possono aggiornarsi
    con il heartbeat di 30 secondi.
@@ -346,7 +346,7 @@ i file Nginx generati da DSM, che gli aggiornamenti possono riscrivere.
    la manutenzione dalla LAN/VPN. Le regole IPv6 sono separate da quelle IPv4:
    non lasciare altri servizi pubblici tramite IPv6 e non pubblicare un record
    AAAA se non si e' verificata quella raggiungibilita'.
-5. Con Wi-Fi disattivata sul telefono aprire `https://nomegruppo.synology.me`.
+5. Con Wi-Fi disattivata sul telefono aprire `https://nomegruppo.synology.me/agesci-canicattini1/`.
    Verificare anche che l'indirizzo pubblico non mostri la dashboard DSM.
    In caso contrario richiudere la pubblicazione e correggere la regola.
 6. Se funziona da rete mobile ma non da casa, verificare NAT loopback/hairpin
@@ -373,9 +373,52 @@ il cambio dei link pubblici. Non pubblicare questo branch NAS su GitHub Pages.
 ## Monitoraggio in regia
 
 Il pannello aggiorna i dati ogni cinque secondi quando la regia e' visibile.
-Usare **Apri monitor** su laptop/telefono per consultare il riepilogo e le
-schede **Traffico**, **Server** e **Problemi** senza lo spazio ridotto delle slide.
-L'endpoint `/api/metrics` richiede una sessione amministrativa: non renderlo pubblico.
+Non contiene pulsanti di aggiornamento manuale: riprende subito anche tornando
+alla scheda. **Apri monitor** amplia soltanto le risorse e le connessioni live.
+Non mostra visite, conteggi giornalieri, tabelle storiche o segnalazioni passate.
+La regia usa `/agesci-canicattini1/api/metrics?view=live`, che non restituisce questi dati storici.
+
+### Statistiche e riepilogo
+
+In `area-riservata/statistiche.html` si trovano visite, pagine viste, connessioni
+live aperte nel giorno, ultimi sette giorni, pagine visitate e segnalazioni.
+La dashboard dell'area riservata mostra automaticamente un riepilogo di visite,
+connessioni giornaliere, flussi attuali, CPU/RAM NAS e segnalazioni.
+Le tre viste sono aggiornate automaticamente e le rispettive API richiedono
+sempre una sessione amministrativa: non renderle pubbliche.
+
+I nuovi conteggi delle connessioni iniziano dall'installazione di questo
+aggiornamento; non vengono ricostruiti numeri per i giorni precedenti.
+Una connessione SSE aperta o riconnessa e' distinta da una visita o una persona.
+Le nuove categorie distinguono slide, documenti preparatori, archivio PDF,
+gestione PDF e statistiche; i vecchi dati non vengono rietichettati.
+
+### Link delle slide e QR
+
+- Home: `https://terranovamtt.synology.me/agesci-canicattini1/index.html`.
+- Slide per i telefoni: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/index.html`.
+- Regia: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/regia.html`.
+- Proiettore: aprire **Apri schermo presentazione** dalla regia.
+- Statistiche: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/statistiche.html`.
+
+Il percorso `assemblea/` contiene i documenti preparatori, non le slide.
+Il QR fornito punta alla home `/agesci-canicattini1`, non direttamente alle slide.
+La versione `assets/img/qr-live.png`, 990 x 990 pixel e 48.461 byte, conserva
+moduli, colori e logo, riducendo il sorgente SVG da 594.282 byte di circa il 92%.
+Il logo raster e' incorporato direttamente; nessun servizio esterno genera il QR.
+La decodifica ZXing e' stata verificata a 256, 320, 640 e 990 pixel.
+Lo SVG ottimizzato non superava gli stessi controlli a tutte le dimensioni.
+Verificare comunque la scansione fisica dal proiettore e dal telefono.
+
+Tutto il sito, API, PDF, calendari e cookie amministrativo usa il prefisso
+`/agesci-canicattini1/`. `NAS_PUBLIC_ORIGIN` resta solo l'origine HTTPS,
+senza percorso. `/index.html` alla radice e' riservato al futuro portfolio:
+questa immagine Nginx non lo pubblica e restituisce 404. La configurazione DSM
+del dominio non cambia. Per aggiungere il portfolio occorrera' una sua
+configurazione di pubblicazione; non viene creato da questo progetto.
+Gli URL AGESCI precedenti senza prefisso non sono piu' validi. Il database e
+i PDF persistenti non vengono spostati, cancellati o importati nuovamente.
+`/healthz` rimane disponibile per i controlli interni dei container.
 
 | Indicatore                | Significato e limite                                                                                                                                              |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -394,7 +437,7 @@ L'endpoint `/api/metrics` richiede una sessione amministrativa: non renderlo pub
 | Volume dati / database    | Spazio disponibile del filesystem e dimensione database/WAL, non una misura delle prestazioni I/O                                                                 |
 | Segnalazioni              | Categorie di errori browser/server, non errori unici: lo stesso problema puo' produrre piu' segnalazioni                                                          |
 
-Sono disponibili totale storico, ultimi sette giorni e pagine viste oggi.
+Nella pagina statistiche sono disponibili totale storico, ultimi sette giorni e pagine viste oggi.
 La dettagliazione giornaliera viene conservata circa 30 giorni; i totali restano.
 Gli eventi conservano al massimo 500 voci delle ultime 24 ore e il pannello
 mostra le ultime 20. Le righe di scheda sono anonime, senza nome, IP, URL con
@@ -479,9 +522,9 @@ proxy va verificata nuovamente anche quella catena di fiducia.
 ### Risorse, volume e monitor esterno
 
 - Per modificare RAM aggiornare `mem_limit` e il limite heap Node nel Compose
-   del branch `NAS`, poi pubblicare il commit. Non alzare solo il heap oltre il
-   limite del container: lasciare margine per RSS e SQLite. Non aggiungere quote
-   CPU senza aver verificato il supporto CFS del kernel: possono impedire l'avvio.
+  del branch `NAS`, poi pubblicare il commit. Non alzare solo il heap oltre il
+  limite del container: lasciare margine per RSS e SQLite. Non aggiungere quote
+  CPU senza aver verificato il supporto CFS del kernel: possono impedire l'avvio.
 - Per cambiare volume fermare deployment e servizi, fare un backup consistente,
   copiare dati e secret con i permessi corretti e aggiornare tutti i percorsi.
   Non avviare su un percorso vuoto aspettandosi che contenga i dati precedenti.
@@ -609,11 +652,11 @@ in cache tutte le pagine o tutti i JSON. Per cache lunga introdurre prima
 nomi con hash e aggiornare tutti i riferimenti nella build.
 
 ```sh
-curl -I http://127.0.0.1:8080/config/site.js
-curl -I http://127.0.0.1:8080/area-riservata/assemblea/dati.js
-curl -I http://127.0.0.1:8080/calendars/events.json
-curl -I http://127.0.0.1:8080/assets/css/home.css
-curl -I -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/assets/css/home.css
+curl -I http://127.0.0.1:8080/agesci-canicattini1/config/site.js
+curl -I http://127.0.0.1:8080/agesci-canicattini1/area-riservata/assemblea/dati.js
+curl -I http://127.0.0.1:8080/agesci-canicattini1/calendars/events.json
+curl -I http://127.0.0.1:8080/agesci-canicattini1/assets/css/home.css
+curl -I -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/agesci-canicattini1/assets/css/home.css
 ```
 
 Controllare `Cache-Control: no-store` per i dati, cache di 3600 secondi

@@ -9,7 +9,7 @@
     if (!url) throw new Error('Servizio di accesso non configurato');
     if (!key) throw new Error('Inserisci la chiave');
     if (window.LIVE?.nas && key === 'nas-session') {
-      const response = await fetch('/api/session', { cache: 'no-store' });
+      const response = await fetch((window.LIVE.basePath || '') + '/api/session', { cache: 'no-store' });
       if (response.ok && (await response.json()).authenticated) {
         sessionStorage.setItem(verifiedKey, key);
         return;
@@ -33,7 +33,7 @@
     sessionStorage.setItem(verifiedKey, stored);
   }
   function esci() {
-    if (window.LIVE?.nas) fetch('/api/logout', { method: 'POST', keepalive: true }).catch(() => {});
+    if (window.LIVE?.nas) fetch((window.LIVE.basePath || '') + '/api/logout', { method: 'POST', keepalive: true }).catch(() => {});
     sessionStorage.removeItem(storageKey);
     sessionStorage.removeItem(verifiedKey);
     localStorage.removeItem('assemblea-gh-token');

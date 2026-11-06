@@ -139,121 +139,30 @@
         </div>
         <div id="nas-monitor" hidden>
           <div class="monitor-heading">
-            <h3>Monitoraggio NAS</h3>
-            <button id="nas-expand" class="sec" type="button">Apri monitor</button
-            ><button id="nas-refresh" class="sec" type="button">Aggiorna</button>
+            <h3>Server live</h3>
+            <button id="nas-expand" class="sec" type="button">Apri monitor</button>
           </div>
           <p id="nas-status" class="monitor-status" role="status" aria-live="polite">Caricamento...</p>
           <p id="nas-alerts" class="monitor-alert" role="status" hidden></p>
           <div class="nas-kpi">
-            <div><b id="nas-visits">-</b><span>Visite oggi</span></div>
+            <div><b id="nas-streams">-</b><span>Connessioni live SSE</span></div>
             <div><b id="nas-online">-</b><span>Schede visibili online</span></div>
             <div><b id="nas-cpu">-</b><span>CPU backend / un core</span></div>
             <div><b id="nas-ram">-</b><span>RAM processo backend</span></div>
             <div><b id="nas-host-cpu">-</b><span>CPU intero NAS</span></div>
             <div><b id="nas-host-ram">-</b><span>RAM intero NAS</span></div>
-            <div><b id="nas-latency">-</b><span>Risposta API p95 / 5 min</span></div>
-            <div><b id="nas-errors">-</b><span>Segnalazioni oggi</span></div>
           </div>
-          <div class="monitor-tabs" role="tablist" aria-label="Monitoraggio">
-            <button
-              id="tab-traffico"
-              type="button"
-              role="tab"
-              data-monitor-tab="traffico"
-              aria-controls="monitor-traffico"
-              aria-selected="true"
-            >
-              Traffico
-            </button>
-            <button
-              id="tab-server"
-              type="button"
-              role="tab"
-              data-monitor-tab="server"
-              aria-controls="monitor-server"
-              aria-selected="false"
-              tabindex="-1"
-            >
-              Server
-            </button>
-            <button
-              id="tab-problemi"
-              type="button"
-              role="tab"
-              data-monitor-tab="problemi"
-              aria-controls="monitor-problemi"
-              aria-selected="false"
-              tabindex="-1"
-            >
-              Problemi
-            </button>
-          </div>
-          <div id="monitor-traffico" role="tabpanel" aria-labelledby="tab-traffico">
-            <p id="nas-total" class="monitor-status">-</p>
-            <table class="monitor-table">
-              <thead>
-                <tr>
-                  <th>Giorno</th>
-                  <th>Visite</th>
-                  <th>Pagine</th>
-                </tr>
-              </thead>
-              <tbody id="nas-days"></tbody>
-            </table>
-            <details>
-              <summary>Pagine viste oggi</summary>
-              <table class="monitor-table">
-                <thead>
-                  <tr>
-                    <th>Pagina</th>
-                    <th>Viste</th>
-                  </tr>
-                </thead>
-                <tbody id="nas-pages"></tbody>
-              </table>
-            </details>
-          </div>
-          <div id="monitor-server" role="tabpanel" aria-labelledby="tab-server" hidden>
-            <dl class="monitor-details">
-              <dt>Flussi live SSE reali</dt>
-              <dd id="nas-streams">-</dd>
-              <dt>Dispositivi presentazione / 60 s</dt>
-              <dd id="nas-devices">-</dd>
-              <dt>RAM container / limite</dt>
-              <dd id="nas-container">-</dd>
-              <dt>Heap JavaScript</dt>
-              <dd id="nas-heap">-</dd>
-              <dt>Ritardo event loop p95</dt>
-              <dd id="nas-lag">-</dd>
-              <dt>Volume dati</dt>
-              <dd id="nas-disk">-</dd>
-              <dt>Database e WAL</dt>
-              <dd id="nas-db">-</dd>
-              <dt>Errori API 5xx / 5 min</dt>
-              <dd id="nas-api-errors">-</dd>
-              <dt>Richieste limitate / 5 min</dt>
-              <dd id="nas-api-limited">-</dd>
-            </dl>
-            <p id="nas-release" class="monitor-status">-</p>
-          </div>
-          <div id="monitor-problemi" role="tabpanel" aria-labelledby="tab-problemi" hidden>
-            <p id="nas-no-events" class="monitor-status">Nessuna segnalazione recente.</p>
-            <ol id="nas-events" class="monitor-events"></ol>
-            <details>
-              <summary>Ultime schede visibili</summary>
-              <table class="monitor-table">
-                <thead>
-                  <tr>
-                    <th>Pagina</th>
-                    <th>Ping</th>
-                    <th>Ultimo</th>
-                  </tr>
-                </thead>
-                <tbody id="nas-sessions"></tbody>
-              </table>
-            </details>
-          </div>
+          <dl class="monitor-details">
+            <dt>Dispositivi presentazione / 60 s</dt>
+            <dd id="nas-devices">-</dd>
+            <dt>RAM container / limite</dt>
+            <dd id="nas-container">-</dd>
+            <dt>Ritardo event loop p95</dt>
+            <dd id="nas-lag">-</dd>
+            <dt>Volume dati</dt>
+            <dd id="nas-disk">-</dd>
+          </dl>
+          <a class="text-link" href="../statistiche.html">Statistiche del sito</a>
         </div>
       </section>
 
@@ -265,7 +174,7 @@
 
     <dialog id="nas-monitor-dialog" aria-labelledby="nas-dialog-title">
       <div class="monitor-heading">
-        <h2 id="nas-dialog-title">Monitoraggio NAS</h2>
+        <h2 id="nas-dialog-title">Server live</h2>
         <button id="nas-close" class="sec" type="button">Chiudi</button>
       </div>
       <div id="nas-monitor-expanded"></div>
@@ -278,7 +187,8 @@
     <script src="core/presenza.js"></script>
     <script src="core/modifiche.js"></script>
     <script src="core/regia-dati.js"></script>
-    <script src="core/monitoraggio.js"></script>
+    <script src="../../assets/js/shared/nas-metrics.js"></script>
+    <script src="core/monitoraggio.js?v=live-2"></script>
     <script src="core/regia.js"></script>
   </body>
 </html>

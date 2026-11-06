@@ -19,11 +19,12 @@ in ingresso su un IP pubblico. Il solo DDNS non supera CGNAT o porte condivise.
 **Installazione DDNS, configurazione Sky WiFi, aggiornamenti e backup:**
 [guida Synology](docs/ottimizzazione-synology.md).
 
-In regia, **Monitoraggio NAS > Apri monitor** mostra visite, pagine viste,
-schede visibili, flussi live reali, CPU/RAM backend e NAS, spazio, latenza e
-segnalazioni recenti. La raccolta browser e' disattivabile; i report non sono
-accessibili senza sessione amministrativa. La guida spiega le definizioni,
-le opzioni privacy e i controlli da fare quando un dispositivo ha problemi.
+In regia, **Server live > Apri monitor** mostra soltanto connessioni attuali,
+CPU/RAM backend e NAS e risorse correnti. Si aggiorna automaticamente, senza
+pulsante Aggiorna. Visite giornaliere, pagine viste, connessioni aperte nel
+giorno e segnalazioni sono nella pagina **Statistiche sito** dell'area riservata;
+la dashboard ne mostra un riepilogo. La raccolta browser e' disattivabile e le
+API dei report richiedono una sessione amministrativa.
 
 > 📘 Guida illustrata (stesso stile della presentazione):
 > https://terranovamt.github.io/agesci-canicattini1/area-riservata/assemblea/guida.html
@@ -42,17 +43,33 @@ le opzioni privacy e i controlli da fare quando un dispositivo ha problemi.
 
 ## Indirizzi
 
+Tutti gli indirizzi seguenti sono sotto `/agesci-canicattini1/` sul dominio
+configurato in `NAS_PUBLIC_ORIGIN` (che resta senza percorso).
+Home: `https://terranovamtt.synology.me/agesci-canicattini1/index.html`.
+La radice `/index.html` resta libera per il futuro portfolio e al momento
+restituisce 404; non viene creato un portfolio da questo repository.
+
 | Chi                          | Indirizzo                                                      |
 | ---------------------------- | -------------------------------------------------------------- |
-| Home / pubblico              | dominio HTTPS configurato in `NAS_PUBLIC_ORIGIN`               |
+| Home / pubblico              | `.../index.html` sotto il prefisso `/agesci-canicattini1/`     |
 | Area riservata               | `.../area-riservata/index.html` (accesso con chiave)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
 | PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
 | Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (chiede la chiave)   |
+| Slide per il pubblico        | `.../area-riservata/assemblea/index.html`                      |
+| Statistiche del sito         | `.../area-riservata/statistiche.html` (accesso riservato)      |
 | Setup (NAS)                  | `.../area-riservata/assemblea/setup.html` (salvataggio SQLite) |
 | Guida                        | `.../area-riservata/assemblea/guida.html`                      |
+
+Sul NAS attuale le slide sono all'indirizzo
+`https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/index.html` e la regia
+in `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/regia.html`.
+Per il proiettore usare **Apri schermo presentazione** dalla regia.
+`assemblea/` resta la sezione dei documenti preparatori, non il link alle slide.
+Il QR fornito e ottimizzato in `assets/img/qr-live.png` punta alla home AGESCI:
+48.461 byte, circa il 92% in meno del sorgente SVG, decodificato a quattro dimensioni.
 
 La home propone **Area riservata**: il backend NAS verifica la password del
 file secret e crea una sessione HttpOnly/Secure di otto ore. Il browser non

@@ -4,22 +4,22 @@ const path = require("node:path");
 const { test } = require("node:test");
 
 const root = path.join(__dirname, "..");
+const prefix = "/agesci-canicattini1";
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n");
 
 test("NAS redirects retired pages without requiring HTML files", () => {
   const nginx = read("deploy/synology/nginx.conf");
+  assert.match(nginx, /absolute_redirect off;/);
   const redirects = {
-    "/setup": "/area-riservata/assemblea/setup.html",
-    "/setup.html": "/area-riservata/assemblea/setup.html",
     "/area-riservata.html": "/area-riservata/index.html",
     "/gestione-documenti.html": "/area-riservata/documenti.html",
     "/PEG.html": "/peg/index.html",
     "/PEG/PEG2628.html": "/peg/edizioni/2026-2028.html",
   };
   for (const [source, target] of Object.entries(redirects)) {
-    const block = nginx.split("location = " + source + " {")[1]?.split("}")[0];
+    const block = nginx.split("location = " + prefix + source + " {")[1]?.split("}")[0];
     assert.ok(block, source);
-    assert.ok(block.includes("return 308 " + target + "$is_args$args;"), source);
+    assert.ok(block.includes("return 308 " + prefix + target + "$is_args$args;"), source);
     assert.ok(fs.existsSync(path.join(root, target.slice(1))), target);
   }
 });
@@ -28,6 +28,8 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
   const nginx = read("deploy/synology/nginx.conf");
   const rules = [...nginx.matchAll(/location ~ ([^\s]+) \{\s*return 308 ([^;]+);/g)];
   const redirects = {
+    "/setup": "/area-riservata/assemblea/setup.html",
+    "/setup.html": "/area-riservata/assemblea/setup.html",
     "/Assemblea-di-Gruppo": "/area-riservata/assemblea/index.html",
     "/Assemblea-di-Gruppo/": "/area-riservata/assemblea/index.html",
     "/Assemblea-di-Gruppo/index.html": "/area-riservata/assemblea/index.html",
@@ -41,12 +43,12 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
     }
   }
   for (const [source, target] of Object.entries(redirects)) {
-    const rule = rules.find(([, pattern]) => new RegExp(pattern).test(source));
+    const rule = rules.find(([, pattern]) => new RegExp(pattern).test(prefix + source));
     assert.ok(rule, source);
-    const match = source.match(new RegExp(rule[1]));
+    const match = (prefix + source).match(new RegExp(rule[1]));
     assert.ok(rule[2].endsWith("$is_args$args"), source);
     const destination = rule[2].replace(/\$(\d+)/g, (_, group) => match[Number(group)]).replace("$is_args$args", "");
-    assert.equal(destination, target, source);
+    assert.equal(destination, prefix + target, source);
     assert.ok(fs.existsSync(path.join(root, target.slice(1))), target);
   }
 });
@@ -86,9 +88,12 @@ test("NAS stores runtime data outside images and proxies dynamic content without
   assert.match(compose, /\$\{NAS_DATA_DIR:-\.\/data\}:\/data/);
   assert.match(compose, /file: \$\{NAS_ADMIN_PASSWORD_FILE/);
   assert.match(compose, /profiles: \["maintenance"\]/);
-  assert.match(nginx, /location \^~ \/api\/ \{\s*proxy_pass http:\/\/app:3000;\s*proxy_buffering off;/);
+  assert.match(
+    nginx,
+    /location \^~ \/agesci-canicattini1\/api\/ \{\s*proxy_pass http:\/\/app:3000;\s*proxy_buffering off;/,
+  );
   for (const resource of ["/config/site.js", "/calendars/events.json", "/area-riservata/assemblea/dati.js"]) {
-    assert.ok(nginx.includes("location = " + resource + " {\n        proxy_pass http://app:3000;"), resource);
+    assert.ok(nginx.includes("location = " + prefix + resource + " {\n        proxy_pass http://app:3000;"), resource);
   }
   assert.match(nginx, /proxy_set_header X-Real-IP \$nas_client_ip/);
   assert.match(nginx, /map \$http_x_real_ip \$nas_client_ip/);

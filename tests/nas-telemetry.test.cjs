@@ -6,7 +6,7 @@ const { test } = require("node:test");
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/nas-telemetry.js"), "utf8");
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-function browser(enabled = true, preview = false, storage = new Map()) {
+function browser(enabled = true, preview = false, storage = new Map(), route = "/") {
   const calls = [],
     events = new Map(),
     intervals = [];
@@ -26,7 +26,7 @@ function browser(enabled = true, preview = false, storage = new Map()) {
   const context = {
     window,
     URL,
-    location: { pathname: "/", origin: "https://site.test", href: "https://site.test/" },
+    location: { pathname: route, origin: "https://site.test", href: "https://site.test" + route },
     document: { readyState: "complete", visibilityState: "visible" },
     performance: { now: () => 1 },
     localStorage: { getItem: (name) => storage.get(name), setItem: (name, value) => storage.set(name, value) },
@@ -74,6 +74,27 @@ test("disabled telemetry and preview do not create visitor IDs or periodic beaco
     assert.equal(app.intervals.length, 0);
     assert.ok(app.calls.every((call) => call.url === "/api/telemetry/config"));
   }
+});
+
+test("tracking distinguishes statistics, document management, preparatory documents and slides", async () => {
+  for (const [route, category] of [
+    ["/area-riservata/statistiche.html", "statistiche"],
+    ["/area-riservata/documenti.html", "gestione-documenti"],
+    ["/assemblea/index.html", "assemblea-documenti"],
+    ["/area-riservata/assemblea/index.html", "assemblea"],
+  ]) {
+    const app = browser(true, false, new Map(), route);
+    await flush();
+    assert.equal(JSON.parse(app.calls[1].options.body).page, category);
+  }
+});
+
+test("telemetry stays under the NAS site prefix", async () => {
+  const app = browser(true, false, new Map(), "/agesci-canicattini1/area-riservata/statistiche.html");
+  await flush();
+  assert.equal(app.calls[0].url, "/agesci-canicattini1/api/telemetry/config");
+  assert.equal(app.calls[1].url, "/agesci-canicattini1/api/telemetry");
+  assert.equal(JSON.parse(app.calls[1].options.body).page, "statistiche");
 });
 
 test("another tab shares a recent visit ID but renews one after inactivity", async () => {

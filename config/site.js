@@ -2,7 +2,11 @@
    Se "url" è vuoto la presentazione funziona come prima (solo locale). */
 window.LIVE = {
   nas: true,
-  url: location.origin + "/api/state/",
+  basePath: location.pathname.startsWith("/agesci-canicattini1/") ? "/agesci-canicattini1" : "",
+  url:
+    location.origin +
+    (location.pathname.startsWith("/agesci-canicattini1/") ? "/agesci-canicattini1" : "") +
+    "/api/state/",
   // 'corrente' = il pubblico non supera MAI la slide che mostri ora (anche se torni indietro)
   // 'massimo'  = il pubblico non supera la slide più avanzata che hai raggiunto
   limite: "corrente",

@@ -264,7 +264,7 @@
       titolo: "Scansiona il QR code",
       sottotitolo: "",
       data_ora: "2026-11-20T20:30:00",
-      immagine: "../../assets/img/qr.svg",
+      immagine: "../../assets/img/qr-live.png",
     },
     { tipo: "slide_ordine_del_giorno", punti: [{ testo: "Nuovo punto", slide_collegata: "" }] },
     { tipo: "slide_avanzamento_odg", completati: 0 },
@@ -648,7 +648,7 @@
   }
   async function gh(file, tk, body) {
     if (nas) {
-      const response = await fetch("/api/content/" + encodeURIComponent(file), {
+      const response = await fetch((window.LIVE.basePath || "") + "/api/content/" + encodeURIComponent(file), {
         method: body ? "PUT" : "GET",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },

@@ -8,6 +8,7 @@
     <link rel="icon" href="../assets/img/logo-grande.png" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
     <link rel="stylesheet" href="../assets/css/home.css" />
+    <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
   </head>
   <body class="reserved-page">
     <header class="reserved-header">
@@ -39,6 +40,39 @@
           </div>
           <button id="esci" class="text-button">Esci dall’area riservata</button>
         </div>
+        <section id="dashboard-metrics" class="dashboard-metrics" aria-labelledby="dashboard-metrics-title" hidden>
+          <div class="metrics-heading">
+            <h2 id="dashboard-metrics-title">Sito e server</h2>
+            <a href="statistiche.html">Statistiche sito →</a>
+          </div>
+          <p id="dashboard-metrics-status" class="metrics-status" role="status" aria-live="polite">Caricamento...</p>
+          <dl class="metrics-overview">
+            <div>
+              <dt>Visite oggi</dt>
+              <dd id="dashboard-visits">-</dd>
+            </div>
+            <div>
+              <dt>Connessioni live aperte oggi</dt>
+              <dd id="dashboard-connections">-</dd>
+            </div>
+            <div>
+              <dt>Flussi SSE attuali</dt>
+              <dd id="dashboard-streams">-</dd>
+            </div>
+            <div>
+              <dt>CPU NAS</dt>
+              <dd id="dashboard-cpu">-</dd>
+            </div>
+            <div>
+              <dt>RAM NAS</dt>
+              <dd id="dashboard-ram">-</dd>
+            </div>
+            <div>
+              <dt>Segnalazioni oggi</dt>
+              <dd id="dashboard-errors">-</dd>
+            </div>
+          </dl>
+        </section>
         <div class="dashboard-overview">
           <article class="assembly-overview">
             <p class="eyebrow">Assemblea configurata</p>
@@ -75,10 +109,7 @@
           <article class="dashboard-tool">
             <span class="tool-number" aria-hidden="true">02</span>
             <h3>Condividi i documenti</h3>
-            <p>
-              Carica PDF, scegli titoli e descrizioni, sostituisci o elimina i materiali. La pubblicazione usa il token
-              GitHub.
-            </p>
+            <p>Carica PDF, scegli titoli e descrizioni, sostituisci o elimina i materiali.</p>
             <a class="button button-secondary" href="documenti.html">Gestisci i PDF →</a>
           </article>
           <article class="dashboard-tool">
@@ -98,10 +129,7 @@
               <strong>Prepara</strong
               ><span>Compila il setup o avvia la procedura per il nuovo anno. Le modifiche restano locali.</span>
             </li>
-            <li>
-              <strong>Pubblica</strong
-              ><span>Salva su GitHub e attendi GitHub Pages. Verifica il sito prima della diretta.</span>
-            </li>
+            <li><strong>Pubblica</strong><span>Salva sul NAS e verifica il sito prima della diretta.</span></li>
             <li>
               <strong>Vai in regia</strong
               ><span>Controlla la vista pubblico, poi avvia l’assemblea e accompagna le slide.</span>
@@ -115,7 +143,8 @@
     <script src="../config/site.js"></script>
     <script src="../assets/js/nas-telemetry.js"></script>
     <script src="../assets/js/shared/accesso.js"></script>
-    <script src="../assets/js/area-dashboard.js"></script>
+    <script src="../assets/js/shared/nas-metrics.js"></script>
+    <script src="../assets/js/area-dashboard.js?v=metrics-2"></script>
     <script src="../assets/js/area-riservata.js"></script>
   </body>
 </html>

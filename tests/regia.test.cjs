@@ -68,7 +68,7 @@ function dashboard(attiva, count = 4, failed = false, options = {}) {
   };
   vm.runInNewContext(
     source.replace(
-      "if (key) accedi(key); else mostraLogin();",
+      /if\s*\(key\)\s*accedi\(key\);\s*else\s*mostraLogin\(\);/,
       "V = { avviaLive: salva => salva() }; window.TEST = { controlla, meter, avviaLive, accedi };",
     ),
     context,

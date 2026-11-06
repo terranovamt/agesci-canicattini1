@@ -46,16 +46,24 @@ async function createNasServer({
   siteRoot = path.resolve(__dirname, ".."),
   password,
   publicOrigin,
+  basePath = "",
   secureCookie = true,
   telemetryEnabled = true,
   hostProc = "",
   release = "manual",
 } = {}) {
-  if (typeof password !== "string" || password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password))
+  if (
+    typeof password !== "string" ||
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/[a-z]/.test(password) ||
+    !/[0-9]/.test(password)
+  )
     throw new Error("La password NAS deve contenere almeno 8 caratteri, una maiuscola, una minuscola e un numero");
   if (!publicOrigin || new URL(publicOrigin).origin !== publicOrigin)
     throw new Error("NAS_PUBLIC_ORIGIN deve essere una origine senza percorso");
   if (secureCookie && !publicOrigin.startsWith("https://")) throw new Error("In produzione serve una origine HTTPS");
+  if (basePath && !/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)*$/.test(basePath)) throw new Error("Percorso base NAS non valido");
   fs.mkdirSync(dataDir, { recursive: true });
   const database = new DatabaseSync(path.join(dataDir, "site.sqlite"));
   database.exec(
@@ -121,7 +129,7 @@ async function createNasServer({
   };
   const authorized = (request) => (sessions.get(sessionId(request))?.expires || 0) > Date.now();
   const cookie = (token, seconds) =>
-    `nas-session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${secureCookie ? "; Secure" : ""}`;
+    `nas-session=${token}; Path=${basePath}/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${secureCookie ? "; Secure" : ""}`;
   const state = () => JSON.parse(read("state"));
   const stateValue = (route) => {
     if (route === "/presenza") return Object.fromEntries(presence);
@@ -195,6 +203,10 @@ async function createNasServer({
     });
     try {
       const url = new URL(request.url, publicOrigin);
+      if (basePath && url.pathname !== "/healthz") {
+        if (!url.pathname.startsWith(basePath + "/")) fail(404, "Risorsa non trovata");
+        url.pathname = url.pathname.slice(basePath.length);
+      }
       requestPath = url.pathname;
       const method = request.method;
       const forwardedIp = request.headers["x-real-ip"] || "";
@@ -214,7 +226,9 @@ async function createNasServer({
       if (url.pathname === "/api/metrics" && method === "GET") {
         if (!authorized(request)) fail(401, "Sessione scaduta: accedi di nuovo");
         const devices = [...presence.values()].filter((value) => value.t > Date.now() - 60000).length;
-        return send(response, 200, monitor.snapshot(streams.size, devices));
+        const view = url.searchParams.get("view") || "full";
+        if (!["full", "live", "summary"].includes(view)) fail(400, "Vista metriche non valida");
+        return send(response, 200, monitor.snapshot(streams.size, devices, view));
       }
       if (url.pathname === "/config/site.js" && ["GET", "HEAD"].includes(method)) {
         return send(
@@ -264,6 +278,7 @@ async function createNasServer({
             ["/live/stato", "/modifiche/patch"].includes(route)
           ) {
             if (streams.size >= 500) fail(503, "Limite connessioni live raggiunto");
+            monitor.connection();
             response.writeHead(200, {
               "Content-Type": "text/event-stream",
               "Cache-Control": "no-store, no-transform",
@@ -408,6 +423,7 @@ if (require.main === module) {
     dataDir: process.env.NAS_DATA_DIR || "/data",
     password: fs.readFileSync(passwordFile, "utf8").replace(/[\r\n]+$/, ""),
     publicOrigin: process.env.NAS_PUBLIC_ORIGIN,
+    basePath: "/agesci-canicattini1",
     telemetryEnabled: process.env.NAS_TELEMETRY_ENABLED !== "false",
     hostProc: process.env.NAS_HOST_PROC || "",
     release: process.env.NAS_RELEASE_REVISION || "manual",

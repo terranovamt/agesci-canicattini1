@@ -135,11 +135,16 @@ test("canonical navigation avoids legacy entry pages and home links point outsid
 test("shared configuration publishes assembly edits into the migrated data directory", () => {
   const context = {
     window: {},
-    location: { search: "" },
+    location: { search: "", pathname: "/", origin: "https://site.test" },
     URLSearchParams,
     document: { getElementById: () => null },
   };
   vm.runInNewContext(read("config/site.js"), context);
+  assert.equal(context.window.LIVE.url, "https://site.test/api/state/");
+  context.location.pathname = "/agesci-canicattini1/area-riservata/assemblea/index.html";
+  vm.runInNewContext(read("config/site.js"), context);
+  assert.equal(context.window.LIVE.basePath, "/agesci-canicattini1");
+  assert.equal(context.window.LIVE.url, "https://site.test/agesci-canicattini1/api/state/");
   assert.equal(context.window.LIVE.github.cartella, "area-riservata/assemblea");
   assert.ok(fs.existsSync(path.join(root, context.window.LIVE.github.cartella, "dati.js")));
   for (const page of [
@@ -172,6 +177,6 @@ test("public archive has year and text search and the home limits recent documen
   assert.match(archive, /id="documents-search"/);
   assert.match(archive, /data-order="latest"/);
   assert.doesNotMatch(archive, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js|data-limit=/);
-  assert.match(read("index.html"), /data-order="latest" data-limit="4"/);
+  assert.match(read("index.html"), /data-order="latest"\s+data-limit="4"/);
   assert.match(read("index.html"), /href="documenti\/index.html"/);
 });
