@@ -4,7 +4,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 
 const root = path.join(__dirname, "..");
-const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n");
 
 test("NAS redirects retired pages without requiring HTML files", () => {
   const nginx = read("deploy/synology/nginx.conf");
@@ -37,16 +37,15 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
   };
   for (const directory of ["Assemblea-di-Gruppo", "assemblea"]) {
     for (const page of ["setup.html", "regia.html", "guida.html", "manifest.webmanifest"]) {
-      redirects['/' + directory + '/' + page] = '/area-riservata/assemblea/' + page;
+      redirects["/" + directory + "/" + page] = "/area-riservata/assemblea/" + page;
     }
   }
   for (const [source, target] of Object.entries(redirects)) {
     const rule = rules.find(([, pattern]) => new RegExp(pattern).test(source));
     assert.ok(rule, source);
     const match = source.match(new RegExp(rule[1]));
-    assert.ok(rule[2].endsWith('$is_args$args'), source);
-    const destination = rule[2].replace(/\$(\d+)/g, (_, group) => match[Number(group)])
-      .replace('$is_args$args', '');
+    assert.ok(rule[2].endsWith("$is_args$args"), source);
+    const destination = rule[2].replace(/\$(\d+)/g, (_, group) => match[Number(group)]).replace("$is_args$args", "");
     assert.equal(destination, target, source);
     assert.ok(fs.existsSync(path.join(root, target.slice(1))), target);
   }
@@ -57,7 +56,10 @@ test("NAS image copies only public site directories, not development tools or se
   assert.doesNotMatch(dockerfile, /COPY\s+\.\s|USER\s+root/);
   for (const [, directory] of dockerfile.matchAll(/^COPY ([\w/-]+)\/ \/usr\/share\/nginx\/html\//gm)) {
     assert.ok(fs.statSync(path.join(root, directory)).isDirectory(), directory);
-    assert.ok(!["deploy", "tools", "tests", ".github", "firebase", "PEG", "Assemblea-di-Gruppo"].includes(directory), directory);
+    assert.ok(
+      !["deploy", "tools", "tests", ".github", "firebase", "PEG", "Assemblea-di-Gruppo"].includes(directory),
+      directory,
+    );
   }
   assert.match(dockerfile, /nginx-unprivileged:/);
 });
@@ -70,6 +72,23 @@ test("NAS does not publish a public listener or embed a tunnel token", () => {
   assert.doesNotMatch(compose, /--token["\s:]|latest|"(?:3000:3000|80:80|443:443)"/);
   assert.match(compose, /condition: service_healthy/);
   assert.match(compose, /mem_limit: 128m/);
+});
+
+test("NAS stores runtime data outside images and proxies dynamic content without SSE buffering", () => {
+  const compose = read("deploy/synology/compose.yaml");
+  const nginx = read("deploy/synology/nginx.conf");
+  assert.match(compose, /\$\{NAS_DATA_DIR:-\.\/data\}:\/data/);
+  assert.match(compose, /file: \$\{NAS_ADMIN_PASSWORD_FILE/);
+  assert.match(compose, /profiles: \["maintenance"\]/);
+  assert.match(nginx, /location \^~ \/api\/ \{\s*proxy_pass http:\/\/app:3000;\s*proxy_buffering off;/);
+  for (const resource of ["/config/site.js", "/calendars/events.json", "/area-riservata/assemblea/dati.js"]) {
+    assert.ok(nginx.includes("location = " + resource + " {\n        proxy_pass http://app:3000;"), resource);
+  }
+  assert.match(nginx, /proxy_set_header X-Real-IP \$nas_client_ip/);
+  assert.match(nginx, /map \$http_x_real_ip \$nas_client_ip/);
+  assert.doesNotMatch(nginx, /\$http_cf_connecting_ip/);
+  assert.ok(read(".dockerignore").includes("**/admin-password.txt"));
+  assert.ok(read(".dockerignore").includes("**/nas.env"));
 });
 
 test("NAS revalidates mutable content before generic static asset caching", () => {

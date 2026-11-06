@@ -6,8 +6,11 @@
 **/.env
 **/.env.*
 **/tunnel-token.txt
+**/admin-password.txt
+**/nas.env
+**/data
+**/*.sqlite*
 tests
-tools
 docs
 design-system
 firebase

@@ -22,10 +22,18 @@ const aliases = {
   "peg/index.html": "peg/edizioni/2026-2028.html",
 };
 const retiredPages = [
-  "area-riservata.html", "gestione-documenti.html", "PEG.html", "setup.html",
-  "PEG/PEG2628.html", "assemblea/setup.html", "assemblea/regia.html", "assemblea/guida.html",
-  "Assemblea-di-Gruppo/index.html", "Assemblea-di-Gruppo/setup.html",
-  "Assemblea-di-Gruppo/regia.html", "Assemblea-di-Gruppo/guida.html",
+  "area-riservata.html",
+  "gestione-documenti.html",
+  "PEG.html",
+  "setup.html",
+  "PEG/PEG2628.html",
+  "assemblea/setup.html",
+  "assemblea/regia.html",
+  "assemblea/guida.html",
+  "Assemblea-di-Gruppo/index.html",
+  "Assemblea-di-Gruppo/setup.html",
+  "Assemblea-di-Gruppo/regia.html",
+  "Assemblea-di-Gruppo/guida.html",
 ];
 
 test("the root contains only the home HTML page", () => {
@@ -41,8 +49,10 @@ test("public assembly contains only its document page, not legacy tools", () => 
 });
 
 test("canonical directories have no obsolete or case-duplicate entries", () => {
-  const directories = fs.readdirSync(root, { withFileTypes: true })
-    .filter(entry => entry.isDirectory()).map(entry => entry.name);
+  const directories = fs
+    .readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
   assert.ok(directories.includes("peg"));
   assert.ok(!directories.includes("PEG"));
   assert.ok(!directories.includes("Assemblea-di-Gruppo"));
@@ -73,10 +83,7 @@ test("all pages, stylesheets and manifests resolve local references under a Page
       if (file !== null) assert.ok(fs.existsSync(path.join(root, file)), `${stylesheet}: ${reference}`);
     }
   }
-  for (const file of [
-    "manifest.webmanifest",
-    "area-riservata/assemblea/manifest.webmanifest",
-  ]) {
+  for (const file of ["manifest.webmanifest", "area-riservata/assemblea/manifest.webmanifest"]) {
     const manifest = JSON.parse(read(file));
     for (const reference of [manifest.start_url, ...manifest.icons.map((icon) => icon.src)]) {
       assert.ok(fs.existsSync(path.join(root, localTarget(file, reference))), `${file}: ${reference}`);

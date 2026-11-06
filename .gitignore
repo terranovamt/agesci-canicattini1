@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 deploy/synology/tunnel-token.txt
+deploy/synology/admin-password.txt
+deploy/synology/nas.env
+deploy/synology/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

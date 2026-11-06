@@ -4,8 +4,9 @@
 
 Il primo livello separa **sezioni del sito**, **risorse e dati** e **strumenti
 di manutenzione**. Dentro una sezione si separano pagine, logica comune e
-componenti specifici. Non occorre un framework o una compilazione: GitHub
-Pages continua a pubblicare direttamente dalla radice di `main`.
+componenti specifici. Sul branch `NAS`, Nginx serve le pagine e un backend
+Node/SQLite gestisce accesso, contenuti e diretta. Il branch `main` e la sua
+pubblicazione GitHub Pages restano separati.
 
 ## Albero e responsabilità
 
@@ -43,7 +44,7 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 │   ├── peg/                       Fotografie del progetto educativo
 │   └── fonts/                     Font locali e relative licenze
 ├── config/
-│   └── site.js                    Firebase e destinazione dei salvataggi GitHub
+│   └── site.js                    Modalita' NAS e URL API della stessa origine
 ├── calendars/                     Dati pubblici dei calendari
 │   ├── sources.json               Feed da sincronizzare
 │   └── events.json                Snapshot letto dal browser
@@ -51,9 +52,10 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 │   ├── index.json                 Metadati dei documenti
 │   └── pdf/                       PDF pubblicati
 ├── firebase/
-│   └── database.rules.json        Regole da configurare nella console Firebase
+│   └── database.rules.json        Riferimento legacy, non usato dal backend NAS
+├── server/                        Backend Node 24, SQLite e immagine Docker
 ├── deploy/
-│   └── synology/                  Container e configurazione Nginx per il NAS
+│   └── synology/                  Container, Nginx e aggiornamento dal branch NAS
 ├── docs/                          Documentazione tecnica e operativa, audit
 ├── design-system/                 Specifiche visive, non codice runtime
 ├── tests/                         Test automatici Node e Python
@@ -98,15 +100,17 @@ stili, script e media; `config/site.js` configura il comportamento pubblico;
 `calendars/` e `documents/` contengono dati. Gli URL di snapshot, indice e PDF
 non sono cambiati: non si interrompono download già condivisi, salvataggi
 GitHub e workflow. `area-riservata/assemblea/dati.js` resta vicino alle pagine che lo
-caricano e viene salvato dal setup nel percorso `LIVE.github.cartella`,
-ora impostato a `area-riservata/assemblea`.
+caricano. Sul NAS e' un valore persistente SQLite servito dallo stesso URL;
+la copia nel repository inizializza il database soltanto al primo avvio.
+Anche PDF e metadati vengono serviti dal database, mantenendo gli URL pubblici.
 
 **Gli strumenti del repository non sono pagine del sito.** Test, guide
 tecniche, specifiche visive e automazioni hanno ciascuno la propria cartella.
 Con la pubblicazione dalla radice anche i file raggiungibili di queste
 cartelle possono essere pubblici: la separazione organizzativa non costituisce
 un controllo di accesso. Non inserire segreti o dati riservati in alcuna parte
-pubblicata; la chiave Firebase resta nella console, il token GitHub nel browser.
+pubblicata. Sul NAS password e token del tunnel restano in file secret esterni
+al repository; il browser usa una sessione HttpOnly senza conservare la password.
 Setup e regia mantengono i controlli di accesso già previsti. La presentazione
 resta leggibile dal pubblico durante la diretta anche se il suo codice è
 raggruppato sotto l'area riservata: il percorso non è un vincolo di sicurezza.
@@ -115,20 +119,20 @@ I PDF pubblici restano in `documents/pdf/`; `area-riservata/documenti.html`
 
 ## Migrazione degli indirizzi
 
-| Vecchio indirizzo | Nuova destinazione |
-| --- | --- |
-| `area-riservata.html` | `area-riservata/index.html` |
-| `gestione-documenti.html` | `area-riservata/documenti.html` |
-| `Assemblea-di-Gruppo/` | `area-riservata/assemblea/` |
-| `Assemblea-di-Gruppo/regia.html` | `area-riservata/assemblea/regia.html` |
-| `Assemblea-di-Gruppo/setup.html`, `setup.html` | `area-riservata/assemblea/setup.html` |
-| `Assemblea-di-Gruppo/guida.html` | `area-riservata/assemblea/guida.html` |
-| `assemblea/setup.html` | `area-riservata/assemblea/setup.html` |
-| `assemblea/regia.html` | `area-riservata/assemblea/regia.html` |
-| `assemblea/guida.html` | `area-riservata/assemblea/guida.html` |
-| `PEG.html` | `peg/index.html`, quindi l'edizione corrente |
-| `PEG/PEG2628.html` | `peg/edizioni/2026-2028.html` |
-| `PEG/`, `PEG/index.html` | `peg/index.html` |
+| Vecchio indirizzo                                                            | Nuova destinazione                              |
+| ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| `area-riservata.html`                                                        | `area-riservata/index.html`                     |
+| `gestione-documenti.html`                                                    | `area-riservata/documenti.html`                 |
+| `Assemblea-di-Gruppo/`                                                       | `area-riservata/assemblea/`                     |
+| `Assemblea-di-Gruppo/regia.html`                                             | `area-riservata/assemblea/regia.html`           |
+| `Assemblea-di-Gruppo/setup.html`, `setup.html`                               | `area-riservata/assemblea/setup.html`           |
+| `Assemblea-di-Gruppo/guida.html`                                             | `area-riservata/assemblea/guida.html`           |
+| `assemblea/setup.html`                                                       | `area-riservata/assemblea/setup.html`           |
+| `assemblea/regia.html`                                                       | `area-riservata/assemblea/regia.html`           |
+| `assemblea/guida.html`                                                       | `area-riservata/assemblea/guida.html`           |
+| `PEG.html`                                                                   | `peg/index.html`, quindi l'edizione corrente    |
+| `PEG/PEG2628.html`                                                           | `peg/edizioni/2026-2028.html`                   |
+| `PEG/`, `PEG/index.html`                                                     | `peg/index.html`                                |
 | `assemblea/manifest.webmanifest`, `Assemblea-di-Gruppo/manifest.webmanifest` | `area-riservata/assemblea/manifest.webmanifest` |
 
 La navigazione interna usa direttamente le destinazioni attuali.
@@ -145,7 +149,7 @@ Quando si pubblica questa migrazione, chiudere e riaprire eventuali schede
 di setup e regia già aperte prima del deployment: il vecchio JavaScript
 potrebbe conservare in memoria la precedente destinazione dei salvataggi.
 Le nuove pagine degli strumenti caricano `config/site.js` con
-`github.cartella: 'area-riservata/assemblea'`.
+`nas: true`; le scritture vanno alle API locali, non a GitHub o Firebase.
 
 I percorsi relativi permettono di servire lo stesso sito sia sotto
 `/agesci-canicattini1/` su GitHub Pages sia nella preview locale. Le URL CSS
