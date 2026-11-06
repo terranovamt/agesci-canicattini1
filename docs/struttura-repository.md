@@ -11,7 +11,7 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 
 ```text
 /
-├── index.html                      Home pubblica del gruppo
+├── index.html                      Home pubblica, unico HTML alla radice
 ├── manifest.webmanifest            Installazione della home
 ├── area-riservata/                 Accesso e gestione del sito
 │   ├── index.html                 Login e dashboard
@@ -52,6 +52,8 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 │   └── pdf/                       PDF pubblicati
 ├── firebase/
 │   └── database.rules.json        Regole da configurare nella console Firebase
+├── deploy/
+│   └── synology/                  Container e configurazione Nginx per il NAS
 ├── docs/                          Documentazione tecnica e operativa, audit
 ├── design-system/                 Specifiche visive, non codice runtime
 ├── tests/                         Test automatici Node e Python
@@ -60,15 +62,16 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 │   ├── workflows/                 Automazioni GitHub Actions
 │   └── prompts/                   Istruzioni, cataloghi e strumenti degli agenti
 ├── README.md                      Ingresso per chi lavora al repository
-├── .gitignore, .nojekyll           Configurazione Git e pubblicazione statica
-└── vecchi ingressi HTML            Solo reindirizzamenti di compatibilità
+└── .gitignore, .dockerignore, .nojekyll  Configurazione Git, build e sito statico
 ```
 
-Le cartelle `Assemblea-di-Gruppo/` e `PEG/` con le maiuscole, e i file
-`area-riservata.html`, `gestione-documenti.html`, `PEG.html` e `setup.html`
-alla radice non contengono copie dell'applicazione: servono solo a mantenere
-raggiungibili i vecchi indirizzi. Il vecchio manifest dell'assemblea punta
-alla nuova sezione.
+Le cartelle obsolete e gli HTML di compatibilita' sono stati rimossi.
+`assemblea/` contiene soltanto la pagina dei documenti preparatori;
+il PEG esiste soltanto in `peg/`, con il nome minuscolo anche su Windows.
+I manifest restano alla radice e nella presentazione che li utilizza.
+Soltanto sul NAS Nginx mantiene i vecchi indirizzi con redirect HTTP.
+GitHub Pages e la preview non applicano queste regole: usare i percorsi
+canonici nelle sottocartelle.
 
 ## Come leggere la gerarchia
 
@@ -125,11 +128,15 @@ I PDF pubblici restano in `documents/pdf/`; `area-riservata/documenti.html`
 | `assemblea/guida.html` | `area-riservata/assemblea/guida.html` |
 | `PEG.html` | `peg/index.html`, quindi l'edizione corrente |
 | `PEG/PEG2628.html` | `peg/edizioni/2026-2028.html` |
+| `PEG/`, `PEG/index.html` | `peg/index.html` |
+| `assemblea/manifest.webmanifest`, `Assemblea-di-Gruppo/manifest.webmanifest` | `area-riservata/assemblea/manifest.webmanifest` |
 
-I reindirizzamenti JavaScript conservano query string e frammento, compresi
-i vecchi link della regia e la posizione delle slide. È presente anche un
-collegamento HTML alla nuova destinazione e un redirect senza JavaScript.
-La navigazione interna usa direttamente le destinazioni nuove.
+La navigazione interna usa direttamente le destinazioni attuali.
+Per tutti i vecchi ingressi della tabella, `deploy/synology/nginx.conf`
+definisce redirect HTTP 308 con conservazione dei parametri; il browser
+mantiene il frammento. Questi indirizzi non sono piu' disponibili su Pages
+o nella preview. `peg/index.html` resta un ingresso funzionale che seleziona
+l'edizione corrente, non una copia storica del sito.
 `assemblea/index.html` ora mostra i documenti preparatori pubblici, non le
 slide. La home continua ad aprire la presentazione durante la diretta, nel
 nuovo percorso `area-riservata/assemblea/index.html`.
@@ -173,4 +180,6 @@ Comandi di verifica: `node --test tests/*.test.cjs` per il sito,
 `python -m unittest discover -s tests -p test_calendar_sync.py` per il
 sincronizzatore e `node tools/preview.cjs` per l'anteprima.
 I test della struttura controllano risorse, link interni, manifest,
-destinazioni dei salvataggi e compatibilità dei vecchi indirizzi.
+destinazioni dei salvataggi e assenza delle vecchie cartelle. I test Synology
+controllano le destinazioni dei redirect nella configurazione Nginx;
+il funzionamento HTTP effettivo richiede il collaudo sul NAS.

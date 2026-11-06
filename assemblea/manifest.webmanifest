@@ -1,9 +1,0 @@
-{
-  "name": "Assemblea di Gruppo",
-  "short_name": "Assemblea",
-  "start_url": "../area-riservata/assemblea/",
-  "scope": "../area-riservata/assemblea/",
-  "display": "fullscreen",
-  "background_color": "#ffffff",
-  "icons": [{ "src": "../assets/img/logo-grande.png", "sizes": "512x512", "type": "image/png" }]
-}
