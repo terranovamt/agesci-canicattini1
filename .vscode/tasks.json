@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "NAS: pubblica branch",
+			"type": "shell",
+			"command": "$env:GIT_TERMINAL_PROMPT='0'\ngit -c credential.interactive=false push origin NAS",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
