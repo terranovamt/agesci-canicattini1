@@ -1,4 +1,5 @@
 .venv-calendar/
+dist/
 __pycache__/
 *.pyc
 deploy/synology/tunnel-token.txt

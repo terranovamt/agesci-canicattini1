@@ -55,6 +55,8 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
 
 test("NAS image copies only public site directories, not development tools or secrets", () => {
   const dockerfile = read("deploy/synology/Dockerfile");
+  assert.match(dockerfile, /RUN node tools\/build-site.cjs \/site/);
+  assert.match(dockerfile, /COPY --from=static-site \/site\//);
   assert.doesNotMatch(dockerfile, /COPY\s+\.\s|USER\s+root/);
   for (const [, directory] of dockerfile.matchAll(/^COPY ([\w/-]+)\/ \/usr\/share\/nginx\/html\//gm)) {
     assert.ok(fs.statSync(path.join(root, directory)).isDirectory(), directory);

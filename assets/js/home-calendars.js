@@ -212,10 +212,23 @@
     });
   }
   async function load() {
+    const controls = ['calendar-prev', 'calendar-next', 'calendar-today', 'calendar-upcoming', 'calendar-more'];
+    controls.forEach(id => { $(id).disabled = true });
     $('calendar-all').disabled = true;
     $('calendar-retry').hidden = true;
     $('calendar-status').textContent = 'Caricamento degli appuntamenti…';
-    $('calendar-app').hidden = true;
+    $('calendar-app').hidden = !data;
+    const agenda = $('calendar-agenda');
+    agenda.setAttribute('aria-busy', 'true');
+    if (!data) {
+      $('calendar-app').hidden = false;
+      agenda.replaceChildren();
+      for (let index = 0; index < 3; index++) {
+        const placeholder = element('div', undefined, 'loading-skeleton');
+        placeholder.setAttribute('aria-hidden', 'true');
+        agenda.append(placeholder);
+      }
+    }
     try {
       const response = await fetch('calendars/events.json', { cache: 'no-store' });
       if (!response.ok) throw new Error('Calendari non disponibili (HTTP ' + response.status + ')');
@@ -225,11 +238,15 @@
       $('calendar-app').hidden = false;
       $('calendar-all').disabled = false;
     } catch (error) {
+      if (!data) $('calendar-app').hidden = true;
       $('calendar-status').textContent = error.message + '. Riprova oppure usa il calendario Outlook.';
       $('calendar-retry').hidden = false;
       warning(true);
       if ($('stato')) { $('stato').hidden = true; $('stato').textContent = '' }
       console.error('Caricamento calendari', error);
+    } finally {
+      agenda.setAttribute('aria-busy', 'false');
+      controls.forEach(id => { $(id).disabled = !data });
     }
   }
   $('calendar-retry').onclick = load;

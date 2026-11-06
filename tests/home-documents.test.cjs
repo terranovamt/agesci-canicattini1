@@ -17,6 +17,33 @@ class Element {
   }
 }
 
+test('archive shows skeletons before the response and loads long lists in blocks without redundant rendering', async () => {
+  const elements = Object.fromEntries(['documents-list', 'documents-status', 'documents-retry', 'documents-search', 'documents-more'].map(id => [id, new Element()]));
+  elements['documents-search'].value = '';
+  let resolveResponse;
+  const items = Array.from({ length: 120 }, (_, index) => ({ file: 'document-' + index + '.pdf', title: 'Document ' + index, description: 'Archivio' }));
+  vm.runInNewContext(source, {
+    document: { getElementById: id => elements[id], createElement: () => new Element(), createElementNS: () => new Element() },
+    window: { DOCUMENTS_MODEL: model }, fetch: () => new Promise(resolve => { resolveResponse = resolve }),
+    console, Intl, Date
+  });
+  assert.equal(elements['documents-list'].children.length, 3);
+  assert.equal(elements['documents-list']['aria-busy'], 'true');
+  resolveResponse({ ok: true, json: async () => items });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(elements['documents-list'].children.length, 48);
+  assert.equal(elements['documents-list']['aria-busy'], 'false');
+  const first = elements['documents-list'].children[0];
+  elements['documents-search'].oninput();
+  assert.equal(elements['documents-list'].children[0], first);
+  elements['documents-more'].onclick();
+  assert.equal(elements['documents-list'].children.length, 96);
+  assert.equal(elements['documents-more'].hidden, false);
+  elements['documents-more'].onclick();
+  assert.equal(elements['documents-list'].children.length, 120);
+  assert.equal(elements['documents-more'].hidden, true);
+});
+
 test('home renders only current assembly preparatory PDFs in addition to the complete archive', async () => {
   const year = Number(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', year: 'numeric' }).format(new Date()));
   const items = [

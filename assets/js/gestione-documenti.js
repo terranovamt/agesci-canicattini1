@@ -29,6 +29,7 @@
   }
   function lock(value) {
     busy = value;
+    $('managed-documents').setAttribute('aria-busy', String(value));
     $("document-form")
       .querySelectorAll("input,textarea,button")
       .forEach((element) => {
@@ -97,6 +98,7 @@
       open.target = "_blank";
       open.rel = "noopener";
       open.textContent = "Apri " + item.file;
+      open.onclick = event => { if (busy) event.preventDefault() };
       const actions = document.createElement("div");
       actions.className = "actions";
       const edit = document.createElement("button");
@@ -124,6 +126,16 @@
     if (busy || (formDirty && !confirm("Scartare le modifiche al modulo e ricaricare?"))) return;
     lock(true);
     message("Caricamento dei documenti…");
+    if (!ready) {
+      const list = $('managed-documents');
+      list.replaceChildren();
+      for (let index = 0; index < 3; index++) {
+        const placeholder = document.createElement('article');
+        placeholder.className = 'loading-skeleton';
+        placeholder.setAttribute('aria-hidden', 'true');
+        list.append(placeholder);
+      }
+    }
     try {
       items = await D.load(credentials());
       ready = true;
@@ -138,17 +150,22 @@
       );
     } catch (error) {
       ready = false;
+      render();
       message(error.message, true);
     } finally {
       lock(false);
     }
   }
   async function publish(change) {
+    const previousItems = items;
     lock(true);
     message(
       preview ? "Salvataggio nella simulazione locale…" : nas ? "Salvataggio sul NAS..." : "Pubblicazione su GitHub…",
     );
     try {
+      items = D.apply(items, change);
+      render();
+      lock(true);
       items = await D.save(change, credentials());
       if (!preview && !nas) localStorage.setItem(D.tokenKey, credentials());
       reset();
@@ -161,6 +178,8 @@
             : "Salvato su GitHub. Attendi GitHub Pages per vedere la modifica sul sito.",
       );
     } catch (error) {
+      items = previousItems;
+      render();
       message(error.message, true);
     } finally {
       lock(false);
