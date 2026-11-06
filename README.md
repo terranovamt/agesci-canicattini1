@@ -117,6 +117,8 @@ dati persistenti che rischierebbe di diventare obsoleta.
 	nativo con caricamento progressivo, non virtualizzazione DOM React.
 - Filtri invariati non ricostruiscono le schede. Script separati per pagina
 	con `defer`, in ordine di dipendenza; immagini fuori dal primo schermo lazy.
+- La build versiona CSS e JavaScript statici con hash del contenuto, evitando
+	asset vecchi dopo gli aggiornamenti senza rinunciare alla cache del browser.
 - Loghi e icone WebP lossless; foto AVIF con fallback WebP, richiesta soltanto
 	dalle slide fotografiche. Favicon e QR rimangono PNG.
 - Montserrat e Caveat WOFF2 locali, soli caratteri latini e stile normale,
