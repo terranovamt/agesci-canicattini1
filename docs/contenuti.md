@@ -47,6 +47,12 @@ gli stili responsive e di stampa sono in `assets/css/peg.css`. Se viene aggiorna
 PDF, aggiornare anche il testo HTML mantenendo la corrispondenza con l'originale.
 `assets/js/site-menu.js` gestisce il menu condiviso tra home e pagina PEG.
 `assets/js/peg.js` evidenzia nell'indice la sezione raggiunta durante lo scorrimento.
+L'indice numera le sezioni da 01 a 05; le tre aree d'intervento, senza numero,
+sono annidate sotto «05 Strutturazione del progetto» (`.peg-index-sub`). Su
+mobile e tablet (fino a 900 px), superato l'indice compare in basso a destra un
+pulsante con l'icona Font Awesome `fa-bars` che apre lo stesso indice per
+saltare tra le sezioni; `peg.js` lo crea clonando l'indice, quindi basta
+aggiornare l'indice nell'HTML.
 Le fotografie in `assets/peg/` provengono dal PDF originale; il carattere
 manoscritto Caveat è servito localmente da `assets/fonts/`, insieme alla
 licenza SIL OFL. È una scelta tipografica, non la grafia autentica di B.-P.

@@ -67,6 +67,26 @@ test("home introduces the dedicated PEG page and the original PDF stays availabl
   assert.match(read("assets/fonts/OFL-Caveat.txt"), /SIL OPEN FONT LICENSE/);
 });
 
+test("PEG index numbers sections 01-05 and nests the three areas, unnumbered, under Strutturazione", () => {
+  const html = read(currentPegPath);
+  const pegIndex = html.match(/<aside class="peg-index">[\s\S]*?<\/aside>/)[0];
+  assert.deepEqual(
+    [...pegIndex.matchAll(/<span>(\d+)<\/span>/g)].map((match) => match[1]),
+    ["01", "02", "03", "04", "05"],
+  );
+  const group = pegIndex.match(/<div class="peg-index-group">\s*<a href="#strutturazione">[\s\S]*?<\/div>\s*<\/div>/);
+  assert.ok(group, "Strutturazione and its areas share one group");
+  const sub = group[0].match(/<div class="peg-index-sub"[^>]*>([\s\S]*?)<\/div>/)[1];
+  assert.deepEqual(
+    [...sub.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]),
+    ["scelta", "custodi", "cittadini"],
+  );
+  assert.doesNotMatch(sub, /<span>/);
+  assert.match(html, /fontawesome-free@7\.2\.0\/css\/fontawesome\.min\.css/);
+  assert.match(html, /fontawesome-free@7\.2\.0\/css\/solid\.min\.css/);
+  assert.match(read("assets/js/peg.js"), /fa-bars/);
+});
+
 test("reading index follows all sections on scroll, resize, load and return to top", () => {
   const ids = [
     "premessa",
@@ -102,6 +122,7 @@ test("reading index follows all sections on scroll, resize, load and return to t
   vm.runInNewContext(read("assets/js/peg.js"), {
     window,
     document: {
+      querySelector: () => null,
       querySelectorAll: () => links,
       getElementById: (id) => ({
         getBoundingClientRect: () => ({ top: 500 + ids.indexOf(id) * 1000 - window.scrollY }),
@@ -149,7 +170,8 @@ test("PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
       )
       .replace(
         "</body>",
-        "<script>" +
+        // Headless virtual time renders no frames, so requestAnimationFrame never fires without this shim.
+        "<script>window.requestAnimationFrame = callback => setTimeout(callback, 16);" +
           read("assets/js/site-menu.js") +
           (file === currentPegPath ? read("assets/js/peg.js") : "") +
           "</script></body>",
@@ -192,6 +214,30 @@ test("PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
             toggle.click();
             doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape' }));
             result.escapeCloses = toggle.getAttribute('aria-expanded') === 'false';
+          }
+          if (page === 0) {
+            const quick = doc.querySelector('.peg-quick');
+            const settle = () => new Promise(resolve => setTimeout(resolve, 60));
+            const scrollTo = async top => { win.scrollTo({ top, behavior: 'instant' }); win.dispatchEvent(new win.Event('scroll')); await settle(); };
+            if (width <= 900) {
+              await scrollTo(0);
+              result.quickHiddenAtTop = !quick.classList.contains('is-visible');
+              await scrollTo(doc.getElementById('strutturazione').getBoundingClientRect().top + win.scrollY);
+              result.quickVisible = quick.classList.contains('is-visible');
+              const quickToggle = quick.querySelector('.peg-quick-toggle');
+              const panel = doc.getElementById('peg-quick-panel');
+              quickToggle.click();
+              result.quickOpen = !panel.hidden && quickToggle.getAttribute('aria-expanded') === 'true'
+                && quickToggle.querySelector('i').classList.contains('fa-xmark');
+              result.quickLinks = panel.querySelectorAll('a').length;
+              result.quickSub = panel.querySelectorAll('.peg-index-sub a').length;
+              result.quickCurrent = (panel.querySelector('[aria-current]') || {}).hash;
+              panel.querySelector('a[href="#scelta"]').click();
+              result.quickClosed = panel.hidden && quickToggle.getAttribute('aria-expanded') === 'false';
+              await scrollTo(0);
+            } else {
+              result.quickDisplay = win.getComputedStyle(quick).display;
+            }
           }
           results.push(result);
         }
@@ -240,6 +286,17 @@ test("PEG and home fit mobile, tablet, laptop and desktop, with usable navigatio
         assert.equal(row.areas, 3, label);
         assert.equal(row.goalColumns, row.width <= 640 ? 1 : 2, label);
         assert.equal(row.indexPosition, row.width <= 900 ? "static" : "sticky", label);
+        if (row.width <= 900) {
+          assert.equal(row.quickHiddenAtTop, true, label);
+          assert.equal(row.quickVisible, true, label);
+          assert.equal(row.quickOpen, true, label);
+          assert.equal(row.quickLinks, 8, label);
+          assert.equal(row.quickSub, 3, label);
+          assert.equal(row.quickCurrent, "#strutturazione", label);
+          assert.equal(row.quickClosed, true, label);
+        } else {
+          assert.equal(row.quickDisplay, "none", label);
+        }
       }
       if (row.width <= 640) {
         assert.equal(row.menuOpen, true, label);
