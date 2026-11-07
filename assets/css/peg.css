@@ -127,7 +127,8 @@
   display: grid;
   padding: 8px 8px 16px 0;
 }
-.peg-index a {
+.peg-index a,
+.peg-quick-panel a {
   display: flex;
   align-items: baseline;
   gap: 12px;
@@ -143,20 +144,56 @@
     background-color var(--motion-base),
     border-color var(--motion-base);
 }
-.peg-index a[aria-current="location"] {
+.peg-index a[aria-current="location"],
+.peg-quick-panel a[aria-current="location"] {
   border-left-color: var(--v);
   background: color-mix(in srgb, var(--v) 9%, var(--bg));
   color: var(--vd);
   font-weight: 800;
 }
-.peg-index a span {
+.peg-index a span,
+.peg-quick-panel a span {
   color: var(--v2);
   font-size: 10px;
 }
 .peg-index a:hover,
-.peg-index a:focus-visible {
+.peg-index a:focus-visible,
+.peg-quick-panel a:hover,
+.peg-quick-panel a:focus-visible {
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+.peg-index-group {
+  display: grid;
+}
+.peg-index-sub {
+  display: grid;
+  margin-left: 18px;
+  border-left: 2px solid color-mix(in srgb, var(--v) 22%, var(--w));
+}
+.peg-index-sub a {
+  --area-color: var(--v);
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.peg-index-sub a:nth-child(2) {
+  --area-color: var(--g-strong);
+}
+.peg-index-sub a:nth-child(3) {
+  --area-color: var(--o-strong);
+}
+.peg-index-sub a::before {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--area-color);
+  content: "";
+}
+.peg-quick {
+  display: none;
 }
 .peg-reading {
   min-width: 0;
@@ -419,6 +456,73 @@
   .peg-index .eyebrow {
     grid-column: 1 / -1;
   }
+  .peg-index .peg-index-group {
+    grid-column: 1 / -1;
+  }
+  .peg-quick {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity var(--motion-base),
+      transform var(--motion-base),
+      visibility 0s linear var(--motion-base);
+  }
+  .peg-quick.is-visible {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--motion-base),
+      transform var(--motion-base);
+  }
+  .peg-quick-toggle {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-left: auto;
+    padding: 0;
+    border: 2px solid var(--w);
+    border-radius: 50%;
+    background: var(--v);
+    color: var(--w);
+    font-size: 22px;
+    box-shadow: var(--shadow-raised);
+  }
+  .peg-quick-toggle[aria-expanded="true"] {
+    background: var(--vd);
+  }
+  .peg-quick-toggle .fa-bars::before {
+    content: var(--fa, "\2630");
+  }
+  .peg-quick-toggle .fa-xmark::before {
+    content: var(--fa, "\2715");
+  }
+  .peg-quick-panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 12px);
+    display: grid;
+    width: min(330px, calc(100vw - 32px));
+    max-height: min(520px, calc(100svh - 120px));
+    padding: 12px 8px 12px 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--peg-line);
+    border-radius: var(--radius-lg);
+    background: var(--w);
+    box-shadow: var(--shadow-raised);
+  }
+  .peg-quick-panel .eyebrow {
+    margin: 0 0 6px;
+    padding: 0 12px 0 15px;
+  }
   .peg-reading {
     max-width: none;
   }
@@ -495,6 +599,7 @@
   .site-header,
   .site-footer,
   .peg-index,
+  .peg-quick,
   .skip-link,
   .peg-directions,
   .peg-download,
