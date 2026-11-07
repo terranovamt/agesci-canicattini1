@@ -23,6 +23,10 @@ Nella gestione, «Anno di riferimento» (`year`) serve al filtro dell’archivio
 l’ordine cronologico. Sono metadati distinti da `assemblyYear`, che decide
 soltanto l’inclusione nei preparatori dell’anno corrente.
 
+In home, sotto i pulsanti principali, il riquadro «Assemblea di Gruppo · data ·
+Tra N giorni» compare quando l’evento è nel calendario del gruppo ed è un link
+alla pagina `assemblea/index.html`.
+
 In home la sezione «Documenti preparatori» è visibile solo negli ultimi 15
 giorni prima dell’evento «Assemblea di Gruppo» del calendario del gruppo e fino
 alla sua conclusione: per mostrarla basta che l’evento sia nel calendario

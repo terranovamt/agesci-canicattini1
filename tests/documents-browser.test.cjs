@@ -279,6 +279,8 @@ test("public documents and management work in a browser at all required widths",
           results.push({ upcomingAssemblyVisible: !doc.querySelector('#stato').hidden,
             upcomingAssemblyText: doc.querySelector('#stato').textContent,
             upcomingAssemblyTitle: doc.querySelector('#stato .assembly-status-title').textContent,
+            upcomingAssemblyHref: doc.querySelector('#stato a.assembly-status-link').getAttribute('href'),
+            upcomingAssemblyLinkWraps: doc.querySelector('#stato a.assembly-status-link .assembly-status-meta') !== null,
             preparatoryVisible: !doc.querySelector('#documenti-preparatori').hidden,
             explainerArticles: [...doc.querySelectorAll('.assembly-explainer-cite')].map(e => e.textContent).join(',') });
           errorSnapshot.events[0].start = new Date(Date.now() + 20 * 86400000).toISOString();
@@ -533,6 +535,8 @@ test("public documents and management work in a browser at all required widths",
       /Assemblea di Gruppo.*Tra 5 giorni/,
     );
     assert.equal(results.find((item) => "upcomingAssemblyTitle" in item).upcomingAssemblyTitle, "Assemblea di Gruppo");
+    assert.equal(results.find((item) => "upcomingAssemblyHref" in item).upcomingAssemblyHref, "assemblea/");
+    assert.equal(results.find((item) => "upcomingAssemblyLinkWraps" in item).upcomingAssemblyLinkWraps, true);
     assert.equal(results.find((item) => "preparatoryVisible" in item).preparatoryVisible, true);
     assert.match(
       results.find((item) => "explainerArticles" in item).explainerArticles,

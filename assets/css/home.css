@@ -45,7 +45,12 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .button-quiet:hover { background: color-mix(in srgb, var(--w) 12%, transparent) }
 .button-secondary { border-color: var(--vl); background: var(--w); color: var(--v) }
 .button-secondary:hover { border-color: var(--v); background: var(--bg) }
-#stato.assembly-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; max-width: 560px; margin: 26px 0 0; padding: 14px 20px 14px 18px; border-left: 4px solid var(--y); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; background: color-mix(in srgb, var(--vd) 42%, transparent); color: var(--w); font-size: clamp(18px, 2vw, 21px) }
+#stato.assembly-status { max-width: 560px; margin: 26px 0 0; color: var(--w); font-size: clamp(18px, 2vw, 21px) }
+.assembly-status-link { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 20px 14px 18px; border-left: 4px solid var(--y); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; background: color-mix(in srgb, var(--vd) 42%, transparent); color: var(--w); text-decoration: none; transition: background-color var(--motion-base) var(--ease-standard) }
+.assembly-status-link:hover { background: color-mix(in srgb, var(--vd) 64%, transparent) }
+.assembly-status-arrow { align-self: center; margin-left: auto; color: var(--y); font-size: .9em; transition: transform var(--motion-base) var(--ease-standard) }
+.assembly-status-arrow .fa-arrow-right::before { content: var(--fa, "\2192") }
+.assembly-status-link:hover .assembly-status-arrow, .assembly-status-link:focus-visible .assembly-status-arrow { transform: translateX(4px) }
 .assembly-status-title { color: var(--w); font: 700 clamp(22px, 2.6vw, 30px)/1.15 Georgia, 'Times New Roman', serif; letter-spacing: -.01em }
 .assembly-status-meta { color: var(--y); font-size: clamp(18px, 2vw, 21px); font-weight: 650; line-height: 1.3 }
 .hero-art { display: grid; place-items: center; min-height: 360px }
@@ -300,7 +305,7 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
   .assembly-explainer { padding: 14px 16px }
   .assembly-explainer-points { grid-template-columns: 1fr; padding: 10px }
   .assembly-explainer-points li { padding: 14px }
-  #stato.assembly-status { padding: 12px 16px 12px 14px }
+  .assembly-status-link { padding: 12px 16px 12px 14px }
   .access-band { gap: 20px; padding: 25px 20px }
   .access-band .button { width: 100% }
   .site-footer { align-items: flex-start; flex-direction: column; gap: 4px; padding: 20px 18px }
