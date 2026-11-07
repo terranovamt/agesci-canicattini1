@@ -44,7 +44,12 @@
       const date = event.allDay ? new Date(event.start + "T12:00:00Z") : new Date(event.start);
       const days = M.calendarDaysUntil(event, new Date());
       const title = /^assemblea di gruppo$/i.test(event.title.trim()) ? "Assemblea di Gruppo" : event.title;
-      banner.append(
+      const link = element("a", undefined, "assembly-status-link");
+      link.href = "assemblea/";
+      const arrow = element("span", undefined, "assembly-status-arrow");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.append(element("i", undefined, "fa-solid fa-arrow-right"));
+      link.append(
         element("strong", title, "assembly-status-title"),
         element("span", " · ", "visually-hidden"),
         element(
@@ -53,7 +58,9 @@
             (days <= 0 ? " · Oggi" : " · Tra " + days + (days === 1 ? " giorno" : " giorni")),
           "assembly-status-meta",
         ),
+        arrow,
       );
+      banner.append(link);
     }
   }
   function renderPreparatory() {
