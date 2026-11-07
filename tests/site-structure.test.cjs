@@ -196,6 +196,26 @@ test("public assembly documents and PEG stay independent of restricted tools and
   assert.match(read("area-riservata/assemblea/setup.html"), /href="\.\.\/index.html"/);
 });
 
+test("assembly explainer appears on home and preparatory page with four articles behind Scopri di più", () => {
+  for (const [file, pdf] of [
+    ["index.html", "documents/pdf/RegolamentoAssembleaCanicattini1.pdf"],
+    ["assemblea/index.html", "../documents/pdf/RegolamentoAssembleaCanicattini1.pdf"],
+  ]) {
+    const card = read(file).match(/<aside class="assembly-explainer"[\s\S]*?<\/aside>/)[0];
+    assert.match(card, /class="assembly-explainer-title">Cos’è l’Assemblea di Gruppo\?</);
+    assert.match(card, /<details class="assembly-explainer-more">\s*<summary>Scopri di più<\/summary>/);
+    assert.deepEqual(
+      [...card.matchAll(/class="assembly-explainer-ref">([^<]+)</g)].map((match) => match[1]),
+      ["Art. 1", "Art. 3", "Artt. 10–11", "Artt. 14–15"],
+    );
+    for (const [, cite] of card.matchAll(/class="assembly-explainer-cite">([^<]+)</g)) {
+      assert.match(cite, /^\(art\. \d+(, c\. \d+)?\)$/);
+    }
+    assert.ok(card.includes(`href="${pdf}"`));
+    assert.ok(fs.existsSync(path.join(__dirname, "..", "documents/pdf/RegolamentoAssembleaCanicattini1.pdf")));
+  }
+});
+
 test("public archive has year and text search and the home limits recent documents to four", () => {
   const archive = read("documenti/index.html");
   assert.match(archive, /id="documents-year"/);

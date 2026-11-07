@@ -168,7 +168,9 @@ precedenti un evento «Assemblea di Gruppo» del calendario del gruppo fino alla
 sua fine, in linea con l'invio del bilancio previsto dall'art. 3 del Regolamento
 assembleare; resta nascosta se i calendari non si caricano. Contiene anche la
 card «Cos'è l'Assemblea di Gruppo?», un breve testo in `index.html` che cita
-articolo e comma di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`.
+articolo e comma di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`, con
+«Scopri di più» che apre i quattro punti principali (artt. 1, 3, 10–11, 14–15).
+La stessa card compare in `assemblea/index.html`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 I salvataggi sul NAS non attendono GitHub Pages.
 
