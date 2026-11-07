@@ -29,8 +29,10 @@ alla sua conclusione: per mostrarla basta che l’evento sia nel calendario
 Outlook del gruppo con quel titolo. La sezione include la card «Cos’è
 l’Assemblea di Gruppo?», un breve testo discorsivo per chi partecipa per la
 prima volta: cita solo articolo e comma, ad esempio «(art. 1, c. 2)», dove
-riprende il Regolamento assembleare; se il Regolamento cambia, aggiornare
-testo e riferimenti in `index.html`.
+riprende il Regolamento assembleare, e con «Scopri di più» apre i quattro punti
+principali (artt. 1, 3, 10–11, 14–15). La stessa card è anche nella pagina
+`assemblea/index.html`: se il Regolamento cambia, aggiornare testo e
+riferimenti in entrambe le pagine.
 
 ## Progetto Educativo di Gruppo
 
