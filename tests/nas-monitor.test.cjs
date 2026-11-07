@@ -11,8 +11,18 @@ test("live presence counts every open site tab, background ones included, and sa
   const database = new DatabaseSync(":memory:");
   const monitor = createMonitor(database, { dataDir: directory });
   const uuid = (index) => String(index).repeat(8) + "-1234-1234-1234-123456789abc";
+  const browsers = { 1: "pc", 2: "pc", 3: "pc", 4: "ipad", 5: "iphone" };
+  const visitor = (index) => ({ pc: uuid(7), ipad: uuid(8), iphone: uuid(9) })[browsers[index]];
   const tab = (index, page, visible, type = "view") =>
-    monitor.telemetry({ id: uuid(index > 3 ? index : 1), tab: uuid(index), type, page, visible, events: [] });
+    monitor.telemetry({
+      id: uuid(index > 3 ? index : 1),
+      tab: uuid(index),
+      visitor: visitor(index),
+      type,
+      page,
+      visible,
+      events: [],
+    });
   try {
     tab(1, "home", true);
     tab(2, "peg", true);
@@ -22,20 +32,31 @@ test("live presence counts every open site tab, background ones included, and sa
     tab(2, "peg", false, "heartbeat");
     tab(3, "documenti", false, "heartbeat");
     let snapshot = monitor.snapshot(0, 0, "live");
+    assert.equal(snapshot.traffic.people, 3);
     assert.equal(snapshot.traffic.online, 5);
     assert.equal(snapshot.traffic.visible, 3);
     assert.equal(snapshot.traffic.presentationDevices, 0);
+    monitor.connection(uuid(8));
+    monitor.connection(uuid(6));
+    assert.equal(monitor.snapshot(0, 0, "summary").traffic.today.people, 4);
     const sampled = Date.now() - 60000;
     monitor.samplePerformance(sampled);
     snapshot = monitor.snapshot(0, 0);
     const minute = snapshot.performance.hourly.find((value) => value.sampledAt === Math.floor(sampled / 60000) * 60000);
-    assert.equal(minute.online, 5);
+    assert.equal(minute.online, 3);
+    assert.equal(snapshot.traffic.daily[0].people, 4);
+    assert.equal(snapshot.traffic.daily[0].liveUnique, 2);
+    assert.equal(snapshot.traffic.daily[1].people, null);
     assert.deepEqual(
       snapshot.traffic.sessions.map((value) => value.visible).sort(),
       [false, false, true, true, true],
     );
     tab(3, "documenti", false, "leave");
     assert.equal(monitor.snapshot(0, 0, "live").traffic.online, 4);
+    assert.equal(monitor.snapshot(0, 0, "live").traffic.people, 3);
+    tab(4, "assemblea", false, "leave");
+    assert.equal(monitor.snapshot(0, 0, "live").traffic.people, 2);
+    assert.throws(() => monitor.telemetry({ id: uuid(1), visitor: "x", type: "view", page: "home", visible: true, events: [] }));
   } finally {
     monitor.stop();
     database.close();

@@ -329,6 +329,8 @@ test("NAS counts active tabs separately and deduplicates retried page views", as
     await app.login();
     const metrics = await (await app.request("/api/metrics")).json();
     assert.equal(metrics.traffic.online, 2);
+    assert.equal(metrics.traffic.people, 1);
+    assert.equal(metrics.traffic.today.people, 1);
     assert.equal(metrics.traffic.visible, 1);
     assert.equal(metrics.traffic.today.visits, 1);
     assert.equal(metrics.traffic.today.views, 2);

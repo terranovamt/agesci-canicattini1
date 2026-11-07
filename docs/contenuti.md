@@ -27,9 +27,10 @@ In home la sezione «Documenti preparatori» è visibile solo negli ultimi 15
 giorni prima dell’evento «Assemblea di Gruppo» del calendario del gruppo e fino
 alla sua conclusione: per mostrarla basta che l’evento sia nel calendario
 Outlook del gruppo con quel titolo. La sezione include la card «Cos’è
-l’Assemblea di Gruppo?», che spiega l’assemblea a chi partecipa per la prima
-volta citando gli articoli del Regolamento assembleare; se il Regolamento
-cambia, aggiornare il testo e i numeri degli articoli in `index.html`.
+l’Assemblea di Gruppo?», un breve testo discorsivo per chi partecipa per la
+prima volta: cita solo articolo e comma, ad esempio «(art. 1, c. 2)», dove
+riprende il Regolamento assembleare; se il Regolamento cambia, aggiornare
+testo e riferimenti in `index.html`.
 
 ## Progetto Educativo di Gruppo
 

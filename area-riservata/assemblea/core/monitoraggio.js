@@ -20,7 +20,7 @@
     $("nas-host-cpu").textContent = percent(resources.host?.cpuPercent);
     $("nas-host-ram").textContent = percent(resources.host?.memoryPercent);
     $("nas-streams").textContent = traffic.liveStreams + " / " + traffic.liveLimit;
-    $("nas-devices").textContent = (data.enabled ? traffic.online : 0).toLocaleString("it-IT");
+    $("nas-devices").textContent = (data.enabled ? traffic.people : 0).toLocaleString("it-IT");
     $("nas-container").textContent =
       bytes(resources.container.memoryBytes) + " / " + bytes(resources.container.memoryLimitBytes);
     $("nas-lag").textContent = milliseconds(resources.process.eventLoopP95Ms);

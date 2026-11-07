@@ -47,6 +47,7 @@ test("browser telemetry counts a view and heartbeat and never includes query str
   let payload = JSON.parse(app.calls[1].options.body);
   assert.equal(payload.type, "view");
   assert.equal(payload.page, "home");
+  assert.equal(payload.visitor, app.storage.get("nas-live-visitor-id"));
   await app.window.fetch("/broken?token=secret-value");
   app.events.get("error")({
     message: "secret-message",
