@@ -68,9 +68,11 @@
     try {
       localStorage.setItem("nas-visit-time", String(Date.now()));
     } catch {}
+    const visitor = visitorId();
     const payload = {
       id,
       tab,
+      ...(visitor ? { visitor } : {}),
       page,
       type,
       visible: document.visibilityState !== "hidden",

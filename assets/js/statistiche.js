@@ -34,9 +34,11 @@
   const counters = [
     "stats-visits",
     "stats-views",
+    "stats-people",
     "stats-live-unique",
     "stats-online",
     "stats-errors",
+    "stats-site-tabs",
     "stats-site-visible",
     "stats-presentation",
     "stats-streams",
@@ -50,7 +52,7 @@
     new Date(value).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", timeZone: "Europe/Rome" });
   const chartNamespace = "http://www.w3.org/2000/svg";
   const performanceSeries = [
-    { key: "online", id: "online", name: "Connessioni attive sul sito", color: "online", unit: "", peakUnit: "" },
+    { key: "online", id: "online", name: "Persone collegate al sito", color: "online", unit: "", peakUnit: "" },
     { key: "p95Ms", id: "latency", name: "Tempo di risposta API p95", color: "latency", unit: " ms", peakUnit: " ms" },
     { key: "cpuPercent", id: "cpu", name: "Utilizzo CPU del NAS", color: "cpu", unit: "%", peakUnit: "%" },
     { key: "memoryPercent", id: "ram", name: "Utilizzo RAM del NAS", color: "ram", unit: "%", peakUnit: "%" },
@@ -192,11 +194,11 @@
   }
   function renderHistory(data) {
     const selected = data.slice(0, historyDays).reverse();
-    const values = selected.flatMap((day) => [day.visits, day.views, day.liveUnique]).filter(Number.isFinite);
+    const values = selected.flatMap((day) => [day.visits, day.views, day.people]).filter(Number.isFinite);
     const maximum = Math.max(1, ...values);
     chart.replaceChildren();
     const title = chartElement("title");
-    title.textContent = "Andamento giornaliero: visite, pagine viste e spettatori unici della diretta";
+    title.textContent = "Andamento giornaliero: visite, pagine viste e persone uniche sull’intero sito";
     chart.append(title);
     for (let tick = 0; tick <= 4; tick++) {
       const y = 20 + (202 * tick) / 4;
@@ -208,9 +210,9 @@
     for (const [key, color] of [
       ["visits", "visits"],
       ["views", "views"],
-      ["liveUnique", "connections"],
+      ["people", "connections"],
     ]) {
-      const series = { key, name: key === "visits" ? "Visite sito" : key === "views" ? "Pagine viste" : "Spettatori unici diretta", color, unit: "" };
+      const series = { key, name: key === "visits" ? "Visite sito" : key === "views" ? "Pagine viste" : "Persone uniche", color, unit: "" };
       const values = selected.map((day) => day[key]);
       let segment = [];
       const segments = [];
@@ -275,17 +277,18 @@
     description.textContent =
       "Intervallo di " +
       historyDays +
-      " giorni. Visite e pagine viste; gli unici della diretta sono disponibili dalla data di attivazione del conteggio.";
+      " giorni. Visite e pagine viste; le persone uniche sono disponibili dalla data di attivazione del conteggio.";
     chart.append(description);
-    $("stats-history-note").textContent = selected.some((day) => day.liveUnique === null)
-      ? "Il conteggio univoco della diretta parte dall’attivazione; i giorni precedenti sono indicati come non raccolti."
-      : "Le riconnessioni e le schede parallele dello stesso browser non aumentano gli unici della diretta.";
+    $("stats-history-note").textContent = selected.some((day) => day.people === null)
+      ? "Il conteggio delle persone uniche parte dall’attivazione; i giorni precedenti sono indicati come non raccolti."
+      : "Ogni browser conta una volta al giorno: più schede o pagine dello stesso browser non aumentano le persone uniche.";
     const body = $("stats-days");
     body.replaceChildren();
     for (const day of selected.slice().reverse()) {
       const row = document.createElement("tr");
       for (const value of [
         date(Date.parse(day.day + "T12:00:00Z")),
+        Number.isFinite(day.people) ? count(day.people) : "Non raccolto",
         day.visits === null ? "Non raccolto" : count(day.visits),
         day.views === null ? "Non raccolto" : count(day.views),
         day.liveUnique === null ? "Non raccolto" : count(day.liveUnique),
@@ -488,9 +491,11 @@
       for (const [id, value] of Object.entries({
         "stats-visits": traffic.today.visits,
         "stats-views": traffic.today.views,
+        "stats-people": traffic.today.people,
         "stats-live-unique": traffic.today.liveUnique,
-        "stats-online": data.enabled ? traffic.online : null,
+        "stats-online": data.enabled ? traffic.people : null,
         "stats-errors": traffic.today.errors,
+        "stats-site-tabs": data.enabled ? traffic.online : null,
         "stats-site-visible": data.enabled ? traffic.visible : null,
         "stats-presentation": traffic.presentationDevices,
         "stats-streams": traffic.liveStreams,
@@ -508,7 +513,7 @@
         count(traffic.totals.views) +
         " pagine viste.";
       const nextDaily = Array.isArray(traffic.daily) ? traffic.daily : [];
-      const nextSignature = nextDaily.map((day) => [day.day, day.visits, day.views, day.liveUnique].join(":")).join("|");
+      const nextSignature = nextDaily.map((day) => [day.day, day.visits, day.views, day.people, day.liveUnique].join(":")).join("|");
       dailyHistory = nextDaily;
       if (nextSignature !== dailySignature) {
         dailySignature = nextSignature;

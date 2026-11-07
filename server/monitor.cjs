@@ -137,15 +137,24 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
   database.exec(
     "CREATE TABLE IF NOT EXISTS monitor_live_visitors (day TEXT NOT NULL, visitor TEXT NOT NULL, PRIMARY KEY(day,visitor)); CREATE INDEX IF NOT EXISTS monitor_live_visitor_day ON monitor_live_visitors(day); CREATE TABLE IF NOT EXISTS monitor_live_tracking (id INTEGER PRIMARY KEY CHECK(id=1), started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_performance (minute INTEGER PRIMARY KEY, online INTEGER NOT NULL, p95_ms REAL, cpu_percent REAL, memory_percent REAL);",
   );
+  database.exec(
+    "CREATE TABLE IF NOT EXISTS monitor_site_visitors (day TEXT NOT NULL, visitor TEXT NOT NULL, PRIMARY KEY(day,visitor)); CREATE TABLE IF NOT EXISTS monitor_site_tracking (id INTEGER PRIMARY KEY CHECK(id=1), started TEXT NOT NULL);",
+  );
   let recordedDay = dayOf(new Date());
   database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(recordedDay);
   database.prepare("INSERT OR IGNORE INTO monitor_live_tracking VALUES (1,?)").run(recordedDay);
+  database.prepare("INSERT OR IGNORE INTO monitor_site_tracking VALUES (1,?)").run(recordedDay);
   const clients = new Map(),
     requests = [];
   // Background tabs are throttled to about one heartbeat per minute, so they need a wider window than visible ones.
   const OPEN_TAB_MS = 150000,
     VISIBLE_TAB_MS = 90000;
   const openTabs = (now) => [...clients.values()].filter((value) => value.seen > now - OPEN_TAB_MS);
+  const people = (tabs) => new Set(tabs.map((value) => value.person)).size;
+  const visitorHash = (visitor) =>
+    typeof visitor === "string" && /^[a-f0-9-]{36}$/i.test(visitor)
+      ? crypto.createHash("sha256").update(visitor.toLowerCase()).digest("hex")
+      : null;
   let lastPerformanceMinute = -1;
   const resources = createResources({ dataDir, hostProc });
   let sample = resources.sample();
@@ -162,6 +171,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       !value ||
       !/^[a-f0-9-]{36}$/i.test(value.id || "") ||
       (value.tab !== undefined && !/^[a-f0-9-]{36}$/i.test(value.tab)) ||
+      (value.visitor !== undefined && !/^[a-f0-9-]{36}$/i.test(value.visitor)) ||
       !PAGES.has(value.page) ||
       !["view", "heartbeat", "leave"].includes(value.type) ||
       typeof value.visible !== "boolean" ||
@@ -198,11 +208,13 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     const visit = !previous || previous.seen < now - 1800000 ? 1 : 0;
     const viewed = value.tab && database.prepare("SELECT seen FROM monitor_views WHERE id=?").get(tab);
     const view = value.type === "view" && !viewed ? 1 : 0;
+    const person = visitorHash(value.visitor) || id;
     database.exec("BEGIN IMMEDIATE");
     try {
       database
         .prepare("INSERT INTO monitor_sessions VALUES (?,?) ON CONFLICT(id) DO UPDATE SET seen=excluded.seen")
         .run(id, now);
+      database.prepare("INSERT OR IGNORE INTO monitor_site_visitors VALUES (?,?)").run(day, person);
       database.prepare("UPDATE monitor_totals SET visits=visits+?,views=views+? WHERE id=1").run(visit, view);
       database
         .prepare(
@@ -221,7 +233,13 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       throw error;
     }
     if (clients.size < 2000 || clients.has(tab))
-      clients.set(tab, { seen: now, page: value.page, visible: value.visible, latencyMs: value.latencyMs ?? null });
+      clients.set(tab, {
+        seen: now,
+        page: value.page,
+        visible: value.visible,
+        latencyMs: value.latencyMs ?? null,
+        person,
+      });
   }
   function request(pathname, status, duration, streaming) {
     if (
@@ -237,10 +255,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
   }
   function connection(visitor) {
     const day = dayOf(new Date());
-    const visitorHash =
-      typeof visitor === "string" && /^[a-f0-9-]{36}$/i.test(visitor)
-        ? crypto.createHash("sha256").update(visitor.toLowerCase()).digest("hex")
-        : null;
+    const hash = visitorHash(visitor);
     database.exec("BEGIN IMMEDIATE");
     try {
       database.prepare("INSERT OR IGNORE INTO monitor_days(day) VALUES (?)").run(day);
@@ -249,8 +264,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       );
       increment.run(day);
       increment.run("total");
-      if (visitorHash)
-        database.prepare("INSERT OR IGNORE INTO monitor_live_visitors VALUES (?,?)").run(day, visitorHash);
+      if (hash) database.prepare("INSERT OR IGNORE INTO monitor_live_visitors VALUES (?,?)").run(day, hash);
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
@@ -267,7 +281,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       .prepare("INSERT OR REPLACE INTO monitor_performance VALUES (?,?,?,?,?)")
       .run(
         minute,
-        openTabs(now).length,
+        people(openTabs(now)),
         durations.length ? durations[Math.ceil(durations.length * 0.95) - 1] : null,
         sample.host?.cpuPercent ?? null,
         sample.host?.memoryPercent ?? null,
@@ -305,6 +319,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       enabled: telemetryEnabled,
       service: { release, startedAt: initialized, uptimeSeconds: Math.floor((now - initialized) / 1000) },
       traffic: {
+        people: people(online),
         online: online.length,
         visible,
         missing,
@@ -321,12 +336,22 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       .prepare("SELECT day,COUNT(*) AS visitors FROM monitor_live_visitors WHERE day>=? GROUP BY day")
       .all(trackingSince);
     const liveVisitorsByDay = new Map(liveVisitors.map((value) => [value.day, value.visitors]));
+    const peopleSince = database.prepare("SELECT started FROM monitor_site_tracking WHERE id=1").get().started;
+    const peopleByDay = new Map(
+      database
+        .prepare(
+          "SELECT day,COUNT(*) AS visitors FROM (SELECT day,visitor FROM monitor_site_visitors WHERE day>=?1 UNION SELECT day,visitor FROM monitor_live_visitors WHERE day>=?1) GROUP BY day",
+        )
+        .all(peopleSince)
+        .map((value) => [value.day, value.visitors]),
+    );
     result.traffic.today = {
       ...(database.prepare("SELECT visits,views,errors FROM monitor_days WHERE day=?").get(day) || {
         visits: 0,
         views: 0,
         errors: 0,
       }),
+      people: peopleByDay.get(day) || 0,
       connections: database.prepare("SELECT opens FROM monitor_connections WHERE day=?").get(day)?.opens || 0,
       liveUnique: liveVisitorsByDay.get(day) || 0,
     };
@@ -351,6 +376,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
         views: value?.views ?? null,
         errors: value?.errors ?? null,
         connections: value?.connections ?? null,
+        people: date < peopleSince ? null : peopleByDay.get(date) || 0,
         liveUnique: date < trackingSince ? null : liveVisitorsByDay.get(date) || 0,
       };
     });
@@ -414,6 +440,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     database.prepare("DELETE FROM monitor_pages WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_connections WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_live_visitors WHERE day<?").run(oldest);
+    database.prepare("DELETE FROM monitor_site_visitors WHERE day<?").run(oldest);
     samplePerformance(now);
   }, 5000);
   timer.unref();

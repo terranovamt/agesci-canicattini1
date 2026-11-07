@@ -22,12 +22,13 @@ in ingresso su un IP pubblico. Il solo DDNS non supera CGNAT o porte condivise.
 In regia, **Server live > Apri monitor** mostra gli spettatori simultanei della
 presentazione e le connessioni SSE tecniche separatamente, oltre a CPU/RAM di
 backend e NAS. Si aggiorna automaticamente, senza pulsante Aggiorna. La pagina
-**Statistiche sito** mostra visite giornaliere, pagine viste, spettatori unici
-della diretta al giorno, distribuzione delle pagine e segnalazioni; la dashboard
-ne mostra un riepilogo. Include grafici dell'ultima ora per le presenze live
-(connessioni attive sull'intero sito, schede in background comprese),
+**Statistiche sito** mostra persone collegate ora e persone uniche al giorno
+sull'intero sito, visite, pagine viste, spettatori unici della diretta,
+distribuzione delle pagine e segnalazioni; la dashboard
+ne mostra un riepilogo. Include grafici dell'ultima ora per le persone
+collegate (browser/dispositivi distinti, schede in background comprese),
 risposta API p95, CPU e RAM, oltre allo storico giornaliero
-aggregato conservato sul NAS per 365 giorni. Gli unici della diretta partono dal
+aggregato conservato sul NAS per 365 giorni. Persone e unici della diretta partono dal
 deploy che attiva il conteggio e i campioni dell'ultima ora si accumulano al
 ritmo di uno al minuto; i dati precedenti sono indicati come non raccolti.
 La pagina mostra anche il commit deployato e permette di confrontarlo con
@@ -166,8 +167,8 @@ Nella home la sezione compare solo dai 15 giorni di calendario (Europe/Rome)
 precedenti un evento «Assemblea di Gruppo» del calendario del gruppo fino alla
 sua fine, in linea con l'invio del bilancio previsto dall'art. 3 del Regolamento
 assembleare; resta nascosta se i calendari non si caricano. Contiene anche la
-card «Cos'è l'Assemblea di Gruppo?», scritta in `index.html` con i riferimenti
-agli articoli di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`.
+card «Cos'è l'Assemblea di Gruppo?», un breve testo in `index.html` che cita
+articolo e comma di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
 I salvataggi sul NAS non attendono GitHub Pages.
 

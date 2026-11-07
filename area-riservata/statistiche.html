@@ -46,10 +46,10 @@
         <section class="metrics-section" aria-labelledby="statistics-today">
           <h2 id="statistics-today">Il sito oggi</h2>
           <dl class="metrics-overview statistics-kpis">
+            <div><dt>Persone collegate ora</dt><dd id="stats-online">-</dd></div>
+            <div><dt>Persone uniche oggi</dt><dd id="stats-people">-</dd></div>
             <div><dt>Visite al sito</dt><dd id="stats-visits">-</dd></div>
             <div><dt>Pagine viste</dt><dd id="stats-views">-</dd></div>
-            <div><dt>Connessioni live uniche</dt><dd id="stats-live-unique">-</dd></div>
-            <div><dt>Connessioni attive ora</dt><dd id="stats-online">-</dd></div>
             <div><dt>Segnalazioni oggi</dt><dd id="stats-errors">-</dd></div>
           </dl>
         </section>
@@ -58,7 +58,7 @@
             <div class="statistics-history-heading">
               <div>
                 <h2 id="statistics-history">Andamento del sito</h2>
-                <p id="stats-history-description" class="metrics-status">Visite, pagine viste e spettatori unici della diretta.</p>
+                <p id="stats-history-description" class="metrics-status">Persone uniche, visite e pagine viste sull’intero sito.</p>
               </div>
               <div class="statistics-range" role="group" aria-label="Intervallo dello storico">
                 <button type="button" data-history-days="7" aria-pressed="false">7 giorni</button>
@@ -70,17 +70,17 @@
             <div class="statistics-chart-legend" aria-hidden="true">
               <span class="statistics-legend-visits">Visite sito</span>
               <span class="statistics-legend-views">Pagine viste</span>
-              <span class="statistics-legend-connections">Unici diretta</span>
+              <span class="statistics-legend-connections">Persone uniche</span>
             </div>
             <svg id="stats-history-chart" class="statistics-chart" viewBox="0 0 720 280" role="img"
-              aria-label="Andamento giornaliero delle visite, delle pagine viste e degli spettatori unici della diretta. Dati anche nella tabella sottostante.">
+              aria-label="Andamento giornaliero di visite, pagine viste e persone uniche sull’intero sito. Dati anche nella tabella sottostante.">
               <title>Andamento del sito</title>
             </svg>
             <p id="stats-history-note" class="metrics-status" role="status"></p>
             <details class="statistics-history-table">
               <summary>Consulta i dati giornalieri</summary>
               <table class="metrics-table">
-                <thead><tr><th scope="col">Giorno</th><th scope="col">Visite sito</th><th scope="col">Pagine viste</th><th scope="col">Unici diretta</th></tr></thead>
+                <thead><tr><th scope="col">Giorno</th><th scope="col">Persone uniche</th><th scope="col">Visite sito</th><th scope="col">Pagine viste</th><th scope="col">Unici diretta</th></tr></thead>
                 <tbody id="stats-days"></tbody>
               </table>
             </details>
@@ -103,9 +103,9 @@
           </div>
           <div class="statistics-hourly-grid">
             <article class="statistics-hour-card" data-hourly="online">
-              <h3>Presenze live</h3><p>Connessioni attive sull’intero sito</p>
+              <h3>Presenze live</h3><p>Persone collegate all’intero sito</p>
               <div class="statistics-hour-values"><strong id="stats-hour-online-current">-</strong><span id="stats-hour-online-peak">-</span></div>
-              <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Connessioni attive sull’intero sito nell’ultima ora"></svg>
+              <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Persone collegate all’intero sito nell’ultima ora"></svg>
             </article>
             <article class="statistics-hour-card" data-hourly="latency">
               <h3>Risposta API</h3><p>Tempo p95 su 5 minuti · ms</p>
@@ -135,16 +135,18 @@
               <div><dt>Risposta API p95 / 5 min</dt><dd id="stats-latency">-</dd></div>
               <div><dt>Errori API 5xx / 5 min</dt><dd id="stats-api-errors">-</dd></div>
               <div><dt>Richieste limitate / 5 min</dt><dd id="stats-limited">-</dd></div>
+              <div><dt>Schede aperte</dt><dd id="stats-site-tabs">-</dd></div>
               <div><dt>Schede in primo piano</dt><dd id="stats-site-visible">-</dd></div>
               <div><dt>Spettatori presentazione</dt><dd id="stats-presentation">-</dd></div>
+              <div><dt>Unici della diretta oggi</dt><dd id="stats-live-unique">-</dd></div>
               <div><dt>Flussi SSE tecnici attivi</dt><dd id="stats-streams">-</dd></div>
             </dl>
             <ol id="stats-events" class="metrics-events"></ol>
           </section>
-          <section class="metrics-section statistics-release-details" aria-label="Totali del sito e connessioni attive">
+          <section class="metrics-section statistics-release-details" aria-label="Totali del sito e schede aperte">
             <p id="stats-totals" class="metrics-status">-</p>
             <details class="statistics-sessions">
-              <summary>Connessioni attive</summary>
+              <summary>Schede aperte</summary>
               <table class="metrics-table">
                 <thead><tr><th scope="col">Pagina</th><th scope="col">Stato</th><th scope="col">Risposta browser</th><th scope="col">Ultimo segnale</th></tr></thead>
                 <tbody id="stats-sessions"></tbody>

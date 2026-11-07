@@ -422,10 +422,12 @@ i PDF persistenti non vengono spostati, cancellati o importati nuovamente.
 
 | Indicatore                | Significato e limite                                                                                                                                              |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Visite oggi               | Sessioni browser osservate; nuova visita dopo 30 minuti di inattivita'. Non sono persone uniche o accessi certificati                                             |
+| Visite oggi               | Sessioni browser osservate; nuova visita dopo 30 minuti di inattivita'. Una persona puo' generare piu' visite                                                      |
 | Pagine                    | Caricamenti delle pagine monitorate, con deduplicazione dei retry                                                                                                 |
-| Connessioni attive (presenze live) | Schede del sito aperte, anche in background, con heartbeat negli ultimi 150 secondi; escono subito alla chiusura. Il grafico orario ne salva un campione al minuto |
-| Schede in primo piano     | Parte delle connessioni attive visibile sullo schermo negli ultimi 90 secondi                                                                                     |
+| Persone collegate ora     | Browser/dispositivi distinti con almeno una scheda aperta (heartbeat negli ultimi 150 secondi): tre schede sullo stesso PC contano una persona. Campione al minuto nel grafico orario |
+| Persone uniche oggi       | Browser/dispositivi distinti che hanno aperto il sito o la diretta nella giornata; conteggio attivo dal deploy che lo ha introdotto                                |
+| Schede aperte             | Schede del sito aperte, anche in background, con heartbeat negli ultimi 150 secondi; escono subito alla chiusura                                                   |
+| Schede in primo piano     | Parte delle schede aperte visibile sullo schermo negli ultimi 90 secondi                                                                                          |
 | Flussi SSE reali          | Connessioni streaming attualmente aperte sul backend; limite globale 500                                                                                          |
 | Dispositivi presentazione | Heartbeat della presentazione/regia negli ultimi 60 secondi, distinto dal traffico generale                                                                       |
 | CPU backend / un core     | CPU usata dal processo Node nel campione; 100% equivale a un core. Non e' la CPU totale del NAS                                                                   |
@@ -447,7 +449,7 @@ parametri o stack trace; non permettono di identificare una persona specifica.
 Ad blocker, JavaScript disabilitato, bot e reti interrotte possono alterare
 i conteggi osservati. iPhone e iPad sospendono le pagine con schermo spento o
 Safari in background, e i browser possono congelare le schede inattive: queste
-schede escono dalle connessioni attive dopo 150 secondi e rientrano appena
+schede escono dalle schede aperte dopo 150 secondi e rientrano appena
 tornano visibili. Le riconnessioni non dimostrano da sole
 un guasto del NAS. Se un telefono non raggiunge il server, puo' non riuscire
 neppure a inviare la segnalazione. Un valore `-` significa non disponibile,
@@ -457,9 +459,11 @@ live e segnala l'errore, invece di presentarli come aggiornati.
 ### Privacy e opzioni di raccolta
 
 Il browser usa un identificativo casuale condiviso tra schede, rinnovato dopo
-30 minuti di inattivita', e uno separato per caricamento pagina. Il server
-memorizza solo hash temporanei per deduplicare le visite; niente fingerprint,
-nomi o IP nei report. Non vengono raccolti messaggi grezzi di errore, password,
+30 minuti di inattivita', e uno separato per caricamento pagina. Per contare le
+persone invia anche l'identificativo casuale anonimo gia' usato dalla diretta,
+salvato nel browser. Il server memorizza solo hash per deduplicare visite e
+persone; niente fingerprint, nomi o IP nei report. Svuotando i dati del sito o
+cambiando browser si risulta una persona nuova. Non vengono raccolti messaggi grezzi di errore, password,
 token, query string o contenuti dei documenti. I log tecnici non sono report
 di visite e devono essere protetti; gli error log possono comunque contenere
 dettagli operativi da rimuovere prima di condividerli.

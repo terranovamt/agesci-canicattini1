@@ -280,7 +280,7 @@ test("public documents and management work in a browser at all required widths",
             upcomingAssemblyText: doc.querySelector('#stato').textContent,
             upcomingAssemblyTitle: doc.querySelector('#stato .assembly-status-title').textContent,
             preparatoryVisible: !doc.querySelector('#documenti-preparatori').hidden,
-            explainerArticles: [...doc.querySelectorAll('.assembly-explainer-ref')].map(e => e.textContent).join(',') });
+            explainerArticles: [...doc.querySelectorAll('.assembly-explainer-cite')].map(e => e.textContent).join(',') });
           errorSnapshot.events[0].start = new Date(Date.now() + 20 * 86400000).toISOString();
           errorSnapshot.events[0].end = new Date(Date.now() + 20 * 86400000 + 3600000).toISOString();
           await doc.querySelector('#calendar-retry').onclick();
@@ -534,7 +534,10 @@ test("public documents and management work in a browser at all required widths",
     );
     assert.equal(results.find((item) => "upcomingAssemblyTitle" in item).upcomingAssemblyTitle, "Assemblea di Gruppo");
     assert.equal(results.find((item) => "preparatoryVisible" in item).preparatoryVisible, true);
-    assert.match(results.find((item) => "explainerArticles" in item).explainerArticles, /^Art\. 1,/);
+    assert.match(
+      results.find((item) => "explainerArticles" in item).explainerArticles,
+      /^\(art\. \d+(, c\. \d+)?\)(,\(art\. \d+(, c\. \d+)?\))*$/,
+    );
     assert.equal(results.find((item) => "farPreparatoryHidden" in item).farPreparatoryHidden, true);
     assert.equal(results.find((item) => "farBannerVisible" in item).farBannerVisible, true);
     for (const item of results.filter((item) => "dateTimeFields" in item)) {

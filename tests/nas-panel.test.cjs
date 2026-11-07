@@ -32,6 +32,7 @@ test("NAS panel displays measured values and clears live values when monitoring 
     warnings: [],
     events: [],
     traffic: {
+      people: 2,
       online: 3,
       liveStreams: 6,
       liveLimit: 500,
@@ -74,6 +75,7 @@ test("NAS panel displays measured values and clears live values when monitoring 
   assert.equal(elements.has("nas-visits"), false);
   assert.equal(elements.has("nas-refresh"), false);
   assert.equal(get("nas-online").textContent, "3");
+  assert.equal(get("nas-devices").textContent, "2");
   assert.equal(get("nas-host-cpu").textContent, "-");
   assert.equal(get("nas-streams").textContent, "6 / 500");
   assert.equal(get("legacy-service-metrics").hidden, true);
@@ -223,13 +225,14 @@ test("statistics page is guarded and renders tracking separately from the live r
     enabled: true,
     sampledAt: Date.now(),
     traffic: {
-      today: { visits: 2, views: 21, liveUnique: 4, connections: 4, errors: 0 },
+      today: { visits: 2, views: 21, people: 5, liveUnique: 4, connections: 4, errors: 0 },
       totals: { visits: 5, views: 6, connections: 7, started: "2026-11-06" },
+      people: 2,
       online: 1,
       visible: 1,
       liveStreams: 2,
       presentationDevices: 3,
-      daily: [{ day: "2026-11-06", visits: 2, views: 3, liveUnique: 4, connections: 4 }],
+      daily: [{ day: "2026-11-06", visits: 2, views: 3, people: 5, liveUnique: 4, connections: 4 }],
       pages: [
         { page: "home", views: 9 },
         { page: "assemblea", views: 6 },
@@ -246,10 +249,13 @@ test("statistics page is guarded and renders tracking separately from the live r
   await new Promise(setImmediate);
   assert.equal(get("stats-visits").textContent, "2");
   assert.equal(get("stats-live-unique").textContent, "4");
-  assert.equal(get("stats-online").textContent, "1");
+  assert.equal(get("stats-online").textContent, "2");
+  assert.equal(get("stats-people").textContent, "5");
+  assert.equal(get("stats-site-tabs").textContent, "1");
   assert.equal(get("stats-site-visible").textContent, "1");
   assert.equal(get("stats-presentation").textContent, "3");
-  assert.equal(get("stats-days").children[0].children.length, 4);
+  assert.equal(get("stats-days").children[0].children.length, 5);
+  assert.equal(get("stats-days").children[0].children[1].textContent, "5");
   assert.equal(get("stats-distribution-title").textContent, "Home e Presentazione raccolgono il 71% delle pagine viste.");
   assert.equal(get("stats-release-commit").textContent, "a".repeat(12));
   assert.equal(get("stats-release-status").textContent, "Il NAS è all’ultimo commit del branch NAS.");
