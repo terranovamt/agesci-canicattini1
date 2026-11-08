@@ -158,71 +158,67 @@ h1 {
   color: color-mix(in srgb, var(--w) 88%, var(--y));
 }
 
-.trail-art {
+.boat-art {
   display: grid;
   justify-items: center;
-  gap: 4px;
   margin: 0;
 }
 
-.trail-art svg {
+.boat-art svg {
   width: min(100%, 360px);
   overflow: visible;
 }
 
-.orbit {
-  fill: none;
-  stroke: color-mix(in srgb, var(--w) 28%, transparent);
-  stroke-width: 1.5;
+.boat-fold.left {
+  fill: color-mix(in srgb, var(--y) 38%, var(--w));
 }
 
-.orbit-two {
-  stroke-dasharray: 4 9;
+.boat-fold.right {
+  fill: var(--w);
 }
 
-.trail {
+.boat-fold.center {
   fill: none;
+  stroke: var(--v2);
+  stroke-width: 2.5;
+}
+
+.boat-hull {
+  fill: color-mix(in srgb, var(--y) 38%, var(--w));
+}
+
+.boat-fold.left,
+.boat-fold.right,
+.boat-hull {
+  stroke: var(--w);
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.boat-fold,
+.waterline,
+.water-ripple {
+  fill: none;
+  stroke: var(--v2);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.waterline {
   stroke: var(--y);
-  stroke-dasharray: 6 8;
-  stroke-linecap: round;
   stroke-width: 3;
 }
 
-.trail-point {
-  fill: var(--y);
-}
-
-.origami-boat {
-  fill: color-mix(in srgb, var(--y) 24%, transparent);
-  stroke: var(--w);
-  stroke-linejoin: round;
-  stroke-width: 3;
-}
-
-.origami-fold,
-.water {
-  fill: none;
-  stroke: var(--w);
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.water-ripple {
+  stroke: color-mix(in srgb, var(--w) 60%, var(--v));
   stroke-width: 2;
 }
 
-.water {
-  stroke: var(--y);
-}
-
-.trail-art text {
+.boat-art text {
   fill: var(--w);
-  font: 700 46px Georgia, "Times New Roman", serif;
-  letter-spacing: 0.12em;
-}
-
-.trail-art p {
-  margin: 0;
-  color: color-mix(in srgb, var(--w) 78%, transparent);
-  font-size: 13px;
-  text-align: center;
+  font: 700 40px Georgia, "Times New Roman", serif;
+  letter-spacing: 0.14em;
 }
 
 footer {
@@ -255,13 +251,9 @@ footer {
     padding: 32px 24px;
   }
 
-  .trail-art {
-    width: min(72%, 250px);
-    margin: -4px auto -12px;
-  }
-
-  .trail-art p {
-    display: none;
+  .boat-art {
+    width: min(88%, 320px);
+    margin: 4px auto -12px;
   }
 
   footer {
