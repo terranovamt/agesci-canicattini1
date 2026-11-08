@@ -46,7 +46,9 @@ test("static build publishes only site files and refuses to overwrite source dir
     assert.match(home, /home\.css\?v=[a-f0-9]{12}/);
     assert.match(home, /src="config\/site\.js"/);
     for (const file of [
+      "404.html",
       "index.html",
+      "assets/css/404.css",
       "assets/fonts/montserrat-latin.woff2",
       "assets/img/foto-gruppo.avif",
       "area-riservata/statistiche.html",
@@ -64,7 +66,7 @@ test("static build publishes only site files and refuses to overwrite source dir
 test("the root contains only the home HTML page", () => {
   assert.deepEqual(
     fs.readdirSync(root).filter((file) => file.endsWith(".html")),
-    ["index.html"],
+    ["404.html", "index.html"],
   );
 });
 
@@ -85,8 +87,10 @@ test("canonical directories have no obsolete or case-duplicate entries", () => {
 
 function localTarget(page, reference) {
   if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(reference)) return null;
-  assert.ok(!reference.startsWith("/"), `${page}: ${reference} must work under a Pages project prefix`);
-  const url = new URL(reference, "https://example.test/agesci-canicattini1/" + page);
+  const base = read(page).match(/<base\s+href=["']([^"']+)["']/i)?.[1];
+  if (reference.startsWith("/"))
+    assert.ok(reference.startsWith("/agesci-canicattini1/"), `${page}: ${reference} must stay under the site prefix`);
+  const url = new URL(reference, new URL(base ?? page, "https://example.test/agesci-canicattini1/"));
   assert.ok(url.pathname.startsWith("/agesci-canicattini1/"), `${page}: ${reference} escapes the site`);
   let file = decodeURIComponent(url.pathname.slice("/agesci-canicattini1/".length));
   if (file.endsWith("/") || !file) file += "index.html";
@@ -190,10 +194,10 @@ test("public assembly documents and PEG stay independent of restricted tools and
   assert.match(html, /data-documents-url="\.\.\/documents\/index.json"/);
   assert.match(html, /data-site-root="\.\.\/"/);
   assert.doesNotMatch(html, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js/);
-  assert.match(read("index.html"), /href="assemblea\/index.html"/);
+  assert.match(read("index.html"), /href="assemblea\/"/);
   assert.match(read("area-riservata/index.html"), /href="assemblea\/setup.html"/);
   assert.match(read("area-riservata/index.html"), /href="assemblea\/regia.html"/);
-  assert.match(read("area-riservata/assemblea/setup.html"), /href="\.\.\/index.html"/);
+  assert.match(read("area-riservata/assemblea/setup.html"), /href="\.\.\/"/);
 });
 
 test("assembly explainer appears on home and preparatory page with four articles behind Scopri di più", () => {
@@ -223,5 +227,5 @@ test("public archive has year and text search and the home limits recent documen
   assert.match(archive, /data-order="latest"/);
   assert.doesNotMatch(archive, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js|data-limit=/);
   assert.match(read("index.html"), /data-order="latest"\s+data-limit="4"/);
-  assert.match(read("index.html"), /href="documenti\/index.html"/);
+  assert.match(read("index.html"), /href="documenti\/"/);
 });

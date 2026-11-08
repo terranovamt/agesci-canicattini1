@@ -94,9 +94,14 @@ test("NAS gateway serves pages, config, QR and PDFs only under the site prefix",
     assert.equal((await fetch(app.origin + "/api/session")).status, 404);
     const redirect = await fetch(root, { redirect: "manual" });
     assert.equal(redirect.headers.get("location"), "/agesci-canicattini1/");
+    const legacy = await fetch(root + "/index.html?from=old-link", { redirect: "manual" });
+    assert.equal(legacy.status, 308);
+    assert.equal(legacy.headers.get("location"), "/agesci-canicattini1/?from=old-link");
+    const legacyArea = await fetch(root + "/area-riservata/index.html", { redirect: "manual" });
+    assert.equal(legacyArea.status, 308);
+    assert.equal(legacyArea.headers.get("location"), "/agesci-canicattini1/area-riservata/");
     for (const resource of [
       "/",
-      "/index.html",
       "/config/site.js",
       "/assets/img/qr-live.png",
       "/area-riservata/statistiche.html",

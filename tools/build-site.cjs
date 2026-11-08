@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 
 const siteRoot = path.resolve(__dirname, "..");
 const publicEntries = [
+  "404.html",
   "index.html",
   "manifest.webmanifest",
   "assets",

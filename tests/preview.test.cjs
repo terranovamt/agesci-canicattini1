@@ -42,11 +42,17 @@ test("local preview serves the redesigned home with local access and hot reload"
     ]) {
       assert.equal((await fetch(origin + resource)).status, 200, resource);
     }
-    const area = await (await fetch(origin + "/area-riservata/index.html")).text();
+    const area = await (await fetch(origin + "/area-riservata/")).text();
     assert.match(area, /window\.ACCESSO=\{chiave:\(\)=>"preview-locale",verificata:\(\)=>true/);
     const doc = await fetch(origin + "/docs/assemblea.md");
     assert.match(await doc.text(), /assemblea/i);
     assert.equal((await fetch(origin + "/index.html", { method: "POST" })).status, 405);
+    const legacyHome = await fetch(origin + "/index.html?from=old-link", { redirect: "manual" });
+    assert.equal(legacyHome.status, 308);
+    assert.equal(legacyHome.headers.get("location"), "/?from=old-link");
+    const legacyArea = await fetch(origin + "/area-riservata/index.html?from=old-link", { redirect: "manual" });
+    assert.equal(legacyArea.status, 308);
+    assert.equal(legacyArea.headers.get("location"), "/area-riservata/?from=old-link");
   });
 });
 
@@ -123,6 +129,9 @@ test("section directories redirect before resolving relative resources", async (
       assert.equal(response.headers.get("location"), "/" + section + "/?test=1");
       assert.equal((await fetch(origin + "/" + section + "/")).status, 200);
     }
+    const legacy = await fetch(origin + "/area-riservata/index.html?test=1", { redirect: "manual" });
+    assert.equal(legacy.status, 308);
+    assert.equal(legacy.headers.get("location"), "/area-riservata/?test=1");
     const setup = await fetch(origin + "/setup");
     assert.equal(setup.status, 404);
     const canonicalSetup = await fetch(origin + "/area-riservata/assemblea/setup.html");
@@ -209,7 +218,7 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
           "/assemblea/",
           /Documenti preparatori/,
           /class="document-card document-project"/,
-          /href="\.\.\/peg\/index.html"/,
+          /href="\.\.\/peg\/"/,
         ],
         [
           "/documenti/",

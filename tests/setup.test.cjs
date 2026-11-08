@@ -428,7 +428,7 @@ test("deleting a collapsed divider retains its slides and requires confirmation"
 test("setup requires an already verified session before loading any data", async () => {
   const t = setup({ unauthenticated: true });
   await flush();
-  assert.deepEqual(t.redirects, ["../index.html"]);
+  assert.deepEqual(t.redirects, ["../"]);
   assert.equal(t.scripts.length, 0);
   assert.equal(t.requests.length, 0);
 });

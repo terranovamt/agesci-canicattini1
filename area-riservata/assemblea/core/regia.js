@@ -76,7 +76,7 @@
   };
   $("#esci").onclick = () => {
     A.esci();
-    location.replace("../index.html");
+    location.replace("../");
   };
 
   /* ---------- presentazione ---------- */
@@ -90,8 +90,8 @@
       const s = (await leggi("/live/stato.json")).dati;
       if (s && s.pos > 0) h = "#" + Math.floor(s.pos / 1000) + "." + (s.pos % 1000);
     } catch (e) {}
-    $("#principale").src = "index.html?vista=principale&regia=" + encodeURIComponent(key) + h;
-    $("#anteprima").src = "index.html?vista=anteprima";
+    $("#principale").src = "./?vista=principale&regia=" + encodeURIComponent(key) + h;
+    $("#anteprima").src = "./?vista=anteprima";
     window.PRESENZA.avvia("r");
     aggancia();
     controlla();
@@ -223,7 +223,7 @@
     try {
       await window.ASSEMBLEA.salva(false, key);
       finestra?.close();
-      location.replace("../../index.html");
+      location.replace("../../");
     } catch (e) {
       alert(e.message);
     } finally {
@@ -243,7 +243,7 @@
           f = `popup,left=${altro.availLeft},top=${altro.availTop},width=${altro.availWidth},height=${altro.availHeight}`;
       }
     } catch (e) {}
-    finestra = window.open("index.html?vista=schermo", "assemblea-schermo", f);
+    finestra = window.open("./?vista=schermo", "assemblea-schermo", f);
     if (!finestra) alert("Il browser ha bloccato la finestra: consenti i popup per questo sito.");
   };
 

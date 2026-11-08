@@ -159,7 +159,7 @@ test("statistics page is guarded and renders tracking separately from the live r
       },
     },
   });
-  assert.equal(redirected, "index.html");
+  assert.equal(redirected, "./");
   const elements = new Map();
   const get = (id) => {
     if (!elements.has(id))

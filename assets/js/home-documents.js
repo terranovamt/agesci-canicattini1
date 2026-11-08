@@ -29,7 +29,7 @@
       file: "PEG26-28.pdf",
       label: "Il nostro percorso",
       theme: "project",
-      link: "peg/index.html",
+      link: "peg/",
       icon: ["M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-3-1H4z", "M13 8a3 3 0 0 1 3-3h4v14h-4a4 4 0 0 0-3 1"],
     },
     {

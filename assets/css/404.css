@@ -1,0 +1,270 @@
+body {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--vd);
+  font: 16px/1.6 system-ui, sans-serif;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  padding: 10px 14px;
+  transform: translateY(-160%);
+  background: var(--y);
+  color: var(--vd);
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 78px;
+  padding: 10px max(24px, calc((100vw - 1200px) / 2));
+  border-bottom: 1px solid color-mix(in srgb, var(--vl) 35%, var(--w));
+  background: var(--w);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--vd);
+  line-height: 1.15;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.brand span {
+  display: grid;
+  gap: 4px;
+}
+
+.brand b {
+  color: var(--v);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+}
+
+.brand small {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-link,
+.text-link {
+  color: var(--v);
+  font-size: 14px;
+  font-weight: 750;
+  text-underline-offset: 4px;
+}
+
+main {
+  width: min(100% - 48px, 1200px);
+  margin: auto;
+  padding: 44px 0;
+}
+
+.not-found {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+  align-items: center;
+  gap: 32px;
+  min-height: 480px;
+  overflow: hidden;
+  padding: clamp(32px, 7vw, 78px);
+  border-radius: var(--radius-xl);
+  background: var(--v);
+  color: var(--w);
+}
+
+.not-found-copy,
+.trail-art {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 14px;
+  color: var(--y);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.eyebrow span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--y);
+}
+
+h1 {
+  max-width: 620px;
+  margin: 0;
+  color: var(--w);
+  font: 700 clamp(42px, 6vw, 70px) / 1.04 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.035em;
+}
+
+.intro {
+  max-width: 490px;
+  margin: 22px 0 28px;
+  color: color-mix(in srgb, var(--w) 88%, var(--y));
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.7;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--y);
+  color: var(--vd);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.button span {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.not-found .text-link {
+  display: block;
+  width: fit-content;
+  margin-top: 16px;
+  color: color-mix(in srgb, var(--w) 88%, var(--y));
+}
+
+.trail-art {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.trail-art svg {
+  width: min(100%, 360px);
+  overflow: visible;
+}
+
+.orbit {
+  fill: none;
+  stroke: color-mix(in srgb, var(--w) 28%, transparent);
+  stroke-width: 1.5;
+}
+
+.orbit-two {
+  stroke-dasharray: 4 9;
+}
+
+.trail {
+  fill: none;
+  stroke: var(--y);
+  stroke-dasharray: 6 8;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.trail-point {
+  fill: var(--y);
+}
+
+.origami-boat {
+  fill: color-mix(in srgb, var(--y) 24%, transparent);
+  stroke: var(--w);
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.origami-fold,
+.water {
+  fill: none;
+  stroke: var(--w);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.water {
+  stroke: var(--y);
+}
+
+.trail-art text {
+  fill: var(--w);
+  font: 700 46px Georgia, "Times New Roman", serif;
+  letter-spacing: 0.12em;
+}
+
+.trail-art p {
+  margin: 0;
+  color: color-mix(in srgb, var(--w) 78%, transparent);
+  font-size: 13px;
+  text-align: center;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(100% - 48px, 1200px);
+  margin: 0 auto;
+  padding: 0 0 24px;
+  color: var(--v2);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    min-height: 70px;
+    padding-inline: 20px;
+  }
+
+  main {
+    width: min(100% - 32px, 1200px);
+    padding: 24px 0;
+  }
+
+  .not-found {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: auto;
+    padding: 32px 24px;
+  }
+
+  .trail-art {
+    width: min(72%, 250px);
+    margin: -4px auto -12px;
+  }
+
+  .trail-art p {
+    display: none;
+  }
+
+  footer {
+    width: min(100% - 32px, 1200px);
+  }
+}
