@@ -14,7 +14,7 @@ window.LIVE = {
   // dove la pagina di setup salva dati.js con "Salva su GitHub"
   github: { repo: "terranovamt/agesci-canicattini1", ramo: "NAS", cartella: "area-riservata/assemblea" },
 };
-/* Solo chi apre index.html?regia=LA-TUA-CHIAVE è il presentatore.
+/* Solo chi apre /?regia=LA-TUA-CHIAVE è il presentatore.
    Senza il parametro, anche nello stesso browser, il ruolo è sempre "pubblico". */
 (function () {
   const L = window.LIVE;
@@ -30,7 +30,7 @@ window.LIVE = {
     L.ruolo = "locale";
     L.chiave = null;
   }
-  /* il vecchio link index.html?regia=… apre la dashboard */
+  /* il vecchio link /?regia=… apre la dashboard */
   if (c && !L.vista && document.getElementById("stage")) {
     sessionStorage.setItem("canicattini-area-chiave", c);
     location.replace("regia.html");

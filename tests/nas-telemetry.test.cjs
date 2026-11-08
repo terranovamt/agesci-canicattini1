@@ -97,8 +97,8 @@ test("tracking distinguishes statistics, document management, preparatory docume
   for (const [route, category] of [
     ["/area-riservata/statistiche.html", "statistiche"],
     ["/area-riservata/documenti.html", "gestione-documenti"],
-    ["/assemblea/index.html", "assemblea-documenti"],
-    ["/area-riservata/assemblea/index.html", "assemblea"],
+    ["/assemblea/", "assemblea-documenti"],
+    ["/area-riservata/assemblea/", "assemblea"],
   ]) {
     const app = browser(true, false, new Map(), route);
     await flush();

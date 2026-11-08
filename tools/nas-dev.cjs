@@ -50,6 +50,11 @@ async function startNasDev({ basePath = "" } = {}) {
         }
         url.pathname = url.pathname.slice(basePath.length);
       }
+      if (/\/index\.html$/.test(url.pathname)) {
+        response.writeHead(308, { Location: basePath + url.pathname.replace(/index\.html$/, "") + url.search });
+        response.end();
+        return;
+      }
       if (
         url.pathname.startsWith("/api/") ||
         url.pathname.startsWith("/documents/") ||

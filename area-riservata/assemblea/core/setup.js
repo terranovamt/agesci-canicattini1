@@ -1,7 +1,7 @@
 /* Setup statico: modifica dati.js e salva su GitHub, senza accessi Firebase. */
 (function () {
   if (!window.ACCESSO.verificata()) {
-    location.replace("../index.html");
+    location.replace("../");
     return;
   }
   const $ = (s) => document.querySelector(s);
@@ -760,7 +760,7 @@
     localStorage.removeItem(TK);
     window.ACCESSO.esci();
     if (published) edit = clone(published);
-    location.replace("../../index.html");
+    location.replace("../../");
   };
   $("#annulla").onclick = () => {
     edit = clone(published);

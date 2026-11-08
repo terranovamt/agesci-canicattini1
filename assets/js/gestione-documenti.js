@@ -1,6 +1,6 @@
 (function () {
   if (!window.ACCESSO.verificata()) {
-    location.replace("index.html");
+    location.replace("./");
     return;
   }
   const $ = (id) => document.getElementById(id);

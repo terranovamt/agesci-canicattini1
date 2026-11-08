@@ -11,9 +11,9 @@ test("NAS redirects retired pages without requiring HTML files", () => {
   const nginx = read("deploy/synology/nginx.conf");
   assert.match(nginx, /absolute_redirect off;/);
   const redirects = {
-    "/area-riservata.html": "/area-riservata/index.html",
+    "/area-riservata.html": "/area-riservata/",
     "/gestione-documenti.html": "/area-riservata/documenti.html",
-    "/PEG.html": "/peg/index.html",
+    "/PEG.html": "/peg/",
     "/PEG/PEG2628.html": "/peg/edizioni/2026-2028.html",
   };
   for (const [source, target] of Object.entries(redirects)) {
@@ -30,12 +30,12 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
   const redirects = {
     "/setup": "/area-riservata/assemblea/setup.html",
     "/setup.html": "/area-riservata/assemblea/setup.html",
-    "/Assemblea-di-Gruppo": "/area-riservata/assemblea/index.html",
-    "/Assemblea-di-Gruppo/": "/area-riservata/assemblea/index.html",
-    "/Assemblea-di-Gruppo/index.html": "/area-riservata/assemblea/index.html",
-    "/PEG": "/peg/index.html",
-    "/PEG/": "/peg/index.html",
-    "/PEG/index.html": "/peg/index.html",
+    "/Assemblea-di-Gruppo": "/area-riservata/assemblea/",
+    "/Assemblea-di-Gruppo/": "/area-riservata/assemblea/",
+    "/Assemblea-di-Gruppo/index.html": "/area-riservata/assemblea/",
+    "/PEG": "/peg/",
+    "/PEG/": "/peg/",
+    "/PEG/index.html": "/peg/",
   };
   for (const directory of ["Assemblea-di-Gruppo", "assemblea"]) {
     for (const page of ["setup.html", "regia.html", "guida.html", "manifest.webmanifest"]) {
@@ -50,6 +50,24 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
     const destination = rule[2].replace(/\$(\d+)/g, (_, group) => match[Number(group)]).replace("$is_args$args", "");
     assert.equal(destination, prefix + target, source);
     assert.ok(fs.existsSync(path.join(root, target.slice(1))), target);
+  }
+});
+
+test("NAS redirects every direct index.html URL to its clean directory URL", () => {
+  const nginx = read("deploy/synology/nginx.conf");
+  const rule = nginx.match(/location ~ (.+) \{\s*return 308 \$1\$is_args\$args;/);
+  assert.ok(rule);
+  const matcher = new RegExp(rule[1]);
+  for (const pathname of [
+    prefix + "/index.html",
+    prefix + "/area-riservata/index.html",
+    prefix + "/area-riservata/assemblea/index.html",
+    prefix + "/documenti/index.html",
+    prefix + "/peg/index.html",
+  ]) {
+    const match = pathname.match(matcher);
+    assert.ok(match, pathname);
+    assert.equal(match[1], pathname.replace(/index\.html$/, ""));
   }
 });
 
@@ -114,4 +132,15 @@ test("NAS revalidates mutable content before generic static asset caching", () =
   assert.match(nginx, /gzip_vary on;/);
   assert.doesNotMatch(nginx, /immutable|expires 1y|brotli on/);
   assert.match(nginx, /try_files \$uri \$uri\/ \$uri\.html =404;/);
+});
+
+test("NAS serves the branded 404 page while preserving the not-found status", () => {
+  const nginx = read("deploy/synology/nginx.conf");
+  const staticLocation = nginx.split("location /agesci-canicattini1/ {")[1]?.split("}")[0];
+  assert.ok(staticLocation);
+  assert.match(staticLocation, /error_page 404 \/agesci-canicattini1\/404\.html;/);
+  assert.match(staticLocation, /try_files \$uri \$uri\/ \$uri\.html =404;/);
+  assert.match(read("404.html"), /<title>Pagina non trovata/);
+  assert.match(read("404.html"), /<meta name="robots" content="noindex,follow"/);
+  assert.match(read("deploy/synology/Dockerfile"), /COPY 404\.html index\.html manifest\.webmanifest/);
 });

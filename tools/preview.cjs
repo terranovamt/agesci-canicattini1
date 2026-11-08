@@ -274,6 +274,12 @@ function createPreviewServer({ watch = true } = {}) {
       return;
     }
 
+    if (/\/index\.html$/.test(url.pathname)) {
+      response.writeHead(308, { Location: url.pathname.replace(/index\.html$/, "") + url.search });
+      response.end();
+      return;
+    }
+
     const file = resolveFile(url.pathname === "/" ? "/index.html" : url.pathname);
     if (!file) {
       response.writeHead(400);

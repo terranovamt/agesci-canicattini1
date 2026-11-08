@@ -14,7 +14,7 @@ const chrome = ["google-chrome", "chromium", "chromium-browser"].find(
 );
 
 test("home introduces the dedicated PEG page and the original PDF stays available", () => {
-  assert.match(read("index.html"), /class="peg-home-link" href="peg\/index\.html">Consulta il PEG 26-28/);
+  assert.match(read("index.html"), /class="peg-home-link" href="peg\/"\s*>\s*Consulta il PEG 26-28/);
   assert.match(
     read("peg/index.html"),
     /location\.replace\('edizioni\/2026-2028\.html' \+ location\.search \+ location\.hash\)/,

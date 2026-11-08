@@ -1,6 +1,6 @@
 FROM node:24-alpine AS static-site
 WORKDIR /source
-COPY index.html manifest.webmanifest ./
+COPY 404.html index.html manifest.webmanifest ./
 COPY assets/ assets/
 COPY config/ config/
 COPY calendars/ calendars/

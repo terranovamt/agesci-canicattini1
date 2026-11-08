@@ -452,7 +452,7 @@ test("public documents and management work in a browser at all required widths",
     assert.deepEqual(results.find((item) => "archiveDescription" in item).archiveDescription, ["Nuovo bilancio"]);
     const publicAssembly = results.find((item) => "publicAssembly" in item);
     assert.equal(publicAssembly.publicAssembly, 4);
-    assert.equal(publicAssembly.publicPeg, "../peg/index.html");
+    assert.equal(publicAssembly.publicPeg, "../peg/");
     assert.equal(publicAssembly.publicPdfs, true);
     for (const item of results.filter((item) => "overflow" in item)) {
       assert.equal(item.overflow, false, "page " + item.page + " must fit width " + item.width);
@@ -463,7 +463,7 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(results.find((item) => "cards" in item).links, true);
     assert.equal(results.find((item) => "cards" in item).pdfLinks, true);
     assert.equal(results.find((item) => "cards" in item).icons, 4);
-    assert.equal(results.find((item) => "cards" in item).pegLink, "peg/index.html");
+    assert.equal(results.find((item) => "cards" in item).pegLink, "peg/");
     assert.deepEqual(results.find((item) => "cards" in item).titles, [
       "PEG 2026-2028",
       "Bilancio 2026 · Modello D",

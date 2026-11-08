@@ -395,8 +395,8 @@ gestione PDF e statistiche; i vecchi dati non vengono rietichettati.
 
 ### Link delle slide e QR
 
-- Home: `https://terranovamtt.synology.me/agesci-canicattini1/index.html`.
-- Slide per i telefoni: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/index.html`.
+- Home: `https://terranovamtt.synology.me/agesci-canicattini1/`.
+- Slide per i telefoni: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/`.
 - Regia: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/assemblea/regia.html`.
 - Proiettore: aprire **Apri schermo presentazione** dalla regia.
 - Statistiche: `https://terranovamtt.synology.me/agesci-canicattini1/area-riservata/statistiche.html`.
@@ -646,8 +646,11 @@ non dichiararla attiva solo perche' il tunnel funziona.
   `no-cache`, cioe' rivalidazione prima del riuso.
 - CSS, JS restanti, immagini e font: cache pubblica di un'ora, con rivalidazione
   alla scadenza. Non sono file con hash: niente `immutable` di un anno.
-- Le risposte 404 non diventano la home: non e' una SPA. Sono supportati
-  directory, redirect esistenti e URL HTML senza estensione, come `/setup`.
+- Le risposte 404 non diventano la home: non e' una SPA. Sul NAS mostrano la
+  pagina grafica `404.html` e mantengono lo status HTTP 404. La build la include
+  e Nginx la serve solo per URL inesistenti sotto `/agesci-canicattini1/`.
+  Sono supportati directory, redirect esistenti e URL HTML senza estensione,
+  come `/setup`.
   Gli HTML di redirect nella root, le vecchie cartelle e i manifest di
   compatibilita' sono stati rimossi: Nginx mantiene i vecchi ingressi con
   redirect 308. Su GitHub Pages e nella preview usare invece
