@@ -267,8 +267,10 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - La UI genitori usa solo `fullName`, senza i due input `givenName`/`surname`;
   legge ancora i nomi verificati preesistenti. Il reimport per CF conserva anche
   il nome completo corretto localmente.
-- `M.pendingCoca` esclude dalle viste dei soli capi i profili con FoCa valorizzato e
-  CoCa assente/No; l'admin riceve tutte le schede, senza questo filtro.
+- `M.pendingCoca` esclude dalle viste dei soli capi i profili adulti con FoCa
+  valorizzato e CoCa assente/No. Se `member.kind === 'ragazzo'` il filtro
+  non si applica mai, indipendentemente dai valori importati.
+  L'admin riceve tutte le schede, senza questo filtro.
   Non eliminare profili o cambiare permessi. I consensi elencati
   in `M.ignoredProfileFields` sono ignorati da import, API profilo e export;
   eventuali JSON storici non richiedono cancellazioni massive.

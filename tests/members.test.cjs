@@ -892,7 +892,7 @@ test("passage derives its destination, rejects mixed or invalid selections atomi
   } finally { db.close(); }
 });
 
-test("member visibility diagnostics count only the effective branch and suspended records after pending CoCa", async t => {
+test("youth visibility ignores FoCa and CoCa while adult exclusions and suspended diagnostics stay scoped", async t => {
   const directory = await fs.mkdtemp(path.join(process.cwd(), ".nas-member-visibility-"));
   const app = await start(directory);
   t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
@@ -906,23 +906,28 @@ test("member visibility diagnostics count only the effective branch and suspende
     { "CODICE SOCIO": "012346", BRANCA: "Branca L/C", "CODICE STATUS SOCIO": "D" },
     { "CODICE SOCIO": "012347", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT" },
     { "CODICE SOCIO": "012348", BRANCA: "Branca R/S", "LIVELLO FOCA": "CFT" },
+    { "CODICE SOCIO": "012349", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "NO" },
   ], [...columns, "LIVELLO FOCA", "INGRESSO COCA"]));
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  db.exec("UPDATE member_profiles SET branch='E/G' WHERE person_id=(SELECT id FROM people WHERE census_code='012347')");
+  db.close();
   const adminState = await app.snapshot();
   assert.equal(Object.hasOwn(adminState, "visibility"), false);
   const chief = adminState.members.find(member => member.code === "7654321");
   assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
   assert.equal((await app.request("auth/view-as", "POST", { personId: chief.id })).status, 200);
-  const expected = { branch: "E/G", total: 5, excludedPendingCoca: 1, excludedLongSuspended: 2 };
+  const expected = { branch: "E/G", total: 7, excludedPendingCoca: 1, excludedLongSuspended: 3 };
   const viewed = await app.snapshot();
   assert.deepEqual(viewed.visibility, expected);
-  assert.deepEqual(viewed.members.map(member => member.code).sort(), ["012342", "012343", "012344", "012345"]);
-  assert.equal(viewed.members.filter(member => !M.longSuspended(member, viewed.currentYear)).length, 2);
+  assert.deepEqual(viewed.members.map(member => member.code).sort(), ["012341", "012342", "012343", "012344", "012345", "012349"]);
+  assert.equal(viewed.members.filter(member => !M.longSuspended(member, viewed.currentYear)).length, 3);
+  assert.equal(viewed.members.find(member => member.code === "012349").kind, "ragazzo");
   assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
   const adminCookie = app.cookie();
   await app.login("7654321");
   assert.deepEqual((await app.snapshot()).visibility, expected);
   assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "R/S" }, "http://localhost", adminCookie)).status, 200);
-  const empty = await app.snapshot();
-  assert.deepEqual(empty.members, []);
-  assert.deepEqual(empty.visibility, { branch: "R/S", total: 1, excludedPendingCoca: 1, excludedLongSuspended: 0 });
+  const rs = await app.snapshot();
+  assert.deepEqual(rs.members.map(member => member.code), ["012348"]);
+  assert.deepEqual(rs.visibility, { branch: "R/S", total: 1, excludedPendingCoca: 0, excludedLongSuspended: 0 });
 });

@@ -112,7 +112,9 @@ tipologia della scheda.
 
 L'amministratore vede tutte le schede, anche quelle con livello FoCa
 valorizzato e ingresso CoCa assente (o No). Il filtro FoCa/CoCa si applica
-solo alle viste dei capi, sempre limitate alla propria branca. I dati e gli
+solo ai profili di tipo adulto nelle viste dei capi, sempre limitate alla propria
+branca. Per il tipo **ragazzo**, FoCa e ingresso CoCa non influenzano mai la
+visibilita, anche se valorizzati nell'import. I dati e gli
 accessi restano conservati. FoCa e CoCa non occupano campi nella scheda dei ragazzi.
 I consensi non sono gestiti da questa interfaccia: le relative colonne CSV
 sono ignorate, non vengono esportate o salvate con il profilo. Gli eventuali

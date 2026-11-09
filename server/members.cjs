@@ -272,7 +272,7 @@ function createMembers(db, people) {
           JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
         if (!current.admin) {
           const scoped = result.members.filter(member => member.branch === current.serviceBranch);
-          const visible = scoped.filter(member => !M.pendingCoca(member.profile));
+          const visible = scoped.filter(member => member.kind === "ragazzo" || !M.pendingCoca(member.profile));
           result.visibility = { branch: current.serviceBranch, total: scoped.length,
             excludedPendingCoca: scoped.length - visible.length,
             excludedLongSuspended: visible.filter(member => M.longSuspended(member, result.currentYear)).length };
