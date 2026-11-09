@@ -17,6 +17,8 @@ pubblicazione GitHub Pages restano separati.
 ├── area-riservata/                 Accesso e gestione del sito
 │   ├── index.html                 Login e dashboard
 │   ├── documenti.html             Gestione e pubblicazione dei PDF
+│   ├── persone.html               Account e reset password (amministratore)
+│   ├── soci.html                  Libro soci, censimenti, percorsi e macro
 │   └── assemblea/                 Strumenti e applicazione assemblea
 │       ├── index.html             Presentazione per pubblico e proiettore
 │       ├── regia.html             Dashboard della diretta
@@ -38,7 +40,7 @@ pubblicazione GitHub Pages restano separati.
 │       └── 2026-2028.html          Testo dell'edizione, con URL stabile nel tempo
 ├── assets/                        Risorse condivise dal sito
 │   ├── css/                       Tema, home, PEG e gestione documenti
-│   ├── js/                        Logica delle pagine, calendari e documenti
+│   ├── js/                        Logica delle pagine, calendari, documenti e soci
 │   │   └── shared/                Accesso e stato assemblea usati da più sezioni
 │   ├── img/                       Loghi, icone, QR, texture e foto di gruppo
 │   ├── peg/                       Fotografie del progetto educativo
@@ -54,6 +56,7 @@ pubblicazione GitHub Pages restano separati.
 ├── firebase/
 │   └── database.rules.json        Riferimento legacy, non usato dal backend NAS
 ├── server/                        Backend Node 24, SQLite e immagine Docker
+│   └── members.cjs                Anagrafe e censimenti nel database esistente
 ├── deploy/
 │   └── synology/                  Container, Nginx e aggiornamento dal branch NAS
 ├── docs/                          Documentazione tecnica e operativa, audit

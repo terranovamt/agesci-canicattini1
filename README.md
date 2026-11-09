@@ -56,6 +56,16 @@ La pagina mostra anche il commit deployato e permette di confrontarlo con
 l'ultimo commit del branch `NAS`. La raccolta browser e' disattivabile e le API
 dei report richiedono una sessione amministrativa.
 
+**Libro soci:** dalla dashboard amministrativa apri **Libro soci**
+(`area-riservata/soci.html`). Importa il CSV ufficiale AGESCI con anteprima e
+conferma, consulta e modifica le schede, filtra ed esporta i risultati.
+Il censimento annuale resta distinto dalla branca locale e dai percorsi
+educativi L/C, E/G, R/S e adulti. Sono disponibili campi personalizzati, macro
+di gruppo e modelli interni stampabili anche in PDF. Tutti i dati restano nel
+database SQLite esistente; nessun elenco soci viene pubblicato nel repository.
+L'importazione non abilita nuovi account al login. Per il flusso operativo
+e i limiti della fonte vedere [gestione soci](docs/soci.md).
+
 > 📘 [Guida illustrata](area-riservata/assemblea/guida.html) (stesso stile della presentazione).
 
 ## Documentazione
@@ -70,6 +80,7 @@ dei report richiedono una sessione amministrativa.
 | [docs/audit-ui-ux.md](docs/audit-ui-ux.md)                         | audit UI/UX e priorità di manutenzione                                       |
 | [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | backend NAS, DDNS Sky WiFi, auto-deployment, calendari DSM e backup          |
 | [docs/sviluppo-ia.md](docs/sviluppo-ia.md)                         | architettura NAS, comandi verificati, invarianti e checklist per lo sviluppo con IA |
+| [docs/soci.md](docs/soci.md)                                     | importazione AGESCI, schede, filtri, campi educativi, macro e documenti |
 
 ## Indirizzi
 
@@ -84,6 +95,7 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Home / pubblico              | `.../` sotto il prefisso `/agesci-canicattini1/`                |
 | Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
+| Libro soci                   | `.../area-riservata/soci.html` (solo amministratore)           |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
 | PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |

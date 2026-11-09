@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Libro soci · Canicattini 1</title>
+  <link rel="icon" href="../assets/img/logo-grande.png">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/home.css">
+  <link rel="stylesheet" href="../assets/css/nas.css">
+  <link rel="stylesheet" href="../assets/css/soci.css">
+</head>
+<body class="reserved-page">
+  <header class="reserved-header">
+    <!-- include:brand -->
+    <a href="index.html">Area riservata</a>
+  </header>
+  <main id="reserved-content" class="members-page">
+    <div class="members-heading">
+      <div><p class="eyebrow">Anagrafe di gruppo</p><h1>Libro soci</h1>
+        <p>Anagrafiche, censimenti e percorsi. Tutto al posto giusto.</p></div>
+      <a class="button button-secondary" href="persone.html">Persone e accessi</a>
+    </div>
+    <p id="members-status" role="status" aria-live="polite"></p>
+    <section id="members-app" hidden>
+      <div id="members-summary" class="members-summary"></div>
+      <div class="members-toolbar">
+        <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
+        <button id="open-import" class="button button-secondary" type="button">Importa CSV AGESCI</button>
+        <button id="export-members" class="button button-secondary" type="button">Esporta risultati</button>
+        <button id="reload-members" class="button button-secondary" type="button">Ricarica</button>
+      </div>
+      <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
+        <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
+        <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
+        <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
+        <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
+        <label>Eta minima<input name="minAge" type="number" min="0" max="130"></label>
+        <label>Eta massima<input name="maxAge" type="number" min="0" max="130"></label>
+        <label>Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="consents">Consensi 2A/2B/2C da verificare</option><option value="incomplete">Anagrafica da completare</option></select></label>
+        <label>Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
+        <label>Valore contiene<input name="value" type="search" autocomplete="off"></label>
+        <label class="members-check"><input name="missing" type="checkbox">Campo educativo vuoto</label>
+        <button class="button button-secondary" type="reset">Azzera filtri</button>
+      </form>
+      <div class="members-result-bar">
+        <p id="members-count" role="status"></p>
+        <div class="members-toolbar">
+          <button id="select-results" class="button button-secondary" type="button">Seleziona risultati</button>
+          <button id="clear-selection" class="button button-secondary" type="button">Deseleziona</button>
+          <button id="open-macro" class="button button-primary" type="button">Azioni rapide</button>
+          <button id="open-documents" class="button button-secondary" type="button">Genera documenti</button>
+        </div>
+      </div>
+      <div class="members-table-wrap"><table class="members-table">
+        <thead><tr><th scope="col">Seleziona</th><th scope="col">Socio</th><th scope="col">Branca locale</th><th scope="col">Eta</th><th scope="col">Censimento AGESCI</th><th scope="col">Contatti</th></tr></thead>
+        <tbody id="members-list"></tbody>
+      </table></div>
+      <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
+      <details class="members-settings"><summary>Campi personalizzati e modelli di gruppo</summary>
+        <div class="members-settings-grid">
+          <form id="field-form"><h2>Nuovo campo di branca</h2>
+            <label>Branca<select name="branch" required></select></label>
+            <label>Nome del campo<input name="label" required maxlength="100" placeholder="Es. Obiettivo personale"></label>
+            <label>Chiave univoca<input name="key" required pattern="[a-z][a-z0-9-]{0,39}" maxlength="40" placeholder="obiettivo-personale"></label>
+            <label>Tipo<select name="type"><option value="text">Testo</option><option value="date">Data</option><option value="select">Scelta</option></select></label>
+            <label>Opzioni (una per riga, solo per Scelta)<textarea name="options" rows="3"></textarea></label>
+            <button class="button button-primary" type="submit">Aggiungi campo</button>
+          </form>
+          <form id="template-form"><h2>Nuovo modello documento</h2>
+            <label>Titolo<input name="title" required maxlength="120"></label>
+            <label>Testo<textarea name="body" rows="8" required maxlength="12000" placeholder="Scheda di {{nome}} {{cognome}}"></textarea></label>
+            <p>Segnaposto: <code>{{nome}} {{cognome}} {{codice}} {{branca}} {{anno}} {{email}} {{cellulare}} {{data}} {{percorso}}</code>. Solo testo: nessun codice o macro eseguibile.</p>
+            <button class="button button-primary" type="submit">Salva modello</button>
+          </form>
+        </div>
+      </details>
+    </section>
+  </main>
+  <dialog id="member-dialog" class="members-dialog">
+    <form id="member-form">
+      <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
+      <p id="member-error" role="alert"></p>
+      <div class="members-form-grid">
+        <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
+        <label>Branca locale<select name="branch" required></select></label>
+      </div>
+      <details open><summary>Anagrafica e contatti</summary><div id="member-profile" class="members-form-grid"></div></details>
+      <details><summary>Consensi e responsabili genitoriali</summary><div id="member-consents" class="members-form-grid"></div>
+        <p>I dati genitoriali sono riportati senza unioni automatiche: verificare duplicati e incongruenze nella fonte.</p></details>
+      <details open><summary>Percorso educativo di branca</summary><div id="member-education" class="members-form-grid"></div></details>
+      <details><summary>Storico censimenti AGESCI</summary><div id="member-censuses"></div></details>
+      <div class="members-dialog-actions"><button class="button button-primary" type="submit">Salva scheda</button><span>Le modifiche restano sul NAS.</span></div>
+    </form>
+  </dialog>
+  <dialog id="import-dialog" class="members-dialog">
+    <div class="members-dialog-heading"><h2>Importa da AGESCI</h2><button class="button button-secondary" type="button" data-close="import-dialog">Chiudi</button></div>
+    <p>Carica RicercaSoci.csv oppure incolla il contenuto. Il file non viene pubblicato. Prima del salvataggio controlla il riepilogo.</p>
+    <label>File CSV<input id="import-file" type="file" accept=".csv,text/csv"></label>
+    <label>Contenuto CSV<textarea id="import-csv" rows="5" placeholder="sep=, ..." spellcheck="false"></textarea></label>
+    <p>Il codice socio identifica la persona; socio + anno identificano il censimento. Un nuovo import aggiorna l'anagrafica ma conserva campi educativi, branca locale, password e permessi. Le colonne assenti sono conservate; i campi vuoti nelle colonne presenti sostituiscono quelli precedenti.</p>
+    <p id="import-error" role="alert"></p>
+    <div id="import-preview"></div>
+    <div class="members-toolbar"><button id="analyze-import" class="button button-secondary" type="button">Analizza CSV</button><button id="confirm-import" class="button button-primary" type="button" disabled>Conferma importazione</button></div>
+  </dialog>
+  <dialog id="macro-dialog" class="members-dialog">
+    <form id="macro-form">
+      <div class="members-dialog-heading"><h2>Azioni rapide</h2><button class="button button-secondary" type="button" data-close="macro-dialog">Chiudi</button></div>
+      <p id="macro-count"></p><p id="macro-error" role="alert"></p>
+      <label>Azione<select name="action"><option value="field">Aggiorna campo educativo</option><option value="branch">Passaggio di branca locale</option></select></label>
+      <label>Branca<select name="branch" required></select></label>
+      <label id="macro-field-label">Campo<select name="key"></select></label>
+      <div id="macro-value"></div>
+      <p>Il passaggio conserva i percorsi precedenti e non cambia il censimento ufficiale o i permessi di login.</p>
+      <button class="button button-primary" type="submit">Applica ai soci selezionati</button>
+    </form>
+  </dialog>
+  <dialog id="documents-dialog" class="members-dialog">
+    <div class="members-dialog-heading"><h2>Documenti dai modelli</h2><button class="button button-secondary" type="button" data-close="documents-dialog">Chiudi</button></div>
+    <label>Modello<select id="document-template"></select></label>
+    <p>Una scheda per ogni socio selezionato. Controlla i testi prima di stampare o salvare in PDF. I modelli interni non sostituiscono certificazioni ufficiali AGESCI.</p>
+    <button id="print-documents" class="button button-primary" type="button">Stampa / Salva PDF</button>
+    <div id="document-preview"></div>
+  </dialog>
+  <div id="members-print" hidden></div>
+  <!-- include:footer {"top":"reserved-content"} -->
+  <script src="../config/site.js"></script>
+  <script src="../assets/js/shared/accesso.js"></script>
+  <script src="../assets/js/soci-model.js"></script>
+  <script src="../assets/js/soci.js"></script>
+</body>
+</html>

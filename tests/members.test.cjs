@@ -1,0 +1,228 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
+const { once } = require("node:events");
+const { test } = require("node:test");
+const { DatabaseSync } = require("node:sqlite");
+const { createNasServer } = require("../server/nas.cjs");
+const { startNasDev } = require("../tools/nas-dev.cjs");
+const M = require("../assets/js/soci-model.js");
+
+const columns = ["ANNO SCOUT", "CODICE SOCIO", "NOME", "COGNOME", "BRANCA", "ORDINALE",
+  "DATA NASCITA", "EMAIL", "CELLULARE", "RESP.GENITORIALE DATI", "STATUS SOCIO", "CODICE STATUS SOCIO",
+  "GRUPPO", "CODICE AREA"];
+const base = { "ANNO SCOUT": "2026", "CODICE SOCIO": "012345", NOME: "Persona", COGNOME: "Esempio",
+  BRANCA: "Branca E/G", ORDINALE: "R2053", "DATA NASCITA": "2/3/2012", EMAIL: "test@example.invalid",
+  CELLULARE: "000 123;000123", "RESP.GENITORIALE DATI": 'Responsabile "Esempio", contatto\nDa verificare',
+  "STATUS SOCIO": "Attivo", "CODICE STATUS SOCIO": "A", GRUPPO: "Gruppo esempio", "CODICE AREA": "ignora" };
+function csv(rows = [{}], headers = columns) {
+  const cell = value => '="' + String(value ?? "").replace(/"/g, '""') + '"';
+  return "\uFEFFsep=,\r\n" + headers.join(",") + "\r\n" +
+    rows.map(row => headers.map(key => cell({ ...base, ...row }[key])).join(",") + ",").join("\r\n");
+}
+const password = "Test-only-password1!";
+async function start(directory) {
+  const server = await createNasServer({ dataDir: directory, password, censusCodes: "7654321",
+    basePath: "/agesci-canicattini1", publicOrigin: "http://localhost", secureCookie: false });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  let cookie = "";
+  return {
+    async request(route, method = "GET", data, origin = "http://localhost", suppliedCookie = cookie) {
+      return fetch(`http://127.0.0.1:${server.address().port}/agesci-canicattini1/api/${route}`, {
+        method, headers: { Cookie: suppliedCookie, Origin: origin, "Content-Type": "application/json" },
+        body: data === undefined ? undefined : JSON.stringify(data),
+      });
+    },
+    async login(code = "23816938") {
+      const r = await this.request("auth/login", "POST", { code, password, confirmation: password });
+      assert.equal(r.status, 200, await r.text());
+      cookie = r.headers.get("set-cookie").split(";")[0];
+    },
+    async snapshot() {
+      const r = await this.request("members");
+      assert.equal(r.status, 200);
+      return r.json();
+    },
+    async import(content) {
+      const r = await this.request("members/import", "POST", { csv: content });
+      assert.equal(r.status, 200, await r.clone().text());
+      const preview = await r.json();
+      const saved = await this.request("members/import", "POST", { csv: content, confirm: true, version: preview.version });
+      assert.equal(saved.status, 200, await saved.text());
+      return preview;
+    },
+    async close() { server.stop(); await once(server, "close"); },
+  };
+}
+
+test("AGESCI CSV preserves codes, quotes, multiline guardians and converts dates", () => {
+  const imported = M.parseImport(csv());
+  assert.equal(imported.members[0].code, "012345");
+  assert.equal(imported.members[0].profile.birthDate, "2012-03-02");
+  assert.equal(imported.members[0].profile.guardians, base["RESP.GENITORIALE DATI"]);
+  assert.equal(imported.members[0].profile.phone, "000123");
+  assert.equal(imported.members[0].census.branch, "E/G");
+  assert.equal(imported.group.ORDINALE, "R2053");
+  assert.deepEqual(imported.ignoredColumns, ["CODICE AREA"]);
+  assert.equal(imported.warnings.length, 1);
+  assert.equal(M.parseImport(csv([{}], columns.filter(key => key !== "EMAIL"))).members[0].profile.email, undefined);
+  const ordinary = columns.join(",") + "\n" + columns.map(key => '"' + String(base[key] ?? "").replace(/"/g, '""') + '"').join(",");
+  assert.equal(M.parseImport(ordinary).members[0].profile.guardians, base["RESP.GENITORIALE DATI"]);
+});
+
+test("AGESCI CSV rejects ambiguous or invalid records before producing a plan", () => {
+  for (const [content, error] of [
+    [csv([{}, {}]), /duplicato/], [csv([{ ORDINALE: "X0000" }]), /gruppo diverso/],
+    [csv([{ "DATA NASCITA": "31/2/2012" }]), /data di nascita/], [csv([{ BRANCA: "Unknown" }]), /branca/],
+    [csv([{ "CODICE SOCIO": "1234" }]), /codice/], [csv([{ "ANNO SCOUT": "26" }]), /anno/],
+    [csv([{ NOME: "", COGNOME: "" }]), /nome e cognome/], [csv() + 'x', /numero colonne/],
+    [csv([{}, { "CODICE SOCIO": "012346", GRUPPO: "Diverso" }]), /gruppo incoerenti/],
+    ['ANNO SCOUT,ANNO SCOUT', /Intestazioni/], [csv().slice(0, -2), /non chiuse/],
+    [csv([{}], [...columns, "NOME"]), /Intestazioni duplicate/],
+  ]) assert.throws(() => M.parseImport(content), error);
+  assert.throws(() => M.parseImport("x".repeat(4 * 1024 * 1024 + 1)), /troppo grande/);
+  assert.throws(() => M.parseImport("\u00e9".repeat(2 * 1024 * 1024 + 1)), /troppo grande/);
+  assert.equal(M.parseImport(csv([{ "CODICE STATUS SOCIO": "S" }])).warnings.some(w => w.includes("sospeso")), true);
+});
+
+test("CSV export is formula-safe with valid quoting and leading-zero codes", () => {
+  const output = M.exportCsv([["012345", "=1+1", " +1", "@x", "-2", 'a,"b"\nnext', undefined]]);
+  assert.equal(output, '\uFEFF"012345","\'=1+1","\' +1","\'@x","\'-2","a,""b""\nnext",""');
+});
+
+test("real NAS gateway connects the member page, session config, assets and API under the site prefix", async t => {
+  const basePath = "/agesci-canicattini1";
+  const app = await startNasDev({ basePath });
+  t.after(() => app.stop());
+  const root = app.origin + basePath;
+  const page = await (await fetch(root + "/area-riservata/soci.html")).text();
+  assert.match(page, /id="members-app"/);
+  assert.match(page, /href="\.\.\/">/);
+  assert.match(page, /src="\.\.\/assets\/js\/soci.js"/);
+  assert.doesNotMatch(page, /include:brand/);
+  assert.equal((await fetch(root + "/api/members")).status, 401);
+  const login = await fetch(root + "/api/auth/login", { method: "POST",
+    headers: { Origin: app.origin, "Content-Type": "application/json" },
+    body: JSON.stringify({ code: "23816938", password: app.password }) });
+  assert.equal(login.status, 200);
+  const headers = { Cookie: login.headers.get("set-cookie").split(";")[0] };
+  const config = await (await fetch(root + "/config/site.js", { headers })).text();
+  assert.match(config, /"admin":true/);
+  assert.match(config, /"basePath":"\/agesci-canicattini1"/);
+  assert.equal((await fetch(root + "/api/members", { headers })).status, 200);
+  for (const asset of ["assets/js/soci-model.js", "assets/js/soci.js", "assets/css/soci.css"])
+    assert.equal((await fetch(root + "/" + asset)).status, 200);
+  const dashboard = await (await fetch(root + "/area-riservata/")).text();
+  assert.match(dashboard, /href="soci.html"/);
+});
+
+test("members API is admin-only and import preview does not write or grant access", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-members-auth-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  assert.equal((await app.request("members")).status, 401);
+  await app.login("7654321");
+  for (const [route, method, value] of [["members", "GET"], ["members/import", "POST", { csv: csv() }],
+    ["members/fields", "POST", {}], ["members/templates", "POST", {}], ["members/macro", "POST", {}], ["members/1", "PATCH", {}]])
+    assert.equal((await app.request(route, method, value)).status, 403);
+  await app.login();
+  assert.equal((await app.request("members/import", "POST", { csv: csv() }, "https://foreign.invalid")).status, 403);
+  const initial = await app.snapshot();
+  const content = csv([{}, { "CODICE SOCIO": "012346", BRANCA: "Adulti" }]);
+  const preview = await (await app.request("members/import", "POST", { csv: content })).json();
+  assert.equal(preview.rows, 2); assert.equal(preview.newCount, 2);
+  assert.deepEqual(await app.snapshot(), initial);
+  assert.equal((await app.request("members/import", "POST", { csv: content, confirm: true })).status, 409);
+  assert.equal((await app.request("members/import", "POST", { csv: content + "\n", confirm: true, version: preview.version })).status, 409);
+  assert.equal((await app.request("members/import", "POST", { csv: content, confirm: true, version: preview.version })).status, 200);
+  const imported = await app.snapshot();
+  assert.equal(imported.members.length, initial.members.length + 2);
+  assert.equal(JSON.stringify(imported).includes("password_hash"), false);
+  assert.match((await app.request("members")).headers.get("cache-control"), /no-store/);
+  assert.equal((await app.request("auth/status", "POST", { code: "012346" })).status, 403);
+  const readDb = new DatabaseSync(path.join(directory, "site.sqlite"));
+  assert.equal(readDb.prepare("SELECT password_hash FROM people WHERE census_code='012346'").get().password_hash, null);
+  readDb.close();
+});
+
+test("members retain annual history, educational fields, account permissions and persist after restart", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-members-history-"));
+  let app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv());
+  let member = (await app.snapshot()).members.find(m => m.code === "012345");
+  const payload = { revision: member.revision, branch: "E/G", profile: member.profile,
+    values: { squadriglia: "Aquile", promessa: "2025-05-01" } };
+  assert.equal((await app.request("members/" + member.id, "PATCH", payload)).status, 200);
+  assert.equal((await app.request("members/" + member.id, "PATCH", payload)).status, 409);
+  member = (await app.snapshot()).members.find(m => m.id === member.id);
+  assert.equal((await app.request("members/macro", "POST", { action: "branch", branch: "R/S",
+    members: [{ id: member.id, revision: member.revision }] })).status, 200);
+  await app.import(csv([{ "ANNO SCOUT": "2027", NOME: "Nuovo", BRANCA: "Branca R/S" }]));
+  await app.import(csv([{ "ANNO SCOUT": "2025", NOME: "Vecchio", GRUPPO: "Gruppo storico" }]));
+  member = (await app.snapshot()).members.find(m => m.id === member.id);
+  assert.equal(member.profile.givenName, "Nuovo");
+  assert.equal(member.branch, "R/S"); assert.equal(member.kind, "ragazzo");
+  assert.deepEqual(member.censuses.map(c => c.year), ["2027", "2026", "2025"]);
+  assert.deepEqual(member.values["E/G"], { squadriglia: "Aquile", promessa: "2025-05-01" });
+  assert.equal((await app.snapshot()).group.GRUPPO, "Gruppo esempio");
+  const reducedHeaders = ["ANNO SCOUT", "CODICE SOCIO", "NOME", "COGNOME", "BRANCA", "ORDINALE"];
+  await app.import(csv([{ "ANNO SCOUT": "2027" }], reducedHeaders));
+  member = (await app.snapshot()).members.find(m => m.id === member.id);
+  assert.equal(member.profile.email, "test@example.invalid");
+  const preview = await app.import(csv([{ "ANNO SCOUT": "2027", EMAIL: "" }]));
+  assert.equal(preview.newCount, 0); assert.equal(preview.updatedCount, 1);
+  member = (await app.snapshot()).members.find(m => m.id === member.id);
+  assert.equal(member.profile.email, "");
+  await app.import(csv([{ "CODICE SOCIO": "7654321", BRANCA: "Branca E/G" }]));
+  assert.equal((await app.snapshot()).members.find(m => m.code === "7654321").kind, "capo");
+  const before = await app.snapshot();
+  await app.close(); app = await start(directory); await app.login();
+  assert.deepEqual(await app.snapshot(), before);
+});
+
+test("profiles, custom fields, templates and bulk macros validate and rollback atomically", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-members-macros-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{}, { "CODICE SOCIO": "012346" }]));
+  let members = (await app.snapshot()).members.filter(m => m.code.startsWith("01234"));
+  let [member] = members;
+  for (const patch of [
+    { profile: { givenName: "Esempio", password_hash: "bad" } }, { profile: { ...member.profile, birthDate: "2026-02-30" } },
+    { profile: { ...member.profile, consent2a: "invalid" } }, { values: { unknown: "x" } }, { values: { promessa: "no" } },
+  ]) assert.equal((await app.request("members/" + member.id, "PATCH",
+    { revision: member.revision, branch: member.branch, profile: member.profile, values: {}, ...patch })).status, 400);
+  assert.deepEqual((await app.snapshot()).members.filter(m => m.code.startsWith("01234")), members);
+  const field = { branch: "E/G", key: "obiettivo", label: "Obiettivo", type: "select", options: ["Avviato", "Concluso"] };
+  assert.equal((await app.request("members/fields", "POST", { ...field, options: ["", ""] })).status, 400);
+  assert.equal((await app.request("members/fields", "POST", field)).status, 201);
+  assert.equal((await app.request("members/fields", "POST", field)).status, 409);
+  const macro = { action: "field", branch: "E/G", key: "obiettivo", value: "Avviato",
+    members: members.map(m => ({ id: m.id, revision: m.revision })) };
+  assert.equal((await app.request("members/macro", "POST", { ...macro,
+    members: [macro.members[0], { ...macro.members[1], revision: 999 }] })).status, 409);
+  assert.equal((await app.snapshot()).members.find(m => m.id === member.id).values["E/G"], undefined);
+  assert.equal((await app.request("members/macro", "POST", { ...macro, value: "Non previsto" })).status, 400);
+  assert.equal((await app.request("members/macro", "POST", macro)).status, 200);
+  members = (await app.snapshot()).members.filter(m => m.code.startsWith("01234"));
+  assert.equal(members.every(m => m.values["E/G"].obiettivo === "Avviato"), true);
+  assert.equal((await app.request("members/macro", "POST", macro)).status, 409);
+  assert.equal((await app.request("members/templates", "POST", { title: "Interno", body: "{{password}}" })).status, 400);
+  assert.equal((await app.request("members/templates", "POST", { title: "Interno", body: "{{nome}} {{percorso}}" })).status, 201);
+  const pending = await (await app.request("members/import", "POST", { csv: csv() })).json();
+  assert.equal((await app.request("members/templates", "POST", { title: "Altro", body: "{{nome}}" })).status, 201);
+  assert.equal((await app.request("members/import", "POST", { csv: csv(), confirm: true, version: pending.version })).status, 409);
+  const newMember = { code: "012349", branch: "L/C", profile: { givenName: "Locale", surname: "Esempio" }, values: { sestiglia: "Rossi" } };
+  assert.equal((await app.request("members", "POST", { ...newMember, values: { unknown: "bad" } })).status, 400);
+  assert.equal((await app.snapshot()).members.some(m => m.code === newMember.code), false);
+  assert.equal((await app.request("members", "POST", newMember)).status, 201);
+  assert.equal((await app.request("members", "POST", newMember)).status, 409);
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
+  db.close();
+});
