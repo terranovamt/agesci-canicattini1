@@ -100,15 +100,16 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
             $('members-visibility-note').textContent.includes('E/G: 1 soci assegnati alla branca.') &&
             !$('members-visibility-note').textContent.includes('esclusi') && !$('members-visibility-note').textContent.includes('sospesi');
           result.incomingCta = !$('members-incoming').hidden && $('members-incoming').textContent === '1 passaggi da accettare o rifiutare →' &&
-            $('transfers-tab').textContent === 'Passaggi · 1';
+            !$('transfers-tab').hidden && $('transfers-tab').textContent === 'Passaggi · 1';
           tab('members-transfer-panel').click();
           result.transfersShown = showing('members-transfer-panel') && $('members-search-panel').hidden;
           result.transfersFit = panelFits('members-transfer-panel');
           result.confirmVisible = !!transferButton('Conferma ingresso') && transferButton('Conferma ingresso').getClientRects().length > 0;
+          transferButton('Conferma ingresso').focus();
           transferButton('Conferma ingresso').click(); await wait();
           result.approval = calls.find(call => call.route === 'members/transfers/1').value;
           result.approvalCleared = $('members-incoming').hidden && $('transfers-tab').textContent === 'Passaggi' &&
-            $('members-transfers').textContent.includes('Nessun passaggio');
+            $('transfers-tab').hidden && showing('members-search-panel') && $('members-transfer-panel').hidden;
           tab('members-search-panel').click();
           result.searchShown = showing('members-search-panel') && $('members-transfer-panel').hidden;
           [...document.querySelectorAll('.member-name')].find(button => button.textContent === 'Example member').click();
@@ -132,7 +133,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           macro.requestSubmit(); await wait();
           result.proposal = calls.find(call => call.route === 'members/macro').value;
           result.macroClosed = !$('macro-dialog').open;
-          result.outgoingPending = $('transfers-tab').textContent === 'Passaggi · 1' && $('members-incoming').hidden &&
+          result.outgoingPending = !$('transfers-tab').hidden && $('transfers-tab').textContent === 'Passaggi · 1' && $('members-incoming').hidden &&
             $('members-transfers').textContent.includes('E/G → R/S') && !transferButton('Conferma ingresso');
           result.fits = document.documentElement.scrollWidth <= innerWidth;
 

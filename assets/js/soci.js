@@ -269,6 +269,12 @@
   }
   function renderTransfers() {
     const reviewable = data.transfers.filter(transfer => transfer.canConfirm).length;
+    const transfersTab = $('transfers-tab');
+    if (!data.transfers.length && transfersTab.getAttribute('aria-pressed') === 'true') {
+      transfersTab.closest('[data-section-nav]').dispatchEvent(
+        new CustomEvent('section-select', { detail: 'members-search-panel' }));
+    }
+    transfersTab.hidden = !data.transfers.length;
     $('transfers-tab').textContent = 'Passaggi' + (data.transfers.length ? ` · ${data.transfers.length}` : '');
     $('members-incoming').hidden = !reviewable;
     $('members-incoming').textContent = `${reviewable} passaggi da accettare o rifiutare →`;
