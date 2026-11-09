@@ -268,6 +268,35 @@ Il listener 8080 e' solo loopback sul NAS e deve essere libero; il backend
 
 ### Primo avvio e verifica
 
+Ogni cartella in `releases` contiene il codice di un commit distribuito o
+tentato, non un backup dei dati. Dopo un deployment riuscito, l'updater conserva
+soltanto la release corrente (`current-revision`) e la precedente che aveva
+superato gli healthcheck (`previous-revision`). Se cambia soltanto `.env`,
+la precedente release resta protetta. Un deployment fallito non avvia la pulizia.
+Le installazioni vecchie senza `previous-revision` vengono ripulite al primo
+deployment riuscito di un nuovo commit, quando la precedente e' identificabile.
+Non vengono eliminate cartelle con nomi diversi dagli hash dei commit o link
+simbolici. `data`, configurazione e repository Git restano intatti.
+
+Le immagini app, web e calendari hanno tag distinti per commit: una build nuova
+non sovrascrive l'immagine della release precedente. La pulizia rimuove anche
+i soli tag app, web e calendari delle release eliminate; se un'immagine e'
+ancora in uso, Docker la protegge e viene segnalata la mancata rimozione.
+Non elimina cache Docker e non esegue prune globale sul NAS, che potrebbe
+coinvolgere altri progetti. Conservare comunque un backup separato
+dei dati persistenti: il rollback del codice non ripristina il database.
+
+Se il sito non si aggiorna, aprire l'ultimo risultato dell'attivita' DSM:
+`NAS gia' aggiornato` significa che commit e configurazione non sono cambiati,
+non certifica la salute dei container. Un errore riporta la fase (fetch,
+configurazione, build o avvio); un avvio fallito mostra anche lo stato dei
+container e tenta il ripristino della release corrente precedente.
+Controllare che il commit sia su `NAS`, l'attivita' sia abilitata e lo spazio
+libero sia sufficiente. Confrontare il file `current-revision` con la release
+visibile nel monitor della regia. Per la diagnosi condividere solo il log
+dell'attivita', dopo aver rimosso eventuali credenziali: non condividere `.env`,
+`nas.env`, `docker inspect` o l'output completo di `docker compose config`.
+
 1. Eseguire manualmente l'attivita' e aspettare il completamento della build.
 2. In Container Manager cercare il progetto/servizi `agesci-nas`: `app` e `web`
    devono essere healthy. Non e' richiesto un container `cloudflared`.

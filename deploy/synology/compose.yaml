@@ -1,5 +1,6 @@
 services:
   app:
+    image: agesci-nas-app:${NAS_RELEASE_REVISION:-manual}
     build:
       context: ../..
       dockerfile: server/Dockerfile
@@ -43,6 +44,7 @@ services:
         max-file: "3"
 
   web:
+    image: agesci-nas-web:${NAS_RELEASE_REVISION:-manual}
     build:
       context: ../..
       dockerfile: deploy/synology/Dockerfile
@@ -95,6 +97,7 @@ services:
         max-file: "3"
 
   calendar-sync:
+    image: agesci-nas-calendar-sync:${NAS_RELEASE_REVISION:-manual}
     profiles: ["maintenance"]
     build:
       context: ../..

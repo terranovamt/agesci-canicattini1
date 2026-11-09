@@ -7,6 +7,8 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 **NAS gia' installato:** basta pubblicare un commit sul branch `NAS`; l'attivita'
 DSM aggiorna e riavvia il progetto esistente, senza ZIP o reinstallazione.
+In `releases` conserva soltanto la release corrente e la precedente funzionante;
+la pulizia avviene dopo un deployment riuscito, senza toccare `data`.
 Per le credenziali puoi aggiungere `.env` nella cartella `NAS_ROOT`: integra
 la configurazione esistente `nas.env`, senza sostituire origine o percorso dati.
 Gli account personali (ragazzi/capi) e gli hash scrypt sono nel database SQLite

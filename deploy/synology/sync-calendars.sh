@@ -6,6 +6,7 @@ if [ -f "$NAS_ROOT/.env" ]; then
     ENV_ARGS+=(--env-file "$NAS_ROOT/.env")
 fi
 revision="$(cat "$NAS_ROOT/current-revision")"
+export NAS_RELEASE_REVISION="$revision"
 docker compose --project-name agesci-nas "${ENV_ARGS[@]}" \
     -f "$NAS_ROOT/releases/$revision/deploy/synology/compose.yaml" \
     --profile maintenance run --rm --no-deps calendar-sync

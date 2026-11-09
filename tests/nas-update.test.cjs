@@ -30,7 +30,17 @@ test("NAS updater serializes deployments and records only healthy versions", () 
   assert.match(script, /up -d --wait --force-recreate/);
 });
 
-test("NAS updater applies private env overrides without requiring a new commit or installation", () => {
+test("NAS builds revision-tagged images and calendar jobs use the current tag", () => {
+  const compose = fs.readFileSync(path.join(__dirname, "../deploy/synology/compose.yaml"), "utf8");
+  for (const service of ["app", "web", "calendar-sync"]) {
+    assert.ok(compose.includes(`image: agesci-nas-${service}:\${NAS_RELEASE_REVISION:-manual}`));
+  }
+  const calendar = fs.readFileSync(path.join(__dirname, "../deploy/synology/sync-calendars.sh"), "utf8");
+  assert.match(calendar, /export NAS_RELEASE_REVISION="\$revision"/);
+  assert.doesNotMatch(script, /docker (?:system|image|builder) prune/);
+});
+
+test("NAS updater preserves data, retains two healthy releases and rolls back failed deployments", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "nas-updater-"));
   const root = path.join(directory, "installed");
   const repository = path.join(directory, "source");
@@ -53,12 +63,32 @@ test("NAS updater applies private env overrides without requiring a new commit o
     fs.writeFileSync(path.join(root, "data/keep.txt"), "existing runtime data");
     fs.writeFileSync(path.join(bin, "chown"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     fs.writeFileSync(path.join(bin, "docker"),
-      '#!/bin/sh\nprintf "%s\\n" "$*" >> "$NAS_ROOT/operations.log"\n', { mode: 0o755 });
-    const run = () => execFileSync("bash", [path.join(__dirname, "../deploy/synology/update.sh")], {
-      env: { ...process.env, NAS_ROOT: root, PATH: bin + path.delimiter + process.env.PATH },
+      `#!/bin/sh
+printf "%s %s\\n" "$NAS_RELEASE_REVISION" "$*" >> "$NAS_ROOT/operations.log"
+case "$*" in
+  *" up "*)
+    if [ "$NAS_RELEASE_REVISION" = "$FAIL_REVISION" ]; then exit 17; fi ;;
+  *" build"*)
+    if [ "$NAS_RELEASE_REVISION" = "$FAIL_BUILD_REVISION" ]; then exit 18; fi ;;
+  *" ps --all")
+    if [ "$NAS_RELEASE_REVISION" = "$FAIL_PS_REVISION" ]; then exit 19; fi ;;
+esac
+if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
+`, { mode: 0o755 });
+    const run = (extra = {}) => execFileSync("bash", [path.join(__dirname, "../deploy/synology/update.sh")], {
+      env: { ...process.env, NAS_ROOT: root, PATH: bin + path.delimiter + process.env.PATH, ...extra },
       timeout: 30000,
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
     });
+    const commit = (label) => {
+      fs.writeFileSync(path.join(repository, "version.txt"), label);
+      execFileSync("git", ["-C", repository, "add", "."]);
+      execFileSync("git", ["-C", repository, "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+        "commit", "-qm", label]);
+      return execFileSync("git", ["-C", repository, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    };
+    const releases = () => fs.readdirSync(path.join(root, "releases")).filter(name => /^[a-f0-9]{40}$/.test(name)).sort();
     run();
     const revision = fs.readFileSync(path.join(root, "current-revision"), "utf8");
     const fingerprint = fs.readFileSync(path.join(root, "current-configuration"), "utf8");
@@ -72,6 +102,48 @@ test("NAS updater applies private env overrides without requiring a new commit o
     assert.match(run(), /Deployment completato/);
     assert.equal(fs.readFileSync(path.join(root, "current-revision"), "utf8"), revision);
     assert.notEqual(fs.readFileSync(path.join(root, "current-configuration"), "utf8"), fingerprint);
+    assert.equal(fs.readFileSync(path.join(root, "data/keep.txt"), "utf8"), "existing runtime data");
+    assert.equal(fs.existsSync(path.join(root, "update.lock")), false);
+
+    // Migrate an existing installation without inventing a healthy fallback.
+    fs.unlinkSync(path.join(root, "previous-revision"));
+    const legacy = "a".repeat(40);
+    fs.mkdirSync(path.join(root, "releases", legacy));
+    assert.match(run(), /NAS gia' aggiornato/);
+    assert.ok(releases().includes(legacy));
+    fs.mkdirSync(path.join(root, "releases", "manual-backup"));
+    fs.symlinkSync(path.join(root, "data"), path.join(root, "releases", "b".repeat(40)));
+    const second = commit("second");
+    run();
+    assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), revision.trim());
+    assert.deepEqual(releases(), [revision.trim(), second, "b".repeat(40)].sort());
+    assert.ok(fs.existsSync(path.join(root, "releases", "manual-backup")));
+    assert.ok(fs.readFileSync(path.join(root, "operations.log"), "utf8").includes(`image rm agesci-nas-app:${legacy}`));
+    const third = commit("third");
+    run();
+    assert.deepEqual(releases(), [second, third, "b".repeat(40)].sort());
+    fs.writeFileSync(path.join(root, ".env"), "NAS_CAPO_CODES=7654323\n");
+    run();
+    assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), second);
+    const beforeFailure = fs.readFileSync(path.join(root, "current-configuration"), "utf8");
+    const failed = commit("failed");
+    assert.throws(() => run({ FAIL_BUILD_REVISION: failed }), error => {
+      assert.match(error.stderr.toString(), /fallito durante: build delle immagini app e web/);
+      return true;
+    });
+    assert.throws(() => run({ FAIL_REVISION: failed, FAIL_PS_REVISION: failed }), error => {
+      assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
+      assert.match(error.stderr.toString(), /tento comunque il ripristino/);
+      return true;
+    });
+    assert.equal(fs.readFileSync(path.join(root, "current-revision"), "utf8").trim(), third);
+    assert.equal(fs.readFileSync(path.join(root, "current-configuration"), "utf8"), beforeFailure);
+    assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), second);
+    assert.deepEqual(releases(), [second, third, failed, "b".repeat(40)].sort());
+    assert.match(fs.readFileSync(path.join(root, "operations.log"), "utf8"),
+      new RegExp(third + " compose .*up -d --build --wait"));
+    run();
+    assert.deepEqual(releases(), [third, failed, "b".repeat(40)].sort());
     assert.equal(fs.readFileSync(path.join(root, "data/keep.txt"), "utf8"), "existing runtime data");
     assert.equal(fs.existsSync(path.join(root, "update.lock")), false);
   } finally {
