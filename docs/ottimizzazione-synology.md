@@ -362,9 +362,8 @@ e [certificati DSM](https://kb.synology.com/it-it/DSM/help/DSM/AdminCenter/conne
 Le condizioni della singola linea Sky e la configurazione reale di router/NAS
 non sono state verificate da questo ambiente.
 
-La sessione usa cookie HttpOnly, Secure e SameSite=Strict, dura otto ore e
-non conserva la password nel browser. Viene invalidata al riavvio del backend,
-anche dopo il deployment: gli amministratori devono accedere di nuovo;
+La sessione personale usa cookie HttpOnly, Secure e SameSite=Strict, dura otto ore e
+non conserva la password nel browser. Il reset revoca tutte le sessioni della persona;
 il pubblico riconnette lo stream. Slide e PDF sono pubblici. Il limite di upload
 e' inferiore a 20 MiB. Non esporre il backend direttamente: si fida dell'IP
 inoltrato da Nginx. Disattivare il vecchio Firebase solo dopo il collaudo e
@@ -493,6 +492,8 @@ un backup e manutenzione del database, non cancellando l'intero sito.
 | `COMPOSE_PROFILES=tunnel`          | Profilo alternativo conservato, non usato dal percorso DDNS             |
 | `NAS_DATA_DIR`                     | Percorso assoluto dei dati persistenti sul volume scelto                |
 | `NAS_ADMIN_PASSWORD_FILE`          | File secret della password; non la password stessa                      |
+| `NAS_ADMIN_PASSWORD`               | Password iniziale admin da `.env`, importata come hash una sola volta; precede il file secret |
+| `NAS_CAPO_CODES`                   | Codici censimento capo abilitati, separati da virgole; `1238005` e' sempre admin |
 | `NAS_TUNNEL_TOKEN_FILE`            | Solo per il profilo alternativo; non serve con DDNS                     |
 | `NAS_TELEMETRY_ENABLED=true/false` | Visite, schede e segnalazioni browser                                   |
 | `NAS_HOST_PROC=/host/proc`         | CPU/RAM dell'intero NAS tramite i due file readonly                     |

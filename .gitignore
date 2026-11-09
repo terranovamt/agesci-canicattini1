@@ -9,3 +9,4 @@ deploy/synology/data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+.env

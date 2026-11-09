@@ -4,12 +4,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const crypto = require("node:crypto");
-const { promisify } = require("node:util");
 const { DatabaseSync } = require("node:sqlite");
 const { createMonitor } = require("./monitor.cjs");
+const { createPeople } = require("./people.cjs");
 const documents = require("../assets/js/documents-model.js");
 
-const scrypt = promisify(crypto.scrypt);
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const SESSION_SECONDS = 8 * 60 * 60;
 const PDF_LIMIT = 20 * 1024 * 1024;
@@ -45,6 +44,7 @@ async function createNasServer({
   dataDir,
   siteRoot = path.resolve(__dirname, ".."),
   password,
+  censusCodes = "",
   publicOrigin,
   basePath = "",
   secureCookie = true,
@@ -109,10 +109,7 @@ async function createNasServer({
       write("documents", JSON.stringify(items));
     }
   });
-  database.exec("DELETE FROM sessions");
-  const salt = crypto.randomBytes(32);
-  const passwordHash = await scrypt(password, salt, 64);
-  const sessions = database.prepare("SELECT expires FROM sessions WHERE id = ?");
+  const people = await createPeople(database, password, censusCodes);
   const streams = new Map();
   const presence = new Map();
   const attempts = new Map();
@@ -132,7 +129,7 @@ async function createNasServer({
     const token = /(?:^|;\s*)nas-session=([a-f0-9]{64})(?:;|$)/.exec(request.headers.cookie || "")?.[1];
     return token ? hash(token) : "";
   };
-  const authorized = (request) => (sessions.get(sessionId(request))?.expires || 0) > Date.now();
+  const authorized = (request) => !!people.user(sessionId(request));
   const cookie = (token, seconds) =>
     `nas-session=${token}; Path=${basePath}/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${secureCookie ? "; Secure" : ""}`;
   const state = () => JSON.parse(read("state"));
@@ -221,6 +218,10 @@ async function createNasServer({
         rateLimit("write:" + ip, 3000, 60000);
       }
       if (url.pathname === "/healthz") return send(response, 200, { ok: true });
+      if (url.pathname === "/api/authorize" && method === "GET")
+        return send(response, authorized(request) ? 204 : 401, "", "text/plain; charset=utf-8");
+      if (await people.handle(url.pathname, request, response,
+        { body, send, cookie, sessionId, rateLimit, clearLimit: (key) => attempts.delete(key), ip, seconds: SESSION_SECONDS })) return;
       if (url.pathname === "/api/telemetry/config" && method === "GET")
         return send(response, 200, { enabled: monitor.enabled });
       if (url.pathname === "/api/telemetry" && method === "POST") {
@@ -239,12 +240,13 @@ async function createNasServer({
         return send(
           response,
           200,
-          fs.readFileSync(path.join(siteRoot, "config/site.js"), "utf8"),
+          fs.readFileSync(path.join(siteRoot, "config/site.js"), "utf8") +
+            "\nwindow.NAS=" + JSON.stringify({ user: people.user(sessionId(request)), basePath }) + ";\n",
           "application/javascript; charset=utf-8",
         );
       }
       if (url.pathname === "/api/session" && method === "GET")
-        return send(response, 200, { authenticated: authorized(request) });
+        return send(response, 200, { authenticated: authorized(request), user: people.user(sessionId(request)) });
       if (url.pathname === "/calendars/events.json" && ["GET", "HEAD"].includes(method)) {
         const snapshot = path.join(dataDir, "calendars/events.json");
         return send(
@@ -260,16 +262,7 @@ async function createNasServer({
         return send(response, 200, { ok: true }, undefined, { "Set-Cookie": cookie("", 0) });
       }
       if (url.pathname === "/api/state/modifiche/k.json" && method === "PUT") {
-        rateLimit("login:" + ip, 5, 60000);
-        const supplied = await body(request, 4096);
-        if (typeof supplied !== "string" || supplied.length > 1024) fail(400, "Password non valida");
-        const suppliedHash = await scrypt(supplied, salt, 64);
-        if (!crypto.timingSafeEqual(suppliedHash, passwordHash)) fail(401, "Password non valida");
-        const token = crypto.randomBytes(32).toString("hex");
-        database
-          .prepare("INSERT INTO sessions(id, expires) VALUES (?, ?)")
-          .run(hash(token), Date.now() + SESSION_SECONDS * 1000);
-        return send(response, 200, { ok: true }, undefined, { "Set-Cookie": cookie(token, SESSION_SECONDS) });
+        fail(410, "Accedi con codice censimento e password dall'area riservata");
       }
       if (url.pathname.startsWith("/api/state/")) {
         const route =
@@ -426,7 +419,9 @@ if (require.main === module) {
   const passwordFile = process.env.NAS_ADMIN_PASSWORD_FILE || "/run/secrets/admin_password";
   createNasServer({
     dataDir: process.env.NAS_DATA_DIR || "/data",
-    password: fs.readFileSync(passwordFile, "utf8").replace(/[\r\n]+$/, ""),
+    password: process.env.NAS_ADMIN_PASSWORD ||
+      (fs.existsSync(passwordFile) ? fs.readFileSync(passwordFile, "utf8").replace(/[\r\n]+$/, "") : ""),
+    censusCodes: process.env.NAS_CAPO_CODES || "",
     publicOrigin: process.env.NAS_PUBLIC_ORIGIN,
     basePath: "/agesci-canicattini1",
     telemetryEnabled: process.env.NAS_TELEMETRY_ENABLED !== "false",

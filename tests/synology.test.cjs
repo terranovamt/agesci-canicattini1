@@ -55,9 +55,10 @@ test("NAS redirects removed directories and manifests to canonical sections", ()
 
 test("NAS redirects every direct index.html URL to its clean directory URL", () => {
   const nginx = read("deploy/synology/nginx.conf");
-  const rule = nginx.match(/location ~ (.+) \{\s*return 308 \$1\$is_args\$args;/);
+  const rule = nginx.match(/location ~ (.+) \{\s*if \(\$request_uri ~ "([^"]+)"\) \{\s*return 308 \$1\$is_args\$args;/);
   assert.ok(rule);
   const matcher = new RegExp(rule[1]);
+  const directRequest = new RegExp(rule[2]);
   for (const pathname of [
     prefix + "/index.html",
     prefix + "/area-riservata/index.html",
@@ -68,7 +69,11 @@ test("NAS redirects every direct index.html URL to its clean directory URL", () 
     const match = pathname.match(matcher);
     assert.ok(match, pathname);
     assert.equal(match[1], pathname.replace(/index\.html$/, ""));
+    assert.equal(pathname.match(directRequest)[1], match[1]);
   }
+  assert.equal(directRequest.test(prefix + "/"), false);
+  assert.equal(directRequest.test(prefix + "/area-riservata/"), false);
+  assert.match(nginx, /try_files \$uri =404;/);
 });
 
 test("NAS image copies only public site directories, not development tools or secrets", () => {

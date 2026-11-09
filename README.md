@@ -5,6 +5,13 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 ## Branch NAS
 
+**Installazione senza SSH/Git sul NAS:** scarica il pacchetto Container Manager
+e segui [docs/synology.md](docs/synology.md). Compila solo password iniziale
+admin e codici capo in `.env`; indirizzo e sottocartella sono gia' configurati.
+Gli account personali (ragazzi/capi) e gli hash scrypt sono nel database SQLite
+esistente. Solo i capi abilitati possono accedere; solo `1238005` gestisce persone
+e reset delle password. La navbar pubblica resta bianca e quella riservata viola.
+
 Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
 diretta, contenuti o PDF. Setup e gestione documenti salvano direttamente sul
 NAS, senza token GitHub. GitHub resta la sorgente del codice: un'attivita' DSM
@@ -61,12 +68,12 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Chi                          | Indirizzo                                                      |
 | ---------------------------- | -------------------------------------------------------------- |
 | Home / pubblico              | `.../` sotto il prefisso `/agesci-canicattini1/`                |
-| Area riservata               | `.../area-riservata/` (accesso con chiave)                     |
+| Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
 | PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |
-| Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (chiede la chiave)   |
+| Regia (dashboard)            | `.../area-riservata/assemblea/regia.html` (sessione personale) |
 | Slide per il pubblico        | `.../area-riservata/assemblea/`                                |
 | Statistiche del sito         | `.../area-riservata/statistiche.html` (accesso riservato)      |
 | Setup (NAS)                  | `.../area-riservata/assemblea/setup.html` (salvataggio SQLite) |
@@ -80,11 +87,11 @@ Per il proiettore usare **Apri schermo presentazione** dalla regia.
 Il QR fornito e ottimizzato in `assets/img/qr-live.png` punta alla home AGESCI:
 48.461 byte, circa il 92% in meno del sorgente SVG, decodificato a quattro dimensioni.
 
-La home propone **Area riservata**: il backend NAS verifica la password del
-file secret e crea una sessione HttpOnly/Secure di otto ore. Il browser non
+La home propone **Area riservata**: il backend NAS verifica codice censimento
+e hash della password personale e crea una sessione HttpOnly/Secure di otto ore. Il browser non
 conserva la password; **Esci** revoca la sessione. Il server protegge le scritture
-anche se qualcuno aggira l'interfaccia. Un riavvio del backend richiede un nuovo
-accesso agli amministratori; il pubblico riconnette la diretta.
+anche se qualcuno aggira l'interfaccia. Il reset della password revoca tutte le
+sessioni della persona; il pubblico riconnette la diretta dopo un riavvio.
 Il setup modifica i contenuti persistenti di base, separati dalle modifiche live.
 Il percorso sotto `area-riservata/` non rende private slide, PDF o codice:
 non inserire informazioni riservate. Non condividere vecchi URL con password.

@@ -1,5 +1,39 @@
 /* Accesso con la chiave condivisa, verificata dalle regole Firebase. */
 (function () {
+  if (window.NAS) {
+    const chiave = () => window.NAS.user ? 'nas-session' : '';
+    const verificata = () => !!window.NAS.user;
+    async function request(path, method = 'GET', data) {
+      const r = await fetch((window.NAS.basePath || '') + '/api/' + path, {
+        method, credentials: 'same-origin', cache: 'no-store',
+        ...(data === undefined ? {} : {
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+        })
+      });
+      if (!r.ok) {
+        if (r.status === 401) window.NAS.user = null;
+        throw new Error(await r.text());
+      }
+      return r.json();
+    }
+    async function entra(password, code, confirmation) {
+      const result = password === 'nas-session' && code === undefined
+        ? await request('auth/me')
+        : await request('auth/login', 'POST', { code, password, confirmation });
+      window.NAS.user = result.user;
+      sessionStorage.setItem('canicattini-area-chiave', 'nas-session');
+      sessionStorage.setItem('canicattini-area-verificata', 'nas-session');
+    }
+    async function esci() {
+      await request('logout', 'POST');
+      window.NAS.user = null;
+      sessionStorage.removeItem('canicattini-area-chiave');
+      sessionStorage.removeItem('canicattini-area-verificata');
+      localStorage.removeItem('assemblea-gh-token');
+    }
+    window.ACCESSO = { chiave, verificata, entra, esci, request };
+    return;
+  }
   const storageKey = 'canicattini-area-chiave';
   const verifiedKey = 'canicattini-area-verificata';
   const chiave = () => sessionStorage.getItem(storageKey) || '';

@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     environment:
       NAS_PUBLIC_ORIGIN: ${NAS_PUBLIC_ORIGIN:?Configure NAS_PUBLIC_ORIGIN in nas.env}
+      NAS_ADMIN_PASSWORD: ${NAS_ADMIN_PASSWORD:-}
+      NAS_CAPO_CODES: ${NAS_CAPO_CODES:-}
       NAS_TELEMETRY_ENABLED: ${NAS_TELEMETRY_ENABLED:-true}
       NAS_HOST_PROC: ${NAS_HOST_PROC-/host/proc}
       NAS_RELEASE_REVISION: ${NAS_RELEASE_REVISION:-manual}

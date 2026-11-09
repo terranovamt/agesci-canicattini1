@@ -1,0 +1,35 @@
+.nas-navbar, body.reserved-page > .reserved-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px max(24px, calc((100vw - 1200px) / 2));
+  background: var(--v, #462678);
+  color: #fff;
+  border-bottom: 0;
+}
+.nas-navbar a, body.reserved-page .reserved-header a,
+body.reserved-page .reserved-header .brand,
+.metrics-page .reserved-header nav a {
+  color: #fff;
+}
+.nas-navbar .nas-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 700 }
+.nas-navbar img { width: 48px; height: 48px; object-fit: contain }
+.nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
+.nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
+#nas-login-form [hidden], #people-tool[hidden] { display: none }
+#password-fields, #confirmation-field { display: grid; gap: 10px }
+#nas-login-form p { font-size: 14px }
+.people-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0 }
+.people-form label { display: grid; gap: 8px }
+.people-form input, .people-form select, .people-list input, .people-list select { width: 100%; padding: 10px; border: 1px solid var(--vl); border-radius: 8px; background: #fff; color: var(--vd) }
+.people-list { display: grid; gap: 16px }
+.person-card { padding: 20px; background: #fff; border: 1px solid var(--vl); border-radius: 16px }
+.person-card h3 { margin: 0 0 12px }
+.person-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 12px }
+.person-fields label { display: grid; gap: 8px }
+.person-actions { display: flex; flex-wrap: wrap; gap: 12px }
+@media (max-width: 600px) {
+  .people-form, .person-fields { grid-template-columns: 1fr }
+}

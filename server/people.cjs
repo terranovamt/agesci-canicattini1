@@ -1,0 +1,173 @@
+"use strict";
+
+const crypto = require("node:crypto");
+const { promisify } = require("node:util");
+const scrypt = promisify(crypto.scrypt);
+const ADMIN_CODE = "1238005";
+const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
+
+function fail(status, message) {
+  throw Object.assign(new Error(message), { status });
+}
+
+function code(value) {
+  if (typeof value !== "string" || !/^\d{7}$/.test(value.replace(/ /g, "")))
+    fail(400, "Il codice censimento deve contenere sette cifre");
+  return value.replace(/ /g, "");
+}
+
+async function encode(password, initial = false) {
+  if (typeof password !== "string" || password.length < (initial ? 8 : 12) || password.length > 128)
+    fail(400, `La password deve contenere da ${initial ? 8 : 12} a 128 caratteri`);
+  const salt = crypto.randomBytes(32).toString("hex");
+  const digest = await scrypt(password, Buffer.from(salt, "hex"), 64);
+  return `scrypt$${salt}$${digest.toString("hex")}`;
+}
+
+async function matches(password, encoded) {
+  if (typeof password !== "string" || password.length > 128 || !encoded) return false;
+  const [, salt, expected] = encoded.split("$");
+  const digest = await scrypt(password, Buffer.from(salt, "hex"), 64);
+  return crypto.timingSafeEqual(digest, Buffer.from(expected, "hex"));
+}
+
+async function createPeople(database, initialPassword, configuredCodes = "") {
+  const allowed = new Set([ADMIN_CODE]);
+  for (const value of configuredCodes.split(",").filter((value) => value.trim()))
+    allowed.add(code(value.trim()));
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS people (
+      id INTEGER PRIMARY KEY, census_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK(kind IN ('ragazzo','capo')), password_hash TEXT,
+      CHECK(kind='capo' OR password_hash IS NULL),
+      CHECK(census_code!='1238005' OR kind='capo')
+    );
+    CREATE TABLE IF NOT EXISTS auth_settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);
+  `);
+  if (!database.prepare("PRAGMA table_info(sessions)").all().some((column) => column.name === "person_id")) {
+    database.exec("ALTER TABLE sessions ADD COLUMN person_id INTEGER REFERENCES people(id); DELETE FROM sessions;");
+  }
+  database.prepare("INSERT OR IGNORE INTO people(census_code,name,kind) VALUES(?,?,'capo')")
+    .run(ADMIN_CODE, "Amministratore");
+  for (const censusCode of allowed)
+    database.prepare("INSERT OR IGNORE INTO people(census_code,name,kind) VALUES(?,?,'capo')")
+      .run(censusCode, "Capo " + censusCode);
+  if (!database.prepare("SELECT 1 FROM auth_settings WHERE name='admin_initialized'").get() && initialPassword) {
+    const encoded = await encode(initialPassword, true);
+    database.prepare("UPDATE people SET password_hash=? WHERE census_code=? AND password_hash IS NULL")
+      .run(encoded, ADMIN_CODE);
+    database.prepare("INSERT INTO auth_settings VALUES('admin_initialized','1')").run();
+  }
+  const placeholders = [...allowed].map(() => "?").join(",");
+  database.prepare(`DELETE FROM sessions WHERE person_id IN (
+    SELECT id FROM people WHERE census_code NOT IN (${placeholders})
+  )`).run(...allowed);
+  const byCode = (censusCode) => database.prepare("SELECT * FROM people WHERE census_code=?").get(censusCode);
+  const person = (row) => ({
+    id: row.id, code: row.census_code, name: row.name, kind: row.kind,
+    admin: row.census_code === ADMIN_CODE, hasPassword: !!row.password_hash,
+    loginEnabled: row.kind === "capo" && allowed.has(row.census_code),
+  });
+  const user = (sessionId) => {
+    const row = database.prepare(`SELECT people.* FROM people JOIN sessions ON people.id=sessions.person_id
+      WHERE sessions.id=? AND expires>? AND kind='capo' AND password_hash IS NOT NULL`).get(sessionId, Date.now());
+    return row && allowed.has(row.census_code) ? person(row) : null;
+  };
+  const enabled = (censusCode) => {
+    const row = byCode(censusCode);
+    if (!allowed.has(censusCode) || row?.kind !== "capo")
+      fail(403, "Codice non abilitato. Contatta l'amministratore del sito");
+    if (censusCode === ADMIN_CODE && !row.password_hash &&
+        !database.prepare("SELECT 1 FROM auth_settings WHERE name='admin_initialized'").get())
+      fail(403, "Configura la password iniziale amministratore in .env");
+    return row;
+  };
+  const requireAdmin = (sessionId) => {
+    const current = user(sessionId);
+    if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+    if (!current.admin) fail(403, "Operazione riservata all'amministratore");
+  };
+  const validatePerson = (value) => {
+    if (typeof value?.name !== "string" || !value.name.trim() || value.name.trim().length > 120 ||
+        !["capo", "ragazzo"].includes(value.kind)) fail(400, "Nome o tipologia non validi");
+  };
+  return {
+    user,
+    async handle(route, request, response, { body, send, cookie, sessionId, rateLimit, clearLimit, ip, seconds }) {
+      const method = request.method;
+      if (route === "/api/auth/me" && method === "GET") {
+        const current = user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        send(response, 200, { user: current });
+        return true;
+      }
+      if (route === "/api/auth/status" && method === "POST") {
+        rateLimit("status:" + ip, 30, 60000);
+        const current = enabled(code((await body(request, 4096))?.code));
+        send(response, 200, { firstAccess: !current.password_hash });
+        return true;
+      }
+      if (route === "/api/auth/login" && method === "POST") {
+        rateLimit("login-ip:" + ip, 30, 900000);
+        const value = await body(request, 4096);
+        const censusCode = code(value?.code);
+        rateLimit("login-code:" + censusCode, 5, 900000);
+        let current = enabled(censusCode);
+        if (!current.password_hash) {
+          if (value.password !== value.confirmation) fail(400, "Le password non coincidono");
+          const encoded = await encode(value.password);
+          database.prepare("UPDATE people SET password_hash=? WHERE id=? AND kind='capo' AND password_hash IS NULL")
+            .run(encoded, current.id);
+          current = enabled(censusCode);
+        }
+        if (!await matches(value.password, current.password_hash)) fail(401, "Codice censimento o password non validi");
+        const latest = enabled(censusCode);
+        if (latest.password_hash !== current.password_hash) fail(409, "Credenziali cambiate: riprova l'accesso");
+        clearLimit("login-code:" + censusCode);
+        const token = crypto.randomBytes(32).toString("hex");
+        database.prepare("INSERT INTO sessions(id,expires,person_id) VALUES(?,?,?)")
+          .run(hash(token), Date.now() + seconds * 1000, current.id);
+        send(response, 200, { user: person(current) }, undefined, { "Set-Cookie": cookie(token, seconds) });
+        return true;
+      }
+      if (!route.startsWith("/api/people")) return false;
+      requireAdmin(sessionId(request));
+      if (route === "/api/people" && method === "GET") {
+        send(response, 200, { people: database.prepare("SELECT * FROM people ORDER BY name,census_code").all().map(person) });
+        return true;
+      }
+      if (route === "/api/people" && method === "POST") {
+        const value = await body(request, 4096);
+        validatePerson(value);
+        const censusCode = code(value.code);
+        if (byCode(censusCode)) fail(409, "Il codice censimento esiste gia'");
+        database.prepare("INSERT INTO people(census_code,name,kind) VALUES(?,?,?)")
+          .run(censusCode, value.name.trim(), value.kind);
+        send(response, 201, { ok: true });
+        return true;
+      }
+      const match = /^\/api\/people\/(\d+)(\/password)?$/.exec(route);
+      if (!match) fail(404, "Persona non trovata");
+      const current = database.prepare("SELECT * FROM people WHERE id=?").get(Number(match[1]));
+      if (!current) fail(404, "Persona non trovata");
+      if (match[2] && method === "DELETE") {
+        if (current.kind !== "capo") fail(400, "I ragazzi non hanno password");
+        database.prepare("UPDATE people SET password_hash=NULL WHERE id=?").run(current.id);
+        database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
+      } else if (!match[2] && method === "PATCH") {
+        const value = await body(request, 4096);
+        validatePerson(value);
+        if (current.census_code === ADMIN_CODE && value.kind !== "capo")
+          fail(400, "L'amministratore deve restare capo");
+        database.prepare(`UPDATE people SET name=?,kind=?,
+          password_hash=CASE WHEN ?='ragazzo' THEN NULL ELSE password_hash END WHERE id=?`)
+          .run(value.name.trim(), value.kind, value.kind, current.id);
+        if (current.kind !== value.kind) database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
+      } else fail(405, "Metodo non consentito");
+      send(response, 200, { ok: true });
+      return true;
+    },
+  };
+}
+
+module.exports = { createPeople };

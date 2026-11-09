@@ -74,9 +74,9 @@
     accedi($("#chiave").value.trim());
     $("#chiave").value = "";
   };
-  $("#esci").onclick = () => {
-    A.esci();
-    location.replace("../");
+  $("#esci").onclick = async () => {
+    try { await A.esci(); location.replace("../"); }
+    catch (e) { alert(e.message); }
   };
 
   /* ---------- presentazione ---------- */

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../assets/css/theme.css" />
     <link rel="stylesheet" href="../assets/css/home.css" />
     <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
+    <link rel="stylesheet" href="../assets/css/nas.css" />
   </head>
   <body class="reserved-page">
     <header class="reserved-header">
@@ -24,11 +25,26 @@
         <p>Uno spazio per preparare l’assemblea, condividere i documenti e accompagnare il gruppo nel nuovo anno.</p>
       </div>
       <section id="login">
-        <p>Inserisci la chiave per accedere agli strumenti di gestione.</p>
+        <p id="legacy-login-hint">Inserisci la chiave per accedere agli strumenti di gestione.</p>
         <form id="login-form" class="accesso">
           <label for="chiave">Chiave di accesso</label>
           <input id="chiave" type="password" autocomplete="current-password" required />
           <button class="button" type="submit">Accedi</button>
+        </form>
+        <form id="nas-login-form" class="accesso" hidden>
+          <label for="census-code">Codice censimento</label>
+          <input id="census-code" type="text" inputmode="numeric" autocomplete="username" maxlength="8" placeholder="123 8005" required>
+          <div id="password-fields" hidden>
+            <label for="nas-password">Password</label>
+            <input id="nas-password" type="password" autocomplete="current-password" maxlength="128" required disabled>
+            <div id="confirmation-field" hidden>
+              <label for="nas-confirmation">Ripeti password</label>
+              <input id="nas-confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="128" disabled>
+              <p>Al primo accesso scegli una password di almeno 12 caratteri.</p>
+            </div>
+          </div>
+          <button class="button" type="submit">Continua</button>
+          <p>Password dimenticata? Contatta l’amministratore del sito.</p>
         </form>
       </section>
       <p id="accesso-stato" role="status" aria-live="polite"></p>
@@ -74,6 +90,11 @@
           </dl>
         </section>
         <div class="dashboard-overview">
+          <article id="people-tool" class="dashboard-tool" hidden>
+            <h3>Persone e accessi</h3>
+            <p>Gestisci ragazzi e capi e cancella le password per consentirne il reset.</p>
+            <a class="button button-primary" href="persone.html">Gestisci le persone →</a>
+          </article>
           <article class="assembly-overview">
             <p class="eyebrow">Assemblea configurata</p>
             <h3 id="dashboard-assembly-title">Caricamento…</h3>
