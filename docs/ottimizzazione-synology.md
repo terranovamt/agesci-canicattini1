@@ -84,9 +84,13 @@ Compila quindi `NAS_ADMIN_PASSWORD` prima dell'aggiornamento. Per cambiarla,
 modifica lo stesso valore: l'updater riavvia il progetto e applica la nuova
 password. Ogni riavvio revoca le sessioni admin; quelle degli altri capi
 restano valide. Il reset nell'elenco persone riguarda soltanto gli altri capi.
-I codici censimento sono sette cifre senza spazi. Le nuove password (compresa
+I codici censimento sono da 5 a 9 cifre senza spazi. Le nuove password (compresa
 quella admin) richiedono 8-128 caratteri, maiuscola, minuscola, numero e
 carattere speciale, come `@`; le password personali gia' impostate restano valide.
+Il codice amministratore e' `23816938` e usa `NAS_ADMIN_PASSWORD`. Il precedente
+codice amministratore `1238005` non ha piu' privilegi: aggiungerlo a
+`NAS_CAPO_CODES` per abilitarlo come capo e impostare una password personale al
+primo accesso. Se e' gia' nell'elenco persone, non va aggiunto una seconda volta.
 
 1. In VS Code verificare che il branch selezionato sia **NAS**, non `main`.
 2. Aprire **Controllo codice sorgente**, rivedere i file modificati e preparare
@@ -547,7 +551,7 @@ un backup e manutenzione del database, non cancellando l'intero sito.
 | `COMPOSE_PROFILES=tunnel`          | Profilo alternativo conservato, non usato dal percorso DDNS             |
 | `NAS_DATA_DIR`                     | Percorso assoluto dei dati persistenti sul volume scelto                |
 | `NAS_ADMIN_PASSWORD`               | Password admin obbligatoria da `nas.env` o `.env`; sempre verificata dalla configurazione, nessun hash persistito |
-| `NAS_CAPO_CODES`                   | Codici censimento capo abilitati, separati da virgole; `1238005` e' sempre admin |
+| `NAS_CAPO_CODES`                   | Codici censimento capo abilitati, separati da virgole; `23816938` e' sempre admin |
 | `NAS_TUNNEL_TOKEN_FILE`            | Solo per il profilo alternativo; non serve con DDNS                     |
 | `NAS_TELEMETRY_ENABLED=true/false` | Visite, schede e segnalazioni browser                                   |
 | `NAS_HOST_PROC=/host/proc`         | CPU/RAM dell'intero NAS tramite i due file readonly                     |

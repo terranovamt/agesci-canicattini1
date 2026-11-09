@@ -33,7 +33,7 @@ async function start(dataDir, options = {}) {
     request,
     origin,
     async login() {
-      const response = await request("/api/auth/login", "POST", { code: "1238005", password: options.password ?? password });
+      const response = await request("/api/auth/login", "POST", { code: "23816938", password: options.password ?? password });
       assert.equal(response.status, 200);
       assert.match(response.headers.get("set-cookie"), /HttpOnly; SameSite=Strict/);
     },
@@ -71,7 +71,7 @@ test("NAS subpath scopes APIs and session cookies without exposing root routes",
     assert.equal((await app.request("/api/session")).status, 404);
     assert.equal((await app.request(basePath + "-other/api/session")).status, 404);
     assert.equal((await app.request(basePath + "/api/metrics")).status, 401);
-    const login = await app.request(basePath + "/api/auth/login", "POST", { code: "1238005", password });
+    const login = await app.request(basePath + "/api/auth/login", "POST", { code: "23816938", password });
     assert.equal(login.status, 200);
     assert.match(login.headers.get("set-cookie"), /Path=\/agesci-canicattini1\/;/);
     assert.equal((await (await app.request(basePath + "/api/session")).json()).authenticated, true);
@@ -138,7 +138,7 @@ test("NAS requires session and same-origin writes, hides secrets and preserves s
     }
     const update = { stato: { pos: 1001, max: 1001 }, k: password };
     assert.equal((await app.request("/api/state/live.json", "PUT", update)).status, 401);
-    assert.equal((await app.request("/api/auth/login", "POST", { code: "1238005", password: "wrong-password" })).status, 401);
+    assert.equal((await app.request("/api/auth/login", "POST", { code: "23816938", password: "wrong-password" })).status, 401);
     await app.login();
     assert.equal((await app.request("/api/state/live.json", "PUT", update, true, "https://evil.test")).status, 403);
     assert.equal((await app.request("/api/state/live.json", "PUT", update)).status, 200);

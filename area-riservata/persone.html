@@ -22,7 +22,7 @@
     <section id="people-app" hidden>
       <h2>Aggiungi una persona</h2>
       <form id="person-form" class="people-form">
-        <label>Codice censimento<input name="code" inputmode="numeric" maxlength="7" pattern="[0-9]{7}" title="Sette cifre, senza spazi" required placeholder="7654321"></label>
+        <label>Codice censimento<input name="code" inputmode="numeric" minlength="5" maxlength="9" pattern="[0-9]{5,9}" title="Da 5 a 9 cifre, senza spazi" required placeholder="7654321"></label>
         <label>Nome e cognome<input name="name" maxlength="120" required autocomplete="off"></label>
         <label>Tipologia<select name="kind"><option value="ragazzo">Ragazzo</option><option value="capo">Capo</option></select></label>
         <button class="button button-primary" type="submit">Aggiungi persona</button>

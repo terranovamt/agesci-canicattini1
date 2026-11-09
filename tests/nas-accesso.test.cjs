@@ -13,18 +13,18 @@ test('NAS authentication uses the server cookie, never persists passwords or a s
     localStorage: { removeItem: k => removed.push(k) },
     fetch: async (url, options) => {
       requests.push([url, options]);
-      return { ok: true, json: async () => ({ user: { admin: true, code: '1238005' } }) };
+      return { ok: true, json: async () => ({ user: { admin: true, code: '23816938' } }) };
     }
   };
   vm.runInNewContext(source('shared/accesso.js'), c);
   assert.equal(c.window.ACCESSO.verificata(), false);
-  await c.window.ACCESSO.entra('A-long-password1!', '1238005', 'A-long-password1!');
+  await c.window.ACCESSO.entra('A-long-password1!', '23816938', 'A-long-password1!');
   assert.equal(c.window.ACCESSO.verificata(), true);
   assert.equal(c.window.ACCESSO.chiave(), 'nas-session');
   assert.equal(requests[0][0], '/api/auth/login');
   assert.equal(requests[0][1].credentials, 'same-origin');
   assert.deepEqual(JSON.parse(requests[0][1].body), {
-    password: 'A-long-password1!', code: '1238005', confirmation: 'A-long-password1!'
+    password: 'A-long-password1!', code: '23816938', confirmation: 'A-long-password1!'
   });
   await c.window.ACCESSO.esci();
   assert.equal(c.window.ACCESSO.verificata(), false);
@@ -131,13 +131,14 @@ test('NAS returning access shows only password; changing code clears both creden
   assert.equal(t.calls[1][0], 'auth/status');
 });
 
-test('NAS census inputs require seven digits without disclosing the admin code', () => {
+test('NAS census inputs accept five to nine digits without disclosing the admin code', () => {
   for (const file of ['index.html', 'persone.html']) {
     const html = fs.readFileSync(path.join(__dirname, '../area-riservata/', file), 'utf8');
     const input = html.match(/<input[^>]+(?:id="census-code"|name="code")[^>]*>/)[0];
-    assert.match(input, /maxlength="7"/);
-    assert.match(input, /pattern="\[0-9\]\{7\}"/);
+    assert.match(input, /minlength="5"/);
+    assert.match(input, /maxlength="9"/);
+    assert.match(input, /pattern="\[0-9\]\{5,9\}"/);
     assert.match(input, /placeholder="7654321"/);
-    assert.doesNotMatch(input, /1238005|123 8005/);
+    assert.doesNotMatch(input, /23816938/);
   }
 });

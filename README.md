@@ -14,8 +14,11 @@ la configurazione esistente `nas.env`, senza sostituire origine o percorso dati.
 Gli account personali (ragazzi/capi) e gli hash scrypt sono nel database SQLite
 esistente, tranne la password admin: viene verificata da `NAS_ADMIN_PASSWORD`
 in `nas.env` (o `.env`), senza conservarne l'hash nel database.
-Solo i capi abilitati possono accedere; solo `1238005` gestisce persone
+Solo i capi abilitati possono accedere; solo `23816938` gestisce persone
 e reset delle password. La navbar pubblica resta bianca e quella riservata viola.
+Il precedente codice amministratore `1238005` diventa un capo normale:
+per abilitarlo aggiungilo a `NAS_CAPO_CODES` e imposta la sua password personale
+al primo accesso. L'account amministratore usa sempre `NAS_ADMIN_PASSWORD`.
 
 Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
 diretta, contenuti o PDF. Setup e gestione documenti salvano direttamente sul
@@ -99,7 +102,7 @@ Il QR fornito e ottimizzato in `assets/img/qr-live.png` punta alla home AGESCI:
 48.461 byte, circa il 92% in meno del sorgente SVG, decodificato a quattro dimensioni.
 
 La home propone **Area riservata**: il backend NAS verifica codice censimento
-(sette cifre senza spazi) e password e crea una sessione HttpOnly/Secure di otto ore.
+(da 5 a 9 cifre senza spazi) e password e crea una sessione HttpOnly/Secure di otto ore.
 Le nuove password richiedono 8-128 caratteri, maiuscola, minuscola, numero e
 carattere speciale (es. `@`). Il browser non
 conserva la password; **Esci** revoca la sessione. Il server protegge le scritture
