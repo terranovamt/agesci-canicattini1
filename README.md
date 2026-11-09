@@ -213,14 +213,14 @@ I feed e i nomi sono configurati in `calendars/sources.json`. Il browser legge
 soltanto `calendars/events.json`, evitando CORS, token e API key nel sito.
 Sul NAS una seconda attivita' DSM esegue `sync-calendars.sh` ogni ora usando
 un container di manutenzione e uno snapshot persistente. Non richiede GitHub
-Actions o commit dello snapshot. Il workflow esistente riguarda soltanto `main`.
+Actions o commit dello snapshot.
 
 La sincronizzazione considera circa un anno passato e due futuri, espande
 ricorrenze, esclusioni, eccezioni e cancellazioni, gestisce eventi giornalieri,
 durate e fusi orari. Pubblica solo titolo, luogo, date e calendario, non
 organizzatori, invitati o descrizioni. Se un feed fallisce, conserva gli ultimi
-eventi noti, li segnala come non aggiornati e fa fallire il workflow dopo aver
-pubblicato lo stato d'errore. La home segnala anche snapshot vecchi oltre tre ore
+eventi noti e li segnala come non aggiornati; la sincronizzazione sul NAS è
+eseguita dall'attività DSM. La home segnala anche snapshot vecchi oltre tre ore
 e il periodo coperto; un errore non viene presentato come assenza di eventi.
 
 I due pacchetti Python in `tools/calendar-requirements.txt` sono usati

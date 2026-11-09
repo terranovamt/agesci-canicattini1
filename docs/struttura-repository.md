@@ -61,8 +61,7 @@ pubblicazione GitHub Pages restano separati.
 ├── tests/                         Test automatici Node e Python
 ├── tools/                         Preview locale e sincronizzatore dei calendari
 ├── .github/
-│   ├── workflows/                 Automazioni GitHub Actions
-│   └── prompts/                   Istruzioni, cataloghi e strumenti degli agenti
+│   └── prompts/                    Cataloghi e strumenti per lo sviluppo
 ├── README.md                      Ingresso per chi lavora al repository
 └── .gitignore, .dockerignore, .nojekyll  Configurazione Git, build e sito statico
 ```
