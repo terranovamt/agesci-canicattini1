@@ -90,6 +90,14 @@ test("NAS gateway serves pages, config, QR and PDFs only under the site prefix",
   const app = await startNasDev({ basePath: "/agesci-canicattini1" });
   try {
     const root = app.origin + "/agesci-canicattini1";
+    const home = await (await fetch(root + "/")).text();
+    assert.match(home, /class="brand" href="\.\/"/);
+    assert.match(home, /<footer class="site-footer">/);
+    assert.doesNotMatch(home, /<!-- include:/);
+    const reserved = await (await fetch(root + "/area-riservata/")).text();
+    assert.match(reserved, /class="brand" href="\.\.\/"/);
+    assert.match(reserved, /href="#reserved-content"/);
+    assert.doesNotMatch(reserved, /<!-- include:/);
     assert.equal((await fetch(app.origin + "/index.html")).status, 404);
     assert.equal((await fetch(app.origin + "/api/session")).status, 404);
     const redirect = await fetch(root, { redirect: "manual" });

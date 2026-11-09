@@ -135,6 +135,16 @@ calendari e dati modificabili continuano a essere letti dal NAS; la build non
 sovrascrive SQLite o i PDF caricati. Non viene generata una copia statica dei
 dati persistenti che rischierebbe di diventare obsoleta.
 
+Logo/link home, footer e pulsante del menu sono definiti una sola volta in
+`tools/partials/`. Le pagine li richiamano con `<!-- include:brand -->`,
+`<!-- include:footer -->` e `<!-- include:menu-toggle -->`.
+Il footer accetta `caption` e `top`, per esempio
+`<!-- include:footer {"top":"reserved-content"} -->`; i percorsi del logo e della
+home sono calcolati dalla posizione della pagina. Build, preview e anteprima NAS
+espandono gli stessi frammenti. Per pubblicare usare l'HTML generato in `dist/`,
+non i sorgenti con direttive; i frammenti non vengono copiati nel sito pubblico.
+I menu e le barre operative specifici delle singole sezioni restano distinti.
+
 - Skeleton durante il caricamento di documenti e calendari, con `aria-busy`
   e animazioni disattivate quando e' richiesta una riduzione del movimento.
 - Salvataggi PDF ottimistici: lista aggiornata subito, conferma dal server e

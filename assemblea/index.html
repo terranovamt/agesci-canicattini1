@@ -16,20 +16,8 @@
   <body>
     <a class="skip-link" href="#contenuto">Vai al contenuto</a>
     <header class="site-header">
-      <a class="brand" href="../" aria-label="AGESCI Canicattini 1, home">
-        <img src="../assets/img/logo-grande.webp" alt=""  decoding="async" width="460" height="526"/>
-        <span><b>AGESCI</b><small>Canicattini 1</small></span>
-      </a>
-      <button
-        id="menu-toggle"
-        class="menu-toggle"
-        type="button"
-        aria-label="Apri il menu"
-        aria-controls="main-nav"
-        aria-expanded="false"
-      >
-        <span></span><span></span><span></span>
-      </button>
+      <!-- include:brand -->
+      <!-- include:menu-toggle -->
       <nav id="main-nav" aria-label="Navigazione principale">
         <a href="../peg/">Il PEG</a>
         <a href="../#eventi">Eventi</a>
@@ -123,11 +111,7 @@
         </noscript>
       </section>
     </main>
-    <footer class="site-footer">
-      <a class="footer-brand" href="../">AGESCI <b>Canicattini 1</b></a>
-      <span>Documenti pubblici · Assemblea di gruppo</span>
-      <a href="#contenuto">Torna all’inizio ↑</a>
-    </footer>
+    <!-- include:footer {"caption":"Documenti pubblici · Assemblea di gruppo"} -->
     <script src="../assets/js/site-menu.js" defer></script>
     <script src="../assets/js/nas-telemetry.js" defer></script>
     <script src="../assets/js/documents-model.js" defer></script>

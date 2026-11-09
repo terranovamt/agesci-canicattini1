@@ -3,9 +3,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
+const { renderHtml } = require("../tools/site-layout.cjs");
 
 const root = path.join(__dirname, "..");
-const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const read = (file) => {
+  const source = fs.readFileSync(path.join(root, file), "utf8");
+  return file.endsWith(".html") ? renderHtml(source, file) : source;
+};
 const files = (directory) =>
   fs
     .readdirSync(path.join(root, directory), { withFileTypes: true })
@@ -36,6 +40,23 @@ const retiredPages = [
   "Assemblea-di-Gruppo/guida.html",
 ];
 
+test("shared HTML fragments render relative links, escape parameters and reject invalid includes", () => {
+  for (const [page, prefix] of [["index.html", ""], ["area-riservata/index.html", "../"], ["peg/edizioni/2026-2028.html", "../../"]]) {
+    const html = renderHtml('<!-- include:brand --><!-- include:footer --><!-- include:menu-toggle -->', page);
+    assert.ok(html.includes('href="' + (prefix || "./") + '"'));
+    assert.ok(html.includes('src="' + prefix + 'assets/img/logo-grande.webp"'));
+    assert.match(html, /id="menu-toggle"/);
+    assert.doesNotMatch(html, /<!-- include:|\{\{/);
+  }
+  const escaped = renderHtml('<!-- include:footer {"caption":"<img> & \\"x\\"","top":"x\\" onclick=\\"bad"} -->', "index.html");
+  assert.match(escaped, /&lt;img&gt; &amp; &quot;x&quot;/);
+  assert.match(escaped, /href="#x&quot; onclick=&quot;bad"/);
+  for (const source of ['<!-- include:unknown -->', '<!-- include:footer {"unknown":"x"} -->',
+    '<!-- include:footer {"caption":null} -->', '<!-- include:brand', '<!-- include:footer {bad} -->'])
+    assert.throws(() => renderHtml(source, "index.html"));
+  assert.throws(() => renderHtml('<!-- include:brand -->', "../index.html"), /Percorso pagina/);
+});
+
 test("static build publishes only site files and refuses to overwrite source directories", () => {
   const { buildSite } = require("../tools/build-site.cjs");
   const directory = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "agesci-static-"));
@@ -54,6 +75,9 @@ test("static build publishes only site files and refuses to overwrite source dir
       "area-riservata/statistiche.html",
     ])
       assert.ok(fs.existsSync(path.join(directory, file)), file);
+    assert.match(home, /<footer class="site-footer">/);
+    assert.match(home, /class="brand" href="\.\/"/);
+    assert.doesNotMatch(home, /<!-- include:/);
     for (const file of ["server", "tools", ".git", "README.md", "nas.env"])
       assert.equal(fs.existsSync(path.join(directory, file)), false, file);
     assert.throws(() => buildSite(root), /sovrascrivere/);

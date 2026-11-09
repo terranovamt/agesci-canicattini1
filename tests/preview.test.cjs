@@ -24,6 +24,9 @@ test("local preview serves the redesigned home with local access and hot reload"
     const response = await fetch(origin);
     const html = await response.text();
     assert.equal(response.status, 200);
+    assert.match(html, /class="brand" href="\.\/"/);
+    assert.match(html, /<footer class="site-footer">/);
+    assert.doesNotMatch(html, /<!-- include:/);
     assert.doesNotMatch(html, /La Zona e i Settori/);
     assert.match(html, /id="eventi"/);
     assert.match(html, /id="documenti"/);
@@ -43,6 +46,9 @@ test("local preview serves the redesigned home with local access and hot reload"
       assert.equal((await fetch(origin + resource)).status, 200, resource);
     }
     const area = await (await fetch(origin + "/area-riservata/")).text();
+    assert.match(area, /class="brand" href="\.\.\/"/);
+    assert.match(area, /href="#reserved-content"/);
+    assert.doesNotMatch(area, /<!-- include:/);
     assert.match(area, /window\.ACCESSO=\{chiave:\(\)=>"preview-locale",verificata:\(\)=>true/);
     const doc = await fetch(origin + "/docs/assemblea.md");
     assert.match(await doc.text(), /assemblea/i);

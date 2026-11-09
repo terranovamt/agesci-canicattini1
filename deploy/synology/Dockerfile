@@ -10,6 +10,8 @@ COPY area-riservata/ area-riservata/
 COPY assemblea/ assemblea/
 COPY peg/ peg/
 COPY tools/build-site.cjs tools/build-site.cjs
+COPY tools/site-layout.cjs tools/site-layout.cjs
+COPY tools/partials/ tools/partials/
 RUN node tools/build-site.cjs /site
 
 FROM nginxinc/nginx-unprivileged:1.28-alpine

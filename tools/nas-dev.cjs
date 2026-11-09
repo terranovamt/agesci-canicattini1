@@ -6,6 +6,7 @@ const os = require("node:os");
 const http = require("node:http");
 const { once } = require("node:events");
 const { createNasServer } = require("../server/nas.cjs");
+const { renderHtml } = require("./site-layout.cjs");
 
 const root = path.resolve(__dirname, "..");
 const password = "Nas-local-test-password1-only!";
@@ -126,7 +127,10 @@ async function startNasDev({ basePath = "" } = {}) {
         }
         file = path.join(file, "index.html");
       }
-      const content = await fs.promises.readFile(file);
+      const source = await fs.promises.readFile(file);
+      const content = path.extname(file) === ".html"
+        ? Buffer.from(renderHtml(source.toString("utf8"), path.relative(root, file).split(path.sep).join("/")))
+        : source;
       response.writeHead(200, {
         "Content-Type": mime[path.extname(file)] || "application/octet-stream",
         "Cache-Control": "no-store",

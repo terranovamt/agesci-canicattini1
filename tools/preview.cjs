@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 const documents = require("../assets/js/documents-model.js");
+const { renderHtml } = require("./site-layout.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const IGNORED_DIRS = new Set([".git", ".github", "node_modules", ".venv-calendar", "__pycache__"]);
@@ -315,7 +316,9 @@ function createPreviewServer({ watch = true } = {}) {
       const content = await fs.promises.readFile(target);
       const extension = path.extname(target).toLowerCase();
       let output = content;
-      if (extension === ".html") output = Buffer.from(transformHtml(content.toString("utf8")));
+      if (extension === ".html") output = Buffer.from(transformHtml(
+        renderHtml(content.toString("utf8"), path.relative(ROOT, target).split(path.sep).join("/")),
+      ));
       else if (target === path.join(ROOT, "config", "site.js")) {
         output = Buffer.from(transformConfig(content.toString("utf8")));
       }

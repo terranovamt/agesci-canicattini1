@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { renderHtml } = require("./site-layout.cjs");
 
 const siteRoot = path.resolve(__dirname, "..");
 const publicEntries = [
@@ -40,7 +41,7 @@ function buildSite(destination = path.join(siteRoot, "dist")) {
       }
       if (!file.endsWith(".html")) continue;
       const relative = path.relative(output, file).split(path.sep).join("/");
-      const html = fs.readFileSync(file, "utf8");
+      const html = renderHtml(fs.readFileSync(file, "utf8"), relative);
       const generated = html.replace(
         /(<(?:script|link)\b[^>]*?\b(?:src|href)=)(["'])([^"']+)\2/g,
         (match, tag, quote, reference) => {

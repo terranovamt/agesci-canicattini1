@@ -11,7 +11,11 @@ const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
 
 test('reserved footers match the public footer and brand links are white on purple navigation', { skip: !chrome }, () => {
   const site = path.join(__dirname, '..');
-  const read = file => fs.readFileSync(path.join(site, file), 'utf8');
+  const { renderHtml } = require('../tools/site-layout.cjs');
+  const read = file => {
+    const source = fs.readFileSync(path.join(site, file), 'utf8');
+    return file.endsWith('.html') ? renderHtml(source, file) : source;
+  };
   const footer = file => read(file).match(/<footer class="site-footer">[\s\S]*?<\/footer>/)[0];
   const normalize = markup => markup.replace(/href="[^"]+"/g, 'href=""').replace(/\s+/g, ' ');
   const publicFooter = footer('index.html');
