@@ -59,6 +59,29 @@ avviato, non con una porta vuota e non soltanto dalla stessa Wi-Fi.
 
 ## Passo zero: pubblicare dal PC
 
+**Se il NAS e' gia' installato e l'attivita' DSM e' attiva, non ripetere
+l'installazione:** basta un commit/push su `NAS`. L'updater conserva progetto,
+volume, proxy e calendari. I passaggi di preparazione seguenti servono solo
+alla prima installazione.
+
+Per gli account personali, puoi compilare `/volume1/docker/agesci-nas/.env`
+(o `NAS_ROOT/.env`, se usi una cartella diversa):
+
+```dotenv
+NAS_ADMIN_PASSWORD='password-iniziale-di-almeno-12-caratteri'
+NAS_CAPO_CODES=codice1,codice2
+```
+
+Sostituisci i segnaposto con i codici capo reali, separati da virgole.
+`nas.env` resta la configurazione base: `.env` la integra e ne puo' sovrascrivere
+i valori, senza richiedere un nuovo progetto. Le modifiche ai due file vengono
+rilevate dall'updater anche quando il commit non cambia e applicate con un
+riavvio del progetto esistente. Non committare questi file o le credenziali.
+La password amministratore e' importata nel database come hash una sola volta;
+nelle installazioni precedenti, il file secret esistente puo' inizializzarla
+senza azioni aggiuntive. Dopo l'inizializzazione usa il reset nell'elenco
+persone: cambiare `NAS_ADMIN_PASSWORD` non sovrascrive le password personali.
+
 1. In VS Code verificare che il branch selezionato sia **NAS**, non `main`.
 2. Aprire **Controllo codice sorgente**, rivedere i file modificati e preparare
    solo quelli dell'implementazione NAS. Non includere password, token, file

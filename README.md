@@ -5,9 +5,10 @@ spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
 ## Branch NAS
 
-**Installazione senza SSH/Git sul NAS:** scarica il pacchetto Container Manager
-e segui [docs/synology.md](docs/synology.md). Compila solo password iniziale
-admin e codici capo in `.env`; indirizzo e sottocartella sono gia' configurati.
+**NAS gia' installato:** basta pubblicare un commit sul branch `NAS`; l'attivita'
+DSM aggiorna e riavvia il progetto esistente, senza ZIP o reinstallazione.
+Per le credenziali puoi aggiungere `.env` nella cartella `NAS_ROOT`: integra
+la configurazione esistente `nas.env`, senza sostituire origine o percorso dati.
 Gli account personali (ragazzi/capi) e gli hash scrypt sono nel database SQLite
 esistente. Solo i capi abilitati possono accedere; solo `1238005` gestisce persone
 e reset delle password. La navbar pubblica resta bianca e quella riservata viola.

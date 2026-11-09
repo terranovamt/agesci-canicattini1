@@ -26,6 +26,13 @@ if [ ! -f "$NAS_ROOT/nas.env" ]; then
     echo "Configurare $NAS_ROOT/nas.env prima di avviare il deployment." >&2
     exit 1
 fi
+ENV_FILES=("$NAS_ROOT/nas.env")
+ENV_ARGS=(--env-file "$NAS_ROOT/nas.env")
+if [ -f "$NAS_ROOT/.env" ]; then
+    ENV_FILES+=("$NAS_ROOT/.env")
+    ENV_ARGS+=(--env-file "$NAS_ROOT/.env")
+fi
+configuration="$(sha256sum "${ENV_FILES[@]}" | sha256sum | cut -d ' ' -f 1)"
 if [ ! -d "$NAS_ROOT/repository.git" ]; then
     git clone --bare --single-branch --branch "$BRANCH" "$REPOSITORY" "$NAS_ROOT/repository.git"
 fi
@@ -33,7 +40,8 @@ git --git-dir="$NAS_ROOT/repository.git" fetch --no-tags origin "+refs/heads/$BR
 revision="$(git --git-dir="$NAS_ROOT/repository.git" rev-parse "refs/heads/$BRANCH")"
 export NAS_RELEASE_REVISION="$revision"
 previous="$(cat "$NAS_ROOT/current-revision" 2>/dev/null || true)"
-if [ "$revision" = "$previous" ]; then
+previous_configuration="$(cat "$NAS_ROOT/current-configuration" 2>/dev/null || true)"
+if [ "$revision" = "$previous" ] && [ "$configuration" = "$previous_configuration" ]; then
     echo "NAS gia' aggiornato a $revision."
     exit 0
 fi
@@ -46,7 +54,7 @@ if [ ! -d "$release" ]; then
 fi
 
 compose() {
-    docker compose --project-name agesci-nas --env-file "$NAS_ROOT/nas.env" \
+    docker compose --project-name agesci-nas "${ENV_ARGS[@]}" \
         -f "$1/deploy/synology/compose.yaml" "${@:2}"
 }
 
@@ -57,6 +65,8 @@ compose "$release" --profile maintenance build calendar-sync
 if compose "$release" up -d --wait --force-recreate --wait-timeout 120; then
     printf '%s\n' "$revision" > "$NAS_ROOT/current-revision.tmp"
     mv "$NAS_ROOT/current-revision.tmp" "$NAS_ROOT/current-revision"
+    printf '%s\n' "$configuration" > "$NAS_ROOT/current-configuration.tmp"
+    mv "$NAS_ROOT/current-configuration.tmp" "$NAS_ROOT/current-configuration"
     cp "$release/deploy/synology/update.sh" "$NAS_ROOT/update.sh.tmp"
     mv "$NAS_ROOT/update.sh.tmp" "$NAS_ROOT/update.sh"
     cp "$release/deploy/synology/sync-calendars.sh" "$NAS_ROOT/sync-calendars.sh.tmp"
