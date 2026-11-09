@@ -267,6 +267,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   Non ripristinare implicitamente un gruppo da una modifica educativa.
   `validateAssignment` si applica a schede, macro, board e rientro tramite
   passaggio; capo/vice singoli, transazioni con rollback integrale.
+  Il modulo deve essere incluso in `server/Dockerfile`: i test Synology
+  controllano anche le dipendenze locali transitive di `server/nas.cjs`,
+  per evitare immagini compilate correttamente ma non avviabili.
 - L'ambiente L/C e condiviso: Branco/Cerchio, con revisione propria.
   `M.lcMoments` e `M.unitRoles` sono la fonte comune per UI e server.
   Cambio ambiente: mappa i momenti per indice, Cucciolo/Cocci e revisioni

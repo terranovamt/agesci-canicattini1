@@ -91,6 +91,21 @@ test("NAS image copies only public site directories, not development tools or se
   assert.match(dockerfile, /nginx-unprivileged:/);
 });
 
+test("NAS app image includes every local runtime module required by the server", () => {
+  const dockerfile = read("server/Dockerfile");
+  const copied = new Set([...dockerfile.matchAll(/^COPY (\S+) \/app\/\S+$/gm)].map(([, source]) => source));
+  const visited = new Set();
+  function check(file) {
+    if (visited.has(file)) return;
+    visited.add(file);
+    assert.ok(copied.has(file), `${file} is missing from server/Dockerfile`);
+    for (const [, dependency] of read(file).matchAll(/require\(["'](\.[^"']+)["']\)/g)) {
+      check(path.posix.normalize(path.posix.join(path.posix.dirname(file), dependency)));
+    }
+  }
+  check("server/nas.cjs");
+});
+
 test("NAS does not publish a public listener or embed a tunnel token", () => {
   const compose = read("deploy/synology/compose.yaml");
   assert.match(compose, /127\.0\.0\.1:8080:8080/);
