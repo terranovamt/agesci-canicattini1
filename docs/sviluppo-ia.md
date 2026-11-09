@@ -169,6 +169,7 @@ univoco e testuale (preservare gli zeri iniziali).
 | `member_censuses` | persona + anno; solo dati ufficiali annuali, non lo storico completo dell'anagrafica |
 | `member_fields` | branca + chiave; definizione testo/data/scelta JSON |
 | `member_values` | persona + branca; valori educativi JSON, preservati nei passaggi |
+| `member_assignment_history` | persona + branca + anno; ultima assegnazione locale e ruolo dell'anno, distinta dai censimenti AGESCI |
 | `member_group` | singolo record; metadati di gruppo e anno piu recente |
 | `member_templates` | titolo e testo del modello interno |
 | `member_transfers` | proposta persona, source/target, proponente, revisione scheda, stato/revisione, revisore; indice univoco parziale per una sola proposta pending |
@@ -230,6 +231,20 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - Non dividere automaticamente nomi completi e non unire responsabili
   con stesso CF. Reimportando, abbinare ciascuna occorrenza una sola volta
   per conservare i nomi/cognomi verificati senza propagare il primo duplicato.
+- La UI genitori usa solo `fullName`, senza i due input `givenName`/`surname`;
+  legge ancora i nomi verificati preesistenti. Il reimport per CF conserva anche
+  il nome completo corretto localmente.
+- `M.pendingCoca` esclude dallo snapshot soci i profili con FoCa valorizzato e
+  CoCa assente/No. Non eliminare profili o cambiare permessi. I consensi elencati
+  in `M.ignoredProfileFields` sono ignorati da import, API profilo e export;
+  eventuali JSON storici non richiedono cancellazioni massive.
+- Nella scheda, assegnazione e ruolo sono un riepilogo in sola lettura;
+  le macro UI li escludono. Gli spostamenti aggiornano lo storico annuale in SQL
+  nella stessa transazione. Usare l'anno massimo importato; checkpoint prima e
+  dopo gli import, senza ricostruire anni precedenti dai censimenti.
+- Il vecchio campo L/C standard `pista` e nascosto dagli input e dalle macro;
+  valori gia salvati restano note consultabili, non cancellarli. Le definizioni
+  personalizzate non devono essere riscritte.
 - `M.defaultFields` contiene cataloghi `multiselect` L/C ed E/G e brevetti
   E/G. I valori sono array di stringhe; `M.selectedChoices` legge i vecchi
   testi separati da punto e virgola. Ricerca, export, stampa, macro,
@@ -258,11 +273,33 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   dei profili, conservando tutto il resto, compresi i percorsi storici.
   Le definizioni vengono adattate nello snapshot, non riscritte a ogni GET.
 - `assets/js/soci-units.js` e il controller della vista, montato da `soci.js`.
+- La board usa righe compatte C/VC, membri senza titoli e nuovi ingressi
+  su fondo distinto. Conservare `data-role`, aria-label completi e bersagli
+  drag/tastiera da almeno 44px anche senza intestazioni per ogni ruolo.
+- `M.patrolCatalog`/`M.patrolIdentity` fissano colori e alias singolare/plurale
+  forniti dal gruppo; API e UI applicano lo stesso catalogo senza cancellare
+  i dati locali precedenti. Gallo ha tre varianti esplicite; non indovinarne una.
+  Guidoni in `assets/img/guidoni/<plurale>.svg`, caricati come immagini esterne
+  con fallback al guidone vuoto. `base.svg` e il modello, `leoni.svg` un esempio.
+  Mai inserire contenuti SVG arbitrari tramite innerHTML.
   Trascinamento e modulo touch/tastiera usano lo stesso endpoint
   `PATCH members/units/assign` con revisione del socio.
   Non nascondere soci con ruolo precedente o gruppo archiviato.
   Guidone e triangolo sono SVG generati, emblemi solo PNG raster salvati nel
   DB (upload browser ridimensionato). Non usare URL esterni o SVG caricati.
+- `GET /api/members/overview` e riservato all'admin e ritorna solo conteggi
+  aggregati (anno massimo importato e numero di record per branca ufficiale),
+  senza PII; la dashboard NAS lo usa per il riepilogo censimenti. Non sostituire
+  questa API con `GET /api/members` nella dashboard.
+- Nel Libro soci le schede branca filtrano a toggle; i chip anno e status
+  riflettono i select esistenti e si combinano. `Ricerca avanzata` raggruppa
+  controlli meno usati. Specialita/brevetti restano multiselect con search in
+  `details` collassato (checkbox, non radio/pulsanti per voce); test UX coprono
+  preview scelte, ricerca e viewport mobile.
+- La dashboard Strumenti mostra `Attività e campi` solo come placeholder
+  inerte, senza route o salvataggio: idee future calendario, uscite/campi,
+  partecipanti e promemoria. Nessuna route "Nuova riunione" e presente al
+  momento. La pagina account reale e `area-riservata/persone.html`.
 - `DOCUMENTS_MODEL.preparatorySlots` produce le cinque posizioni
   Convocazione/Regolamento/PEG/Bilancio/Verbale per anno, indipendentemente
   dall'ordine latest della home. `assemblyType` esplicito prevale sul

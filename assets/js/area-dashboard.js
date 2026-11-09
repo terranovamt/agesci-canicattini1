@@ -119,14 +119,50 @@
       $("dashboard-documents-retry").hidden = false;
     }
   }
+  async function groupOverview() {
+    if (!window.NAS?.user?.admin || !window.ACCESSO?.request) return;
+    const panel = $("dashboard-group-overview"), retry = $("dashboard-group-retry");
+    panel.hidden = false;
+    retry.hidden = true;
+    $("dashboard-group-status").textContent = "Caricamento dei censimenti…";
+    $("dashboard-group-counts").replaceChildren();
+    try {
+      const data = await window.ACCESSO.request("members/overview");
+      if (!data || !Array.isArray(data.branches) || !Number.isSafeInteger(data.total) || data.total < 0 ||
+          data.branches.some(item => !Number.isSafeInteger(item.count) || item.count < 0)) {
+        throw new Error("Riepilogo censimenti non valido");
+      }
+      const makeCount = (label, count, className) => {
+        const item = document.createElement("div");
+        if (className) item.className = className;
+        const term = document.createElement("dt"), value = document.createElement("dd");
+        term.textContent = label;
+        value.textContent = count.toLocaleString("it-IT");
+        item.append(term, value);
+        return item;
+      };
+      $("dashboard-group-counts").append(
+        makeCount("Totale censiti", data.total, "group-census-total"),
+        ...data.branches.map(item => makeCount(item.branch, item.count, "group-census-branch")),
+      );
+      $("dashboard-group-status").textContent = data.year
+        ? `Censimenti AGESCI importati · anno ${data.year}. Conteggio per branca di censimento, inclusi gli status importati senza modificarli.`
+        : "Nessun censimento AGESCI importato.";
+    } catch (error) {
+      $("dashboard-group-status").textContent = error.message;
+      retry.hidden = false;
+    }
+  }
   window.AREA_DASHBOARD = {
     load() {
       if (started || !window.ACCESSO.verificata()) return;
       started = true;
       $("dashboard-assembly-retry").onclick = assembly;
       $("dashboard-documents-retry").onclick = documents;
+      $("dashboard-group-retry").onclick = groupOverview;
       assembly();
       documents();
+      groupOverview();
       metrics();
     },
   };

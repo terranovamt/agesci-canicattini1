@@ -10,7 +10,7 @@ const read = file => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
 const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
   spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
 
-test("unit board supports ordered roles, dragging, accessible moves, hide/restore, symbols and LC environments at five widths", { skip: !chrome }, () => {
+test("compact unit board supports fixed colors, ordered rows, dragging, moves and LC environments at five widths", { skip: !chrome }, () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "member-units-browser-"));
   try {
     const snapshot = {
@@ -92,10 +92,19 @@ test("unit board supports ordered roles, dragging, accessible moves, hide/restor
           check(form.elements.color.value === '#ffffff' && form.elements.color.disabled, 'namedColor');
           submit(form); await settle();
           check(!$('unit-dialog').open && $('units-board').querySelector('svg path').getAttribute('stroke') === '#f5cb31', 'triangle');
+          const points = $('units-board').querySelector('svg path').getAttribute('d').match(/[\\d.]+/g).map(Number);
+          const sides = [Math.hypot(points[2] - points[0], points[3] - points[1]),
+            Math.hypot(points[4] - points[2], points[5] - points[3]),
+            Math.hypot(points[0] - points[4], points[1] - points[5])];
+          check(points[1] < points[3] && Math.max(...sides) - Math.min(...sides) < .001, 'equilateral');
           const assignment = $('unit-assignment-form');
           assignment.elements.memberId.value = '1'; assignment.elements.unitId.value = '10'; assignment.elements.unitId.onchange();
           assignment.elements.role.value = 'Cucciolo'; submit(assignment); await settle();
           check(!!document.querySelector('[data-unit-id="10"] [data-role="Cucciolo"] [data-member-id="1"]'), 'accessibleMove');
+          document.querySelector('[data-unit-id="10"] [data-member-id="1"] .unit-move').click();
+          check($('unit-assignment').open && assignment.elements.memberId.value === '1' &&
+            assignment.elements.role.value === 'Cucciolo', 'moveShortcut');
+          $('unit-assignment').open = false;
           check(fits(), 'lcFits');
           $('lc-environment-form').elements.environment.value = 'Cerchio';
           submit($('lc-environment-form')); await settle();
@@ -104,7 +113,7 @@ test("unit board supports ordered roles, dragging, accessible moves, hide/restor
           document.querySelector('[data-unit-id="10"] .member-name').click();
           check([...$('member-education').querySelector('[name="extra:progressione"]').options].some(option => option.value === 'Coccinella del prato'), 'cerchioSheet');
           document.querySelector('[data-close="member-dialog"]').click();
-          const hide = [...document.querySelectorAll('[data-unit-id="10"] button')].find(button => button.textContent === 'Nascondi');
+          const hide = document.querySelector('[data-unit-id="10"] .unit-hide');
           hide.click(); await settle();
           check(!$('units-board').querySelector('[data-unit-id="10"]') &&
             $('unit-unassigned').textContent.includes('Assegnazione conservata: Bianchi'), 'hidePreserves');
@@ -115,8 +124,17 @@ test("unit board supports ordered roles, dragging, accessible moves, hide/restor
           check(!$('unit-unassigned').querySelector('details').open, 'unassignedCompact');
           $('unit-unassigned').querySelector('details').open = true;
           check($('lc-environment-form').hidden && !$('units-board').textContent.includes('Persona 7'), 'egScope');
-          check(JSON.stringify([...document.querySelector('[data-unit-id="1"]').querySelectorAll('h4')].slice(0,4).map(node => node.textContent)) ===
+          $('new-unit').click(); form.elements.name.value = 'Nome senza colori'; form.elements.name.oninput();
+          check($('unit-appearance').hidden && $('unit-name-hint').textContent.includes('non sono definiti'), 'fixedEditor');
+          submit(form);
+          check($('unit-dialog').open && $('unit-error').textContent.includes('catalogo'), 'unknownNameError');
+          $('close-unit').click();
+          check(JSON.stringify([...document.querySelector('[data-unit-id="1"]').querySelectorAll('[data-role]')].map(node => node.dataset.role)) ===
             JSON.stringify(M.unitRoles('E/G')), 'roleOrder');
+          check(document.querySelector('[data-unit-id="1"] .unit-chief abbr').textContent === 'C' &&
+            document.querySelector('[data-unit-id="1"] .unit-deputy abbr').textContent === 'VC' &&
+            !document.querySelector('[data-unit-id="1"] .unit-regular h4') &&
+            !!document.querySelector('[data-unit-id="1"] .unit-newcomer'), 'compactRows');
           check($('units-board').textContent.includes('Ruolo storico') &&
             $('unit-unassigned').textContent.includes('Assegnazione conservata: Nascosti'), 'legacyVisible');
           const drag = (id, unitId, role) => {
@@ -132,31 +150,24 @@ test("unit board supports ordered roles, dragging, accessible moves, hide/restor
           drag(4, 1, 'Capo squadriglia'); await settle();
           check(!!document.querySelector('[data-unit-id="1"] [data-role="Capo squadriglia"] [data-member-id="4"]') &&
             !!document.querySelector('[data-unit-id="2"] [data-role="Squadrigliere"] [data-member-id="3"]'), 'dragMove');
-          document.querySelector('[data-unit-id="1"] .members-toolbar button').click();
-          form.elements.color.value = '#25477e'; form.elements.color.oninput();
-          const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 8;
-          canvas.getContext('2d').fillRect(0, 0, 16, 8);
-          const blob = new Blob([Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]), char => char.charCodeAt(0))], {type:'image/png'});
-          const upload = new DataTransfer(); upload.items.add(new File([blob], 'symbol.png', {type:'image/png'}));
-          $('unit-image-file').files = upload.files;
-          const uploading = $('unit-image-file').onchange();
-          check($('save-unit').disabled && $('close-unit').disabled, 'imageBusy');
-          await uploading;
-          check(!!$('unit-symbol-preview').querySelector('image') &&
-            document.querySelector('#unit-symbol-preview image').getAttribute('preserveAspectRatio') === 'xMidYMid meet', 'imagePreview');
-          const invalid = new DataTransfer(); invalid.items.add(new File(['bad'], 'invalid.svg', {type:'image/svg+xml'}));
-          $('unit-image-file').files = invalid.files; await $('unit-image-file').onchange();
-          check($('unit-error').textContent.includes('Impossibile caricare') && !!$('unit-symbol-preview').querySelector('image'), 'invalidImageError');
-          $('unit-image-file').files = upload.files; await $('unit-image-file').onchange();
-          check($('unit-dialog').getBoundingClientRect().right <= innerWidth + 1 &&
-            $('unit-dialog').scrollWidth <= $('unit-dialog').clientWidth, 'editorFits');
-          submit(form); await settle();
-          check(!!document.querySelector('[data-unit-id="1"] svg image') && snapshot.units[0].color === '#25477e', 'imageSaved');
+          const band = document.querySelector('[data-unit-id="1"] .unit-colors');
+          check(band.children.length === 2 && band.getAttribute('aria-label') === 'Verde / Nero' &&
+            band.children[0].style.backgroundColor === 'rgb(57, 130, 88)' &&
+            band.children[1].style.backgroundColor === 'rgb(36, 36, 36)' &&
+            band.getBoundingClientRect().top >= document.querySelector('[data-unit-id="1"] h3').getBoundingClientRect().bottom, 'fixedColors');
+          check(![...$('units-board').querySelectorAll('button')].some(button => ['Colori e simbolo', 'Colore'].includes(button.textContent)), 'noAppearanceButton');
+          const flag = document.querySelector('[data-unit-id="1"] svg');
+          flag.querySelector('image')?.dispatchEvent(new Event('error'));
+          check(!!flag.querySelector('path[fill="#ffffff"]') && !flag.querySelector('image'), 'emptyFlag');
           check(fits(), 'egFits');
           for (const card of document.querySelectorAll('.unit-member')) {
-            const rect = card.querySelector('.button').getBoundingClientRect();
+            const button = card.querySelector('.unit-move');
+            if (!button) continue;
+            const rect = button.getBoundingClientRect();
             if (rect.height) check(rect.height >= 44 && rect.width >= 44, 'touchTargets');
           }
+          const unitCard = document.querySelector('[data-unit-id="2"]');
+          check(unitCard.getBoundingClientRect().height <= 430, 'compactHeight');
           check(!errors.length, 'noErrors');
         } catch (error) { results.failure = error.message; results.errors = errors; }
         const output = document.createElement('pre'); output.id = 'unit-result';
@@ -190,9 +201,10 @@ test("unit board supports ordered roles, dragging, accessible moves, hide/restor
       assert.ok(encoded, browser.stdout.slice(-3000));
       const results = JSON.parse(Buffer.from(encoded, "base64").toString());
       assert.equal(results.failure, undefined, width + ": " + JSON.stringify(results));
-      for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "lcFits", "cerchio", "cerchioSheet",
+      for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "moveShortcut", "fixedEditor", "unknownNameError", "lcFits", "cerchio", "cerchioSheet",
         "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove",
-        "imagePreview", "imageBusy", "invalidImageError", "editorFits", "imageSaved", "egFits", "touchTargets", "noErrors", "unassignedCompact"])
+        "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
+        "egFits", "touchTargets", "noErrors", "unassignedCompact"])
         assert.equal(results[key], true, width + " " + key + ": " + JSON.stringify(results));
     }
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }

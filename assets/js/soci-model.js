@@ -32,10 +32,15 @@
     ['unitStatus', 'STATUS UNITA'], ['environment', 'AMBIENTE UNITA'], ['appointment', 'INCARICO'],
   ];
   const guardianFields = {
-    fullName: 'Nome completo importato', givenName: 'Nome', surname: 'Cognome',
+    fullName: 'Nome completo', givenName: 'Nome', surname: 'Cognome',
     taxCode: 'Codice fiscale', birthTown: 'Comune nascita', birthDate: 'Data nascita',
     email: 'Email', phone: 'Cellulare',
   };
+  const ignoredProfileFields = ['digital', 'consent2a', 'consent2b', 'consent2c', 'magazines'];
+  function pendingCoca(profile) {
+    const empty = value => ['', 'no', 'false', '0', '-', 'non indicato'].includes(String(value || '').trim().toLocaleLowerCase('it'));
+    return !empty(profile.foca) && empty(profile.coca);
+  }
   function parseGuardians(source) {
     const contacts = [], unparsed = [];
     for (const record of String(source || '').split(';').map(value => value.trim()).filter(Boolean)) {
@@ -90,6 +95,73 @@
     Azzurri: '#5096d3', Blu: '#25477e', Arancioni: '#ed8e32', Viola: '#8459a2',
   };
   function unitKey(name) { return String(name || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it'); }
+  const patrolColors = {
+    Arancione: ['#ed8e32', 'Gaiezza, buon carattere'],
+    Azzurro: ['#5096d3', "Altezza d'ideali, intelligenza"],
+    Bianco: ['#ffffff', 'Purezza, onesta'], Blu: ['#25477e', 'Inventiva, osservazione'],
+    Giallo: ['#f5cb31', 'Laboriosita, probita, abilita'], Grigio: ['#898989', 'Dolcezza, pazienza'],
+    Marrone: ['#74482b', 'Furberia, capacita'], Nero: ['#242424', 'Forza, sicurezza'],
+    Rosso: ['#cc3038', 'Coraggio, generosita'], 'Verde chiaro': ['#82b857', 'Speranza, prodezza'],
+    'Verde scuro': ['#285c3e', 'Scienza del bosco, amore della natura'],
+    Viola: ['#8459a2', 'Perseveranza, tenacia'], Verde: ['#398258', ''],
+    'Blu reale': ['#3155b6', ''], 'Blu marino': ['#192e50', ''], Kaki: ['#b2a378', ''],
+    Castagno: ['#87452f', ''], Malva: ['#b68bb4', ''], Scarlatto: ['#dc2638', ''],
+    Rosa: ['#e7a1ba', ''], Porpora: ['#913c73', ''], Marroncino: ['#b08a63', ''],
+    Nocciola: ['#a47b50', ''],
+  };
+  const patrolCatalog = [
+    ['Airone', 'Aironi', 'Verde', 'Grigio'], ['Albatro', 'Albatri', 'Blu reale', 'Kaki'],
+    ['Anatra', 'Anatre', 'Castagno', 'Grigio'], ['Antilope', 'Antilopi', 'Blu marino', 'Bianco'],
+    ['Aquila', 'Aquile', 'Verde', 'Nero'], ['Ariete', 'Arieti', 'Marrone'],
+    ['Arzavola', 'Arzavole', 'Marrone', 'Verde'], ['Beccaccia', 'Beccacce', 'Castagno', 'Malva'],
+    ['Beccaccino', 'Beccaccini', 'Blu reale', 'Scarlatto'], ['Bufalo', 'Bufali', 'Rosso', 'Bianco'],
+    ['Bulldog', 'Bulldog', 'Azzurro', 'Marrone'], ['Cane', 'Cani', 'Arancione'],
+    ['Canguro', 'Canguri', 'Rosso', 'Grigio'], ['Castoro', 'Castori', 'Blu', 'Giallo'],
+    ['Cavallo', 'Cavalli', 'Nero', 'Bianco'], ['Cervo', 'Cervi', 'Viola', 'Nero'],
+    ['Chiurlo', 'Chiurli', 'Verde'], ['Cicogna', 'Cicogne', 'Azzurro', 'Bianco'],
+    ['Cigno', 'Cigni', 'Grigio', 'Scarlatto'], ['Cinghiale', 'Cinghiali', 'Grigio', 'Rosa'],
+    ['Cobra', 'Cobra', 'Arancione', 'Nero'], ['Coccodrillo', 'Coccodrilli', 'Verde', 'Kaki'],
+    ['Colombaccio', 'Colombacci', 'Blu', 'Marrone'], ['Colombo', 'Colombi', 'Grigio', 'Bianco'],
+    ['Cormorano', 'Cormorani', 'Nero', 'Grigio'], ['Cornacchia', 'Cornacchie', 'Nero', 'Rosso'],
+    ['Corvo', 'Corvi', 'Nero'], ['Cuculo', 'Cuculi', 'Grigio', 'Marrone'],
+    ['Elefante', 'Elefanti', 'Porpora', 'Bianco'], ['Fagiano', 'Fagiani', 'Marrone', 'Giallo'],
+    ['Falco', 'Falchi', 'Rosa'], ['Falcone', 'Falconi', 'Marrone', 'Arancione'],
+    ['Foca', 'Foche', 'Rosso', 'Nero'], ['Folaga', 'Folaghe', 'Kaki'],
+    ['Gabbiano', 'Gabbiani', 'Porpora', 'Grigio'],
+    ['Gallo (rosso e marrone)', 'Galli (rosso e marrone)', 'Rosso', 'Marrone'],
+    ['Gallo (marrone e grigio)', 'Galli (marrone e grigio)', 'Marrone', 'Grigio'],
+    ['Gallo (marrone e marroncino)', 'Galli (marrone e marroncino)', 'Marrone', 'Marroncino'],
+    ['Gatto', 'Gatti', 'Grigio', 'Marrone'], ['Gazzella', 'Gazzelle', 'Arancione', 'Bianco'],
+    ['Gheppio', 'Gheppi', 'Blu reale', 'Viola'], ['Gufo', 'Gufi', 'Blu'],
+    ['Iena', 'Iene', 'Giallo', 'Bianco'], ['Ippopotamo', 'Ippopotami', 'Rosa', 'Nero'],
+    ['Leone', 'Leoni', 'Giallo', 'Rosso'], ['Lontra', 'Lontre', 'Marrone', 'Bianco'],
+    ['Lupo', 'Lupi', 'Giallo', 'Nero'], ['Mangusta', 'Manguste', 'Marrone', 'Arancione'],
+    ['Martin', 'Martin', 'Blu', 'Verde'], ['Merlo', 'Merli', 'Nero', 'Kaki'],
+    ['Moriglione', 'Moriglioni', 'Giallo', 'Blu marino'], ['Nottola', 'Nottole', 'Nero', 'Nocciola'],
+    ['Orso', 'Orsi', 'Marrone', 'Nero'], ['Pantera', 'Pantere', 'Giallo'],
+    ['Pavone', 'Pavoni', 'Verde', 'Blu'], ['Pellicano', 'Pellicani', 'Grigio', 'Viola'],
+    ['Pettirosso', 'Pettirossi', 'Castagno', 'Nero'], ['Picchio', 'Picchi', 'Verde', 'Viola'],
+    ['Pinguino', 'Pinguini', 'Bianco', 'Nero'], ['Pipistrello', 'Pipistrelli', 'Azzurro', 'Nero'],
+    ['Piviere', 'Pivieri', 'Arancione', 'Grigio'], ['Procellaria', 'Procellarie', 'Blu marino', 'Grigio'],
+    ['Procione', 'Procioni', 'Nero', 'Marrone'], ['Puffino', 'Puffini', 'Grigio', 'Giallo'],
+    ['Rinoceronte', 'Rinoceronti', 'Blu marino', 'Arancione'], ['Rondine', 'Rondini', 'Blu marino'],
+    ['Sciacallo', 'Sciacalli', 'Grigio', 'Nero'], ['Scoiattolo', 'Scoiattoli', 'Grigio', 'Rosso'],
+    ['Serpente', 'Serpenti', 'Rosa', 'Bianco'], ['Smeriglio', 'Smerigli', 'Blu reale', 'Marrone'],
+    ['Storno', 'Storni', 'Nero', 'Giallo'], ['Succiacapre', 'Succiacapre', 'Giallo', 'Marrone'],
+    ['Tarabuso', 'Tarabusi', 'Grigio', 'Verde'], ['Tasso', 'Tassi', 'Verde', 'Bianco'],
+    ['Tigre', 'Tigri', 'Viola'], ['Toro', 'Tori', 'Rosso'],
+    ['Trampoliere', 'Trampolieri', 'Bianco', 'Verde'], ['Tricheco', 'Trichechi', 'Bianco', 'Kaki'],
+    ['Volpe', 'Volpi', 'Giallo', 'Verde'],
+  ];
+  function patrolIdentity(name) {
+    const entry = patrolCatalog.find(([singular, plural]) => [singular, plural].some(value => unitKey(value) === unitKey(name)));
+    if (!entry) return null;
+    const [, plural, first, second = first] = entry;
+    return { color: patrolColors[first][0], color2: patrolColors[second][0],
+      colors: first === second ? [first] : [first, second],
+      meanings: [first, second].map(color => patrolColors[color][1]).filter((value, index, list) => value && list.indexOf(value) === index),
+      image: unitKey(plural).replace(/ \(.+\)$/, '') + '.svg' };
+  }
   function unitField(branch) { return branch === 'L/C' ? 'sestiglia' : 'squadriglia'; }
   function unitRoles(branch, environment = 'Branco') {
     return branch === 'E/G'
@@ -102,7 +174,7 @@
     ['E/G', 'squadriglia', 'Squadriglia'], ['E/G', 'ruolo', 'Ruolo in squadriglia'],
     ['E/G', 'tappa', 'Tappa'], ['E/G', 'specialita', 'Specialita'],
     ['E/G', 'brevetti', 'Brevetti di competenza'], ['E/G', 'promessa', 'Data promessa', 'date'],
-    ['R/S', 'comunita', 'Noviziato / clan'], ['R/S', 'punto-strada', 'Punto della strada'],
+    ['R/S', 'comunita', 'Comunità R/S · Noviziato per i novizi'], ['R/S', 'punto-strada', 'Punto della strada'],
     ['R/S', 'servizio', 'Servizio'], ['R/S', 'partenza', 'Data partenza', 'date'],
     ['Adulti', 'servizio', 'Servizio in gruppo'], ['Adulti', 'formazione', 'Percorso formativo'],
   ].map(([branch, key, label, type = 'text']) => ({ branch, key, label, type, options: [] }));
@@ -119,6 +191,9 @@
   const egStage = defaultFields.find(field => field.branch === 'E/G' && field.key === 'tappa');
   egStage.type = 'select';
   egStage.options = ['Tappa della scoperta', 'Tappa della competenza', 'Tappa della responsabilita'];
+  const rsCommunity = defaultFields.find(field => field.branch === 'R/S' && field.key === 'comunita');
+  rsCommunity.type = 'select';
+  rsCommunity.options = ['Noviziato', 'Clan'];
   defaultFields.find(field => field.branch === 'L/C' && field.key === 'progressione').label = 'Momento della progressione';
   for (const field of defaultFields) {
     if (field.key === 'specialita' || field.key === 'brevetti') {
@@ -214,7 +289,8 @@
       if (census.statusCode === 'S' || census.statusCode === 'D') warnings.push(`Riga ${line}: censimento sospeso, non equivale a socio attivo`);
       return { code, year, branch, profile, census };
     });
-    const used = new Set([...required, ...headers.map(v => v[1]), ...censusHeaders.map(v => v[1]), ...Object.keys(group)]);
+    for (const member of members) for (const key of ignoredProfileFields) delete member.profile[key];
+    const used = new Set([...required, ...headers.filter(([key]) => !ignoredProfileFields.includes(key)).map(v => v[1]), ...censusHeaders.map(v => v[1]), ...Object.keys(group)]);
     return { members, group, warnings, ignoredColumns: columns.filter(key => !used.has(key)) };
   }
   function csvCell(value) {
@@ -223,7 +299,7 @@
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
   const model = { branches, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
-    lcMoments, sestigliaColors, unitKey, unitField, unitRoles,
+    lcMoments, sestigliaColors, unitKey, unitField, unitRoles, patrolColors, patrolCatalog, patrolIdentity, ignoredProfileFields, pendingCoca,
     selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;
   else root.SOCI_MODEL = model;

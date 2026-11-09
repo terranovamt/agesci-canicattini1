@@ -5,7 +5,7 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const memberSections = ['profile', 'contacts', 'guardians', 'consents', 'education', 'censuses'];
+  const memberSections = ['profile', 'contacts', 'guardians', 'education', 'censuses'];
   let guardianNextIndex = 0;
   const selected = new Set();
   const unitBoard = window.SOCI_UNITS({ perform: run, reload: load, openMember });
@@ -29,15 +29,34 @@
     if (definition.type === 'multiselect') {
       const group = node('fieldset', undefined, 'members-choice-field members-wide');
       const selected = M.selectedChoices(value);
+      const selectedList = node('div', undefined, 'members-selected-choices');
       const details = node('details');
       const summary = node('summary');
-      const updateCount = () => { summary.textContent = labelText + ' · ' + group.querySelectorAll('input[type="checkbox"]:checked').length + ' selezionate'; };
+      const updateCount = () => {
+        const values = [...group.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value);
+        summary.textContent = `Aggiungi o modifica · ${values.length} ${values.length === 1 ? 'selezionata' : 'selezionate'}`;
+        selectedList.replaceChildren(...values.map(value => {
+          const item = node('span', undefined, 'members-selected-choice');
+          const remove = node('button', '×');
+          remove.type = 'button'; remove.setAttribute('aria-label', 'Rimuovi ' + value);
+          remove.onclick = () => {
+            const checkbox = [...choices.querySelectorAll('input')].find(input => input.value === value);
+            checkbox.checked = false; updateCount();
+            (selectedList.querySelectorAll('button')[values.indexOf(value)] || summary).focus();
+          };
+          item.append(node('span', value), remove); return item;
+        }));
+        if (!values.length) selectedList.append(node('span', 'Nessuna assegnata', 'members-note'));
+      };
       group.append(node('legend', labelText));
+      group.append(selectedList);
       details.append(summary);
-      const searchLabel = node('label', 'Cerca nell’elenco');
-      const search = node('input'); search.type = 'search';
+      const searchLabel = node('label', 'Cerca ' + labelText.toLocaleLowerCase('it'));
+      const search = node('input'); search.type = 'search'; search.placeholder = 'Scrivi per filtrare'; search.setAttribute('aria-label', 'Cerca ' + labelText.toLocaleLowerCase('it'));
       searchLabel.append(search); details.append(searchLabel);
       const choices = node('div', undefined, 'members-choice-list');
+      const empty = node('p', 'Nessuna voce corrisponde alla ricerca.', 'members-note');
+      empty.hidden = true;
       for (const item of [...definition.options, ...selected.filter(item => !definition.options.includes(item))]) {
         const label = node('label', item + (definition.options.includes(item) ? '' : ' (valore precedente)'));
         const checkbox = node('input'); checkbox.type = 'checkbox'; checkbox.name = name;
@@ -48,8 +67,10 @@
       search.oninput = () => {
         const query = search.value.trim().toLocaleLowerCase('it');
         for (const label of choices.children) label.hidden = !label.textContent.toLocaleLowerCase('it').includes(query);
+        empty.hidden = [...choices.children].some(label => !label.hidden);
       };
-      details.append(choices); group.append(details); updateCount();
+      details.append(choices, empty); group.append(details); updateCount();
+      details.addEventListener('toggle', () => { if (details.open) search.focus(); });
       return group;
     }
     const label = node('label', labelText);
@@ -94,7 +115,6 @@
       if (f.minAge.value && (years === null || years < Number(f.minAge.value))) return false;
       if (f.maxAge.value && (years === null || years > Number(f.maxAge.value))) return false;
       if (f.quality.value === 'contacts' && (member.profile.email || member.profile.phone)) return false;
-      if (f.quality.value === 'consents' && ['consent2a', 'consent2b', 'consent2c'].every(key => member.profile[key])) return false;
       if (f.quality.value === 'incomplete' && member.profile.givenName && member.profile.surname && member.profile.birthDate) return false;
       if (f.field.value) {
         const [branch, key] = f.field.value.split(':');
@@ -121,13 +141,15 @@
       card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
       card.setAttribute('aria-pressed', String(filters.elements.branch.value === branch));
       card.append(node('span', branch), node('strong', String(countable.filter(m => m.branch === branch).length)));
+      card.setAttribute('aria-label', `Filtra ${branch} · ${countable.filter(m => m.branch === branch).length} ragazzi`);
       card.onclick = () => {
-        filters.elements.branch.value = branch;
+        filters.elements.branch.value = filters.elements.branch.value === branch ? '' : branch;
         render();
         [...$('members-summary').children].find(button => button.firstChild.textContent === branch)?.focus();
       };
       return card;
     }));
+    renderQuickFilters();
     $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
     if (filters.elements.groupBirthYear.checked) visible.sort((a, b) =>
       (a.profile.birthDate?.slice(0, 4) || '9999').localeCompare(b.profile.birthDate?.slice(0, 4) || '9999') || a.name.localeCompare(b.name));
@@ -164,6 +186,37 @@
     }
     $('members-list').replaceChildren(...rows);
     updateSelection();
+  }
+  function renderQuickFilters() {
+    const container = $('members-quick-filters');
+    const groups = [
+      ['Anno censimento', 'year', 'Ultimo disponibile', filters.elements.year],
+      ['Stato AGESCI', 'status', 'Tutti gli stati', filters.elements.status],
+    ];
+    container.replaceChildren(...groups.map(([label, key, allLabel, select]) => {
+      const group = node('section', undefined, 'members-quick-filter-group');
+      group.setAttribute('aria-label', label);
+      group.append(node('h3', label));
+      const buttons = node('div', undefined, 'members-quick-filter-options');
+      const values = [...select.options].filter(option => option.value);
+      const entries = [[ '', allLabel ], ...values.map(option => [option.value, option.textContent])];
+      entries.forEach(([value, text]) => {
+        const button = node('button', text, 'members-filter-chip');
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(select.value === value));
+        button.onclick = () => {
+          select.value = select.value === value && value ? '' : value;
+          render();
+          [...container.querySelectorAll(`[data-filter-key="${key}"]`)]
+            .find(item => item.dataset.filterValue === select.value)?.focus();
+        };
+        button.dataset.filterKey = key;
+        button.dataset.filterValue = value;
+        buttons.append(button);
+      });
+      group.append(buttons);
+      return group;
+    }));
   }
   function renderTransfers() {
     $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
@@ -227,29 +280,34 @@
       if (data) updateSelection();
     }
   }
-  const consentKeys = ['guardianType', 'guardians', 'digital', 'consent2a', 'consent2b', 'consent2c', 'magazines'];
+  const excludedProfileKeys = ['guardianType', 'guardians', 'foca', 'coca', ...M.ignoredProfileFields];
   const contactKeys = ['address', 'streetNumber', 'town', 'province', 'postalCode', 'email', 'phone'];
+  const assignmentField = field => ['L/C', 'E/G'].includes(field.branch) && [M.unitField(field.branch), 'ruolo'].includes(field.key);
+  const legacyPista = field => field.branch === 'L/C' && field.key === 'pista' && field.type === 'text' &&
+    ['Pista / sentiero', 'Pista', 'Sentiero'].includes(field.label);
+  const editableEducation = field => !assignmentField(field) && !legacyPista(field);
   function educationDraft() {
     if (educationBranch) {
       const formData = new FormData(profileForm);
-      drafts[educationBranch] = Object.fromEntries(data.fields.filter(field => field.branch === educationBranch)
-        .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || '']));
+      drafts[educationBranch] = { ...drafts[educationBranch], ...Object.fromEntries(data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
+        .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || ''])) };
     }
   }
   function appendGuardian(contact = {}) {
     const index = guardianNextIndex++;
     const card = node('section', undefined, 'guardian-card');
     card.dataset.guardianIndex = index;
-    card.append(node('h4', contact.fullName || [contact.givenName, contact.surname].filter(Boolean).join(' ') || 'Nuovo responsabile'));
+    card.append(node('h4', 'Responsabile ' + ($('member-guardians').children.length + 1)));
     const grid = node('div', undefined, 'members-form-grid');
-    for (const [key, label] of Object.entries(M.guardianFields)) {
-      const field = input(label, 'guardian:' + index + ':' + key, contact[key], key === 'birthDate' ? { type: 'date' } : {});
+    for (const key of ['fullName', 'taxCode', 'phone', 'birthTown', 'birthDate', 'email']) {
+      const label = M.guardianFields[key];
+      const value = key === 'fullName' ? [contact.givenName, contact.surname].filter(Boolean).join(' ') || contact.fullName : contact[key];
+      const field = input(label, 'guardian:' + index + ':' + key, value, key === 'birthDate' ? { type: 'date' } : {});
       const control = field.querySelector('input');
-      if (key === 'fullName') { control.readOnly = true; field.hidden = !contact.fullName; }
-      if (key === 'givenName' && !contact.fullName) control.required = true;
+      if (key === 'fullName') { control.required = true; field.classList.add('members-wide'); }
       if (key === 'taxCode') { control.maxLength = 16; control.pattern = '[A-Za-z0-9]{16}'; }
       if (key === 'phone') control.type = 'tel';
-      if (key === 'email') control.inputMode = 'email';
+      if (key === 'email') { control.inputMode = 'email'; field.classList.add('members-wide'); }
       grid.append(field);
     }
     const remove = node('button', 'Rimuovi responsabile', 'button button-secondary');
@@ -259,7 +317,7 @@
   }
   function guardianPayload() {
     const formData = new FormData(profileForm);
-    return [...$('member-guardians').children].map(card => Object.fromEntries(Object.keys(M.guardianFields)
+    return [...$('member-guardians').children].map(card => Object.fromEntries(Object.keys(M.guardianFields).filter(key => !['givenName', 'surname'].includes(key))
       .map(key => [key, formData.get('guardian:' + card.dataset.guardianIndex + ':' + key) || ''])));
   }
   $('add-guardian').onclick = () => {
@@ -272,8 +330,26 @@
   };
   function renderEducation() {
     educationBranch = profileForm.elements.branch.value;
-    $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch)
+    $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
       .map(field => input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...educationDefinition(field), max: 2000 })));
+    const assignment = $('member-assignment');
+    assignment.replaceChildren();
+    if (['L/C', 'E/G'].includes(educationBranch)) {
+      const lc = educationBranch === 'L/C', values = drafts[educationBranch] || {};
+      const card = node('section', undefined, 'member-assignment-summary');
+      card.append(node('h4', lc ? 'Sestiglia e ruolo' : 'Squadriglia e ruolo'),
+        node('p', [values[M.unitField(educationBranch)] || 'Non assegnata', values.ruolo || 'Ruolo non assegnato'].join(' · ')),
+        node('small', lc ? 'Si modificano dalla schermata Sestiglie.' : 'Si modificano dalla schermata Squadriglie.'));
+      const previous = values.pista;
+      if (previous && data.fields.some(field => field.branch === educationBranch && legacyPista(field)))
+        card.append(node('p', 'Nota di percorso precedente: ' + previous, 'members-note'));
+      const history = node('details'), list = node('div');
+      history.append(node('summary', 'Storico assegnazioni per anno'));
+      for (const item of (editing?.assignmentHistory || []).filter(item => item.branch === educationBranch))
+        list.append(node('p', `${item.year} · ${item.unit || 'Senza gruppo'} · ${item.role || 'Nessun ruolo'}`));
+      if (!list.children.length) list.append(node('p', 'Nessuno storico registrato. Le assegnazioni precedenti all’attivazione dello storico non sono ricostruibili.'));
+      history.append(list); card.append(history); assignment.append(card);
+    }
   }
   function educationDefinition(field) {
     if (['L/C', 'E/G'].includes(field.branch) && field.key === M.unitField(field.branch) && field.type === 'text') {
@@ -312,15 +388,15 @@
     const profile = { ...member?.profile };
     if (member && !Object.keys(profile).length) profile.givenName = member.name;
     for (const [target, keys] of [
-      [$('member-profile'), Object.keys(M.profileFields).filter(key => !consentKeys.includes(key) && !contactKeys.includes(key))],
-      [$('member-contacts'), contactKeys], [$('member-consents'), consentKeys.filter(key => !['guardians', 'guardianType'].includes(key))],
+      [$('member-profile'), Object.keys(M.profileFields).filter(key => !excludedProfileKeys.includes(key) && !contactKeys.includes(key))],
+      [$('member-contacts'), contactKeys],
       [$('member-guardian-type'), ['guardianType']], [$('member-guardian-source'), ['guardians']],
     ]) {
       target.replaceChildren(...keys.map(key => {
         const definition = key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
           : key === 'sex' ? { type: 'select', options: ['M', 'F'] }
           : key === 'digital' ? { type: 'select', options: ['True', 'False'] }
-          : key.startsWith('consent') || key === 'magazines' ? { type: 'select', options: ['SI', 'NO'] } : {};
+          : {};
         return input(M.profileFields[key], 'profile:' + key, profile[key], definition);
       }));
     }
@@ -385,8 +461,8 @@
     event.preventDefault();
     educationDraft();
     const branch = profileForm.elements.branch.value;
-    const profile = Object.fromEntries(['member-profile', 'member-contacts', 'member-consents', 'member-guardian-type', 'member-guardian-source']
-      .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value]));
+    const profile = { ...editing?.profile, ...Object.fromEntries(['member-profile', 'member-contacts', 'member-guardian-type', 'member-guardian-source']
+      .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value])) };
     profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
@@ -432,7 +508,7 @@
       if (branch) f.branch.value = branch;
     }
     f.branch.disabled = !fieldAction;
-    const fields = data.fields.filter(field => field.branch === f.branch.value);
+    const fields = data.fields.filter(field => field.branch === f.branch.value && editableEducation(field));
     const oldKey = f.key.value;
     options(f.key, fields.map(field => [field.key, field.label]));
     if (fields.some(field => field.key === oldKey)) f.key.value = oldKey;
@@ -500,8 +576,8 @@
   };
   window.addEventListener('afterprint', () => $('members-print').replaceChildren());
   $('export-members').onclick = () => {
-    if (!confirm('Esportare i risultati con anagrafica, contatti, consensi e campi educativi? Il CSV contiene dati personali: conservarlo in modo sicuro.')) return;
-    const profileKeys = Object.keys(M.profileFields), censusKeys = Object.keys(M.censusFields);
+    if (!confirm('Esportare i risultati con anagrafica, contatti e campi educativi? Il CSV contiene dati personali: conservarlo in modo sicuro.')) return;
+    const profileKeys = Object.keys(M.profileFields).filter(key => !M.ignoredProfileFields.includes(key)), censusKeys = Object.keys(M.censusFields);
     const rows = [['Codice socio', 'Branca locale', ...profileKeys.map(key => M.profileFields[key]), 'Responsabili genitoriali strutturati', 'Anno scout',
       ...censusKeys.map(key => M.censusFields[key]), ...data.fields.map(field => field.branch + ' - ' + field.label)],
     ...results().map(member => [member.code, member.branch, ...profileKeys.map(key => member.profile[key]),

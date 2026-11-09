@@ -73,15 +73,40 @@ una presente ma vuota li azzera. L'import non elimina record duplicati.
 
 ## Schede, ricerche ed estrazioni
 
-Aprire il nome di un socio per anagrafica, contatti, consensi, dati genitoriali,
+Aprire il nome di un socio per anagrafica, contatti, dati genitoriali,
 percorso educativo e storico annuale AGESCI. Le modifiche manuali non
 riscrivono lo storico ufficiale. Gli account preesistenti senza scheda devono
 essere completati prima di applicare macro.
 
-La ricerca comprende nome, codice e dati anagrafici. I filtri combinano
-branca locale, anno, status ufficiale, eta, campi educativi e verifiche dei
-contatti/consensi mancanti. Senza anno esplicito viene usato l'ultimo disponibile
-per ogni socio, non un unico anno comune a tutti.
+I soci con livello FoCa valorizzato e ingresso CoCa assente (o No) non sono
+mostrati nel Libro soci, nelle ricerche o negli export; i dati e gli accessi
+restano conservati. FoCa e CoCa non occupano campi nella scheda dei ragazzi.
+I consensi non sono gestiti da questa interfaccia: le relative colonne CSV
+sono ignorate, non vengono esportate o salvate con il profilo. Gli eventuali
+valori gia presenti nel JSON SQL restano inerti, senza cancellazioni massive.
+
+Per ciascun genitore si modifica solo **Nome completo**, senza ripetere
+Nome e Cognome. Restano CF, luogo/data di nascita, email e cellulare.
+Eventuali nomi/cognomi verificati nelle vecchie schede vengono mostrati in un
+unico campo, senza dividere automaticamente i nomi importati.
+
+La ricerca comprende nome, codice e dati anagrafici. Le schede numeriche per
+branca sono filtri rapidi: premere la branca selezionata una seconda volta
+rimuove il filtro. I chip di anno e status sono indipendenti e combinabili;
+selezionarli di nuovo li azzera. Gli stessi filtri sono disponibili nei campi
+select. **Ricerca avanzata** contiene eta, anno di nascita, verifiche
+anagrafiche e criteri sul percorso educativo; senza anno esplicito viene usato
+l'ultimo disponibile per ogni socio, non un unico anno comune a tutti.
+
+La dashboard amministrativa mostra il totale dei censimenti AGESCI importati
+nell'anno piu recente e la ripartizione per branca ufficiale. Il riepilogo
+espone solo conteggi, non dati anagrafici; comprende gli status presenti
+nell'import senza riattivare o modificare le schede.
+
+Specialita e brevetti mostrano subito le voci assegnate, ciascuna rimovibile.
+**Aggiungi o modifica** apre un catalogo ricercabile con caselle multiselezione,
+conteggio e messaggio per ricerche senza risultati. Non esiste un pulsante per
+ogni voce del catalogo. Su mobile la lista e scorrevole.
 
 Di default sono esclusi da elenco, conteggi ed export i soci il cui ultimo
 censimento ha codice **D** (AGESCI: sospeso da oltre un anno), oppure **S**
@@ -96,7 +121,7 @@ di selezionare insieme le annate. Nessun ruolo, progressione o passaggio
 viene assegnato automaticamente in base all'eta.
 
 **Esporta risultati** scarica tutte le righe filtrate (non solo quelle
-selezionate), con anagrafica, consensi, censimento scelto e campi delle varie
+selezionate), con anagrafica, censimento scelto e campi delle varie
 branche. Il CSV protegge le celle che potrebbero essere interpretate come
 formule dai fogli di calcolo; non e un CSV di reimportazione AGESCI.
 Contiene dati personali: conservarlo in modo sicuro e cancellarlo quando non
@@ -108,9 +133,9 @@ Campi iniziali:
 
 | Branca | Percorso |
 | --- | --- |
-| L/C | sestiglia, ruolo (capo, vice, sestigliere, Cucciolo nel Branco / Cocci nel Cerchio), primo/secondo/terzo anno, momenti, pista/sentiero, specialita, data promessa |
+| L/C | sestiglia e ruolo in sola lettura, primo/secondo/terzo anno, momento della progressione, specialita, data promessa |
 | E/G | squadriglia, ruolo (capo, vice, squadrigliere, piede tenero), anno in branca, tappa (scoperta, competenza, responsabilita), specialita, brevetti di competenza, data promessa |
-| R/S | noviziato/clan, passi (scoperta, competenza, responsabilita), punto della strada, servizio, data partenza |
+| R/S | comunita (Noviziato per i novizi del primo anno, oppure Clan), passi (scoperta, competenza, responsabilita), punto della strada, servizio, data partenza |
 | Adulti | servizio in gruppo, formazione |
 
 In **Campi personalizzati e modelli di gruppo** si aggiungono campi testo,
@@ -121,11 +146,17 @@ rinominate o eliminate dall'interfaccia.
 Nel Branco i momenti L/C sono **Lupo della legge**, **Lupo della rupe**,
 **Lupo anziano**; nel Cerchio **Coccinella del prato**, **Coccinella del bosco**,
 **Coccinella della montagna**.
-Le tappe E/G e i passi R/S sono selezioni singole. Specialita L/C (39 voci),
+La comunita R/S e una scelta tra **Noviziato** e **Clan**: chi e nel primo anno
+R/S appartiene al Noviziato ed e un novizio. Le tappe E/G e i passi R/S sono
+selezioni singole. Specialita L/C (39 voci),
 E/G (65 voci) e brevetti E/G (15 voci) sono elenchi ricercabili a selezione
 multipla, anche nelle macro; nessun brevetto o specialita viene proposto in
 R/S. Le scelte gia salvate non presenti nel catalogo restano visibili come
 valori precedenti e non vengono cancellate durante l'aggiornamento.
+
+Il momento L/C e la scelta strutturata del percorso. Il vecchio campo libero
+standard Pista/Sentiero non viene piu proposto come secondo percorso:
+eventuali valori precedenti restano consultabili come nota, senza perderli.
 
 Il catalogo L/C e quello fornito dal gruppo. Gli elenchi E/G e brevetti sono
 stati riscontrati nell'applicazione pubblica di
@@ -135,13 +166,25 @@ inventate relazioni tra brevetti e specialita.
 
 ### Sestiglie e squadriglie
 
-La sezione **Sestiglie e squadriglie** organizza i ragazzi della branca locale.
-L'amministratore sceglie L/C o E/G; i capi vedono solo la propria branca.
-R/S non usa questa vista. I sospesi da oltre un anno restano esclusi.
+La sezione mostra **Sestiglie** per L/C e **Squadriglie** per E/G; titolo e
+navigazione seguono la branca selezionata. L'amministratore sceglie L/C o E/G;
+i capi vedono solo la propria branca. R/S non usa questa vista. I sospesi da
+oltre un anno restano esclusi.
 
-Le righe sono sempre capo, vice, sestiglieri/squadriglieri e Cuccioli/Cocci
-o Piedi teneri. Trascinare un socio sulla riga desiderata oppure premere
-**Sposta** e usare il modulo **Inserisci o sposta un socio**, disponibile anche
+Sestiglia/squadriglia e ruolo si assegnano da questa vista, non dalla scheda
+personale o dalle macro. La scheda li riepiloga in sola lettura e permette di
+aprire **Storico assegnazioni per anno**. L'anno di riferimento e il massimo
+anno censimento importato (o l'anno corrente se mancano censimenti): viene
+conservata l'ultima assegnazione registrata in ogni anno. Un import successivo
+o un riavvio non riscrive gli anni passati. Lo storico parte dalle informazioni
+oggi disponibili: i censimenti ufficiali non contengono le vecchie sestiglie,
+quindi gli anni precedenti non vengono inventati.
+
+Le righe sono compatte: **C** su fondo viola per il capo, **VC** su fondo
+lilla per il vice, poi membri senza etichette ripetute e nuovi ingressi
+(Cuccioli/Cocci o Piedi teneri) in fondo su giallo chiaro.
+Trascinare un socio sulla riga desiderata oppure premere
+la freccia accanto al nome e usare **Inserisci o sposta un socio**, disponibile anche
 da telefono e tastiera. Lo spostamento non cambia branca e conserva gli altri
 campi educativi. Capo e vice ammettono una sola persona: prima liberare il
 posto occupato. Le stesse regole valgono per schede e macro; duplicati
@@ -154,15 +197,32 @@ sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
 **Senza gruppo / da verificare**, con l'assegnazione conservata indicata.
 Per rimuovere esplicitamente l'assegnazione scegliere **Senza gruppo**.
 
-Le sestiglie hanno un triangolo bordato di giallo, con il proprio colore al
+Le sestiglie hanno un triangolo equilatero con punta in alto, bordato di giallo, con il proprio colore al
 centro. I nomi colore proposti selezionano automaticamente il colore
 corrispondente; per un nome locale si puo scegliere il colore.
-Le squadriglie hanno un guidone bianco con asta, due colori sul lato e un
-simbolo centrale caricabile (PNG/JPEG/WebP fino a 5 MiB, ridimensionato e
-salvato come PNG nel database). Le proporzioni dell'immagine sono conservate.
-La creazione non richiede un'immagine.
+I colori delle squadriglie sono fissati nel catalogo `patrolCatalog` in
+`assets/js/soci-model.js`, condiviso tra UI e server. Sono mostrati come
+rettangolo diviso in due sotto il nome; le voci monocolore usano due meta
+uguali. Nome singolare e plurale sono equivalenti per colori e immagini,
+non per l'identita del gruppo. Le tre varianti Gallo sono esplicite: non
+si sceglie arbitrariamente un abbinamento per un vecchio nome ambiguo.
+I colori locali dei nomi fuori catalogo restano conservati.
+Per creare una nuova squadriglia fuori catalogo occorre aggiungerne prima
+nome e colori nel codice; quelle locali gia archiviate restano ripristinabili.
+Il rettangolo descrive colori e significati al passaggio del mouse.
+Non c'e un pulsante per modificare colori e simbolo.
 
-Un capo L/C puo scegliere **Branco · Lupetti** o **Cerchio · Coccinelle**.
+I guidoni completi SVG si aggiungono in `assets/img/guidoni/`, con nome
+plurale minuscolo: `leoni.svg`, `aquile.svg`, `volpi.svg`, ecc.
+Il caricamento usa file statici come immagini, senza iniettare SVG nel DOM.
+Se manca il file viene mostrato un guidone bianco vuoto; i colori restano
+nel rettangolo sotto il nome. `base.svg` e la base riutilizzabile, con il
+gruppo centrale `simbolo`; `leoni.svg` e un esempio originale sostituibile.
+Le immagini precedentemente salvate nel database non vengono eliminate,
+ma la nuova vista usa i file SVG del codice.
+
+Un capo L/C puo scegliere **Branco · Lupetti** o **Cerchio · Coccinelle**
+aprendo **Ambiente L/C**, chiuso normalmente per lasciare spazio ai nomi.
 L'ambiente e condiviso da tutta la branca, non personale. Il cambio aggiorna
 terminologia, momenti corrispondenti per posizione e Cucciolo/Cocci, anche nei
 percorsi L/C conservati; non elimina specialita, gruppi o altre informazioni.

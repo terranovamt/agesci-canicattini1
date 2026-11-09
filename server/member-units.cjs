@@ -15,10 +15,35 @@ function createMemberUnits(db) {
       branch TEXT PRIMARY KEY, environment TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1
     );
     INSERT OR IGNORE INTO member_branch_settings VALUES('L/C','Branco',1);
+    CREATE TABLE IF NOT EXISTS member_assignment_history (
+      person_id INTEGER NOT NULL REFERENCES people(id), branch TEXT NOT NULL,
+      year TEXT NOT NULL, unit TEXT NOT NULL, role TEXT NOT NULL,
+      PRIMARY KEY(person_id,branch,year)
+    );
   `);
+  const currentYear = () => db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
+    JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
+  function recordAssignment(id, branch, values) {
+    if (!["L/C", "E/G"].includes(branch)) return;
+    const unit = values[M.unitField(branch)] || "", role = values.ruolo || "";
+    if (!unit && !role && !db.prepare("SELECT 1 FROM member_assignment_history WHERE person_id=? AND branch=?").get(id, branch)) return;
+    db.prepare(`INSERT INTO member_assignment_history VALUES(?,?,?,?,?)
+      ON CONFLICT(person_id,branch,year) DO UPDATE SET unit=excluded.unit,role=excluded.role`)
+      .run(id, branch, currentYear(), unit, role);
+  }
+  function checkpoint() {
+    for (const row of db.prepare(`SELECT v.person_id,v.branch,v.data FROM member_values v
+      JOIN member_profiles m ON m.person_id=v.person_id AND m.branch=v.branch
+      JOIN people p ON p.id=v.person_id WHERE p.census_code!=?`).all(ADMIN_CODE))
+      recordAssignment(row.person_id, row.branch, JSON.parse(row.data));
+  }
+  const history = id => db.prepare("SELECT year,branch,unit,role FROM member_assignment_history WHERE person_id=? ORDER BY year DESC,branch").all(id);
+  checkpoint();
   const configuration = () => db.prepare("SELECT environment,revision FROM member_branch_settings WHERE branch='L/C'").get();
   const all = () => db.prepare("SELECT * FROM member_units ORDER BY branch,name COLLATE NOCASE").all()
-    .map(row => ({ id: row.id, branch: row.branch, name: row.name, color: row.color, color2: row.color2,
+    .map(row => ({ id: row.id, branch: row.branch, name: row.name,
+      color: (row.branch === "E/G" && M.patrolIdentity(row.name)?.color) || row.color,
+      color2: (row.branch === "E/G" && M.patrolIdentity(row.name)?.color2) || row.color2,
       emblem: row.emblem, hidden: !!row.hidden, revision: row.revision }));
   const groupName = (value, max = 80) => {
     if (typeof value !== "string") fail(400, "Nome del gruppo non valido");
@@ -127,6 +152,7 @@ function createMemberUnits(db) {
           if (!changed) continue;
           db.prepare("UPDATE member_values SET data=? WHERE person_id=? AND branch='L/C'")
             .run(JSON.stringify(values), row.person_id);
+          recordAssignment(row.person_id, "L/C", values);
           db.prepare("UPDATE member_profiles SET revision=revision+1 WHERE person_id=?").run(row.person_id);
         }
         db.prepare("UPDATE member_branch_settings SET environment=?,revision=revision+1 WHERE branch='L/C'").run(value.environment);
@@ -142,6 +168,8 @@ function createMemberUnits(db) {
         let unit = find(value.branch, name);
         if (unit && !unit.hidden) fail(409, "Esiste gia un gruppo con questo nome.");
         if (!unit) {
+          if (value.branch === "E/G" && !M.patrolIdentity(name))
+            fail(400, "Nome fuori catalogo: aggiungi prima i colori della squadriglia nel codice.");
           unit = ensure(value.branch, name);
           const firstColor = value.color === undefined ? unit.color : unitColor(value.branch, name, value.color);
           const secondColor = value.branch === "L/C" || value.color2 === undefined ? unit.color2 : color(value.color2);
@@ -202,6 +230,6 @@ function createMemberUnits(db) {
     }
     return false;
   }
-  return { all, configuration, definitions, validateAssignment, handle };
+  return { all, configuration, definitions, validateAssignment, handle, recordAssignment, checkpoint, history };
 }
 module.exports = { createMemberUnits };

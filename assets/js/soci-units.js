@@ -1,6 +1,7 @@
 (function () {
   'use strict';
   const M = window.SOCI_MODEL;
+  const guidoniRoot = new URL('../img/guidoni/', document.currentScript.src || new URL('assets/js/soci-units.js', document.baseURI)).href;
   const $ = id => document.getElementById(id);
   const el = (tag, text, className) => {
     const node = document.createElement(tag);
@@ -15,7 +16,6 @@
     }));
     if (items.some(([value]) => String(value) === previous)) select.value = previous;
   };
-  let nextSymbol = 0;
   function symbol(unit) {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
@@ -28,19 +28,17 @@
       return node;
     };
     if (unit.branch === 'L/C') {
-      svg.append(shape('path', { d: 'M20 20 H200 L110 145 Z', fill: unit.color, stroke: '#f5cb31', 'stroke-width': '10', 'stroke-linejoin': 'round' }));
+      svg.append(shape('path', { d: 'M110 10 L190 148.564 L30 148.564 Z', fill: unit.color, stroke: '#f5cb31', 'stroke-width': '10', 'stroke-linejoin': 'round' }));
     } else {
       const outline = 'M30 20 Q155 12 205 80 Q155 148 30 140 Z';
-      const clipId = 'unit-flag-' + (++nextSymbol);
-      const defs = shape('defs', {}), clip = shape('clipPath', { id: clipId });
-      clip.append(shape('path', { d: outline })); defs.append(clip); svg.append(defs);
       svg.append(shape('path', { d: 'M23 8 V153', stroke: '#76512d', 'stroke-width': '6', 'stroke-linecap': 'round' }));
       svg.append(shape('path', { d: outline, fill: '#ffffff', stroke: '#5c5660', 'stroke-width': '2' }));
-      const contents = shape('g', { 'clip-path': 'url(#' + clipId + ')' });
-      contents.append(shape('rect', { x: 31, y: 20, width: 15, height: 60, fill: unit.color }),
-        shape('rect', { x: 31, y: 80, width: 15, height: 61, fill: unit.color2 }));
-      if (unit.emblem) contents.append(shape('image', { href: unit.emblem, x: 72, y: 35, width: 98, height: 90, preserveAspectRatio: 'xMidYMid meet' }));
-      svg.append(contents, shape('path', { d: outline, fill: 'none', stroke: '#5c5660', 'stroke-width': '2' }));
+      const identity = M.patrolIdentity(unit.name);
+      if (identity) {
+        const image = shape('image', { href: guidoniRoot + identity.image, x: 0, y: 0, width: 220, height: 160, preserveAspectRatio: 'xMidYMid meet' });
+        image.addEventListener('error', () => image.remove(), { once: true });
+        svg.append(image);
+      }
     }
     return svg;
   }
@@ -74,17 +72,17 @@
       form.elements.color.disabled = branch() === 'L/C' && Object.keys(M.sestigliaColors).some(name => M.unitKey(name) === M.unitKey(unit?.name));
       form.elements.color2.value = unit?.color2 || '#ffffff';
       $('unit-editor-title').textContent = unit ? 'Colori e simbolo · ' + unit.name : branch() === 'L/C' ? 'Nuova sestiglia' : 'Nuova squadriglia';
-      $('unit-appearance').hidden = false;
+      $('unit-appearance').hidden = branch() === 'E/G';
       $('unit-color2-label').hidden = $('unit-emblem-controls').hidden = branch() === 'L/C';
       $('unit-name-hint').textContent = unit ? 'Il nome identifica il gruppo e non cambia. Nascondilo per conservarlo senza mostrarlo.' :
         branch() === 'L/C' ? 'Usa il nome del colore (es. Bianchi, Rossi, Neri). Lo stesso nome ripristina la sestiglia nascosta.' :
-          'Lo stesso nome ripristina la squadriglia nascosta, comprese le sue informazioni.';
+          'Scegli un nome dal catalogo: colori e guidone sono definiti nel codice. Lo stesso nome ripristina la squadriglia nascosta.';
       $('save-unit').textContent = unit ? 'Salva gruppo' : 'Crea / ripristina';
       $('unit-error').textContent = '';
-      form.elements.name.setAttribute('list', branch() === 'L/C' ? 'sestiglia-names' : '');
-      $('sestiglia-names').replaceChildren(...(branch() === 'L/C' ? Object.keys(M.sestigliaColors).map(name => {
+      form.elements.name.setAttribute('list', 'sestiglia-names');
+      $('sestiglia-names').replaceChildren(...(branch() === 'L/C' ? Object.keys(M.sestigliaColors) : M.patrolCatalog.map(entry => entry[1])).map(name => {
         const option = el('option'); option.value = name; return option;
-      }) : []));
+      }));
       preview();
       editorSnapshot = state();
       $('unit-dialog').showModal();
@@ -102,6 +100,12 @@
         const match = Object.entries(M.sestigliaColors).find(([name]) => M.unitKey(name) === M.unitKey(form.elements.name.value));
         form.elements.color.disabled = !!match;
         if (match) form.elements.color.value = match[1];
+      } else {
+        const identity = M.patrolIdentity(form.elements.name.value);
+        const previous = data.units.find(unit => unit.branch === 'E/G' && M.unitKey(unit.name) === M.unitKey(form.elements.name.value));
+        $('unit-name-hint').textContent = identity ? identity.colors.join(' / ') + '. Colori definiti nel codice.' :
+          previous ? 'Nome locale: saranno conservati i colori precedenti.' :
+            'Scegli un nome dal catalogo: per questo nome i colori non sono definiti. Aggiungili nel codice prima di creare la squadriglia.';
       }
       preview();
     };
@@ -134,6 +138,11 @@
     form.onsubmit = event => {
       event.preventDefault();
       if (imageBusy) return;
+      if (branch() === 'E/G' && !M.patrolIdentity(form.elements.name.value) &&
+          !data.units.some(unit => unit.branch === 'E/G' && M.unitKey(unit.name) === M.unitKey(form.elements.name.value))) {
+        $('unit-error').textContent = 'Scegli un nome dal catalogo o aggiungi prima i suoi colori nel codice.';
+        return;
+      }
       perform(async () => {
         if (editing) await window.ACCESSO.request('members/units/' + editing.id, 'PATCH', {
           revision: editing.revision, color: form.elements.color.value, color2: form.elements.color2.value,
@@ -188,7 +197,7 @@
       };
       const name = el('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
-      const move = el('button', 'Sposta', 'button button-secondary');
+      const move = el('button', '↔', 'unit-move');
       move.type = 'button';
       move.disabled = !member.revision;
       move.setAttribute('aria-label', 'Sposta ' + member.name);
@@ -224,11 +233,13 @@
     function render() {
       if (!data || !branch()) return;
       const lc = branch() === 'L/C', roles = M.unitRoles(branch(), environment());
+      $('units-tab').textContent = lc ? 'Sestiglie' : 'Squadriglie';
       $('members-units-panel').dataset.environment = lc ? environment() : 'Reparto';
       $('units-title').textContent = lc ? 'Sestiglie del ' + environment().toLocaleLowerCase('it') : 'Squadriglie del reparto';
       $('units-environment-label').textContent = lc ? environment() + (environment() === 'Branco' ? ' · Lupetti' : ' · Coccinelle') : 'Reparto · Esploratori e guide';
       $('new-unit').textContent = lc ? '+ Sestiglia' : '+ Squadriglia';
       $('lc-environment-form').hidden = !lc;
+      $('lc-environment-settings').hidden = !lc;
       $('lc-environment-form').elements.environment.value = environment();
       const available = members();
       options(assignment.elements.memberId, [['', 'Scegli un socio'], ...available.map(member => [member.id, member.name])]);
@@ -256,25 +267,47 @@
         const card = el('section', undefined, 'scout-unit');
         card.dataset.unitId = unit.id;
         const heading = el('div', undefined, 'unit-heading');
-        heading.append(symbol(unit), el('h3', unit.name));
-        const edit = el('button', 'Colori e simbolo', 'button button-secondary');
-        edit.type = 'button'; edit.onclick = () => editUnit(unit);
-        if (lc) edit.textContent = 'Colore';
-        const hide = el('button', 'Nascondi', 'button button-secondary');
+        const title = el('div', undefined, 'unit-title');
+        title.append(el('h3', unit.name));
+        if (!lc) {
+          const identity = M.patrolIdentity(unit.name);
+          const colors = el('span', undefined, 'unit-colors');
+          const colorNames = identity?.colors.join(' / ') || 'Colori locali precedenti';
+          colors.setAttribute('role', 'img'); colors.setAttribute('aria-label', colorNames);
+          colors.title = [colorNames, ...(identity?.meanings || [])].join(' · ');
+          for (const color of [identity?.color || unit.color, identity?.color2 || unit.color2]) {
+            const half = el('span'); half.style.backgroundColor = color; colors.append(half);
+          }
+          title.append(colors);
+        }
+        heading.append(symbol(unit), title);
+        const hide = el('button', '×', 'unit-hide');
         hide.type = 'button'; hide.onclick = () => {
           if (!confirm('Nascondere ' + unit.name + '? Assegnazioni, colori e simbolo saranno conservati.')) return;
           perform(async () => { await window.ACCESSO.request('members/units/' + unit.id, 'PATCH', { revision: unit.revision, hidden: true }); await reload(); }, $('units-status'));
         };
-        const actions = el('div', undefined, 'members-toolbar'); actions.append(edit, hide);
-        card.append(heading, actions);
+        hide.setAttribute('aria-label', 'Nascondi ' + unit.name);
+        hide.title = 'Nascondi ' + unit.name;
+        heading.append(hide);
+        card.append(heading);
         const assigned = available.filter(member => M.unitKey(member.values[branch()]?.[M.unitField(branch())]) === M.unitKey(unit.name));
-        for (const role of roles) {
+        for (const [index, role] of roles.entries()) {
           const lane = el('section', undefined, 'unit-role-lane');
+          lane.classList.add(['unit-chief', 'unit-deputy', 'unit-regular', 'unit-newcomer'][index]);
           lane.dataset.role = role; lane.setAttribute('aria-label', unit.name + ' · ' + role);
-          lane.append(el('h4', role));
           const occupants = assigned.filter(member => member.values[branch()]?.ruolo === role);
-          occupants.forEach(member => lane.append(memberCard(member)));
-          if (!occupants.length) lane.append(el('p', 'Posto libero', 'unit-empty'));
+          if (index < 2) {
+            const row = occupants.length ? memberCard(occupants[0]) : el('div', undefined, 'unit-member');
+            const badge = el('abbr', index === 0 ? 'C' : 'VC', 'unit-role-badge');
+            badge.title = role; row.prepend(badge);
+            if (!occupants.length) row.append(el('span', 'Posto libero', 'unit-empty'));
+            lane.append(row);
+            occupants.slice(1).forEach(member => lane.append(memberCard(member)));
+          } else occupants.forEach(member => lane.append(memberCard(member)));
+          if (!occupants.length && index >= 2) {
+            const empty = el('p', index === 3 ? role + ' · trascina qui' : 'Trascina qui', 'unit-empty');
+            lane.append(empty);
+          }
           if (roles.indexOf(role) < 2 && occupants.length > 1) lane.append(el('p', 'Piu soci in questo ruolo: verifica le assegnazioni precedenti.', 'unit-warning'));
           dropTarget(lane, unit.id, role);
           card.append(lane);

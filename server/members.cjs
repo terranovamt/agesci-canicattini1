@@ -46,6 +46,17 @@ function createMembers(db, people) {
   `);
   for (const field of M.defaultFields)
     db.prepare("INSERT OR IGNORE INTO member_fields VALUES(?,?,?)").run(field.branch, field.key, JSON.stringify(field));
+  const rsCommunity = M.defaultFields.find(field => field.branch === "R/S" && field.key === "comunita");
+  const oldRsCommunity = { branch: "R/S", key: "comunita", label: "Noviziato / clan", type: "text", options: [] };
+  const storedRsCommunity = db.prepare("SELECT definition FROM member_fields WHERE branch='R/S' AND key='comunita'").get();
+  if (storedRsCommunity?.definition === JSON.stringify(oldRsCommunity)) {
+    const definition = structuredClone(rsCommunity);
+    for (const row of db.prepare("SELECT data FROM member_values WHERE branch='R/S'").all()) {
+      const value = JSON.parse(row.data).comunita;
+      if (value && !definition.options.includes(value)) definition.options.push(value);
+    }
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='R/S' AND key='comunita'").run(JSON.stringify(definition));
+  }
   db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='brevetti' AND definition=?")
     .run(JSON.stringify(M.defaultFields.find(field => field.branch === "E/G" && field.key === "brevetti")),
       JSON.stringify({ branch: "E/G", key: "brevetti", label: "Brevetti", type: "text", options: [] }));
@@ -120,8 +131,12 @@ function createMembers(db, people) {
   };
   const fields = () => units.definitions(db.prepare("SELECT definition FROM member_fields ORDER BY branch,key").all().map(row => JSON.parse(row.definition)));
   const templates = () => db.prepare("SELECT * FROM member_templates ORDER BY title").all();
-  const withGuardians = profile => Object.hasOwn(profile, "guardianContacts") ? profile
-    : { ...profile, guardianContacts: M.parseGuardians(profile.guardians).contacts };
+  const cleanProfile = profile => Object.fromEntries(Object.entries(profile).filter(([key]) => !M.ignoredProfileFields.includes(key)));
+  const withGuardians = profile => {
+    profile = cleanProfile(profile);
+    return Object.hasOwn(profile, "guardianContacts") ? profile
+      : { ...profile, guardianContacts: M.parseGuardians(profile.guardians).contacts };
+  };
   const get = (id, includeAdmin = false) => {
     const row = db.prepare("SELECT id,census_code,name,kind FROM people WHERE id=?").get(id);
     if (!row || (!includeAdmin && row.census_code === ADMIN_CODE)) fail(404, "Socio non trovato");
@@ -134,6 +149,7 @@ function createMembers(db, people) {
         .map(row => ({ year: row.year, ...JSON.parse(row.data) })),
       values: Object.fromEntries(db.prepare("SELECT branch,data FROM member_values WHERE person_id=?").all(id)
         .map(row => [row.branch, JSON.parse(row.data)])),
+      assignmentHistory: units.history(row.id),
     };
   };
   const requireRevision = (member, revision) => {
@@ -142,11 +158,11 @@ function createMembers(db, people) {
   const writeProfile = (member, branch, profile) => {
     db.prepare(`INSERT INTO member_profiles VALUES(?,?,?,1) ON CONFLICT(person_id)
       DO UPDATE SET branch=excluded.branch,data=excluded.data,revision=member_profiles.revision+1`)
-      .run(member.id, branch, JSON.stringify(profile));
+      .run(member.id, branch, JSON.stringify(cleanProfile(profile)));
   };
   const validateProfile = value => {
     if (!object(value) || Object.keys(value).some(key => key !== "guardianContacts" && !Object.hasOwn(M.profileFields, key))) fail(400, "Campi anagrafici non validi");
-    const profile = Object.fromEntries(Object.entries(value).filter(([key]) => key !== "guardianContacts")
+    const profile = Object.fromEntries(Object.entries(value).filter(([key]) => key !== "guardianContacts" && !M.ignoredProfileFields.includes(key))
       .map(([key, value]) => [key, text(value, key === "guardians" ? 12000 : 500)]));
     if (Object.hasOwn(value, "guardianContacts")) {
       if (!Array.isArray(value.guardianContacts) || value.guardianContacts.length > 20)
@@ -168,9 +184,6 @@ function createMembers(db, people) {
     if (!(profile.givenName || profile.surname)) fail(400, "Inserire nome o cognome");
     if ([profile.givenName, profile.surname].filter(Boolean).join(" ").length > 120) fail(400, "Nome e cognome troppo lunghi");
     if (profile.sex && !["M", "F"].includes(profile.sex)) fail(400, "Sesso non valido");
-    for (const key of ["consent2a", "consent2b", "consent2c", "magazines"])
-      if (profile[key] && !["SI", "NO"].includes(profile[key])) fail(400, "Consenso non valido");
-    if (profile.digital && !["True", "False"].includes(profile.digital)) fail(400, "Gestione digitale non valida");
     return profile;
   };
   const writeValues = (member, branch, value) => {
@@ -195,11 +208,14 @@ function createMembers(db, people) {
       if (definition.type === "select" && validated[key] && !definition.options.includes(validated[key]) && validated[key] !== previous) fail(400, "Opzione di branca non valida");
     }
     units.validateAssignment(member, branch, validated);
+    units.recordAssignment(member.id, branch, member.values[branch] || {});
+    units.recordAssignment(member.id, branch, validated);
     db.prepare("INSERT INTO member_values VALUES(?,?,?) ON CONFLICT(person_id,branch) DO UPDATE SET data=excluded.data")
       .run(member.id, branch, JSON.stringify(validated));
   };
   const snapshot = () => ({
-    members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id)),
+    members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id))
+      .filter(member => !M.pendingCoca(member.profile)),
     fields: fields(), templates: templates(),
     group: JSON.parse(db.prepare("SELECT data FROM member_group WHERE id=1").get()?.data || "{}"),
     units: units.all(), lc: units.configuration(),
@@ -232,13 +248,30 @@ function createMembers(db, people) {
       };
       user();
       const method = request.method;
+      if (route === "/api/members/overview" && method === "GET") {
+        admin();
+        const year = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
+          JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || null;
+        const counts = Object.fromEntries(M.branches.map(branch => [branch, 0]));
+        if (year) {
+          for (const row of db.prepare(`SELECT c.data FROM member_censuses c
+            JOIN people p ON p.id=c.person_id WHERE c.year=? AND p.census_code!=?`).all(year, ADMIN_CODE)) {
+            const branch = JSON.parse(row.data).branch;
+            if (Object.hasOwn(counts, branch)) counts[branch]++;
+          }
+        }
+        send(response, 200, { year, total: Object.values(counts).reduce((sum, count) => sum + count, 0),
+          branches: M.branches.map(branch => ({ branch, count: counts[branch] })) });
+        return true;
+      }
       if (route === "/api/members" && method === "GET") {
         const current = user(), result = snapshot();
         result.currentYear = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
           JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
         if (!current.admin) {
           result.members = result.members.filter(member => member.branch === current.serviceBranch)
-            .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} } }));
+            .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} },
+              assignmentHistory: member.assignmentHistory.filter(item => item.branch === member.branch) }));
           result.fields = result.fields.filter(field => field.branch === current.serviceBranch);
           result.units = result.units.filter(unit => unit.branch === current.serviceBranch);
         }
@@ -287,6 +320,7 @@ function createMembers(db, people) {
         }
         if (value.version !== importVersion(value.csv)) fail(409, "Dati cambiati dopo l'anteprima: analizza di nuovo il CSV");
         transaction(() => {
+          units.checkpoint();
           // The newest census supplies the anagraphic snapshot; local branch and education stay untouched.
           result.members.sort((a, b) => a.year.localeCompare(b.year));
           for (const imported of result.members) {
@@ -312,7 +346,8 @@ function createMembers(db, people) {
                     !matched.has(index) && item.taxCode && item.taxCode === contact.taxCode) ?? -1;
                   const previous = member.profile.guardianContacts?.[index];
                   if (previous) matched.add(index);
-                  return previous ? { ...contact, givenName: previous.givenName || "", surname: previous.surname || "" } : contact;
+                  return previous ? { ...contact, fullName: previous.fullName || contact.fullName,
+                    givenName: previous.givenName || "", surname: previous.surname || "" } : contact;
                 });
               }
               writeProfile(member, member.revision ? member.branch : imported.branch, profile);
@@ -325,6 +360,7 @@ function createMembers(db, people) {
           db.prepare(`INSERT INTO member_group VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET
             data=excluded.data,year=excluded.year WHERE excluded.year>=member_group.year`)
             .run(JSON.stringify({ ...previousGroup, ...result.group }), year);
+          units.checkpoint();
         });
         send(response, 200, { ok: true, newCount: result.newCount, updatedCount: result.updatedCount }); return true;
       }

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160" role="img" aria-labelledby="title">
+  <title id="title">Guidone vuoto</title>
+  <path d="M23 8v145" fill="none" stroke="#76512d" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 20Q155 12 205 80Q155 148 30 140Z" fill="#fff" stroke="#5c5660" stroke-width="2"/>
+  <g id="simbolo" transform="translate(118 80)"/>
+</svg>

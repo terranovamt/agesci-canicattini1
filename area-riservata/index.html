@@ -71,6 +71,14 @@
           <button type="button" data-section-target="dashboard-assembly-panel">Assemblea di gruppo</button>
         </nav>
         <div id="dashboard-summary-panel" data-section-panel>
+        <article id="dashboard-group-overview" class="group-census-overview" aria-labelledby="group-census-title" hidden>
+          <div class="metrics-heading">
+            <div><p class="eyebrow">Il gruppo, a colpo d’occhio</p><h2 id="group-census-title">Censimenti per branca</h2></div>
+            <button id="dashboard-group-retry" class="button button-secondary" type="button" hidden>Riprova</button>
+          </div>
+          <p id="dashboard-group-status" class="group-census-status" role="status" aria-live="polite">Caricamento censimenti…</p>
+          <dl id="dashboard-group-counts" class="group-census-counts"></dl>
+        </article>
         <section id="dashboard-metrics" class="dashboard-metrics" aria-labelledby="dashboard-metrics-title" hidden>
           <div class="metrics-heading">
             <h2 id="dashboard-metrics-title">Sito e server</h2>
@@ -129,6 +137,7 @@
         </div>
         </div>
         <div id="dashboard-work-panel" data-section-panel>
+          <div class="dashboard-tools dashboard-work-tools">
           <article id="people-tool" class="dashboard-tool" hidden>
             <h3>Libro soci e accessi</h3>
             <p>Importa da AGESCI, consulta le schede e gestisci percorsi educativi, estrazioni e documenti.</p>
@@ -137,6 +146,13 @@
               <a id="people-access-tool" class="button button-secondary" href="persone.html">Gestisci accessi capi →</a>
             </div>
           </article>
+          <article class="dashboard-tool dashboard-tool-coming" aria-labelledby="activities-coming-title">
+            <span class="tool-number" aria-hidden="true">···</span>
+            <p class="dashboard-coming-label">In arrivo · da progettare</p>
+            <h3 id="activities-coming-title">Attività e campi</h3>
+            <p>Uno spazio da costruire insieme: calendario essenziale, schede per uscite e campi, partecipanti e promemoria pratici. Per ora questa sezione è solo un’idea: non gestisce né salva attività.</p>
+          </article>
+          </div>
         </div>
         <section class="dashboard-workflow" id="dashboard-assembly-panel" data-section-panel aria-labelledby="workflow-title">
           <h2 id="workflow-title">Dal lavoro alla presentazione</h2>

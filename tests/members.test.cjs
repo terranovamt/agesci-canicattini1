@@ -165,6 +165,12 @@ test("parents, multiple specialties, badges and tenderfoot role persist without 
   await app.import(csv([{ "RESP.GENITORIALE DATI": guardianSource }]));
   member = (await app.snapshot()).members.find(row => row.id === member.id);
   assert.equal(member.profile.guardianContacts[0].givenName, "Responsabile");
+  member.profile.guardianContacts[0] = { ...member.profile.guardianContacts[0], fullName: "Responsabile Verificato", givenName: "", surname: "" };
+  assert.equal((await app.request("members/" + member.id, "PATCH",
+    { revision: member.revision, branch: member.branch, profile: member.profile, values })).status, 200);
+  await app.import(csv([{ "RESP.GENITORIALE DATI": guardianSource }]));
+  member = (await app.snapshot()).members.find(row => row.id === member.id);
+  assert.equal(member.profile.guardianContacts[0].fullName, "Responsabile Verificato");
   assert.equal(member.profile.guardians, guardianSource);
   assert.deepEqual(member.values["E/G"], values);
   const before = await app.snapshot();
@@ -236,6 +242,8 @@ test("units preserve identity, colors, symbols and assignments across hide, rest
   };
   const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
   const first = (await send("units", "POST", { branch: "E/G", name: "Aquile", color: "#cc3038", color2: "#ffffff", emblem: png }, 201)).unit;
+  assert.equal(first.color, M.patrolIdentity("Aquile").color);
+  assert.equal(first.color2, M.patrolIdentity("Aquile").color2);
   const second = (await send("units", "POST", { branch: "E/G", name: "Falchi" }, 201)).unit;
   let state = await app.snapshot();
   const [a, b, c] = ["012345", "012346", "012347"].map(code => state.members.find(member => member.code === code));
@@ -288,6 +296,22 @@ test("units preserve identity, colors, symbols and assignments across hide, rest
   db.close();
   await assign(c.id, second.id, "Piede tenero");
   assert.deepEqual((await app.snapshot()).members.find(member => member.id === c.id).values["E/G"].specialita, ["Cuoco", "Old custom award"]);
+});
+
+test("patrol catalog resolves singular and plural names and preserves all supplied color variants", () => {
+  for (const [singular, plural, first, second = first] of M.patrolCatalog) {
+    const identity = M.patrolIdentity(singular);
+    assert.deepEqual(identity, M.patrolIdentity(plural.toUpperCase()));
+    assert.equal(identity.color, M.patrolColors[first][0]);
+    assert.equal(identity.color2, M.patrolColors[second][0]);
+    assert.match(identity.image, /^[a-z-]+\.svg$/);
+  }
+  assert.deepEqual(M.patrolIdentity("Aquile").colors, ["Verde", "Nero"]);
+  assert.deepEqual(M.patrolIdentity("Falchi").colors, ["Rosa"]);
+  assert.equal(M.patrolIdentity("Leoni").image, "leoni.svg");
+  assert.equal(M.patrolIdentity("Gallo"), null);
+  assert.equal(M.patrolCatalog.filter(([name]) => name.startsWith("Gallo ")).length, 3);
+  assert.equal(M.patrolIdentity("Nome locale"), null);
 });
 
 test("passage re-entry cannot reactivate a historical assignment into an occupied leader role", async t => {
@@ -365,6 +389,34 @@ test("LC environment is shared, migrates moments and novice roles, and respects 
   assert.deepEqual(await app.snapshot(), changed);
 });
 
+test("census overview returns only latest-year branch aggregates to administrators", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-census-overview-"));
+  const app = await start(directory, "7654321");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([
+    { "CODICE SOCIO": "012345", BRANCA: "Branca E/G" },
+    { "CODICE SOCIO": "012346", BRANCA: "Branca E/G" },
+    { "CODICE SOCIO": "012347", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012348", "ANNO SCOUT": "2025", BRANCA: "Branca R/S" },
+    { "CODICE SOCIO": "23816938", BRANCA: "Branca Adulti" },
+  ]));
+  const response = await app.request("members/overview");
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    year: "2026", total: 3,
+    branches: [
+      { branch: "L/C", count: 1 }, { branch: "E/G", count: 2 },
+      { branch: "R/S", count: 0 }, { branch: "Adulti", count: 0 },
+    ],
+  });
+  const state = await app.snapshot();
+  const chief = state.members.find(member => member.code === "7654321");
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
+  await app.login("7654321");
+  assert.equal((await app.request("members/overview")).status, 403);
+});
+
 test("CSV export is formula-safe with valid quoting and leading-zero codes", () => {
   const output = M.exportCsv([["012345", "=1+1", " +1", "@x", "-2", 'a,"b"\nnext', undefined]]);
   assert.equal(output, '\uFEFF"012345","\'=1+1","\' +1","\'@x","\'-2","a,""b""\nnext",""');
@@ -380,6 +432,8 @@ test("old suspended census records are excluded using the latest status, not bir
   assert.equal(M.longSuspended({ censuses: [{ year: "2027", statusCode: "A" }, { year: "2025", statusCode: "D" }] }, "2027"), false);
   assert.equal(M.nextBranch("L/C"), "E/G"); assert.equal(M.nextBranch("E/G"), "R/S"); assert.equal(M.nextBranch("R/S"), "");
   assert.equal(M.defaultFields.filter(f => f.branch === "R/S").some(f => ["ruolo", "specialita", "brevetti", "sestiglia", "squadriglia"].includes(f.key)), false);
+  assert.deepEqual(M.defaultFields.find(f => f.branch === "R/S" && f.key === "comunita"),
+    { branch: "R/S", key: "comunita", label: "Comunità R/S · Noviziato per i novizi", type: "select", options: ["Noviziato", "Clan"] });
 });
 
 test("educational schema upgrade preserves existing role values and custom definitions", () => {
@@ -391,11 +445,19 @@ test("educational schema upgrade preserves existing role values and custom defin
     const old = { branch: "E/G", key: "ruolo", label: "Ruolo in squadriglia", type: "text", options: [] };
     db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(old));
     db.prepare("INSERT INTO member_values VALUES(1,'E/G',?)").run('{"ruolo":"Legacy role"}');
+    const oldCommunity = { branch: "R/S", key: "comunita", label: "Noviziato / clan", type: "text", options: [] };
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='R/S' AND key='comunita'").run(JSON.stringify(oldCommunity));
+    db.prepare("INSERT INTO member_values VALUES(1,'R/S',?)").run('{"comunita":"Comunità locale"}');
     createMembers(db, {});
     const upgraded = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='ruolo'").get().definition);
     assert.equal(upgraded.type, "select");
     assert.equal(upgraded.options.includes("Capo squadriglia"), true);
     assert.equal(upgraded.options.includes("Legacy role"), true);
+    const upgradedCommunity = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='R/S' AND key='comunita'").get().definition);
+    assert.equal(upgradedCommunity.type, "select");
+    assert.deepEqual(upgradedCommunity.options.slice(0, 2), ["Noviziato", "Clan"]);
+    assert.equal(upgradedCommunity.options.includes("Comunità locale"), true);
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1 AND branch='R/S'").get().data).comunita, "Comunità locale");
     assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).ruolo, "Legacy role");
     const custom = { ...old, label: "Custom role" };
     db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(custom));
@@ -613,7 +675,7 @@ test("profiles, custom fields, templates and bulk macros validate and rollback a
   let [member] = members;
   for (const patch of [
     { profile: { givenName: "Esempio", password_hash: "bad" } }, { profile: { ...member.profile, birthDate: "2026-02-30" } },
-    { profile: { ...member.profile, consent2a: "invalid" } }, { values: { unknown: "x" } }, { values: { promessa: "no" } },
+    { values: { unknown: "x" } }, { values: { promessa: "no" } },
   ]) assert.equal((await app.request("members/" + member.id, "PATCH",
     { revision: member.revision, branch: member.branch, profile: member.profile, values: {}, ...patch })).status, 400);
   assert.deepEqual((await app.snapshot()).members.filter(m => m.code.startsWith("01234")), members);
@@ -644,4 +706,61 @@ test("profiles, custom fields, templates and bulk macros validate and rollback a
   const db = new DatabaseSync(path.join(directory, "site.sqlite"));
   assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
   db.close();
+});
+
+test("FoCa without CoCa is hidden, consents are ignored and annual assignments survive imports and restart", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-member-history-"));
+  let app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  const headers = [...columns, "LIVELLO FOCA", "INGRESSO COCA", "CONSENSO 2A", "CONSENSO RIVISTE"];
+  await app.import(csv([
+    { "ANNO SCOUT": "2025", BRANCA: "Branca L/C", "CONSENSO 2A": "SI" },
+    { "CODICE SOCIO": "012346", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "" },
+    { "CODICE SOCIO": "012347", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "2025" },
+  ], headers));
+  let state = await app.snapshot();
+  assert.equal(state.members.some(member => member.code === "012346"), false);
+  assert.equal(state.members.some(member => member.code === "012347"), true);
+  let member = state.members.find(member => member.code === "012345");
+  assert.equal(member.profile.consent2a, undefined);
+  const createUnit = async name => {
+    const response = await app.request("members/units", "POST", { branch: "L/C", name });
+    assert.equal(response.status, 201);
+    return (await response.json()).unit;
+  };
+  const first = await createUnit("Rossi");
+  const assign = async (unit, role) => {
+    assert.equal((await app.request("members/units/assign", "PATCH", {
+      memberId: member.id, revision: member.revision, unitId: unit.id, role,
+    })).status, 200);
+    member = (await app.snapshot()).members.find(row => row.id === member.id);
+  };
+  // The maximum imported year is the operational year for the whole group.
+  await assign(first, "Cucciolo");
+  await app.import(csv([{ "ANNO SCOUT": "2027", BRANCA: "Branca L/C" }]));
+  member = (await app.snapshot()).members.find(row => row.id === member.id);
+  const second = await createUnit("Bianchi");
+  await assign(second, "Sestigliere");
+  assert.deepEqual(member.assignmentHistory, [
+    { year: "2027", branch: "L/C", unit: "Bianchi", role: "Sestigliere" },
+    { year: "2026", branch: "L/C", unit: "Rossi", role: "Cucciolo" },
+  ]);
+  assert.equal((await app.request("members/" + member.id, "PATCH", {
+    revision: member.revision, branch: member.branch,
+    profile: { ...member.profile, consent2a: "invalid", magazines: "SI" }, values: member.values["L/C"],
+  })).status, 200);
+  const persisted = await app.snapshot();
+  member = persisted.members.find(row => row.id === member.id);
+  assert.equal(member.profile.consent2a, undefined);
+  assert.equal(member.profile.magazines, undefined);
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  const stored = JSON.parse(db.prepare("SELECT data FROM member_profiles WHERE person_id=?").get(member.id).data);
+  assert.equal(Object.hasOwn(stored, "consent2a"), false);
+  assert.equal(db.prepare("SELECT count(*) AS n FROM member_profiles").get().n >= 3, true);
+  db.close();
+  await app.close(); app = await start(directory); await app.login();
+  assert.deepEqual(await app.snapshot(), persisted);
+  assert.equal(M.pendingCoca({ foca: "CFT", coca: "NO" }), true);
+  assert.equal(M.pendingCoca({ foca: "", coca: "" }), false);
 });

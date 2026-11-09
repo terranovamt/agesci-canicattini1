@@ -25,7 +25,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
             guardians: "Esempio Responsabile [C.F.ABCDEF80A01H501U] - Nato/a a: Comune Esempio il: 1/1/1980 e-mail: guardian@example.invalid Cellulare: 000123" },
           censuses: [{ year: "2026", branch: "E/G", status: "Attivo" }], values: { "E/G": { squadriglia: "Aquile" } } },
         { id: 2, code: "012346", name: "Persona Locale", kind: "ragazzo", branch: "L/C", revision: 1,
-          profile: { givenName: "Persona", surname: "Locale" }, censuses: [], values: {} },
+          profile: { givenName: "Persona", surname: "Locale" }, censuses: [], values: { "L/C": { pista: "Nota precedente" } } },
         { id: 3, code: "012347", name: "Sospeso Lungo", kind: "ragazzo", branch: "E/G", revision: 1,
           profile: { givenName: "Sospeso", surname: "Lungo" }, censuses: [{ year: "2026", statusCode: "D", status: "Sospeso da oltre un anno" }], values: {} },
         { id: 4, code: "012348", name: "Sospeso Storico", kind: "ragazzo", branch: "L/C", revision: 1,
@@ -71,11 +71,17 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
     `;
     const exercise = `
       (async () => {
-        const results = {}, $ = id => document.getElementById(id);
+        const results = {}, $ = id => document.getElementById(id), M = window.SOCI_MODEL;
         const settle = () => new Promise(resolve => setTimeout(resolve, 30));
         try {
           await settle();
           results.loaded = !$('members-app').hidden;
+          results.contextualUnitLabels = $('units-tab').textContent === 'Sestiglie' &&
+            $('units-title').textContent.startsWith('Sestiglie');
+          $('units-branch').value = 'E/G'; $('units-branch').onchange();
+          results.contextualUnitLabels = results.contextualUnitLabels &&
+            $('units-tab').textContent === 'Squadriglie' && $('units-title').textContent.startsWith('Squadriglie');
+          $('units-branch').value = 'L/C'; $('units-branch').onchange();
           results.width = window.innerWidth;
           results.fits = document.documentElement.scrollWidth <= window.innerWidth;
           results.buttonLayout = [...document.querySelectorAll('.members-toolbar, .members-dialog-actions')]
@@ -90,6 +96,11 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
                   });
               });
             });
+          results.quickFilterTargets = [...document.querySelectorAll('.members-quick-filter-options button')]
+              .every(button => {
+                  const rect = button.getBoundingClientRect();
+                  return rect.height >= 44 && rect.left >= 0 && rect.right <= innerWidth + 1;
+              });
           results.safeName = !!document.querySelector('.member-name') && !document.querySelector('.member-name img');
           results.rows = $('members-list').rows.length;
           results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
@@ -105,10 +116,25 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.branchCardFilters = filters.branch.value === 'E/G' &&
             $('members-list').textContent.includes('012345') && !$('members-list').textContent.includes('Persona Locale') &&
             document.activeElement.getAttribute('aria-pressed') === 'true';
+          [...$('members-summary').querySelectorAll('button')].find(button => button.firstChild.textContent === 'E/G').click();
+          results.branchClickAgainClears = filters.branch.value === '' && $('members-list').rows.length === 2;
+          [...$('members-summary').querySelectorAll('button')].find(button => button.firstChild.textContent === 'E/G').click();
           results.summaryNoHint = !$('members-summary').textContent.includes('schede visibili nella branca locale');
           results.branchRows = $('members-list').rows.length;
-          filters.year.value = '2026'; $('members-filters').oninput();
+          [...document.querySelectorAll('[data-filter-key="year"]')].find(button => button.dataset.filterValue === '2026').click();
           results.yearRows = $('members-list').rows.length;
+          results.yearChipPressed = filters.year.value === '2026' &&
+            document.querySelector('[data-filter-key="year"][data-filter-value="2026"]').getAttribute('aria-pressed') === 'true';
+          document.querySelector('[data-filter-key="status"][data-filter-value="Attivo"]').click();
+          results.statusCombined = filters.status.value === 'Attivo' && $('members-list').rows.length === 1;
+          document.querySelector('[data-filter-key="status"][data-filter-value="Attivo"]').click();
+          results.statusChipToggle = filters.status.value === '' && filters.year.value === '2026';
+          document.querySelector('[data-filter-key="year"][data-filter-value="2026"]').click();
+          results.yearChipToggle = filters.year.value === '' && $('members-list').rows.length === 1;
+          results.advancedCollapsed = !$('members-advanced-search').open;
+          $('members-advanced-search').querySelector('summary').click();
+          results.advancedExpanded = $('members-advanced-search').open &&
+            $('members-advanced-search').querySelector('[name="birthYear"]').getClientRects().length > 0;
           filters.field.value = 'E/G:squadriglia'; filters.value.value = 'Aquile'; $('members-filters').oninput();
           results.fieldMatch = $('members-list').rows.length;
           filters.missing.checked = true; $('members-filters').oninput();
@@ -126,16 +152,16 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.length === 6 &&
+          results.sectionNavigation = memberTabs.length === 5 && !$('member-tab-consents') &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1;
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
           memberTabs[3].click();
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
-            $('member-panel-profile').hidden && !$('member-panel-consents').hidden;
+            $('member-panel-profile').hidden && !$('member-panel-education').hidden;
           $('member-section-next').click();
-          results.sectionProgress = $('member-section-progress').textContent.includes('5 di 6');
+          results.sectionProgress = $('member-section-progress').textContent.includes('5 di 5');
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
@@ -143,38 +169,47 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           const saveRect = $('member-save').getBoundingClientRect();
           results.saveReachable = saveRect.bottom <= innerHeight && saveRect.height >= 44;
           results.branchLocked = form.elements.branch.disabled;
-          results.prefilled = form.elements['extra:squadriglia'].value;
+          results.prefilled = $('member-assignment').textContent.includes('Aquile') &&
+            !form.elements['extra:squadriglia'] && !form.elements['extra:ruolo'];
+          results.assignmentHistory = $('member-assignment').querySelector('details').textContent.includes('Storico assegnazioni per anno');
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
           memberTabs[2].click();
           results.guardianParsed = $('member-guardians').children.length === 1 &&
             form.elements['guardian:0:taxCode'].value === 'ABCDEF80A01H501U' &&
             form.elements['guardian:0:email'].value === 'guardian@example.invalid' &&
-            form.elements['guardian:0:givenName'].value === '';
-          form.elements['guardian:0:givenName'].value = 'Responsabile';
-          form.elements['guardian:0:surname'].value = 'Esempio';
+            !form.elements['guardian:0:givenName'] && !form.elements['guardian:0:surname'] &&
+            form.elements['guardian:0:fullName'].value === 'Esempio Responsabile';
+          form.elements['guardian:0:fullName'].value = 'Responsabile Esempio';
           $('add-guardian').click();
           results.guardianAdd = $('member-guardians').children.length === 2;
           $('member-guardians').lastElementChild.querySelector('button').click();
           results.guardianRemove = $('member-guardians').children.length === 1;
-          memberTabs[4].click();
+          memberTabs[3].click();
           const specialtyGroup = [...$('member-education').querySelectorAll('.members-choice-field')]
             .find(group => group.querySelector('input[type=checkbox]').name === 'extra:specialita');
           specialtyGroup.querySelector('details').open = true;
+          results.specialtiesNotButtonGrid = specialtyGroup.querySelectorAll('.members-choice-list button, input[type=radio]').length === 0 &&
+            specialtyGroup.querySelectorAll('input[type=checkbox]').length === M.specialtyCatalogs['E/G'].length;
           const checkAward = value => {
             const checkbox = [...specialtyGroup.querySelectorAll('input[type=checkbox]')].find(input => input.value === value);
             checkbox.click();
           };
           checkAward('Cuoco'); checkAward('Fotografo');
+          results.specialtySummary = specialtyGroup.querySelector('summary').textContent.includes('2 selezionate') &&
+            specialtyGroup.querySelector('.members-selected-choices').textContent.includes('Cuoco') &&
+            specialtyGroup.querySelector('.members-selected-choices').textContent.includes('Fotografo');
+          specialtyGroup.querySelector('[aria-label="Rimuovi Cuoco"]').click();
+          results.specialtyRemove = ![...specialtyGroup.querySelectorAll('input[type=checkbox]')].find(input => input.value === 'Cuoco').checked;
+          checkAward('Cuoco');
           const awardSearch = specialtyGroup.querySelector('input[type=search]');
           awardSearch.value = 'cuoco'; awardSearch.dispatchEvent(new Event('input'));
           results.awardSearch = [...specialtyGroup.querySelector('.members-choice-list').children].filter(label => !label.hidden).length === 1;
           results.awardFits = $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
           const badge = [...$('member-education').querySelectorAll('input[name="extra:brevetti"]')].find(input => input.value === 'Pioniere');
           badge.click();
-          form.elements['extra:ruolo'].value = 'Piede tenero';
           form.elements['extra:tappa'].value = 'Tappa della scoperta';
           memberTabs[2].click();
-          results.guardianDraft = form.elements['guardian:0:givenName'].value === 'Responsabile';
+          results.guardianDraft = form.elements['guardian:0:fullName'].value === 'Responsabile Esempio';
           form.elements['profile:phone'].value = '000123';
           memberTabs[1].click();
           form.elements['profile:email'].value = 'not-an-email';
@@ -184,7 +219,6 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           form.elements['profile:email'].value = 'test@example.invalid';
           form.elements['profile:email'].setCustomValidity('');
           memberTabs[0].click();
-          form.elements['extra:squadriglia'].value = 'Falchi';
           form.requestSubmit(); await settle();
           results.saved = window.calls.find(call => call.method === 'PATCH').value;
           results.closedAfterSave = !$('member-dialog').open;
@@ -192,15 +226,16 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           $('open-macro').click();
           const macro = $('macro-form');
           macro.elements.branch.value = 'E/G'; macro.elements.branch.onchange();
-          macro.elements.key.value = 'squadriglia'; macro.elements.key.onchange();
-          macro.elements.value.value = 'Volpi';
+          results.noAssignmentMacro = ![...macro.elements.key.options].some(option => ['squadriglia', 'ruolo'].includes(option.value));
+          macro.elements.key.value = 'anno'; macro.elements.key.onchange();
+          macro.elements.value.value = 'Secondo anno';
           macro.requestSubmit(); await settle();
           results.macro = window.calls.find(call => call.route === 'members/macro').value;
           $('members-list').querySelector('input[type=checkbox]').click();
           $('open-documents').click();
           results.safeDocument = !document.querySelector('#document-preview img');
           $('print-documents').click();
-          results.printed = window.printed.includes('Volpi') && window.printed.includes('012345');
+          results.printed = window.printed.includes('Secondo anno') && window.printed.includes('012345');
           $('open-macro').click();
           macro.elements.action.value = 'passage'; macro.elements.action.onchange();
           results.nextBranch = macro.elements.branch.value;
@@ -219,6 +254,10 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.clearedCsv = $('import-csv').value === '';
           $('new-member').click();
           results.newEditableCode = !form.elements.code.readOnly;
+          document.querySelector('[data-close=member-dialog]').click();
+          [...document.querySelectorAll('#members-list .member-name')].find(button => button.textContent === 'Persona Locale').click();
+          results.onlyLcMoment = !form.elements['extra:pista'] && !!form.elements['extra:progressione'] &&
+            $('member-assignment').textContent.includes('Nota precedente');
           document.querySelector('[data-close=member-dialog]').click();
           results.errors = window.errors;
         } catch(error) { results.failure = error.message; results.errors = window.errors; }
@@ -260,31 +299,36 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.deepEqual(results.errors, []);
       assert.equal(results.width, width); assert.equal(results.fits, true);
       assert.equal(results.buttonLayout, true, JSON.stringify(results));
+      assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
-        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress"])
+        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress",
+        "contextualUnitLabels", "assignmentHistory", "onlyLcMoment"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.rows, 2);
       assert.equal(results.visibleCount, 2); assert.equal(results.withSuspended, 4); assert.equal(results.hiddenSelectionRemoved, true);
       assert.equal(results.branchLocked, true);
       assert.equal(results.branchCardFilters, true); assert.equal(results.summaryNoHint, true);
+      for (const key of ["branchClickAgainClears", "yearChipPressed", "statusCombined", "statusChipToggle",
+        "yearChipToggle", "advancedCollapsed", "advancedExpanded", "specialtiesNotButtonGrid", "specialtySummary", "specialtyRemove", "noAssignmentMacro"])
+        assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.branchRows, 1); assert.equal(results.yearRows, 1); assert.equal(results.fieldMatch, 1);
       assert.equal(results.birthRows, 1); assert.equal(results.birthGroup, true);
-      assert.equal(results.prefilled, "Aquile");
+      assert.equal(results.prefilled, true);
       assert.equal(results.saved.profile.phone, "000123");
-      assert.equal(results.saved.values.squadriglia, "Falchi");
+      assert.equal(results.saved.values.squadriglia, "Aquile");
       for (const key of ["guardianParsed", "guardianAdd", "guardianRemove", "guardianDraft", "awardSearch", "awardFits"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.deepEqual(results.saved.values.specialita, ["Cuoco", "Fotografo"]);
       assert.deepEqual(results.saved.values.brevetti, ["Pioniere"]);
       assert.equal(results.saved.values.progressione, undefined);
-      assert.equal(results.saved.values.ruolo, "Piede tenero");
+      assert.equal(results.saved.values.ruolo, undefined);
       assert.equal(results.saved.values.tappa, "Tappa della scoperta");
-      assert.equal(results.saved.profile.guardianContacts[0].givenName, "Responsabile");
+      assert.equal(results.saved.profile.guardianContacts[0].fullName, "Responsabile Esempio");
       assert.equal(results.invalidContactsVisible, true);
       assert.equal(results.saveReachable, true);
       assert.equal(results.saved.revision, 1);
-      assert.equal(results.macro.value, "Volpi"); assert.equal(results.macro.members[0].revision, 2);
+      assert.equal(results.macro.value, "Secondo anno"); assert.equal(results.macro.members[0].revision, 2);
       assert.equal(results.nextBranch, "R/S"); assert.equal(results.passage.branch, "R/S");
       assert.equal(results.pending, true, JSON.stringify(results)); assert.equal(results.notMoved, true, JSON.stringify(results)); assert.equal(results.cancelled, true, JSON.stringify(results));
       assert.equal(results.confirm.version, "preview-token"); assert.equal(results.confirm.csv, "synthetic csv");

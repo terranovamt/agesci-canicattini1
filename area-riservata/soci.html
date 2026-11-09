@@ -27,11 +27,14 @@
     <section id="members-app" hidden>
       <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
         <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
-        <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie e squadriglie</button>
+        <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie</button>
         <button type="button" data-section-target="members-transfer-panel">Passaggi</button>
         <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
       </nav>
       <div id="members-search-panel" data-section-panel>
+      <div class="members-heading">
+        <div><h2>Soci per branca</h2><p>Premi una branca per filtrare, ripremila per rimuovere il filtro.</p></div>
+      </div>
       <div id="members-summary" class="members-summary"></div>
       <div class="members-toolbar">
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
@@ -44,17 +47,23 @@
         <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
         <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
         <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
-        <label>Eta minima<input name="minAge" type="number" min="0" max="130"></label>
-        <label>Eta massima<input name="maxAge" type="number" min="0" max="130"></label>
-        <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
-        <label class="members-check"><input name="groupBirthYear" type="checkbox">Raggruppa per anno di nascita</label>
         <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
-        <label>Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="consents">Consensi 2A/2B/2C da verificare</option><option value="incomplete">Anagrafica da completare</option></select></label>
-        <label>Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
-        <label>Valore contiene<input name="value" type="search" autocomplete="off"></label>
-        <label class="members-check"><input name="missing" type="checkbox">Campo educativo vuoto</label>
+        <details id="members-advanced-search" class="members-advanced-search">
+          <summary>Ricerca avanzata <span>Età, dati da verificare e percorso educativo</span></summary>
+          <div class="members-filters-advanced">
+            <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
+            <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
+            <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
+            <label class="members-check"><input name="groupBirthYear" type="checkbox">Raggruppa per anno di nascita</label>
+            <label>Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="incomplete">Anagrafica da completare</option></select></label>
+            <label>Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
+            <label>Valore contiene<input name="value" type="search" autocomplete="off"></label>
+            <label class="members-check"><input name="missing" type="checkbox">Campo educativo vuoto</label>
+          </div>
+        </details>
         <button class="button button-secondary" type="reset">Azzera filtri</button>
       </form>
+      <div id="members-quick-filters" class="members-quick-filters" aria-label="Filtri rapidi per anno e status"></div>
       <div class="members-result-bar">
         <p id="members-count" role="status"></p>
         <div class="members-toolbar">
@@ -73,7 +82,7 @@
       </div>
       <section id="members-units-panel" data-section-panel aria-labelledby="units-title">
         <div class="members-heading">
-          <div><p id="units-environment-label" class="eyebrow"></p><h2 id="units-title">Sestiglie e squadriglie</h2></div>
+          <div><p id="units-environment-label" class="eyebrow"></p><h2 id="units-title">Sestiglie</h2></div>
           <label>Branca<select id="units-branch"><option value="L/C">L/C</option><option value="E/G">E/G</option></select></label>
         </div>
         <p id="units-status" role="status" aria-live="polite"></p>
@@ -82,12 +91,15 @@
           <button id="units-new-member" type="button" class="button button-secondary">Nuovo socio</button>
           <button id="reload-units" type="button" class="button button-secondary">Ricarica</button>
         </div>
+        <details id="lc-environment-settings" class="units-environment-settings">
+          <summary>Ambiente L/C</summary>
         <form id="lc-environment-form" class="units-environment">
           <label>Ambiente fantastico condiviso<select name="environment"><option value="Branco">Branco · Lupetti</option><option value="Cerchio">Cerchio · Coccinelle</option></select></label>
           <button type="submit" class="button button-secondary">Salva ambiente L/C</button>
           <p>La scelta vale per tutti i capi L/C. I momenti corrispondenti e i ruoli Cucciolo/Cocci vengono aggiornati senza spostare i soci.</p>
         </form>
-        <details id="unit-assignment" class="units-assignment" open>
+        </details>
+        <details id="unit-assignment" class="units-assignment">
           <summary>Inserisci o sposta un socio</summary>
           <form id="unit-assignment-form" class="members-form-grid">
             <label>Socio<select name="memberId" required></select></label>
@@ -95,9 +107,9 @@
             <label>Ruolo<select name="role" required></select></label>
             <button type="submit" class="button button-primary">Assegna / sposta</button>
           </form>
-          <p>Puoi anche trascinare un socio nella riga del ruolo desiderato. Su telefono o da tastiera premi “Sposta” sul socio e scegli la destinazione qui. Capo e vice hanno un solo posto: libera quello occupato prima di assegnarlo.</p>
+          <p>Trascina un socio nella riga desiderata oppure premi la freccia accanto al nome. C indica il capo, VC il vice; le righe in fondo evidenziano i nuovi ingressi. Capo e vice hanno un solo posto.</p>
         </details>
-        <p class="members-note">Sono mostrati i ragazzi della branca locale, esclusi i sospesi da oltre un anno. Nascondere un gruppo conserva soci, ruoli, colori e simbolo.</p>
+        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome per spostarlo.</p>
         <div id="unit-unassigned"></div>
         <div id="units-board" class="units-board"></div>
         <details id="units-hidden"><summary>Gruppi nascosti</summary><div id="units-hidden-list"></div></details>
@@ -157,7 +169,6 @@
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
         <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false">Contatti</button>
         <button type="button" role="tab" id="member-tab-guardians" aria-controls="member-panel-guardians" aria-selected="false">Genitori</button>
-        <button type="button" role="tab" id="member-tab-consents" aria-controls="member-panel-consents" aria-selected="false">Consensi</button>
         <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
         <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
       </nav>
@@ -172,20 +183,16 @@
       <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" hidden>
         <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
       </section>
-      <section id="member-panel-consents" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-consents" hidden>
-        <h3>Consensi</h3><div id="member-consents" class="members-form-grid"></div>
-      </section>
       <section id="member-panel-guardians" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-guardians" hidden>
         <h3>Responsabili genitoriali</h3>
         <div id="member-guardian-type"></div>
-        <p>CF, nascita e contatti sono separati dalla fonte AGESCI. Il nome completo importato resta visibile: verifica nome e cognome, senza divisioni o unioni automatiche.</p>
         <p id="member-guardian-warning" role="status"></p>
         <div id="member-guardians"></div>
         <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
         <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
       </section>
       <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
-        <h3>Percorso educativo di branca</h3><div id="member-education" class="members-form-grid"></div>
+        <h3>Percorso educativo di branca</h3><div id="member-assignment"></div><div id="member-education" class="members-form-grid"></div>
       </section>
       <section id="member-panel-censuses" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-censuses" hidden>
         <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>

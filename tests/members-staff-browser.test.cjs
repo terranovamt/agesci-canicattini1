@@ -47,7 +47,8 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           result.approval = calls.find(call => call.route === 'members/transfers/1').value;
           document.querySelector('.member-name').click();
           result.branchLocked = $('member-form').elements.branch.disabled;
-          result.roleOptions = [...$('member-form').elements['extra:ruolo'].options].map(option => option.value);
+          result.assignmentReadOnly = !$('member-form').elements['extra:ruolo'] &&
+            !$('member-form').elements['extra:squadriglia'] && $('member-assignment').textContent.includes('Squadriglie');
           document.querySelector('[data-close=member-dialog]').click();
           $('select-results').click(); $('open-macro').click();
           const macro = $('macro-form');
@@ -94,7 +95,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       for (const key of ["loaded", "hidden", "confirmVisible", "branchLocked", "noEducationalInput", "fits"])
         assert.equal(measured[key], true, key + " at " + width + ": " + JSON.stringify(measured));
       assert.deepEqual(measured.scope, ["E/G"]);
-      assert.deepEqual(measured.roleOptions, ["", "Capo squadriglia", "Vice capo squadriglia", "Squadrigliere", "Piede tenero"]);
+      assert.equal(measured.assignmentReadOnly, true);
       assert.deepEqual(measured.approval, { action: "confirm", revision: 1 });
       assert.equal(measured.target, "R/S");
       assert.equal(measured.proposal.branch, "R/S");
