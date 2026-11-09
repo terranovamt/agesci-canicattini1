@@ -95,7 +95,12 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           filters.showSuspended.checked = false; $('members-filters').oninput();
           results.hiddenSelectionRemoved = $('members-count').textContent.includes('2 selezionati');
           $('clear-selection').click();
-          filters.branch.value = 'E/G'; $('members-filters').oninput();
+          const branchCard = [...$('members-summary').querySelectorAll('button')].find(button => button.firstChild.textContent === 'E/G');
+          branchCard.click();
+          results.branchCardFilters = filters.branch.value === 'E/G' &&
+            $('members-list').textContent.includes('012345') && !$('members-list').textContent.includes('Persona Locale') &&
+            document.activeElement.getAttribute('aria-pressed') === 'true';
+          results.summaryNoHint = !$('members-summary').textContent.includes('schede visibili nella branca locale');
           results.branchRows = $('members-list').rows.length;
           filters.year.value = '2026'; $('members-filters').oninput();
           results.yearRows = $('members-list').rows.length;
@@ -202,6 +207,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.equal(results.rows, 2);
       assert.equal(results.visibleCount, 2); assert.equal(results.withSuspended, 4); assert.equal(results.hiddenSelectionRemoved, true);
       assert.equal(results.branchLocked, true);
+      assert.equal(results.branchCardFilters, true); assert.equal(results.summaryNoHint, true);
       assert.equal(results.branchRows, 1); assert.equal(results.yearRows, 1); assert.equal(results.fieldMatch, 1);
       assert.equal(results.birthRows, 1); assert.equal(results.birthGroup, true);
       assert.equal(results.prefilled, "Aquile");

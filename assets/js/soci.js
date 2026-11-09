@@ -80,8 +80,15 @@
       data.members.filter(member => M.longSuspended(member, data.currentYear)).forEach(member => selected.delete(member.id));
     const countable = data.members.filter(member => filters.elements.showSuspended.checked || !M.longSuspended(member, data.currentYear));
     $('members-summary').replaceChildren(...M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch).map((branch, i) => {
-      const card = node('article'); card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
-      card.append(node('span', branch), node('strong', String(countable.filter(m => m.branch === branch).length)), node('span', 'schede visibili nella branca locale'));
+      const card = node('button'); card.type = 'button';
+      card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
+      card.setAttribute('aria-pressed', String(filters.elements.branch.value === branch));
+      card.append(node('span', branch), node('strong', String(countable.filter(m => m.branch === branch).length)));
+      card.onclick = () => {
+        filters.elements.branch.value = branch;
+        render();
+        [...$('members-summary').children].find(button => button.firstChild.textContent === branch)?.focus();
+      };
       return card;
     }));
     $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
