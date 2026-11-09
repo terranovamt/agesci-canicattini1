@@ -129,10 +129,17 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           search.value = 'SONA'; search.oninput();
           check($('unit-available-list').querySelectorAll('mark').length === 2 &&
             [...$('unit-available-list').querySelectorAll('mark')].every(mark => mark.textContent === 'sona'), 'highlightSubstring');
+          const availableCards = [...$('unit-available-list').querySelectorAll('.unit-member')];
+          search.value = availableCards[0].querySelector('.member-name').dataset.name;
+          search.oninput();
+          check(!availableCards[0].hidden && availableCards[1].hidden &&
+            availableCards[0].querySelector('mark'), 'filterNames');
           search.value = '<img>'; search.oninput();
           check(!$('unit-available-list').querySelector('mark, img') &&
+            availableCards.every(card => card.hidden) &&
             $('unit-available-status').textContent.includes('Nessun nome'), 'safeSearch');
           search.value = ''; search.oninput();
+          check(availableCards.every(card => !card.hidden), 'clearNameSearch');
           check($('lc-environment-form').hidden && !$('units-board').textContent.includes('Persona 7'), 'egScope');
           $('new-unit').click(); form.elements.name.value = 'Nome senza colori'; form.elements.name.oninput();
           check($('unit-appearance').hidden && $('unit-name-hint').textContent.includes('non sono definiti'), 'fixedEditor');

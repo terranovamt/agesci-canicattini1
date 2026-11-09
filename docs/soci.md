@@ -236,8 +236,8 @@ sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
 **Soci disponibili**, con l'assegnazione conservata indicata.
 Il blocco resta aperto in alto ed e fisso durante lo scorrimento (tranne negli
 schermi molto bassi, per non coprire le destinazioni); sparisce quando e vuoto.
-La ricerca accanto al titolo evidenzia tutte le occorrenze nei nomi, senza
-nascondere gli altri soci. Trascinare un nome su questo blocco rimuove
+La ricerca **Cerca**, a sinistra del riquadro, evidenzia tutte le occorrenze
+nei nomi e nasconde i soci che non corrispondono. Trascinare un nome su questo blocco rimuove
 esplicitamente l'assegnazione. Non ci sono frecce o form separati per spostare.
 Da tastiera, premere Invio sulla maniglia, raggiungere una riga di destinazione
 con Tab e confermare con Invio o Spazio; Esc annulla.

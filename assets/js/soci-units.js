@@ -184,6 +184,7 @@
         const text = name.dataset.name, lower = text.toLocaleLowerCase('it');
         name.replaceChildren();
         let start = 0, index = query ? lower.indexOf(query) : -1;
+        name.closest('.unit-member').hidden = !!query && index < 0;
         if (index >= 0) matches++;
         while (index >= 0) {
           name.append(document.createTextNode(text.slice(start, index)), el('mark', text.slice(index, index + query.length)));
@@ -193,7 +194,7 @@
         name.append(document.createTextNode(text.slice(start)));
       }
       $('unit-available-status').textContent = query
-        ? matches ? `${matches} nomi evidenziati. Trascina un socio sulla riga desiderata.` : 'Nessun nome corrisponde alla ricerca.'
+        ? matches ? `${matches} soci trovati. Trascina un socio sulla riga desiderata.` : 'Nessun nome corrisponde alla ricerca.'
         : 'Trascina un socio sulla riga desiderata.';
     }
     search.oninput = highlightNames;
