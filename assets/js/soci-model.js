@@ -80,6 +80,22 @@
   function selectedChoices(value) {
     return Array.isArray(value) ? value : String(value || '').split(';').map(item => item.trim()).filter(Boolean);
   }
+  const lcMoments = {
+    Branco: ['Lupo della legge', 'Lupo della rupe', 'Lupo anziano'],
+    Cerchio: ['Coccinella del prato', 'Coccinella del bosco', 'Coccinella della montagna'],
+  };
+  const sestigliaColors = {
+    Bianchi: '#ffffff', Neri: '#242424', Rossi: '#cc3038', Grigi: '#898989',
+    Bruni: '#74482b', Fulvi: '#c07832', Gialli: '#f5cb31', Verdi: '#398258',
+    Azzurri: '#5096d3', Blu: '#25477e', Arancioni: '#ed8e32', Viola: '#8459a2',
+  };
+  function unitKey(name) { return String(name || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it'); }
+  function unitField(branch) { return branch === 'L/C' ? 'sestiglia' : 'squadriglia'; }
+  function unitRoles(branch, environment = 'Branco') {
+    return branch === 'E/G'
+      ? ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere', 'Piede tenero']
+      : ['Capo sestiglia', 'Vice capo sestiglia', 'Sestigliere', environment === 'Cerchio' ? 'Cocci' : 'Cucciolo'];
+  }
   const defaultFields = [
     ['L/C', 'sestiglia', 'Sestiglia'], ['L/C', 'pista', 'Pista / sentiero'],
     ['L/C', 'specialita', 'Specialita'], ['L/C', 'promessa', 'Data promessa', 'date'],
@@ -91,15 +107,14 @@
     ['Adulti', 'servizio', 'Servizio in gruppo'], ['Adulti', 'formazione', 'Percorso formativo'],
   ].map(([branch, key, label, type = 'text']) => ({ branch, key, label, type, options: [] }));
   const choices = [
-    ['L/C', 'ruolo', 'Ruolo in sestiglia', ['Capo sestiglia', 'Vice capo sestiglia', 'Sestigliere', 'Novizio']],
+    ['L/C', 'ruolo', 'Ruolo in sestiglia', unitRoles('L/C')],
     ['L/C', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno']],
     ['L/C', 'progressione', 'Progressione', ['Lupo della legge', 'Lupo della rupe', 'Lupo anziano']],
     ['E/G', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno', 'Quarto anno']],
-    ['E/G', 'progressione', 'Piede tenero', ['Si', 'No']],
     ['R/S', 'passi', 'Passi', ['Passi della scoperta', 'Passi della competenza', 'Passi della responsabilita']],
   ];
   defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').type = 'select';
-  defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').options = ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere'];
+  defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').options = unitRoles('E/G');
   for (const [branch, key, label, options] of choices) defaultFields.push({ branch, key, label, type: 'select', options });
   const egStage = defaultFields.find(field => field.branch === 'E/G' && field.key === 'tappa');
   egStage.type = 'select';
@@ -208,6 +223,7 @@
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
   const model = { branches, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
+    lcMoments, sestigliaColors, unitKey, unitField, unitRoles,
     selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;
   else root.SOCI_MODEL = model;

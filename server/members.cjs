@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 const M = require("../assets/js/soci-model.js");
 const { ADMIN_CODE } = require("./people.cjs");
+const { createMemberUnits } = require("./member-units.cjs");
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const object = value => value && typeof value === "object" && !Array.isArray(value);
 const text = (value, max = 500) => {
@@ -62,24 +63,53 @@ function createMembers(db, people) {
     const row = db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key=?").get(field.branch, field.key);
     const old = JSON.parse(row.definition);
     const expected = field.key === "progressione"
-      ? field.branch === "E/G"
-        ? { ...field, label: "Ingresso in reparto", options: ["Piede tenero"] }
-        : { ...field, label: "Progressione" }
+      ? { ...field, label: "Progressione" }
       : { ...field, type: "text", options: [] };
     if (JSON.stringify(old) === JSON.stringify(expected)) {
       db.prepare("UPDATE member_fields SET definition=? WHERE branch=? AND key=?")
         .run(JSON.stringify(field), field.branch, field.key);
-      if (field.branch === "E/G" && field.key === "progressione") {
-        for (const row of db.prepare("SELECT person_id,data FROM member_values WHERE branch='E/G'").all()) {
-          const values = JSON.parse(row.data);
-          if (values.progressione !== "Piede tenero") continue;
-          values.progressione = "Si";
-          db.prepare("UPDATE member_values SET data=? WHERE person_id=? AND branch='E/G'")
-            .run(JSON.stringify(values), row.person_id);
-        }
-      }
     }
   }
+  const flagRow = db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='progressione'").get();
+  const oldFlags = [
+    { branch: "E/G", key: "progressione", label: "Piede tenero", type: "select", options: ["Si", "No"] },
+    { branch: "E/G", key: "progressione", label: "Ingresso in reparto", type: "select", options: ["Piede tenero"] },
+  ];
+  const removeFlag = flagRow && oldFlags.some(field => flagRow.definition === JSON.stringify(field));
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    let migrateNovizio = false;
+    for (const [branch, oldOptions] of [
+      ["E/G", ["Capo squadriglia", "Vice capo squadriglia", "Squadrigliere"]],
+      ["L/C", ["Capo sestiglia", "Vice capo sestiglia", "Sestigliere", "Novizio"]],
+    ]) {
+      const field = M.defaultFields.find(field => field.branch === branch && field.key === "ruolo");
+      const old = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key='ruolo'").get(branch).definition);
+      const standard = JSON.stringify({ ...old, options: field.options }) === JSON.stringify(field);
+      if (!standard || !oldOptions.every((option, index) => old.options[index] === option)) continue;
+      if (branch === "L/C") migrateNovizio = true;
+      const options = [...field.options, ...old.options.filter(option => !oldOptions.includes(option) && !field.options.includes(option))];
+      db.prepare("UPDATE member_fields SET definition=? WHERE branch=? AND key='ruolo'")
+        .run(JSON.stringify({ ...field, options }), branch);
+    }
+    if (removeFlag) db.prepare("DELETE FROM member_fields WHERE branch='E/G' AND key='progressione'").run();
+    for (const row of db.prepare("SELECT person_id,branch,data FROM member_values WHERE branch IN ('L/C','E/G')").all()) {
+      const values = JSON.parse(row.data);
+      let changed = false;
+      if (row.branch === "L/C" && migrateNovizio && values.ruolo === "Novizio") { values.ruolo = "Cucciolo"; changed = true; }
+      if (row.branch === "E/G" && removeFlag && Object.hasOwn(values, "progressione")) {
+        if (["Si", "Piede tenero"].includes(values.progressione) && (!values.ruolo || values.ruolo === "Squadrigliere"))
+          values.ruolo = "Piede tenero";
+        delete values.progressione;
+        changed = true;
+      }
+      if (!changed) continue;
+      db.prepare("UPDATE member_values SET data=? WHERE person_id=? AND branch=?").run(JSON.stringify(values), row.person_id, row.branch);
+      db.prepare("UPDATE member_profiles SET revision=revision+1 WHERE person_id=?").run(row.person_id);
+    }
+    db.exec("COMMIT");
+  } catch (error) { db.exec("ROLLBACK"); throw error; }
+  const units = createMemberUnits(db);
   if (!db.prepare("SELECT id FROM member_templates LIMIT 1").get())
     db.prepare("INSERT INTO member_templates(title,body) VALUES(?,?)").run("Scheda interna socio",
       "Scheda interna - non sostituisce documenti ufficiali AGESCI\n\n{{nome}} {{cognome}}\nCodice socio: {{codice}}\nBranca: {{branca}}\nAnno scout: {{anno}}\nEmail: {{email}}\nTelefono: {{cellulare}}\n\nPercorso educativo:\n{{percorso}}\n\nData: {{data}}");
@@ -88,7 +118,7 @@ function createMembers(db, people) {
     try { const result = action(); db.exec("COMMIT"); return result; }
     catch (error) { db.exec("ROLLBACK"); throw error; }
   };
-  const fields = () => db.prepare("SELECT definition FROM member_fields ORDER BY branch,key").all().map(row => JSON.parse(row.definition));
+  const fields = () => units.definitions(db.prepare("SELECT definition FROM member_fields ORDER BY branch,key").all().map(row => JSON.parse(row.definition)));
   const templates = () => db.prepare("SELECT * FROM member_templates ORDER BY title").all();
   const withGuardians = profile => Object.hasOwn(profile, "guardianContacts") ? profile
     : { ...profile, guardianContacts: M.parseGuardians(profile.guardians).contacts };
@@ -151,8 +181,9 @@ function createMembers(db, people) {
       const definition = definitions.find(field => field.key === key);
       const previous = member.values[branch]?.[key];
       if (definition.type === "multiselect") {
-        if (!Array.isArray(valueText) || valueText.length > 100) fail(400, "Selezione di branca non valida");
-        validated[key] = valueText.map(value => text(value, 2000));
+        const selected = typeof valueText === "string" && valueText === previous ? M.selectedChoices(valueText) : valueText;
+        if (!Array.isArray(selected) || selected.length > 100) fail(400, "Selezione di branca non valida");
+        validated[key] = selected.map(value => text(value, 2000));
         const legacy = M.selectedChoices(previous);
         if (new Set(validated[key]).size !== validated[key].length ||
             validated[key].some(value => !definition.options.includes(value) && !legacy.includes(value)))
@@ -163,6 +194,7 @@ function createMembers(db, people) {
       if (definition.type === "date") validated[key] = dateValue(validated[key]);
       if (definition.type === "select" && validated[key] && !definition.options.includes(validated[key]) && validated[key] !== previous) fail(400, "Opzione di branca non valida");
     }
+    units.validateAssignment(member, branch, validated);
     db.prepare("INSERT INTO member_values VALUES(?,?,?) ON CONFLICT(person_id,branch) DO UPDATE SET data=excluded.data")
       .run(member.id, branch, JSON.stringify(validated));
   };
@@ -170,6 +202,7 @@ function createMembers(db, people) {
     members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id)),
     fields: fields(), templates: templates(),
     group: JSON.parse(db.prepare("SELECT data FROM member_group WHERE id=1").get()?.data || "{}"),
+    units: units.all(), lc: units.configuration(),
   });
   const importPlan = csv => {
     let result;
@@ -207,6 +240,7 @@ function createMembers(db, people) {
           result.members = result.members.filter(member => member.branch === current.serviceBranch)
             .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} } }));
           result.fields = result.fields.filter(field => field.branch === current.serviceBranch);
+          result.units = result.units.filter(unit => unit.branch === current.serviceBranch);
         }
         result.transfers = db.prepare(`SELECT t.* FROM member_transfers t JOIN people p ON p.id=t.person_id
           WHERE t.status='pending' AND p.census_code!=? ORDER BY t.id`).all(ADMIN_CODE)
@@ -221,6 +255,8 @@ function createMembers(db, people) {
           });
         send(response, 200, result); return true;
       }
+      if (await units.handle(route, request, response,
+        { body, send, access, transaction, get, requireRevision, writeValues, writeProfile })) return true;
       if (route === "/api/members" && method === "POST") {
         admin();
         const value = await body(request, 64000);
@@ -359,6 +395,7 @@ function createMembers(db, people) {
             const member = get(transfer.person_id);
             requireRevision(member, transfer.member_revision);
             if (member.branch !== transfer.source) fail(409, "Branca del socio cambiata: riproporre il passaggio");
+            units.validateAssignment(member, transfer.target, { ...(member.values[transfer.target] || {}) });
             writeProfile(member, transfer.target, member.profile);
           }
           db.prepare("UPDATE member_transfers SET status=?,revision=revision+1,reviewer_id=? WHERE id=?")

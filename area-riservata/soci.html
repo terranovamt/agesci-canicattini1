@@ -27,6 +27,7 @@
     <section id="members-app" hidden>
       <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
         <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
+        <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie e squadriglie</button>
         <button type="button" data-section-target="members-transfer-panel">Passaggi</button>
         <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
       </nav>
@@ -70,6 +71,37 @@
       <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
       <p id="suspension-note" class="members-note"></p>
       </div>
+      <section id="members-units-panel" data-section-panel aria-labelledby="units-title">
+        <div class="members-heading">
+          <div><p id="units-environment-label" class="eyebrow"></p><h2 id="units-title">Sestiglie e squadriglie</h2></div>
+          <label>Branca<select id="units-branch"><option value="L/C">L/C</option><option value="E/G">E/G</option></select></label>
+        </div>
+        <p id="units-status" role="status" aria-live="polite"></p>
+        <div class="members-toolbar">
+          <button id="new-unit" type="button" class="button button-primary">Aggiungi gruppo</button>
+          <button id="units-new-member" type="button" class="button button-secondary">Nuovo socio</button>
+          <button id="reload-units" type="button" class="button button-secondary">Ricarica</button>
+        </div>
+        <form id="lc-environment-form" class="units-environment">
+          <label>Ambiente fantastico condiviso<select name="environment"><option value="Branco">Branco · Lupetti</option><option value="Cerchio">Cerchio · Coccinelle</option></select></label>
+          <button type="submit" class="button button-secondary">Salva ambiente L/C</button>
+          <p>La scelta vale per tutti i capi L/C. I momenti corrispondenti e i ruoli Cucciolo/Cocci vengono aggiornati senza spostare i soci.</p>
+        </form>
+        <details id="unit-assignment" class="units-assignment" open>
+          <summary>Inserisci o sposta un socio</summary>
+          <form id="unit-assignment-form" class="members-form-grid">
+            <label>Socio<select name="memberId" required></select></label>
+            <label>Destinazione<select name="unitId"></select></label>
+            <label>Ruolo<select name="role" required></select></label>
+            <button type="submit" class="button button-primary">Assegna / sposta</button>
+          </form>
+          <p>Puoi anche trascinare un socio nella riga del ruolo desiderato. Su telefono o da tastiera premi “Sposta” sul socio e scegli la destinazione qui. Capo e vice hanno un solo posto: libera quello occupato prima di assegnarlo.</p>
+        </details>
+        <p class="members-note">Sono mostrati i ragazzi della branca locale, esclusi i sospesi da oltre un anno. Nascondere un gruppo conserva soci, ruoli, colori e simbolo.</p>
+        <div id="unit-unassigned"></div>
+        <div id="units-board" class="units-board"></div>
+        <details id="units-hidden"><summary>Gruppi nascosti</summary><div id="units-hidden-list"></div></details>
+      </section>
       <section id="members-transfer-panel" class="members-settings" data-section-panel aria-labelledby="transfers-title">
         <h2 id="transfers-title">Passaggi in attesa</h2>
         <p>La branca resta quella di provenienza finche un altro capo della destinazione conferma. Nessuna progressione viene assegnata automaticamente per eta.</p>
@@ -95,6 +127,28 @@
       </section>
     </section>
   </main>
+  <dialog id="unit-dialog" class="members-dialog">
+    <form id="unit-form">
+      <div class="members-dialog-heading"><h2 id="unit-editor-title">Nuovo gruppo</h2><button id="close-unit" class="button button-secondary" type="button">Chiudi</button></div>
+      <p id="unit-error" role="alert"></p>
+      <label>Nome<input name="name" required maxlength="80" autocomplete="off" list="sestiglia-names"></label>
+      <datalist id="sestiglia-names"></datalist>
+      <p id="unit-name-hint">Lo stesso nome ripristina un gruppo nascosto, comprese le sue informazioni.</p>
+      <div id="unit-appearance">
+        <div id="unit-symbol-preview" class="unit-symbol-preview"></div>
+        <div class="members-form-grid">
+          <label>Colore principale<input name="color" type="color" value="#ffffff"></label>
+          <label id="unit-color2-label">Secondo colore<input name="color2" type="color" value="#ffffff"></label>
+        </div>
+        <div id="unit-emblem-controls">
+          <label>Simbolo del guidone<input id="unit-image-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+          <p>PNG, JPEG o WebP fino a 5 MiB. Il simbolo viene ridimensionato e salvato nel database, non pubblicato sul sito.</p>
+          <button id="remove-unit-image" type="button" class="button button-secondary">Rimuovi simbolo</button>
+        </div>
+      </div>
+      <button id="save-unit" type="submit" class="button button-primary">Crea / ripristina</button>
+    </form>
+  </dialog>
   <dialog id="member-dialog" class="members-dialog">
     <form id="member-form">
       <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
@@ -188,6 +242,7 @@
   <script src="../config/site.js"></script>
   <script src="../assets/js/shared/accesso.js"></script>
   <script src="../assets/js/soci-model.js"></script>
+  <script src="../assets/js/soci-units.js"></script>
   <script src="../assets/js/soci.js"></script>
   <script src="../assets/js/shared/section-nav.js"></script>
 </body>

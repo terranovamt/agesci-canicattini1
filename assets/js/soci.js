@@ -8,6 +8,7 @@
   const memberSections = ['profile', 'contacts', 'guardians', 'consents', 'education', 'censuses'];
   let guardianNextIndex = 0;
   const selected = new Set();
+  const unitBoard = window.SOCI_UNITS({ perform: run, reload: load, openMember });
   function node(tag, text, className) {
     const el = document.createElement(tag);
     if (text !== undefined) el.textContent = text;
@@ -199,6 +200,7 @@
     $('members-app').hidden = false;
     renderTransfers();
     render();
+    unitBoard.update(data);
   }
   async function run(action, errorTarget = $('members-status')) {
     if (busy) return;
@@ -271,7 +273,13 @@
   function renderEducation() {
     educationBranch = profileForm.elements.branch.value;
     $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch)
-      .map(field => input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...field, max: 2000 })));
+      .map(field => input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...educationDefinition(field), max: 2000 })));
+  }
+  function educationDefinition(field) {
+    if (['L/C', 'E/G'].includes(field.branch) && field.key === M.unitField(field.branch) && field.type === 'text') {
+      return { ...field, type: 'select', options: data.units.filter(unit => unit.branch === field.branch && !unit.hidden).map(unit => unit.name) };
+    }
+    return field;
   }
   function showMemberSection(index, focus = false) {
     memberSection = Math.max(0, Math.min(memberSections.length - 1, index));
@@ -431,12 +439,12 @@
     $('macro-field-label').hidden = !fieldAction;
     $('macro-value').replaceChildren();
     const definition = fields.find(field => field.key === f.key.value);
-    if (fieldAction && definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...definition, max: 2000 }));
+    if (fieldAction && definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
   }
   macroForm.elements.branch.onchange = macroForm.elements.action.onchange = macroInputs;
   macroForm.elements.key.onchange = () => {
     const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === macroForm.elements.key.value);
-    $('macro-value').replaceChildren(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...definition, max: 2000 }));
+    $('macro-value').replaceChildren(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
   };
   $('open-macro').onclick = () => {
     $('macro-error').textContent = '';

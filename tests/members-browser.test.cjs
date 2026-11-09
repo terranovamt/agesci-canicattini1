@@ -15,6 +15,10 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "members-browser-"));
   try {
     const snapshot = {
+      units: [{ id: 1, branch: "E/G", name: "Aquile", color: "#ffffff", color2: "#ff0000", emblem: "", hidden: false, revision: 1 },
+        { id: 2, branch: "E/G", name: "Falchi", color: "#ffffff", color2: "#ff0000", emblem: "", hidden: false, revision: 1 },
+        { id: 3, branch: "E/G", name: "Volpi", color: "#ffffff", color2: "#ff0000", emblem: "", hidden: false, revision: 1 }],
+      lc: { environment: "Branco", revision: 1 },
       members: [
         { id: 1, code: "012345", name: '<img src=x onerror=alert(1)> Esempio', kind: "ragazzo", branch: "E/G", revision: 1,
           profile: { givenName: '<img src=x onerror=alert(1)>', surname: "Esempio", birthDate: "2012-03-02", email: "test@example.invalid",
@@ -167,8 +171,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.awardFits = $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
           const badge = [...$('member-education').querySelectorAll('input[name="extra:brevetti"]')].find(input => input.value === 'Pioniere');
           badge.click();
-          form.elements['extra:progressione'].value = 'No';
-          form.elements['extra:ruolo'].value = 'Squadrigliere';
+          form.elements['extra:ruolo'].value = 'Piede tenero';
           form.elements['extra:tappa'].value = 'Tappa della scoperta';
           memberTabs[2].click();
           results.guardianDraft = form.elements['guardian:0:givenName'].value === 'Responsabile';
@@ -227,6 +230,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
           src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
       .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
@@ -273,8 +277,8 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.deepEqual(results.saved.values.specialita, ["Cuoco", "Fotografo"]);
       assert.deepEqual(results.saved.values.brevetti, ["Pioniere"]);
-      assert.equal(results.saved.values.progressione, "No");
-      assert.equal(results.saved.values.ruolo, "Squadrigliere");
+      assert.equal(results.saved.values.progressione, undefined);
+      assert.equal(results.saved.values.ruolo, "Piede tenero");
       assert.equal(results.saved.values.tappa, "Tappa della scoperta");
       assert.equal(results.saved.profile.guardianContacts[0].givenName, "Responsabile");
       assert.equal(results.invalidContactsVisible, true);

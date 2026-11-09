@@ -236,11 +236,33 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   raccolta delle bozze e validazione devono gestire entrambe le forme.
   Valori precedenti fuori catalogo restano visibili e possono essere
   conservati, non assegnati ex novo ad altri soci.
-- Migrare solo definizioni standard esattamente riconosciute, mai quelle
-  personalizzate. Il vecchio E/G `progressione="Piede tenero"` diventa `Si`;
-  la scelta Si/No resta indipendente da `ruolo`. Momenti L/C e tappe E/G
+- Migrare solo definizioni standard riconosciute, mai quelle
+  personalizzate. Il vecchio E/G `progressione="Si"`/`"Piede tenero"` diventa
+  `ruolo="Piede tenero"` se il ruolo era vuoto/Squadrigliere; capo e vice
+  espliciti hanno precedenza. Eliminare soltanto il campo flag standard.
+  `Novizio` L/C diventa `Cucciolo` solo con lo schema standard precedente.
+  Migrazioni atomiche e idempotenti, con revisione dei profili modificati.
+  Momenti L/C e tappe E/G
   sono selezioni singole; R/S ha `passi` e nessun catalogo di specialita.
   Fonti e conteggi dei cataloghi sono documentati in `docs/soci.md`.
+- `server/member-units.cjs` gestisce `member_units` e
+  `member_branch_settings`. Identita univoca `(branch, M.unitKey(name))`;
+  nascondere non elimina immagini, colori o `member_values`.
+  POST con lo stesso nome ripristina senza sovrascrivere l'aspetto.
+  Non ripristinare implicitamente un gruppo da una modifica educativa.
+  `validateAssignment` si applica a schede, macro, board e rientro tramite
+  passaggio; capo/vice singoli, transazioni con rollback integrale.
+- L'ambiente L/C e condiviso: Branco/Cerchio, con revisione propria.
+  `M.lcMoments` e `M.unitRoles` sono la fonte comune per UI e server.
+  Cambio ambiente: mappa i momenti per indice, Cucciolo/Cocci e revisioni
+  dei profili, conservando tutto il resto, compresi i percorsi storici.
+  Le definizioni vengono adattate nello snapshot, non riscritte a ogni GET.
+- `assets/js/soci-units.js` e il controller della vista, montato da `soci.js`.
+  Trascinamento e modulo touch/tastiera usano lo stesso endpoint
+  `PATCH members/units/assign` con revisione del socio.
+  Non nascondere soci con ruolo precedente o gruppo archiviato.
+  Guidone e triangolo sono SVG generati, emblemi solo PNG raster salvati nel
+  DB (upload browser ridimensionato). Non usare URL esterni o SVG caricati.
 - `DOCUMENTS_MODEL.preparatorySlots` produce le cinque posizioni
   Convocazione/Regolamento/PEG/Bilancio/Verbale per anno, indipendentemente
   dall'ordine latest della home. `assemblyType` esplicito prevale sul

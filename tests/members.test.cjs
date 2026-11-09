@@ -117,17 +117,22 @@ test("catalog schema upgrades standard fields while retaining custom definitions
       { branch: "E/G", key: "tappa", label: "Tappa", type: "text", options: [] },
       { branch: "E/G", key: "progressione", label: "Ingresso in reparto", type: "select", options: ["Piede tenero"] },
     ];
-    for (const field of oldFields) db.prepare("UPDATE member_fields SET definition=? WHERE branch=? AND key=?")
-      .run(JSON.stringify(field), field.branch, field.key);
+    for (const field of oldFields) db.prepare("INSERT OR REPLACE INTO member_fields VALUES(?,?,?)")
+      .run(field.branch, field.key, JSON.stringify(field));
     db.exec("INSERT INTO people VALUES(1,'012345','Example','ragazzo')");
     db.prepare("INSERT INTO member_values VALUES(1,'E/G',?)").run(JSON.stringify({ specialita: "Old custom award", progressione: "Piede tenero" }));
     createMembers(db, {});
     for (const old of oldFields) {
+      if (old.key === "progressione") {
+        assert.equal(db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key=?").get(old.branch, old.key), undefined);
+        continue;
+      }
       const field = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key=?").get(old.branch, old.key).definition);
       assert.deepEqual(field, M.defaultFields.find(field => field.branch === old.branch && field.key === old.key));
     }
     assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).specialita, "Old custom award");
-    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).progressione, "Si");
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).ruolo, "Piede tenero");
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).progressione, undefined);
     const custom = { ...oldFields[0], label: "Local custom specialty" };
     db.prepare("UPDATE member_fields SET definition=? WHERE branch='L/C' AND key='specialita'").run(JSON.stringify(custom));
     createMembers(db, {});
@@ -138,7 +143,7 @@ test("catalog schema upgrades standard fields while retaining custom definitions
   } finally { db.close(); }
 });
 
-test("parents, multiple specialties, badges and independent tenderfoot status persist without exposing admin", async t => {
+test("parents, multiple specialties, badges and tenderfoot role persist without exposing admin", async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-member-catalogs-"));
   let app = await start(directory);
   t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
@@ -153,7 +158,7 @@ test("parents, multiple specialties, badges and independent tenderfoot status pe
   let member = state.members.find(member => member.code === "012345");
   member.profile.guardianContacts[0].givenName = "Responsabile";
   member.profile.guardianContacts[0].surname = "Esempio";
-  const values = { ruolo: "Squadrigliere", progressione: "No", tappa: "Tappa della scoperta",
+  const values = { ruolo: "Piede tenero", tappa: "Tappa della scoperta",
     specialita: ["Cuoco", "Fotografo"], brevetti: ["Pioniere", "Soccorritore"] };
   assert.equal((await app.request("members/" + member.id, "PATCH",
     { revision: member.revision, branch: member.branch, profile: member.profile, values })).status, 200);
@@ -175,6 +180,189 @@ test("parents, multiple specialties, badges and independent tenderfoot status pe
   assert.deepEqual(persisted.members.find(row => row.id === lc.id).values["L/C"].specialita, ["Astronomo", "Kim"]);
   await app.close(); app = await start(directory); await app.login();
   assert.deepEqual(await app.snapshot(), persisted);
+});
+
+test("unit migrations replace standard flags and novice roles once without changing custom schemas", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec("CREATE TABLE people(id INTEGER PRIMARY KEY,census_code TEXT,name TEXT,kind TEXT)");
+    createMembers(db, {});
+    for (let id = 1; id <= 3; id++) {
+      db.prepare("INSERT INTO people VALUES(?,?,?,'ragazzo')").run(id, "01234" + id, "Example " + id);
+      db.prepare("INSERT INTO member_profiles VALUES(?,?,?,1)").run(id, id === 3 ? "L/C" : "E/G", "{}");
+    }
+    const flag = { branch: "E/G", key: "progressione", label: "Piede tenero", type: "select", options: ["Si", "No"] };
+    const role = { ...M.defaultFields.find(field => field.branch === "L/C" && field.key === "ruolo"),
+      options: ["Capo sestiglia", "Vice capo sestiglia", "Sestigliere", "Novizio"] };
+    db.prepare("INSERT INTO member_fields VALUES('E/G','progressione',?)").run(JSON.stringify(flag));
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='L/C' AND key='ruolo'").run(JSON.stringify(role));
+    db.prepare("INSERT INTO member_values VALUES(1,'E/G',?)").run('{"ruolo":"Squadrigliere","progressione":"Si"}');
+    db.prepare("INSERT INTO member_values VALUES(2,'E/G',?)").run('{"ruolo":"Capo squadriglia","progressione":"Si"}');
+    db.prepare("INSERT INTO member_values VALUES(3,'L/C',?)").run('{"ruolo":"Novizio","sestiglia":"Rossi"}');
+    createMembers(db, {});
+    const values = () => db.prepare("SELECT person_id,data FROM member_values ORDER BY person_id").all().map(row => JSON.parse(row.data));
+    assert.deepEqual(values(), [{ ruolo: "Piede tenero" }, { ruolo: "Capo squadriglia" }, { ruolo: "Cucciolo", sestiglia: "Rossi" }]);
+    const revisions = () => db.prepare("SELECT revision FROM member_profiles ORDER BY person_id").all().map(row => row.revision);
+    assert.deepEqual(revisions(), [2, 2, 2]);
+    createMembers(db, {});
+    assert.deepEqual(revisions(), [2, 2, 2]);
+    const customRole = { ...role, label: "Custom local roles" };
+    const customFlag = { ...flag, label: "Local flag" };
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='L/C' AND key='ruolo'").run(JSON.stringify(customRole));
+    db.prepare("INSERT INTO member_fields VALUES('E/G','progressione',?)").run(JSON.stringify(customFlag));
+    db.prepare("UPDATE member_values SET data=? WHERE person_id=3").run('{"ruolo":"Novizio","sestiglia":"Rossi"}');
+    createMembers(db, {});
+    assert.equal(values()[2].ruolo, "Novizio");
+    assert.equal(db.prepare("SELECT definition FROM member_fields WHERE branch='L/C' AND key='ruolo'").get().definition, JSON.stringify(customRole));
+    assert.equal(db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='progressione'").get().definition, JSON.stringify(customFlag));
+    db.exec("INSERT INTO people VALUES(4,'012349','Example 4','ragazzo')");
+    const longName = "Legacy " + "x".repeat(90);
+    db.prepare("INSERT INTO member_values VALUES(4,'E/G',?)").run(JSON.stringify({ squadriglia: longName }));
+    createMembers(db, {});
+    assert.equal(db.prepare("SELECT name FROM member_units WHERE name=?").get(longName).name, longName);
+  } finally { db.close(); }
+});
+
+test("units preserve identity, colors, symbols and assignments across hide, restore and restart; all editors enforce roles", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-member-units-"));
+  let app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{}, { "CODICE SOCIO": "012346" }, { "CODICE SOCIO": "012347" }]));
+  const send = async (route, method, value, status = 200) => {
+    const response = await app.request("members/" + route, method, value);
+    assert.equal(response.status, status, await response.clone().text());
+    return status < 300 ? response.json() : null;
+  };
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+  const first = (await send("units", "POST", { branch: "E/G", name: "Aquile", color: "#cc3038", color2: "#ffffff", emblem: png }, 201)).unit;
+  const second = (await send("units", "POST", { branch: "E/G", name: "Falchi" }, 201)).unit;
+  let state = await app.snapshot();
+  const [a, b, c] = ["012345", "012346", "012347"].map(code => state.members.find(member => member.code === code));
+  const assign = async (id, unitId, role, status = 200) => {
+    const member = (await app.snapshot()).members.find(member => member.id === id);
+    await send("units/assign", "PATCH", { memberId: id, revision: member.revision, unitId, role }, status);
+  };
+  await assign(a.id, first.id, "Capo squadriglia");
+  await assign(b.id, first.id, "Capo squadriglia", 409);
+  await assign(b.id, first.id, "Vice capo squadriglia");
+  await assign(c.id, first.id, "Piede tenero");
+  await send("units/assign", "PATCH", { memberId: c.id, revision: 1, unitId: second.id, role: "Squadrigliere" }, 409);
+  const before = await app.snapshot(), latestC = before.members.find(member => member.id === c.id);
+  await send(String(c.id), "PATCH", { branch: "E/G", revision: latestC.revision, profile: latestC.profile,
+    values: { squadriglia: first.name, ruolo: "Capo squadriglia" } }, 409);
+  await send("macro", "POST", { action: "field", branch: "E/G", key: "ruolo", value: "Capo squadriglia",
+    members: [b, c].map(member => ({ id: member.id, revision: before.members.find(row => row.id === member.id).revision })) }, 409);
+  assert.deepEqual(await app.snapshot(), before);
+  for (const unitId of [undefined, {}, "1", -1, 1.5])
+    await send("units/assign", "PATCH", { memberId: c.id, revision: latestC.revision, unitId, role: "Squadrigliere" }, 400);
+  await assign(a.id, second.id, "Squadrigliere");
+  state = await app.snapshot();
+  await send("macro", "POST", { action: "field", branch: "E/G", key: "ruolo", value: "Capo squadriglia",
+    members: [b, c].map(member => ({ id: member.id, revision: state.members.find(row => row.id === member.id).revision })) }, 409);
+  assert.deepEqual(await app.snapshot(), state);
+  await assign(b.id, first.id, "Capo squadriglia");
+  await send("units/" + first.id, "PATCH", { revision: first.revision, hidden: true });
+  await assign(c.id, first.id, "Squadrigliere", 409);
+  state = await app.snapshot();
+  const unchanged = state.members.find(member => member.id === c.id);
+  await send(String(c.id), "PATCH", { branch: "E/G", revision: unchanged.revision, profile: unchanged.profile,
+    values: { ...unchanged.values["E/G"], specialita: ["Cuoco"] } });
+  await app.close(); app = await start(directory); await app.login();
+  state = await app.snapshot();
+  assert.equal(state.units.find(unit => unit.id === first.id).hidden, true);
+  assert.equal(state.members.find(member => member.id === c.id).values["E/G"].squadriglia, first.name);
+  const restored = (await send("units", "POST", { branch: "E/G", name: "  AQUILE  ", color: "#000000", emblem: "" }, 201)).unit;
+  assert.deepEqual({ ...restored, revision: first.revision, hidden: false }, first);
+  await send("units", "POST", { branch: "E/G", name: "Aquile" }, 409);
+  await send("units/" + first.id, "PATCH", { revision: first.revision, hidden: true }, 409);
+  await send("units/" + first.id, "PATCH", { revision: restored.revision, hidden: false, emblem: "data:image/svg+xml;base64,WA==" }, 400);
+  await send("units", "POST", { branch: "E/G", name: "Invalid image", emblem: "data:image/png;base64,WA==" }, 400);
+  assert.equal((await app.snapshot()).units.some(unit => unit.name === "Invalid image"), false);
+  await assign(c.id, null, "");
+  const cleared = (await app.snapshot()).members.find(member => member.id === c.id).values["E/G"];
+  assert.deepEqual(cleared, { squadriglia: "", ruolo: "", specialita: ["Cuoco"] });
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  db.prepare("UPDATE member_values SET data=? WHERE person_id=? AND branch='E/G'")
+    .run(JSON.stringify({ ...cleared, specialita: "Cuoco; Old custom award" }), c.id);
+  db.close();
+  await assign(c.id, second.id, "Piede tenero");
+  assert.deepEqual((await app.snapshot()).members.find(member => member.id === c.id).values["E/G"].specialita, ["Cuoco", "Old custom award"]);
+});
+
+test("passage re-entry cannot reactivate a historical assignment into an occupied leader role", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-unit-passage-"));
+  const app = await start(directory, "7654321,7654322");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{ BRANCA: "Branca L/C" }, { "CODICE SOCIO": "012346" }]));
+  const state = await app.snapshot();
+  const lc = state.members.find(member => member.code === "012345"), eg = state.members.find(member => member.code === "012346");
+  for (const [code, branch] of [["7654321", "L/C"], ["7654322", "E/G"]]) {
+    const chief = state.members.find(member => member.code === code);
+    assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: branch })).status, 200);
+  }
+  assert.equal((await app.request("members/" + eg.id, "PATCH", { revision: eg.revision, branch: "E/G", profile: eg.profile,
+    values: { squadriglia: "Aquile", ruolo: "Capo squadriglia" } })).status, 200);
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  db.prepare("INSERT INTO member_values VALUES(?,'E/G',?)").run(lc.id, '{"squadriglia":"Aquile","ruolo":"Capo squadriglia"}');
+  db.close();
+  await app.login("7654321");
+  assert.equal((await app.request("members/macro", "POST", { action: "passage", branch: "E/G",
+    members: [{ id: lc.id, revision: lc.revision }] })).status, 200);
+  await app.login("7654322");
+  const transfer = (await app.snapshot()).transfers[0];
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: transfer.revision })).status, 409);
+  let current = await app.snapshot();
+  assert.equal(current.members.some(member => member.id === lc.id), false);
+  assert.equal(current.transfers.length, 1);
+  const leader = current.members.find(member => member.id === eg.id);
+  assert.equal((await app.request("members/units/assign", "PATCH", { memberId: eg.id, revision: leader.revision, unitId: null })).status, 200);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: transfer.revision })).status, 200);
+  current = await app.snapshot();
+  assert.equal(current.members.find(member => member.id === lc.id).values["E/G"].ruolo, "Capo squadriglia");
+});
+
+test("LC environment is shared, migrates moments and novice roles, and respects chief scope", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-lc-environment-"));
+  let app = await start(directory, "7654321,7654322,7654323");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{ BRANCA: "Branca L/C" }, { "CODICE SOCIO": "012346", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012347", BRANCA: "Branca R/S" }]));
+  let state = await app.snapshot();
+  const chiefs = ["7654321", "7654322", "7654323"].map(code => state.members.find(member => member.code === code));
+  for (const [index, chief] of chiefs.entries())
+    assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: M.branches[index] })).status, 200);
+  const lc = state.members.find(member => member.code === "012345");
+  const rs = state.members.find(member => member.code === "012347");
+  const values = { sestiglia: "Rossi", ruolo: "Cucciolo", progressione: "Lupo della rupe", specialita: ["Kim"] };
+  assert.equal((await app.request("members/" + lc.id, "PATCH", { branch: "L/C", revision: lc.revision, profile: lc.profile, values })).status, 200);
+  const egUnit = await app.request("members/units", "POST", { branch: "E/G", name: "Aquile" });
+  const eg = (await egUnit.json()).unit;
+  await app.login("7654321");
+  state = await app.snapshot();
+  assert.equal(state.units.every(unit => unit.branch === "L/C"), true);
+  assert.equal((await app.request("members/units", "POST", { branch: "E/G", name: "Falchi" })).status, 403);
+  assert.equal((await app.request("members/units/" + eg.id, "PATCH", { revision: eg.revision, hidden: true })).status, 403);
+  const member = state.members.find(member => member.id === lc.id);
+  assert.equal((await app.request("members/units/assign", "PATCH", { memberId: member.id, revision: member.revision, unitId: eg.id, role: "Cucciolo" })).status, 403);
+  assert.equal((await app.request("members/lc-environment", "PATCH", { revision: state.lc.revision, environment: "Cerchio" })).status, 200);
+  const changed = await app.snapshot(), after = changed.members.find(member => member.id === lc.id);
+  assert.deepEqual(after.values["L/C"], { ...values, ruolo: "Cocci", progressione: "Coccinella del bosco" });
+  assert.equal(after.revision, member.revision + 1);
+  assert.deepEqual(changed.fields.find(field => field.key === "progressione").options, M.lcMoments.Cerchio);
+  assert.deepEqual(changed.fields.find(field => field.key === "ruolo").options, M.unitRoles("L/C", "Cerchio"));
+  assert.equal(changed.fields.find(field => field.key === "pista").label, "Sentiero");
+  assert.equal((await app.request("members/lc-environment", "PATCH", { revision: state.lc.revision, environment: "Branco" })).status, 409);
+  assert.equal((await app.request("members/units", "POST", { branch: "L/C", name: "Bianchi", color: "#ff0000" })).status, 400);
+  await app.login("7654322");
+  assert.equal((await app.request("members/lc-environment", "PATCH", { revision: changed.lc.revision, environment: "Branco" })).status, 403);
+  await app.login("7654323");
+  assert.equal((await app.request("members/units", "POST", { branch: "R/S", name: "Not a unit" })).status, 400);
+  assert.equal((await app.request("members/units/assign", "PATCH", { memberId: rs.id, revision: rs.revision, unitId: eg.id, role: "Squadrigliere" })).status, 400);
+  await app.close(); app = await start(directory, "7654321,7654322,7654323"); await app.login("7654321");
+  assert.deepEqual(await app.snapshot(), changed);
 });
 
 test("CSV export is formula-safe with valid quoting and leading-zero codes", () => {
@@ -336,7 +524,7 @@ test("real NAS gateway connects the member page, session config, assets and API 
   assert.match(config, /"admin":true/);
   assert.match(config, /"basePath":"\/agesci-canicattini1"/);
   assert.equal((await fetch(root + "/api/members", { headers })).status, 200);
-  for (const asset of ["assets/js/soci-model.js", "assets/js/soci.js", "assets/css/soci.css"])
+  for (const asset of ["assets/js/soci-model.js", "assets/js/soci-units.js", "assets/js/soci.js", "assets/css/soci.css"])
     assert.equal((await fetch(root + "/" + asset)).status, 200);
   const dashboard = await (await fetch(root + "/area-riservata/")).text();
   assert.match(dashboard, /href="soci.html"/);

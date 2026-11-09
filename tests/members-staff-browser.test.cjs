@@ -14,7 +14,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 test("staff UI hides admin tools, constrains fields and exposes destination confirmation", { skip: !chrome }, () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "members-staff-browser-"));
   try {
-    const snapshot = { currentYear: "2027", group: {}, templates: [{ id: 1, title: "Internal", body: "{{nome}}" }],
+    const snapshot = { currentYear: "2027", group: {}, units: [], lc: { environment: "Branco", revision: 1 }, templates: [{ id: 1, title: "Internal", body: "{{nome}}" }],
       fields: M.defaultFields.filter(field => field.branch === "E/G"),
       members: [{ id: 1, name: "Example member", code: "012345", branch: "E/G", revision: 1,
         profile: { givenName: "Example", surname: "Member", birthDate: "2012-01-01" }, censuses: [], values: {} }],
@@ -66,6 +66,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` : "")
       .replace("</head>", `<style>${["theme", "home", "nas", "soci"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`)
       .replace("</body>", `<script>${exercise}</script></body>`);
@@ -93,7 +94,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       for (const key of ["loaded", "hidden", "confirmVisible", "branchLocked", "noEducationalInput", "fits"])
         assert.equal(measured[key], true, key + " at " + width + ": " + JSON.stringify(measured));
       assert.deepEqual(measured.scope, ["E/G"]);
-      assert.deepEqual(measured.roleOptions, ["", "Capo squadriglia", "Vice capo squadriglia", "Squadrigliere"]);
+      assert.deepEqual(measured.roleOptions, ["", "Capo squadriglia", "Vice capo squadriglia", "Squadrigliere", "Piede tenero"]);
       assert.deepEqual(measured.approval, { action: "confirm", revision: 1 });
       assert.equal(measured.target, "R/S");
       assert.equal(measured.proposal.branch, "R/S");

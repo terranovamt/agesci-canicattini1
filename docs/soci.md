@@ -108,8 +108,8 @@ Campi iniziali:
 
 | Branca | Percorso |
 | --- | --- |
-| L/C | sestiglia, ruolo (capo, vice, sestigliere, novizio), primo/secondo/terzo anno, progressione (lupo della legge, della rupe, anziano), pista/sentiero, specialita, data promessa |
-| E/G | squadriglia, ruolo (capo, vice, squadrigliere), anno in branca, piede tenero Si/No indipendente dal ruolo, tappa (scoperta, competenza, responsabilita), specialita, brevetti di competenza, data promessa |
+| L/C | sestiglia, ruolo (capo, vice, sestigliere, Cucciolo nel Branco / Cocci nel Cerchio), primo/secondo/terzo anno, momenti, pista/sentiero, specialita, data promessa |
+| E/G | squadriglia, ruolo (capo, vice, squadrigliere, piede tenero), anno in branca, tappa (scoperta, competenza, responsabilita), specialita, brevetti di competenza, data promessa |
 | R/S | noviziato/clan, passi (scoperta, competenza, responsabilita), punto della strada, servizio, data partenza |
 | Adulti | servizio in gruppo, formazione |
 
@@ -118,7 +118,9 @@ data o scelta. La chiave e univoca nella branca, composta da lettere minuscole,
 cifre e trattini; inizia con una lettera. Le definizioni sono aggiunte, non
 rinominate o eliminate dall'interfaccia.
 
-I momenti L/C sono **Lupo della legge**, **Lupo della rupe**, **Lupo anziano**.
+Nel Branco i momenti L/C sono **Lupo della legge**, **Lupo della rupe**,
+**Lupo anziano**; nel Cerchio **Coccinella del prato**, **Coccinella del bosco**,
+**Coccinella della montagna**.
 Le tappe E/G e i passi R/S sono selezioni singole. Specialita L/C (39 voci),
 E/G (65 voci) e brevetti E/G (15 voci) sono elenchi ricercabili a selezione
 multipla, anche nelle macro; nessun brevetto o specialita viene proposto in
@@ -130,6 +132,47 @@ stati riscontrati nell'applicazione pubblica di
 [AGESCI Campania, plancia](https://github.com/AGESCI-Campania/plancia/blob/ef1e5b39ff74bbec7133680a8ec25db0b5641041/apps/diaries/models.py),
 che li riferisce agli allegati del regolamento metodologico. Non vengono
 inventate relazioni tra brevetti e specialita.
+
+### Sestiglie e squadriglie
+
+La sezione **Sestiglie e squadriglie** organizza i ragazzi della branca locale.
+L'amministratore sceglie L/C o E/G; i capi vedono solo la propria branca.
+R/S non usa questa vista. I sospesi da oltre un anno restano esclusi.
+
+Le righe sono sempre capo, vice, sestiglieri/squadriglieri e Cuccioli/Cocci
+o Piedi teneri. Trascinare un socio sulla riga desiderata oppure premere
+**Sposta** e usare il modulo **Inserisci o sposta un socio**, disponibile anche
+da telefono e tastiera. Lo spostamento non cambia branca e conserva gli altri
+campi educativi. Capo e vice ammettono una sola persona: prima liberare il
+posto occupato. Le stesse regole valgono per schede e macro; duplicati
+precedenti e ruoli non riconosciuti sono segnalati, non cancellati.
+
+**Nascondi** conserva identita, colori, simbolo e assegnazioni.
+**Gruppi nascosti** consente il ripristino; anche ricreare lo stesso nome
+(ignorando maiuscole e spazi superflui) recupera il gruppo esistente senza
+sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
+**Senza gruppo / da verificare**, con l'assegnazione conservata indicata.
+Per rimuovere esplicitamente l'assegnazione scegliere **Senza gruppo**.
+
+Le sestiglie hanno un triangolo bordato di giallo, con il proprio colore al
+centro. I nomi colore proposti selezionano automaticamente il colore
+corrispondente; per un nome locale si puo scegliere il colore.
+Le squadriglie hanno un guidone bianco con asta, due colori sul lato e un
+simbolo centrale caricabile (PNG/JPEG/WebP fino a 5 MiB, ridimensionato e
+salvato come PNG nel database). Le proporzioni dell'immagine sono conservate.
+La creazione non richiede un'immagine.
+
+Un capo L/C puo scegliere **Branco · Lupetti** o **Cerchio · Coccinelle**.
+L'ambiente e condiviso da tutta la branca, non personale. Il cambio aggiorna
+terminologia, momenti corrispondenti per posizione e Cucciolo/Cocci, anche nei
+percorsi L/C conservati; non elimina specialita, gruppi o altre informazioni.
+Le schede interessate cambiano revisione per impedire salvataggi su bozze obsolete.
+
+L'aggiornamento converte il vecchio flag E/G Si/Piede tenero nel ruolo
+**Piede tenero**, se il ruolo era vuoto o Squadrigliere; un capo/vice esplicito
+ha precedenza. Il flag standard viene rimosso. Il precedente ruolo L/C
+**Novizio** diventa **Cucciolo** soltanto con la definizione standard
+riconosciuta. Le definizioni personalizzate non vengono riscritte.
 
 Selezionare soci e aprire **Azioni rapide** per assegnare un valore educativo
 o proporre un passaggio alla branca successiva. La selezione comprende anche soci
@@ -147,6 +190,9 @@ una propria proposta. Prima dell'ingresso, la destinazione vede solo nome,
 codice e anno di nascita nella proposta, non la scheda completa.
 La conferma conserva tutti i percorsi precedenti, senza modificare censimento
 o account. Dopo il passaggio la provenienza perde l'accesso alla scheda.
+Se un percorso precedente della destinazione conserva un gruppo nascosto o
+un posto di capo/vice ora occupato, la conferma viene bloccata: ripristinare
+il gruppo o liberare il posto prima di riprovare, senza sovrascrivere altri soci.
 Il capo vede solo i valori educativi della branca corrente; l'amministratore
 puo vedere quelli storici delle altre branche.
 
