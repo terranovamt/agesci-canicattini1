@@ -233,14 +233,14 @@ permessi della precedente branca.
 
 | Metodo / suffisso | Contratto |
 | --- | --- |
-| GET `/` | `{members, fields, templates, group, currentYear, transfers}` filtrato per ambito; mai hash o password |
+| GET `/` | `{members, fields, templates, group, currentYear, transfers, visibility?}` filtrato per ambito; mai hash o password |
 | POST `/` | `{code, branch, profile, values}`; nuova persona e scheda nella stessa transazione |
 | PATCH `/:id` | `{revision, branch, profile, values}`; salva il profilo e i valori della sola branca scelta |
 | POST `/import` | `{csv}` per anteprima; `{csv, confirm:true, version}` per conferma |
 | POST `/fields` | `{branch, key, label, type, options}`; aggiunta, non modifica/eliminazione |
 | POST `/templates` | `{title, body}`; aggiunta modello testuale |
-| POST `/macro` | `{action, branch, members:[{id,revision}], key?, value?}`; `action` passage o field; branch e alias compatibile di passage, non un cambio immediato |
-| PATCH `/transfers/:id` | `{revision, action:'confirm'|'reject'|'cancel'}`; conferma/rifiuto di altro capo destinatario, annullamento della provenienza |
+| POST `/macro` | UI: `{action:'passage', members:[{id,revision}]}`; destinazione derivata server-side. Compatibilita API: `branch` opzionale verificata per passage; `action:'field'` con branch/key/value e alias `action:'branch'` restano supportati ma non proposti dalla UI |
+| PATCH `/transfers/:id` | `{revision, action:'confirm'|'reject'|'cancel'}`; altro capo destinatario oppure admin anche proponente; vista admin-come-capo confinata alla destinazione; annullamento della provenienza |
 
 Anteprima e conferma sono separate: SHA256 del CSV esatto e dello snapshot
 del DB impedisce di confermare dopo modifiche concorrenti. Import e macro
@@ -330,6 +330,7 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   DB (upload browser ridimensionato). Non usare URL esterni o SVG caricati.
 - `GET /api/members/overview` e riservato all'admin e ritorna solo conteggi
   aggregati (anno massimo importato e numero di record per branca ufficiale),
+  escludendo sempre i sospesi da oltre un anno con `M.longSuspended`,
   senza PII; la dashboard NAS lo usa per il riepilogo censimenti. Non sostituire
   questa API con `GET /api/members` nella dashboard.
 - Nel Libro soci le schede branca filtrano a toggle; i chip anno e status
@@ -364,7 +365,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - Conservare tutti i valori educativi delle altre branche. Una macro di
   campo deve selezionare solo persone nella branca indicata; un passaggio
   propone la branca successiva L/C → E/G → R/S, senza modificarla subito.
-  Conferma solo da altro capo della destinazione (o altro amministratore).
+  Conferma da altro capo della destinazione oppure dall'amministratore,
+  anche autore della proposta. In vista come capo l'admin puo confermare
+  soltanto per la destinazione effettiva; audit con actorId reale.
   La revisione della scheda deve coincidere con quella della proposta:
   altrimenti annullare/rifiutare e riproporre. PATCH del profilo non puo
   cambiare una branca gia inizializzata per aggirare il flusso.
@@ -383,6 +386,13 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   sospeso da oltre un anno; S viene escluso se il suo anno e precedente a
   currentYear. La UI li omette da elenco, conteggi, export e selezione di
   default. Il filtro esplicito li include; non eliminare record dal DB.
+- `GET members` per capi aggiunge `visibility:{branch,total,
+  excludedPendingCoca,excludedLongSuspended}` limitato alla loro branca.
+  `total` precede i filtri; sospesi conteggiati dopo FoCa/Co.Ca. per evitare
+  duplicazioni. La UI spiega lo zero senza includere i record FoCa/Co.Ca.
+  esclusi e segnala separatamente i passaggi in ingresso ancora da confermare.
+- L'unica azione rapida UI e `Proponi passaggio`, senza select di azione,
+  campo o destinazione. Gli aggiornamenti educativi UI sono individuali.
 - Anno di nascita, anno in branca, ruolo e progressione sono distinti.
   Filtrare/raggruppare per nascita senza assegnazioni automatiche.
   L/C ha ruoli di sestiglia e progressione legge/rupe/anziano; E/G ha ruoli

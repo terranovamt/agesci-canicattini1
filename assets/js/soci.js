@@ -165,6 +165,17 @@
       return card;
     }));
     renderQuickFilters();
+    const visibility = data.visibility, visibilityNotes = [];
+    if (visibility) {
+      visibilityNotes.push(`${M.branchLabel(visibility.branch)}: ${visibility.total} soci assegnati alla branca.`);
+      if (visibility.excludedPendingCoca)
+        visibilityNotes.push(`${visibility.excludedPendingCoca} esclusi dalla vista capo: FoCa valorizzato e ingresso Co.Ca. assente o No. L’amministratore puo verificarne le schede.`);
+      if (visibility.excludedLongSuspended && !filters.elements.showSuspended.checked)
+        visibilityNotes.push(`${visibility.excludedLongSuspended} sospesi da oltre un anno nascosti; puoi includerli dalla ricerca avanzata.`);
+      visibilityNotes.push('I passaggi in ingresso non sono ancora soci della branca: compaiono dopo la conferma.');
+    }
+    $('members-visibility-note').textContent = visibilityNotes.join(' ');
+    $('members-visibility-note').hidden = !visibility;
     $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
     const sortValue = member => {
       switch (sortKey) {
@@ -257,9 +268,16 @@
     $('members-active-filters').hidden = container.hidden;
   }
   function renderTransfers() {
+    const reviewable = data.transfers.filter(transfer => transfer.canConfirm).length;
+    $('transfers-tab').textContent = 'Passaggi' + (data.transfers.length ? ` · ${data.transfers.length}` : '');
+    $('members-incoming').hidden = !reviewable;
+    $('members-incoming').textContent = `${reviewable} passaggi da accettare o rifiutare →`;
+    $('members-incoming').onclick = () => $('transfers-tab').click();
     $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
       const card = node('article', undefined, 'members-census');
       card.append(node('p', `${transfer.name} · ${transfer.code} · ${transfer.birthYear || 'Nascita non indicata'} · ${M.branchLabel(transfer.source)} → ${M.branchLabel(transfer.target)}`));
+      if (!transfer.canConfirm)
+        card.append(node('p', 'In attesa di un altro capo della destinazione o dell’amministratore.', 'members-note'));
       for (const [action, label, allowed] of [['confirm', 'Conferma ingresso', transfer.canConfirm],
         ['reject', 'Rifiuta passaggio', transfer.canConfirm], ['cancel', 'Annulla proposta', transfer.canCancel]]) {
         if (!allowed) continue;
@@ -320,7 +338,10 @@
       if ($('member-dialog').open) configureMemberSections();
       $('confirm-import').disabled = !preview;
       $('member-section-back').disabled = memberSection === 0;
-      if (data) updateSelection();
+      if (data) {
+        updateSelection();
+        $('propose-transfer').disabled = !!passageSelection().error;
+      }
     }
   }
   const excludedProfileKeys = ['guardianType', 'guardians', 'foca', 'coca', ...M.ignoredProfileFields];
@@ -571,55 +592,29 @@
       $('import-dialog').close(); await load();
     }, $('import-error'));
   };
-  function macroInputs(resetBranch = false) {
-    const f = macroForm.elements, fieldAction = f.action.value === 'field';
-    if (!fieldAction) options(f.branch, [[M.nextBranch(chosen()[0]?.branch), M.nextBranch(chosen()[0]?.branch) || 'Nessuna branca successiva']]);
-    else {
-      const branch = resetBranch ? chosen()[0]?.branch : f.branch.value;
-      branchOptions(f.branch);
-      if (branch) f.branch.value = branch;
-    }
-    f.branch.disabled = !fieldAction;
-    const fields = data.fields.filter(field => field.branch === f.branch.value && editableEducation(field));
-    const oldKey = f.key.value;
-    options(f.key, fields.map(field => [field.key, field.label]));
-    if (fields.some(field => field.key === oldKey)) f.key.value = oldKey;
-    $('macro-field-label').hidden = !fieldAction;
-    $('macro-value').replaceChildren();
-    const definition = fields.find(field => field.key === f.key.value);
-    if (fieldAction && definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
-    $('macro-replacement-warning').hidden = !fieldAction || definition?.type !== 'multiselect';
+  function passageSelection() {
+    const members = chosen(), source = members[0]?.branch, target = M.nextBranch(source);
+    let error = '';
+    if (!members.length) error = 'Seleziona almeno un socio.';
+    else if (members.some(member => member.branch !== source)) error = 'Seleziona solo soci della stessa branca.';
+    else if (!target) error = 'Non e previsto un passaggio alla branca successiva per R/S o Co.Ca.';
+    return { members, source, target, error };
   }
-  macroForm.elements.branch.onchange = () => macroInputs();
-  macroForm.elements.action.onchange = () => macroInputs(true);
-  macroForm.elements.key.onchange = () => {
-    const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === macroForm.elements.key.value);
-    $('macro-value').replaceChildren();
-    if (definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
-    $('macro-replacement-warning').hidden = definition?.type !== 'multiselect';
-  };
   $('open-macro').onclick = () => {
-    $('macro-error').textContent = '';
+    const passage = passageSelection();
+    $('macro-error').textContent = passage.error;
     $('macro-count').textContent = `${selected.size} soci selezionati (anche fuori dai filtri correnti).`;
-    macroForm.elements.branch.value = chosen()[0]?.branch || 'L/C';
-    const passage = [...macroForm.elements.action.options].find(option => option.value === 'passage');
-    passage.disabled = !M.nextBranch(chosen()[0]?.branch) || chosen().some(member => member.branch !== chosen()[0].branch);
-    if (passage.disabled) macroForm.elements.action.value = 'field';
-    macroInputs(true); $('macro-dialog').showModal();
+    $('macro-route').textContent = passage.error ? 'Nessun passaggio proponibile con questa selezione.' :
+      `${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)}`;
+    $('propose-transfer').disabled = !!passage.error;
+    $('macro-dialog').showModal();
   };
   macroForm.onsubmit = event => {
     event.preventDefault();
-    const value = Object.fromEntries(new FormData(macroForm));
-    const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === value.key);
-    if (!selected.size || (value.action === 'field' && (!definition || !editableEducation(definition)))) {
-      $('macro-error').textContent = 'Seleziona soci e un campo educativo valido.';
-      return;
-    }
-    const replacement = value.action === 'field' && definition.type === 'multiselect';
-    if (!confirm(`Applicare la macro a ${selected.size} soci?` + (replacement ? ' La lista sostituirà tutte le selezioni precedenti del campo; se vuota, le cancellerà.' : ''))) return;
-    if (value.action === 'field' && definition?.type === 'multiselect') value.value = new FormData(macroForm).getAll('value');
-    value.branch = macroForm.elements.branch.value;
-    value.members = chosen().map(member => ({ id: member.id, revision: member.revision }));
+    const passage = passageSelection();
+    if (passage.error) { $('macro-error').textContent = passage.error; return; }
+    if (!confirm(`Proporre il passaggio ${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)} per ${passage.members.length} soci?`)) return;
+    const value = { action: 'passage', members: passage.members.map(member => ({ id: member.id, revision: member.revision })) };
     run(async () => { await A.request('members/macro', 'POST', value); $('macro-dialog').close(); await load(); }, $('macro-error'));
   };
   const fieldForm = $('field-form');
@@ -713,7 +708,7 @@
   for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('cancel', event => { if (!canClose(dialog)) event.preventDefault(); });
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   branchOptions(filters.elements.branch, ['', 'Tutte le branche']);
-  branchOptions(profileForm.elements.branch); branchOptions(macroForm.elements.branch); branchOptions($('field-form').elements.branch);
+  branchOptions(profileForm.elements.branch); branchOptions($('field-form').elements.branch);
   $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !window.NAS?.user?.admin;
   if (!window.NAS?.user || (!window.NAS.user.admin && !window.NAS.user.serviceBranch)) {
     $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';

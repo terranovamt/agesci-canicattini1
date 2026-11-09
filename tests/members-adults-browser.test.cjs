@@ -146,9 +146,28 @@ test("adult sheets skip youth sections, navigate accessibly and preserve saved d
           form.elements.branch.value = 'L/C'; form.elements.branch.onchange();
           assert(sections().length === 5 && !form.elements['extra:anno'].disabled, 'new youth sections');
           document.querySelector('[data-close=member-dialog]').click();
-          $('select-results').click(); $('open-macro').click();
-          assert($('macro-form').elements.branch.querySelector('[value=Adulti]').textContent === 'Co.Ca.', 'macro label');
-          document.querySelector('[data-close=macro-dialog]').click();
+          const macroCalls = () => calls.filter(call => call.route === 'members/macro').length;
+          const noRoute = 'Nessun passaggio proponibile con questa selezione.';
+          const impossible = 'Non e previsto un passaggio alla branca successiva per R/S o Co.Ca.';
+          const blockedFor = (branch, error) => {
+            $('clear-selection').click();
+            filter.value = branch; $('members-filters').oninput();
+            $('select-results').click();
+            const count = $('members-list').rows.length;
+            $('open-macro').click();
+            const macro = $('macro-form');
+            assert(macro.querySelectorAll('select,input,textarea').length === 0, 'macro without dropdowns or values ' + branch);
+            assert($('macro-error').textContent === error && $('macro-route').textContent === noRoute && $('propose-transfer').disabled,
+              'passage blocked for ' + (branch || 'mixed selection'));
+            const before = calls.length;
+            macro.requestSubmit();
+            assert(calls.length === before && macroCalls() === 0 && $('macro-dialog').open, 'invalid passage must not call the API');
+            document.querySelector('[data-close=macro-dialog]').click();
+            return count;
+          };
+          assert(blockedFor('R/S', impossible) === 1, 'R/S selection');
+          assert(blockedFor('Adulti', impossible) === 3, 'Co.Ca. selection');
+          blockedFor('', 'Seleziona solo soci della stessa branca.');
           $('open-documents').click();
           assert($('document-preview').textContent.includes('Co.Ca.') && !$('document-preview').textContent.includes('Adulti'), 'document label');
           document.querySelector('[data-close=documents-dialog]').click();

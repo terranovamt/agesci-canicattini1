@@ -33,6 +33,8 @@ all'amministratore: elenca i capi configurati con branca di servizio e apre la
 stessa sessione con i permessi server del capo scelto, senza password del capo e
 senza modificarne credenziali o branca. Le azioni amministrative restano negate
 finche' non si preme **Torna admin**, sempre visibile nell'header. I passaggi
+possono essere confermati anche se proposti dallo stesso admin, ma soltanto
+nella vista della branca di destinazione (o tornando admin). I passaggi
 proposti o confermati in questa vista restano attribuiti all'amministratore.
 Se il capo perde abilitazione o branca, le API rispondono 409 finche' non si
 torna admin; ogni riavvio chiude comunque le sessioni admin.
@@ -176,7 +178,7 @@ La comunita R/S e una scelta tra **Noviziato** e **Clan**: chi e nel primo anno
 R/S appartiene al Noviziato ed e un novizio. Le tappe E/G e i passi R/S sono
 selezioni singole. Specialita L/C (39 voci),
 E/G (65 voci) e brevetti E/G (15 voci) sono elenchi ricercabili a selezione
-multipla, anche nelle macro; nessun brevetto o specialita viene proposto in
+multipla nelle schede individuali; nessun brevetto o specialita viene proposto in
 R/S. Le scelte gia salvate non presenti nel catalogo restano visibili come
 valori precedenti e non vengono cancellate durante l'aggiornamento.
 
@@ -278,19 +280,27 @@ ha precedenza. Il flag standard viene rimosso. Il precedente ruolo L/C
 **Novizio** diventa **Cucciolo** soltanto con la definizione standard
 riconosciuta. Le definizioni personalizzate non vengono riscritte.
 
-Selezionare soci e aprire **Azioni rapide** per assegnare un valore educativo
-o proporre un passaggio alla branca successiva. La selezione comprende anche soci
+Selezionare soci e aprire **Proponi passaggio**. Per ora questa e l'unica
+azione rapida: non e disponibile l'aggiornamento collettivo di campi educativi.
+Provenienza e destinazione sono determinate dai soci selezionati e mostrate
+in sola lettura, senza menu di scelta. Selezioni miste, R/S e Co.Ca. sono
+bloccate con un messaggio esplicito. La selezione comprende anche soci
 non piu visibili dopo un cambio dei filtri; il conteggio lo segnala.
-L'aggiornamento educativo richiede soci della stessa branca. Un valore vuoto
-cancella il campo. In R/S non ci sono sestiglie, squadriglie, ruoli,
+I campi educativi restano modificabili nella scheda individuale.
+In R/S non ci sono sestiglie, squadriglie, ruoli,
 specialita o brevetti; restano i campi del percorso R/S.
 
 La successione e **L/C → E/G → R/S**, senza salti e senza passaggio automatico
 da R/S a Co.Ca. Il capo della provenienza propone il passaggio; fino alla
 conferma la branca locale non cambia. Un altro capo assegnato alla
 destinazione puo confermare o rifiutare in **Passaggi in attesa**; la provenienza
-puo annullare. L'amministratore gestisce tutte le branche, ma non puo confermare
-una propria proposta. Prima dell'ingresso, la destinazione vede solo nome,
+puo annullare. L'amministratore gestisce tutte le branche e puo confermare
+anche una propria proposta, inclusa la vista come capo della destinazione.
+Il controllo di una persona diversa rimane per i capi non admin; le operazioni
+in vista capo restano attribuite all'admin reale.
+La scheda **Passaggi** indica il numero di proposte; nel Libro soci un
+collegamento porta ai passaggi da accettare o rifiutare, anche se la lista soci
+e vuota. Prima dell'ingresso, la destinazione vede solo nome,
 codice e anno di nascita nella proposta, non la scheda completa.
 La conferma conserva tutti i percorsi precedenti, senza modificare censimento
 o account. Dopo il passaggio la provenienza perde l'accesso alla scheda.

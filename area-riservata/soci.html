@@ -28,7 +28,7 @@
       <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
         <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
         <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie</button>
-        <button type="button" data-section-target="members-transfer-panel">Passaggi</button>
+        <button id="transfers-tab" type="button" data-section-target="members-transfer-panel">Passaggi</button>
         <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
       </nav>
       <div id="members-search-panel" data-section-panel>
@@ -36,6 +36,8 @@
         <div><h2>Soci per branca</h2><p>Premi una branca per filtrare, ripremila per rimuovere il filtro.</p></div>
       </div>
       <div id="members-summary" class="members-summary"></div>
+      <p id="members-visibility-note" class="members-note" role="status" hidden></p>
+      <button id="members-incoming" class="button button-secondary" type="button" hidden></button>
       <div class="members-toolbar members-primary-actions">
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
         <details class="members-secondary-actions">
@@ -78,7 +80,7 @@
         </div>
         <div id="members-selection" class="members-toolbar" role="group" aria-label="Azioni sui soci selezionati" hidden>
           <button id="clear-selection" class="button button-secondary" type="button">Deseleziona</button>
-          <button id="open-macro" class="button button-primary" type="button">Azioni rapide</button>
+          <button id="open-macro" class="button button-primary" type="button">Proponi passaggio</button>
           <button id="open-documents" class="button button-secondary" type="button">Genera documenti</button>
         </div>
       </div>
@@ -122,7 +124,7 @@
       </section>
       <section id="members-transfer-panel" class="members-settings" data-section-panel aria-labelledby="transfers-title">
         <h2 id="transfers-title">Passaggi in attesa</h2>
-        <p>La branca resta quella di provenienza finche un altro capo della destinazione conferma. Nessuna progressione viene assegnata automaticamente per eta.</p>
+        <p>La branca resta quella di provenienza finche un capo della destinazione conferma. L’amministratore puo confermare anche le proprie proposte. Nessuna progressione viene assegnata automaticamente per eta.</p>
         <div id="members-transfers"></div>
       </section>
       <section id="members-settings-panel" class="members-settings" data-section-panel><h2>Campi personalizzati e modelli</h2>
@@ -233,15 +235,11 @@
   </dialog>
   <dialog id="macro-dialog" class="members-dialog">
     <form id="macro-form">
-      <div class="members-dialog-heading"><h2>Azioni rapide</h2><button class="button button-secondary" type="button" data-close="macro-dialog">Chiudi</button></div>
+      <div class="members-dialog-heading"><h2>Passaggio alla branca successiva</h2><button class="button button-secondary" type="button" data-close="macro-dialog">Chiudi</button></div>
       <p id="macro-count"></p><p id="macro-error" role="alert"></p>
-      <label>Azione<select name="action"><option value="field">Aggiorna campo educativo</option><option value="passage">Proponi passaggio alla branca successiva</option></select></label>
-      <label>Branca<select name="branch" required></select></label>
-      <label id="macro-field-label">Campo<select name="key"></select></label>
-      <div id="macro-value"></div>
-      <p id="macro-replacement-warning" role="status" hidden>La lista scelta sostituisce tutte le selezioni precedenti del campo per ogni socio selezionato. Una lista vuota le cancella.</p>
+      <p id="macro-route" class="member-assignment-summary"></p>
       <p>Seleziona i soci per anno di nascita e decidi tu quando proporre L/C → E/G → R/S. Il passaggio viene applicato solo dopo la conferma della destinazione e conserva i percorsi precedenti.</p>
-      <button class="button button-primary" type="submit">Applica ai soci selezionati</button>
+      <button id="propose-transfer" class="button button-primary" type="submit">Proponi passaggio</button>
     </form>
   </dialog>
   <dialog id="documents-dialog" class="members-dialog">

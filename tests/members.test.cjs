@@ -399,14 +399,20 @@ test("census overview returns only latest-year branch aggregates to administrato
     { "CODICE SOCIO": "012346", BRANCA: "Branca E/G" },
     { "CODICE SOCIO": "012347", BRANCA: "Branca L/C" },
     { "CODICE SOCIO": "012348", "ANNO SCOUT": "2025", BRANCA: "Branca R/S" },
+    { "CODICE SOCIO": "012349", BRANCA: "Branca E/G", "CODICE STATUS SOCIO": "S" },
+    { "CODICE SOCIO": "012350", BRANCA: "Branca R/S", "CODICE STATUS SOCIO": "D" },
+    { "CODICE SOCIO": "012345", "ANNO SCOUT": "2025", "CODICE STATUS SOCIO": "D" },
     { "CODICE SOCIO": "23816938", BRANCA: "Branca Adulti" },
   ]));
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  db.exec("UPDATE member_profiles SET branch='L/C' WHERE person_id=(SELECT id FROM people WHERE census_code='012345')");
+  db.close();
   const response = await app.request("members/overview");
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {
-    year: "2026", total: 3,
+    year: "2026", total: 4,
     branches: [
-      { branch: "L/C", count: 1 }, { branch: "E/G", count: 2 },
+      { branch: "L/C", count: 1 }, { branch: "E/G", count: 3 },
       { branch: "R/S", count: 0 }, { branch: "Adulti", count: 0 },
     ],
   });
@@ -512,6 +518,11 @@ test("service branches constrain every staff operation and passages require a di
   assert.equal(state.members.find(m => m.id === lc.id).branch, "L/C");
   const transfer = state.transfers[0];
   assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
+  assert.equal((await app.request("people/" + chiefs[0].id, "PATCH", { serviceBranch: "E/G" }, "http://localhost", adminCookie)).status, 200);
+  assert.equal((await app.snapshot()).transfers[0].canConfirm, false);
+  for (const action of ["confirm", "reject"])
+    assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action, revision: 1, viewAs: {} })).status, 403);
+  assert.equal((await app.request("people/" + chiefs[0].id, "PATCH", { serviceBranch: "L/C" }, "http://localhost", adminCookie)).status, 200);
   await app.login("7654323");
   assert.equal((await app.snapshot()).transfers.length, 0);
   assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
@@ -552,8 +563,7 @@ test("pending passages survive restart, conflict with profile changes and can be
   assert.equal((await propose()).status, 200);
   await app.close(); app = await start(directory); await app.login();
   let transfer = (await app.snapshot()).transfers[0];
-  assert.equal(transfer.canConfirm, false);
-  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
+  assert.equal(transfer.canConfirm, true);
   assert.equal((await app.request("members/" + member.id, "PATCH", { branch: "L/C", revision: member.revision, profile: member.profile, values: { sestiglia: "Rossi" } })).status, 200);
   member = (await app.snapshot()).members.find(m => m.id === member.id);
   await app.login("7654321");
@@ -777,7 +787,11 @@ test("admin view-as sees only the chief's branch and passages stay attributed to
   const app = await start(directory, "7654321,7654322");
   t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
   await app.login();
-  await app.import(csv([{ "CODICE SOCIO": "012341", BRANCA: "Branca L/C" }, { "CODICE SOCIO": "012343", BRANCA: "Branca E/G" }]));
+  await app.import(csv([
+    { "CODICE SOCIO": "012341", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012342", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012343", BRANCA: "Branca E/G" },
+  ]));
   let state = await app.snapshot();
   const [lcChief, egChief] = ["7654321", "7654322"].map(code => state.members.find(m => m.code === code));
   assert.equal((await app.request("people/" + lcChief.id, "PATCH", { serviceBranch: "L/C" })).status, 200);
@@ -800,20 +814,115 @@ test("admin view-as sees only the chief's branch and passages stay attributed to
   assert.equal((await app.request("auth/view-as", "POST", { personId: lcChief.id })).status, 200);
   state = await app.snapshot();
   const current = state.members.find(m => m.id === lc.id);
-  assert.equal((await app.request("members/macro", "POST", { action: "passage", branch: "E/G", members: [{ id: lc.id, revision: current.revision }] })).status, 200);
+  const second = state.members.find(m => m.code === "012342");
+  assert.equal((await app.request("members/macro", "POST", { action: "passage",
+    members: [current, second].map(({ id, revision }) => ({ id, revision })) })).status, 200);
+  const wrongBranchTransfers = (await app.snapshot()).transfers;
+  assert.equal(wrongBranchTransfers.every(transfer => !transfer.canConfirm), true);
+  for (const action of ["confirm", "reject"])
+    assert.equal((await app.request("members/transfers/" + wrongBranchTransfers[0].id, "PATCH", { action, revision: 1 })).status, 403);
   const db = new DatabaseSync(path.join(directory, "site.sqlite"));
   const adminId = db.prepare("SELECT id FROM people WHERE census_code='23816938'").get().id;
   assert.equal(db.prepare("SELECT proposer_id FROM member_transfers").get().proposer_id, adminId);
   assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
   assert.equal((await app.request("auth/view-as", "POST", { personId: egChief.id })).status, 200);
-  const transfer = (await app.snapshot()).transfers[0];
-  assert.equal(transfer.canConfirm, false);
-  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
-  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "reject", revision: 1 })).status, 403);
+  const transfers = (await app.snapshot()).transfers;
+  assert.equal(transfers.every(transfer => transfer.canConfirm), true);
+  for (const [index, action] of ["confirm", "reject"].entries())
+    assert.equal((await app.request("members/transfers/" + transfers[index].id, "PATCH", { action, revision: 1 })).status, 200);
+  assert.equal((await app.snapshot()).members.some(member => member.id === lc.id), true);
+  assert.equal((await app.request("members/overview")).status, 403);
+  assert.equal((await app.request("members", "POST", {})).status, 403);
+  assert.deepEqual(db.prepare("SELECT proposer_id,reviewer_id,status FROM member_transfers ORDER BY id").all()
+    .map(row => ({ ...row })), [
+    { proposer_id: adminId, reviewer_id: adminId, status: "confirmed" },
+    { proposer_id: adminId, reviewer_id: adminId, status: "rejected" },
+  ]);
   assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
   await app.login("7654322");
-  assert.equal((await app.snapshot()).transfers[0].canConfirm, true);
-  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 200);
-  assert.equal(db.prepare("SELECT reviewer_id FROM member_transfers").get().reviewer_id, egChief.id);
+  assert.equal((await app.snapshot()).transfers.length, 0);
   db.close();
+});
+
+test("passage derives its destination, rejects mixed or invalid selections atomically and allows admin self-review", async t => {
+  const directory = await fs.mkdtemp(path.join(process.cwd(), ".nas-passage-api-"));
+  const app = await start(directory, "");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([
+    { "CODICE SOCIO": "012341", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012342", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012343", BRANCA: "Branca E/G" },
+    { "CODICE SOCIO": "012344", BRANCA: "Branca R/S" },
+    { "CODICE SOCIO": "012345", BRANCA: "Branca Adulti" },
+  ]));
+  const before = await app.snapshot();
+  const [lc, lcSecond, eg, rs, adult] = ["012341", "012342", "012343", "012344", "012345"]
+    .map(code => before.members.find(member => member.code === code));
+  const selected = members => members.map(({ id, revision }) => ({ id, revision }));
+  for (const payload of [
+    { members: selected([lc, eg]) },
+    { members: selected([lc, rs]) },
+    { members: selected([lc, adult]) },
+    { members: selected([rs]) },
+    { members: selected([adult]) },
+    ...["L/C", "R/S", "Adulti", null].map(branch => ({ members: selected([lc]), branch })),
+  ]) {
+    assert.equal((await app.request("members/macro", "POST", { action: "passage", ...payload })).status, 400);
+    assert.deepEqual(await app.snapshot(), before);
+  }
+  assert.equal((await app.request("members/macro", "POST", { action: "passage",
+    members: selected([lc, { ...lcSecond, revision: lcSecond.revision + 1 }]) })).status, 409);
+  assert.deepEqual(await app.snapshot(), before);
+  assert.equal((await app.request("members/macro", "POST", { action: "passage", members: selected([lc, lcSecond]) })).status, 200);
+  let state = await app.snapshot();
+  assert.deepEqual(state.transfers.map(transfer => [transfer.target, transfer.canConfirm]), [["E/G", true], ["E/G", true]]);
+  for (const [index, action] of ["confirm", "reject"].entries())
+    assert.equal((await app.request("members/transfers/" + state.transfers[index].id, "PATCH", { action, revision: 1 })).status, 200);
+  assert.equal((await app.request("members/macro", "POST", { action: "passage", members: selected([eg]) })).status, 200);
+  state = await app.snapshot();
+  assert.equal(state.transfers[0].target, "R/S");
+  assert.equal(state.members.find(member => member.id === lc.id).branch, "E/G");
+  assert.equal(state.members.find(member => member.id === lcSecond.id).branch, "L/C");
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  try {
+    const adminId = db.prepare("SELECT id FROM people WHERE census_code='23816938'").get().id;
+    assert.equal(db.prepare("SELECT count(*) AS n FROM member_transfers WHERE reviewer_id=? AND proposer_id=?")
+      .get(adminId, adminId).n, 2);
+  } finally { db.close(); }
+});
+
+test("member visibility diagnostics count only the effective branch and suspended records after pending CoCa", async t => {
+  const directory = await fs.mkdtemp(path.join(process.cwd(), ".nas-member-visibility-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([
+    { "CODICE SOCIO": "012341", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "NO", "CODICE STATUS SOCIO": "D" },
+    { "CODICE SOCIO": "012342", "CODICE STATUS SOCIO": "D" },
+    { "CODICE SOCIO": "012343", "CODICE STATUS SOCIO": "S", "ANNO SCOUT": "2025" },
+    { "CODICE SOCIO": "012344", "CODICE STATUS SOCIO": "S" },
+    { "CODICE SOCIO": "012345" },
+    { "CODICE SOCIO": "012346", BRANCA: "Branca L/C", "CODICE STATUS SOCIO": "D" },
+    { "CODICE SOCIO": "012347", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT" },
+    { "CODICE SOCIO": "012348", BRANCA: "Branca R/S", "LIVELLO FOCA": "CFT" },
+  ], [...columns, "LIVELLO FOCA", "INGRESSO COCA"]));
+  const adminState = await app.snapshot();
+  assert.equal(Object.hasOwn(adminState, "visibility"), false);
+  const chief = adminState.members.find(member => member.code === "7654321");
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
+  assert.equal((await app.request("auth/view-as", "POST", { personId: chief.id })).status, 200);
+  const expected = { branch: "E/G", total: 5, excludedPendingCoca: 1, excludedLongSuspended: 2 };
+  const viewed = await app.snapshot();
+  assert.deepEqual(viewed.visibility, expected);
+  assert.deepEqual(viewed.members.map(member => member.code).sort(), ["012342", "012343", "012344", "012345"]);
+  assert.equal(viewed.members.filter(member => !M.longSuspended(member, viewed.currentYear)).length, 2);
+  assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
+  const adminCookie = app.cookie();
+  await app.login("7654321");
+  assert.deepEqual((await app.snapshot()).visibility, expected);
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "R/S" }, "http://localhost", adminCookie)).status, 200);
+  const empty = await app.snapshot();
+  assert.deepEqual(empty.members, []);
+  assert.deepEqual(empty.visibility, { branch: "R/S", total: 1, excludedPendingCoca: 1, excludedLongSuspended: 0 });
 });

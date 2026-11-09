@@ -245,6 +245,8 @@ function createMembers(db, people) {
         const current = user();
         if (!current.admin && branch !== current.serviceBranch) fail(403, "Socio o campo fuori dalla tua branca di servizio");
       };
+      const canReview = (transfer, current) => current.admin ||
+        (transfer.target === current.serviceBranch && (!!current.viewAs || transfer.proposer_id !== current.actorId));
       user();
       const method = request.method;
       if (route === "/api/members/overview" && method === "GET") {
@@ -255,7 +257,8 @@ function createMembers(db, people) {
         if (year) {
           for (const row of db.prepare(`SELECT c.data FROM member_censuses c
             JOIN people p ON p.id=c.person_id WHERE c.year=? AND p.census_code!=?`).all(year, ADMIN_CODE)) {
-            const branch = JSON.parse(row.data).branch;
+            const census = JSON.parse(row.data), branch = census.branch;
+            if (M.longSuspended({ censuses: [{ ...census, year }] }, year)) continue;
             if (Object.hasOwn(counts, branch)) counts[branch]++;
           }
         }
@@ -268,7 +271,12 @@ function createMembers(db, people) {
         result.currentYear = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
           JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
         if (!current.admin) {
-          result.members = result.members.filter(member => member.branch === current.serviceBranch && !M.pendingCoca(member.profile))
+          const scoped = result.members.filter(member => member.branch === current.serviceBranch);
+          const visible = scoped.filter(member => !M.pendingCoca(member.profile));
+          result.visibility = { branch: current.serviceBranch, total: scoped.length,
+            excludedPendingCoca: scoped.length - visible.length,
+            excludedLongSuspended: visible.filter(member => M.longSuspended(member, result.currentYear)).length };
+          result.members = visible
             .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} },
               assignmentHistory: member.assignmentHistory.filter(item => item.branch === member.branch) }));
           result.fields = result.fields.filter(field => field.branch === current.serviceBranch);
@@ -281,8 +289,7 @@ function createMembers(db, people) {
             const member = get(transfer.person_id);
             return { id: transfer.id, personId: member.id, name: member.name, code: member.code,
               birthYear: member.profile.birthDate?.slice(0, 4) || "", source: transfer.source, target: transfer.target,
-              revision: transfer.revision, canConfirm: transfer.proposer_id !== current.actorId &&
-                (current.admin || transfer.target === current.serviceBranch),
+              revision: transfer.revision, canConfirm: canReview(transfer, current),
               canCancel: current.admin || transfer.source === current.serviceBranch };
           });
         send(response, 200, result); return true;
@@ -391,8 +398,8 @@ function createMembers(db, people) {
         const value = await body(request, 256 * 1024);
         if (!Array.isArray(value?.members) || !value.members.length || value.members.length > 5000 ||
             new Set(value.members.map(row => row?.id)).size !== value.members.length) fail(400, "Selezione soci non valida");
-        const targetBranch = branchValue(value.branch);
         if (!["branch", "passage", "field"].includes(value.action)) fail(400, "Macro non valida");
+        let targetBranch = value.action === "passage" && !Object.hasOwn(value, "branch") ? null : branchValue(value.branch);
         transaction(() => {
           for (const selected of value.members) {
             if (!Number.isSafeInteger(selected?.id)) fail(400, "Socio non valido");
@@ -405,7 +412,10 @@ function createMembers(db, people) {
               writeValues(member, targetBranch, { ...(member.values[targetBranch] || {}), [text(value.key, 40)]: value.value });
               writeProfile(member, member.branch, member.profile);
             } else {
-              if (M.nextBranch(member.branch) !== targetBranch) fail(400, "Passaggi consentiti: L/C → E/G → R/S");
+              const next = M.nextBranch(member.branch);
+              if (!next || (targetBranch !== null && next !== targetBranch))
+                fail(400, "Passaggi consentiti: L/C → E/G → R/S; selezionare soci della stessa branca");
+              targetBranch = next;
               if (db.prepare("SELECT id FROM member_transfers WHERE person_id=? AND status='pending'").get(member.id))
                 fail(409, "Passaggio gia' in attesa di conferma");
               db.prepare("INSERT INTO member_transfers(person_id,source,target,proposer_id,member_revision) VALUES(?,?,?,?,?)")
@@ -423,7 +433,7 @@ function createMembers(db, people) {
         if (transfer.status !== "pending" || transfer.revision !== value?.revision) fail(409, "Passaggio gia' modificato: ricarica");
         if (!["confirm", "reject", "cancel"].includes(value.action)) fail(400, "Azione passaggio non valida");
         if (value.action === "cancel") access(transfer.source);
-        else if (transfer.proposer_id === current.actorId || (!current.admin && current.serviceBranch !== transfer.target))
+        else if (!canReview(transfer, current))
           fail(403, "Serve la conferma di un altro capo della branca di destinazione");
         transaction(() => {
           if (value.action === "confirm") {

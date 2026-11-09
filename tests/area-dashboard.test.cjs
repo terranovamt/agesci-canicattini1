@@ -82,6 +82,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(get("dashboard-group-overview").hidden, false);
   assert.match(get("dashboard-group-status").textContent, /anno 2026/);
+  assert.match(get("dashboard-group-status").textContent, /esclusi i sospesi da oltre un anno/);
   assert.equal(get("dashboard-group-counts").children.length, 5);
   assert.equal(get("dashboard-group-counts").children[0].children[1].textContent, "3");
   assert.equal(get("dashboard-group-counts").children[2].children[1].textContent, "2");

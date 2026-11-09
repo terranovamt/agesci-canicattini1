@@ -149,7 +149,7 @@
         ...data.branches.map(item => makeCount(window.SOCI_MODEL.branchLabel(item.branch), item.count, "group-census-branch", item.branch)),
       );
       $("dashboard-group-status").textContent = data.year
-        ? `Censimenti AGESCI · anno ${data.year} · tutti gli status importati.`
+        ? `Censimenti AGESCI · anno ${data.year} · esclusi i sospesi da oltre un anno.`
         : "Nessun censimento AGESCI importato.";
     } catch (error) {
       $("dashboard-group-status").textContent = error.message;

@@ -10,7 +10,7 @@ const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
   spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
-test("member UI edits, filters, imports, applies macros and prints safely across six responsive viewports", { skip: !chrome }, t => {
+test("member UI edits, filters, imports, proposes passages and prints safely across six responsive viewports", { skip: !chrome }, t => {
   const directory = fs.mkdtempSync(path.join(root, ".members-browser-"));
   try {
     const snapshot = {
@@ -56,14 +56,12 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           warnings:Array.from({length:12}, (_,index) => 'Da verificare: responsabile della riga ' + (index + 1)),
           ignoredColumns:['COLONNA'], version:'preview-token'};
         if (route === 'members/macro') {
+          if (value.action !== 'passage' || Object.hasOwn(value, 'branch')) throw new Error('Macro non valida');
           for (const selected of value.members) {
             const member = snapshot.members.find(m => m.id === selected.id);
-            if(value.action === 'passage') {
-              snapshot.transfers.push({id:1,personId:member.id,name:member.name,code:member.code,birthYear:'2012',source:member.branch,target:value.branch,revision:1,canConfirm:false,canCancel:true});
-            } else {
-              member.values[value.branch] ||= {}; member.values[value.branch][value.key] = value.value;
-              member.revision++;
-            }
+            const target = window.SOCI_MODEL.nextBranch(member.branch);
+            if (!target || member.revision !== selected.revision) throw new Error('Passaggio non valido');
+            snapshot.transfers.push({id:1,personId:member.id,name:member.name,code:member.code,birthYear:'2012',source:member.branch,target,revision:1,canConfirm:true,canCancel:true});
           }
         }
         if (route.startsWith('members/transfers/')) snapshot.transfers = [];
@@ -317,6 +315,7 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           const badge = [...$('member-education').querySelectorAll('input[name="extra:brevetti"]')].find(input => input.value === 'Pioniere');
           badge.click();
           form.elements['extra:tappa'].value = 'Tappa della scoperta';
+          form.elements['extra:anno'].value = 'Secondo anno';
           memberTabs[2].click();
           results.guardianDraft = form.elements['guardian:0:fullName'].value === 'Responsabile Esempio';
           form.elements['profile:phone'].value = '000123';
@@ -333,37 +332,41 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           results.realOperationSuccess = $('members-status').textContent === 'Operazione completata.' &&
             $('members-status').dataset.tone === 'success' && getComputedStyle($('members-status')).color === 'rgb(49, 95, 69)';
           results.closedAfterSave = !$('member-dialog').open;
+          const macro = $('macro-form');
+          const macroCalls = () => window.calls.filter(call => call.route === 'members/macro').length;
           $('members-list').querySelector('input[type=checkbox]').click();
+          results.quickActionOnlyPassage = $('open-macro').textContent === 'Proponi passaggio' &&
+            [...$('members-selection').querySelectorAll('button')].map(button => button.textContent).join('|') === 'Deseleziona|Proponi passaggio|Genera documenti';
           $('open-macro').click();
           results.macroFits = dialogFits('macro-dialog');
-          const macro = $('macro-form');
-          macro.elements.branch.value = 'E/G'; macro.elements.branch.onchange();
-          results.noAssignmentMacro = ![...macro.elements.key.options].some(option => ['squadriglia', 'ruolo'].includes(option.value));
-          macro.elements.key.value = 'specialita'; macro.elements.key.onchange();
-          results.multipleReplacementWarning = !$('macro-replacement-warning').hidden;
-          macro.elements.key.value = 'anno'; macro.elements.key.onchange();
-          results.multipleReplacementWarning = results.multipleReplacementWarning && $('macro-replacement-warning').hidden;
-          macro.elements.value.value = 'Secondo anno';
+          results.macroRoute = $('macro-route').textContent === 'E/G → R/S' && $('macro-error').textContent === '' &&
+            !$('propose-transfer').disabled && $('macro-count').textContent.startsWith('1 soci selezionati');
+          results.macroNoInputs = macro.querySelectorAll('select,input,textarea').length === 0 &&
+            !$('macro-value') && !$('macro-field-label') && !$('macro-replacement-warning') &&
+            [...macro.querySelectorAll('button')].map(button => button.textContent).join('|') === 'Chiudi|Proponi passaggio';
           macro.requestSubmit(); await settle();
-          results.macro = window.calls.find(call => call.route === 'members/macro').value;
+          results.passageConfirmed = window.confirmations.at(-1) === 'Proporre il passaggio E/G → R/S per 1 soci?';
+          results.passage = window.calls.find(call => call.route === 'members/macro').value;
+          results.macroClosed = !$('macro-dialog').open;
+          results.pending = $('members-transfers').textContent.includes('E/G → R/S');
+          results.notMoved = $('members-list').textContent.includes('E/G');
+          results.pendingBadge = $('transfers-tab').textContent === 'Passaggi · 1' && !$('members-incoming').hidden &&
+            $('members-incoming').textContent === '1 passaggi da accettare o rifiutare →';
           $('members-list').querySelector('input[type=checkbox]').click();
           $('open-documents').click();
           results.documentsFit = dialogFits('documents-dialog');
           results.safeDocument = !document.querySelector('#document-preview img');
           $('print-documents').click();
-          results.printed = window.printed.includes('Secondo anno') && window.printed.includes('012345');
-          $('open-macro').click();
-          macro.elements.action.value = 'passage'; macro.elements.action.onchange();
-          results.nextBranch = macro.elements.branch.value;
-          macro.requestSubmit(); await settle();
-          results.passage = window.calls.find(call => call.route === 'members/macro' && call.value.action === 'passage').value;
-          results.pending = $('members-transfers').textContent.includes('E/G → R/S');
-          results.notMoved = $('members-list').textContent.includes('E/G');
-          document.querySelector('[data-section-target="members-transfer-panel"]').click();
+          results.printed = ['Secondo anno', 'Tappa della scoperta', 'Cuoco; Fotografo', 'Pioniere', '012345'].every(text => window.printed.includes(text));
+          $('members-incoming').click();
+          results.incomingOpensTab = !$('members-transfer-panel').hidden && $('members-search-panel').hidden &&
+            $('transfers-tab').getAttribute('aria-pressed') === 'true';
           results.pendingLayout = controlsFit($('members-transfers')) &&
             $('members-transfers').scrollWidth <= $('members-transfers').clientWidth;
-          $('members-transfers').querySelector('button').click(); await settle();
-          results.cancelled = $('members-transfers').textContent.includes('Nessun passaggio');
+          [...$('members-transfers').querySelectorAll('button')].find(button => button.textContent === 'Annulla proposta').click(); await settle();
+          results.cancelPatch = window.calls.filter(call => call.method === 'PATCH').at(-1);
+          results.cancelled = $('members-transfers').textContent.includes('Nessun passaggio') && $('members-incoming').hidden &&
+            $('transfers-tab').textContent === 'Passaggi';
           document.querySelector('[data-section-target="members-search-panel"]').click();
           $('open-import').click();
           results.importSourceFits = dialogFits('import-dialog');
@@ -397,18 +400,32 @@ test("member UI edits, filters, imports, applies macros and prints safely across
             !$('document-preview').textContent.includes('Pista / sentiero');
           document.querySelector('[data-close=documents-dialog]').click();
           $('open-macro').click();
-          macro.elements.action.value = 'field'; macro.elements.action.onchange();
-          macro.elements.branch.value = 'E/G'; macro.elements.branch.onchange();
-          results.macroBranchChoice = macro.elements.branch.value === 'E/G';
-          macro.elements.key.value = 'specialita'; macro.elements.key.onchange();
-          $('macro-value').querySelector('details').open = true;
-          macro.querySelector('button[type=submit]').scrollIntoView({block:'end'});
+          results.lcRoute = $('macro-route').textContent === 'L/C → E/G' && !$('propose-transfer').disabled && $('macro-error').textContent === '';
+          document.querySelector('[data-close=macro-dialog]').click();
+          filters.search.value = ''; $('members-filters').oninput();
+          [...$('members-list').querySelectorAll('input[type=checkbox]')].find(input => !input.checked).click();
+          $('open-macro').click();
+          const noRoute = 'Nessun passaggio proponibile con questa selezione.';
+          results.mixedBlocked = $('members-count').textContent.includes('2 selezionati') &&
+            $('macro-error').textContent === 'Seleziona solo soci della stessa branca.' &&
+            $('macro-route').textContent === noRoute && $('propose-transfer').disabled;
+          macro.querySelector('#propose-transfer').scrollIntoView({block:'end'});
           results.multipleMacroFits = dialogFits('macro-dialog') &&
-            macro.querySelector('button[type=submit]').getBoundingClientRect().bottom <= innerHeight;
+            macro.querySelector('#propose-transfer').getBoundingClientRect().bottom <= innerHeight;
+          const invalidStart = { calls: window.calls.length, macro: macroCalls(), confirmations: window.confirmations.length };
           macro.requestSubmit(); await settle();
-          results.replacementConfirmed = window.confirmations.some(text => text.includes('sostituirà tutte le selezioni precedenti'));
-          results.emptyMultiplePayload = Array.isArray(window.calls.filter(call => call.route === 'members/macro').at(-1).value.value) &&
-            window.calls.filter(call => call.route === 'members/macro').at(-1).value.value.length === 0;
+          results.mixedStaysOpen = $('macro-dialog').open && $('macro-error').textContent === 'Seleziona solo soci della stessa branca.';
+          document.querySelector('[data-close=macro-dialog]').click();
+          $('clear-selection').click();
+          results.emptyDisabled = $('open-macro').disabled && $('members-selection').hidden;
+          $('open-macro').onclick();
+          results.emptyBlocked = $('macro-error').textContent === 'Seleziona almeno un socio.' &&
+            $('macro-route').textContent === noRoute && $('propose-transfer').disabled;
+          macro.requestSubmit(); await settle();
+          results.emptyStaysOpen = $('macro-dialog').open && $('macro-error').textContent === 'Seleziona almeno un socio.';
+          results.invalidNoApi = window.calls.length === invalidStart.calls && macroCalls() === invalidStart.macro &&
+            window.confirmations.length === invalidStart.confirmations;
+          document.querySelector('[data-close=macro-dialog]').click();
           const field = $('field-form');
           field.elements.label.value = 'Obiettivo personale'; field.elements.label.dispatchEvent(new Event('input'));
           results.keySuggested = field.elements.key.value === 'obiettivo-personale';
@@ -472,8 +489,9 @@ test("member UI edits, filters, imports, applies macros and prints safely across
       for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress",
         "contextualUnitLabels", "assignmentHistory", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
-        "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "multipleReplacementWarning", "dirtyCloseProtected",
-        "noLegacyPistaDocument", "macroBranchChoice", "replacementConfirmed", "emptyMultiplePayload", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
+        "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
+        "noLegacyPistaDocument", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
+        "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
         "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogCapped", "pickerFits", "macroFits", "documentsFit",
         "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",
         "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
@@ -485,7 +503,7 @@ test("member UI edits, filters, imports, applies macros and prints safely across
       assert.equal(results.branchCardFilters, true); assert.equal(results.summaryNoHint, true);
       for (const key of ["branchClickAgainClears", "yearChipPressed", "statusCombined", "statusChipToggle",
         "yearChipToggle", "advancedCollapsed", "advancedExpanded", "advancedCensusFilters", "resetHiddenWithoutFilters",
-        "resetRightOfActiveFilters", "resetClearsAndHides", "checkboxShowsReset", "specialtiesNotButtonGrid", "specialtySummary", "specialtyRemove", "noAssignmentMacro"])
+        "resetRightOfActiveFilters", "resetClearsAndHides", "checkboxShowsReset", "specialtiesNotButtonGrid", "specialtySummary", "specialtyRemove"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.branchRows, 1); assert.equal(results.yearRows, 1); assert.equal(results.fieldMatch, 1);
       assert.equal(results.birthRows, 1); assert.equal(results.birthGroup, true);
@@ -499,12 +517,13 @@ test("member UI edits, filters, imports, applies macros and prints safely across
       assert.equal(results.saved.values.progressione, undefined);
       assert.equal(results.saved.values.ruolo, undefined);
       assert.equal(results.saved.values.tappa, "Tappa della scoperta");
+      assert.equal(results.saved.values.anno, "Secondo anno");
       assert.equal(results.saved.profile.guardianContacts[0].fullName, "Responsabile Esempio");
       assert.equal(results.invalidContactsVisible, true);
       assert.equal(results.saveReachable, true);
       assert.equal(results.saved.revision, 1);
-      assert.equal(results.macro.value, "Secondo anno"); assert.equal(results.macro.members[0].revision, 2);
-      assert.equal(results.nextBranch, "R/S"); assert.equal(results.passage.branch, "R/S");
+      assert.deepEqual(results.passage, { action: "passage", members: [{ id: 1, revision: 2 }] });
+      assert.deepEqual(results.cancelPatch, { route: "members/transfers/1", method: "PATCH", value: { action: "cancel", revision: 1 } });
       assert.equal(results.pending, true, JSON.stringify(results)); assert.equal(results.notMoved, true, JSON.stringify(results)); assert.equal(results.cancelled, true, JSON.stringify(results));
       assert.equal(results.confirm.version, "preview-token"); assert.equal(results.confirm.csv, "synthetic csv");
     }
