@@ -37,9 +37,11 @@
           <div id="password-fields" hidden>
             <label for="nas-password">Password</label>
             <input id="nas-password" type="password" autocomplete="current-password" maxlength="128" required disabled>
+            <button id="toggle-nas-password" class="password-visibility" type="button" aria-controls="nas-password" aria-pressed="false" disabled>Mostra password</button>
             <div id="confirmation-field" hidden>
               <label for="nas-confirmation">Ripeti password</label>
               <input id="nas-confirmation" type="password" autocomplete="new-password" minlength="8" maxlength="128" disabled>
+              <button id="toggle-nas-confirmation" class="password-visibility" type="button" aria-controls="nas-confirmation" aria-pressed="false" disabled>Mostra password</button>
               <p>Al primo accesso scegli una password di almeno 8 caratteri, con una maiuscola, una minuscola, un numero e un carattere speciale, come @.</p>
             </div>
           </div>

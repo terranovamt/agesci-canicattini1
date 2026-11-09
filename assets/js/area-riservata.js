@@ -5,19 +5,36 @@
     const code = document.getElementById('census-code');
     const password = document.getElementById('nas-password');
     const confirmation = document.getElementById('nas-confirmation');
+    const togglePassword = document.getElementById('toggle-nas-password');
+    const toggleConfirmation = document.getElementById('toggle-nas-confirmation');
     const fields = document.getElementById('password-fields');
     const repeat = document.getElementById('confirmation-field');
     const status = document.getElementById('accesso-stato');
-    const button = form.querySelector('button');
+    const button = form.querySelector('button[type="submit"]');
     let checkedCode = '';
+    function conceal(input, toggle) {
+      input.type = 'password';
+      toggle.textContent = 'Mostra password';
+      toggle.setAttribute('aria-pressed', 'false');
+    }
+    function toggleVisibility(input, toggle) {
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      toggle.textContent = visible ? 'Nascondi password' : 'Mostra password';
+      toggle.setAttribute('aria-pressed', String(visible));
+    }
+    togglePassword.onclick = () => toggleVisibility(password, togglePassword);
+    toggleConfirmation.onclick = () => toggleVisibility(confirmation, toggleConfirmation);
     document.getElementById('login-form').hidden = true;
     document.getElementById('legacy-login-hint').textContent = 'Accesso riservato ai capi censiti nel gruppo.';
     form.hidden = false;
     function resetFields() {
       checkedCode = '';
       fields.hidden = repeat.hidden = true;
-      password.disabled = confirmation.disabled = true;
+      password.disabled = confirmation.disabled = togglePassword.disabled = toggleConfirmation.disabled = true;
       password.value = confirmation.value = '';
+      conceal(password, togglePassword);
+      conceal(confirmation, toggleConfirmation);
       button.textContent = 'Continua';
     }
     function showTools() {
@@ -39,8 +56,9 @@
           checkedCode = code.value;
           fields.hidden = false;
           password.disabled = false;
+          togglePassword.disabled = false;
           repeat.hidden = !result.firstAccess;
-          confirmation.disabled = !result.firstAccess;
+          confirmation.disabled = toggleConfirmation.disabled = !result.firstAccess;
           confirmation.required = result.firstAccess;
           password.minLength = result.firstAccess ? 8 : 1;
           password.pattern = result.firstAccess ? '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,128}' : '';
@@ -51,11 +69,16 @@
           password.focus();
         } else {
           await A.entra(password.value, checkedCode, confirmation.disabled ? undefined : confirmation.value);
+          password.value = confirmation.value = '';
+          conceal(password, togglePassword);
+          conceal(confirmation, toggleConfirmation);
           showTools();
         }
       } catch (error) {
         status.textContent = error.message;
         password.value = confirmation.value = '';
+        conceal(password, togglePassword);
+        conceal(confirmation, toggleConfirmation);
       } finally { button.disabled = code.disabled = false }
     };
     document.getElementById('esci').onclick = async () => {
