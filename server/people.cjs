@@ -5,6 +5,8 @@ const { promisify } = require("node:util");
 const scrypt = promisify(crypto.scrypt);
 const ADMIN_CODE = "23816938";
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const SERVICE_BRANCHES = ["L/C", "E/G", "R/S"];
+const STALE_VIEW = "Il capo visualizzato non e' piu' disponibile: torna amministratore";
 
 function fail(status, message) {
   throw Object.assign(new Error(message), { status });
@@ -83,6 +85,9 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
   if (!database.prepare("PRAGMA table_info(sessions)").all().some((column) => column.name === "person_id")) {
     database.exec("ALTER TABLE sessions ADD COLUMN person_id INTEGER REFERENCES people(id); DELETE FROM sessions;");
   }
+  // Admin "view as": the session keeps the real admin in person_id and only stores the viewed chief.
+  if (!database.prepare("PRAGMA table_info(sessions)").all().some((column) => column.name === "view_as_id"))
+    database.exec("ALTER TABLE sessions ADD COLUMN view_as_id INTEGER REFERENCES people(id)");
   database.prepare("INSERT OR IGNORE INTO people(census_code,name,kind) VALUES(?,?,'capo')")
     .run(ADMIN_CODE, "Amministratore");
   database.prepare("UPDATE people SET kind='capo', password_hash=NULL WHERE census_code=?").run(ADMIN_CODE);
@@ -103,11 +108,39 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
     loginEnabled: row.kind === "capo" && allowed.has(row.census_code),
     serviceBranch: row.service_branch,
   });
-  const user = (sessionId) => {
-    const row = database.prepare(`SELECT people.* FROM people JOIN sessions ON people.id=sessions.person_id
+  const actorRow = (sessionId) => {
+    const row = database.prepare(`SELECT people.*, sessions.view_as_id AS session_view_as_id FROM people
+      JOIN sessions ON people.id=sessions.person_id
       WHERE sessions.id=? AND expires>? AND kind='capo'
       AND (census_code=? OR password_hash IS NOT NULL)`).get(sessionId, Date.now(), ADMIN_CODE);
-    return row && allowed.has(row.census_code) ? person(row) : null;
+    return row && allowed.has(row.census_code) ? row : null;
+  };
+  const viewTarget = (id) => {
+    const row = Number.isSafeInteger(id) ? database.prepare("SELECT * FROM people WHERE id=?").get(id) : null;
+    return row && row.kind === "capo" && configured.has(row.census_code) &&
+      SERVICE_BRANCHES.includes(row.service_branch) ? row : null;
+  };
+  // actorId is non-enumerable: available for server-side audit fields, never serialized to clients.
+  const withActor = (value, actor) => Object.defineProperty(value, "actorId", { value: actor.id });
+  const resolve = (sessionId) => {
+    const actor = actorRow(sessionId);
+    if (!actor) return null;
+    if (actor.session_view_as_id === null) return { actor, user: withActor(person(actor), actor), viewAs: null };
+    if (actor.census_code !== ADMIN_CODE) return null;
+    const target = viewTarget(actor.session_view_as_id);
+    const viewAs = { adminName: actor.name,
+      target: target ? { id: target.id, name: target.name, serviceBranch: target.service_branch } : null };
+    return { actor, viewAs, user: target ? withActor({ ...person(target), viewAs: { adminName: actor.name } }, actor) : null };
+  };
+  // Effective user for every permission check: under "view as" it is the viewed chief, never the admin.
+  const user = (sessionId) => {
+    const current = resolve(sessionId);
+    if (current?.viewAs && !current.user) fail(409, STALE_VIEW);
+    return current?.user || null;
+  };
+  const client = (sessionId) => {
+    const current = resolve(sessionId);
+    return { user: current?.user || null, viewAs: current?.viewAs || null };
   };
   const enabled = (censusCode) => {
     const row = byCode(censusCode);
@@ -122,12 +155,32 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
   };
   return {
     user,
+    client,
     async handle(route, request, response, { body, send, cookie, sessionId, rateLimit, clearLimit, ip, seconds }) {
       const method = request.method;
       if (route === "/api/auth/me" && method === "GET") {
         const current = user(sessionId(request));
         if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
         send(response, 200, { user: current });
+        return true;
+      }
+      if (route === "/api/auth/view-as") {
+        const id = sessionId(request), current = resolve(id);
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        if (current.actor.census_code !== ADMIN_CODE) fail(403, "Operazione riservata all'amministratore");
+        if (method === "POST") {
+          if (current.viewAs) fail(409, "Torna amministratore prima di cambiare vista");
+          const value = await body(request, 1024);
+          if (!value || typeof value !== "object" || Object.keys(value).length !== 1 || !Number.isSafeInteger(value.personId))
+            fail(400, "Capo da visualizzare non valido");
+          const target = viewTarget(value.personId);
+          if (!target) fail(404, "Capo non disponibile: serve un capo abilitato con branca di servizio");
+          if (!database.prepare("UPDATE sessions SET view_as_id=? WHERE id=? AND person_id=? AND view_as_id IS NULL")
+            .run(target.id, id, current.actor.id).changes) fail(409, "Torna amministratore prima di cambiare vista");
+        } else if (method === "DELETE") {
+          database.prepare("UPDATE sessions SET view_as_id=NULL WHERE id=? AND person_id=?").run(id, current.actor.id);
+        } else fail(405, "Metodo non consentito");
+        send(response, 200, client(id));
         return true;
       }
       if (route === "/api/auth/status" && method === "POST") {

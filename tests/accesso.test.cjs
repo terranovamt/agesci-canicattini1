@@ -98,3 +98,25 @@ test("a key stored by an old regia URL is not a verified session", () => {
   session.set("canicattini-area-chiave", "unverified");
   assert.equal(a.verificata(), false);
 });
+
+test("NAS view-as uses dedicated session endpoints and never sends credentials", async () => {
+  const calls = [];
+  const window = { NAS: { user: { admin: true }, viewAs: null, basePath: "/base" } };
+  const replies = [
+    { user: { admin: false, serviceBranch: "E/G" }, viewAs: { adminName: "Amministratore", target: { id: 2, name: "Capo", serviceBranch: "E/G" } } },
+    { user: { admin: true }, viewAs: null },
+  ];
+  vm.runInNewContext(source, { window, fetch: async (url, options) => {
+    calls.push({ url, method: options.method, body: options.body });
+    return { ok: true, json: async () => replies.shift() };
+  } });
+  await window.ACCESSO.vista(2);
+  assert.equal(window.NAS.user.admin, false);
+  assert.equal(window.NAS.viewAs.target.serviceBranch, "E/G");
+  await window.ACCESSO.tornaAdmin();
+  assert.deepEqual([window.NAS.user.admin, window.NAS.viewAs], [true, null]);
+  assert.deepEqual(calls, [
+    { url: "/base/api/auth/view-as", method: "POST", body: '{"personId":2}' },
+    { url: "/base/api/auth/view-as", method: "DELETE", body: undefined },
+  ]);
+});

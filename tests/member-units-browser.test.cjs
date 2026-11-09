@@ -141,12 +141,12 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
             $('unit-unassigned').textContent.includes('Assegnazione conservata: Nascosti'), 'legacyVisible');
           check(document.querySelector('[data-unit-id="1"] .unit-member-count').textContent === '2 ragazzi' &&
             document.querySelector('[data-unit-id="2"] .unit-member-count').textContent === '0 ragazzi', 'countsIncludeLegacy');
+          // Real mouse/touch dragging is covered by member-units-drag-browser.test.cjs; here the same moves use the accessible form.
           const drag = (id, unitId, role) => {
-            const transfer = new DataTransfer(), member = document.querySelector('.unit-member[data-member-id="' + id + '"]');
-            member.dispatchEvent(new DragEvent('dragstart', {dataTransfer: transfer, bubbles: true}));
-            const lane = document.querySelector('[data-unit-id="' + unitId + '"] [data-role="' + role + '"]');
-            lane.dispatchEvent(new DragEvent('dragover', {dataTransfer: transfer, bubbles: true, cancelable: true}));
-            lane.dispatchEvent(new DragEvent('drop', {dataTransfer: transfer, bubbles: true, cancelable: true}));
+            check(document.querySelector('.unit-member[data-member-id="' + id + '"]').classList.contains('unit-draggable') &&
+              !!document.querySelector('[data-unit-id="' + unitId + '"] [data-drop-role="' + role + '"]'), 'dropTargets');
+            assignment.elements.memberId.value = String(id); assignment.elements.unitId.value = String(unitId);
+            assignment.elements.unitId.onchange(); assignment.elements.role.value = role; submit(assignment);
           };
           drag(4, 1, 'Capo squadriglia'); await settle();
           check($('units-status').textContent.includes('occupato') && !!$('unit-unassigned').querySelector('[data-member-id="4"]'), 'occupiedError');
@@ -229,7 +229,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
       const results = JSON.parse(Buffer.from(encoded, "base64").toString());
       assert.equal(results.failure, undefined, width + ": " + JSON.stringify(results));
       for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "moveShortcut", "fixedEditor", "unknownNameError", "lcFits", "cerchio", "cerchioSheet",
-        "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove",
+        "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove", "dropTargets",
         "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
         "egFits", "touchTargets", "noErrors", "unassignedCompact", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
         "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "assignmentFits"])

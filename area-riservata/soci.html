@@ -48,13 +48,13 @@
         </details>
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
-        <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
-        <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
-        <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
-        <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
         <details id="members-advanced-search" class="members-advanced-search">
-          <summary>Ricerca avanzata <span>Età, dati da verificare e percorso educativo</span></summary>
+          <summary>Ricerca avanzata <span>Censimento, età, dati da verificare e percorso educativo</span></summary>
           <div class="members-filters-advanced">
+            <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
+            <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
+            <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
+            <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
             <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
             <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
             <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
@@ -66,9 +66,11 @@
             <label class="members-check"><input name="missing" type="checkbox">Campo educativo vuoto</label>
           </div>
         </details>
-        <button class="button button-secondary" type="reset">Azzera filtri</button>
       </form>
-      <div id="members-quick-filters" class="members-quick-filters" aria-label="Filtri attivi" hidden></div>
+      <div id="members-active-filters" class="members-active-filters" hidden>
+        <div id="members-quick-filters" class="members-quick-filters" role="group" aria-label="Filtri attivi" hidden></div>
+        <button id="members-reset-filters" class="button button-secondary" type="reset" form="members-filters">Azzera filtri</button>
+      </div>
       <div class="members-result-bar">
         <p id="members-count" role="status"></p>
         <div class="members-toolbar">
@@ -116,7 +118,7 @@
           </form>
           <p>Trascina un socio nella riga desiderata oppure premi la freccia accanto al nome. C indica il capo, VC il vice; le righe in fondo evidenziano i nuovi ingressi. Capo e vice hanno un solo posto.</p>
         </details>
-        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome per spostarlo.</p>
+        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome o la maniglia ⋮⋮ per spostarlo (su touch tieni premuto il nome).</p>
         <div id="unit-unassigned"></div>
         <div id="units-board" class="units-board"></div>
         <details id="units-hidden"><summary>Sestiglie nascoste</summary><div id="units-hidden-list"></div></details>
@@ -165,7 +167,7 @@
           <button id="remove-unit-image" type="button" class="button button-secondary">Rimuovi simbolo</button>
         </div>
       </div>
-      <button id="save-unit" type="submit" class="button button-primary">Crea / ripristina</button>
+      <button id="save-unit" type="submit" class="button button-primary">Crea</button>
     </form>
   </dialog>
   <dialog id="member-dialog" class="members-dialog">

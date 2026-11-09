@@ -94,7 +94,7 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           results.lowHeightControls = innerHeight > 500 || (visibleInViewport(document.querySelector('#members-app > .section-nav')) &&
             visibleInViewport($('members-access-link')) && visibleInViewport($('new-member')) &&
             visibleInViewport(document.querySelector('.members-summary button')) &&
-            visibleInViewport($('members-filters').elements.search));
+            visibleInViewport($('members-advanced-search').querySelector('summary')));
           results.lowHeightSearchTop = Math.round($('members-filters').elements.search.getBoundingClientRect().top);
           $('reload-members').click(); await settle();
           results.noReloadSuccess = $('members-status').textContent === '' && !$('members-app').inert;
@@ -137,6 +137,23 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
           const filters = $('members-filters').elements;
           results.noDuplicateFilters = $('members-quick-filters').hidden && $('members-selection').hidden;
+          const resetFilters = $('members-reset-filters');
+          results.advancedCensusFilters = ['search', 'year', 'status', 'showSuspended']
+            .every(name => $('members-advanced-search').contains(filters[name])) && !$('members-advanced-search').open;
+          results.resetHiddenWithoutFilters = $('members-active-filters').hidden && !resetFilters.getClientRects().length &&
+            !$('members-filters').contains(resetFilters) && !filters.search.checkVisibility();
+          filters.search.value = 'Esempio'; $('members-filters').oninput();
+          const chipRect = document.querySelector('[data-filter-key="search"]').getBoundingClientRect();
+          const resetRect = resetFilters.getBoundingClientRect();
+          results.resetRightOfActiveFilters = !$('members-active-filters').hidden && resetRect.width >= 44 && resetRect.height >= 44 &&
+            resetRect.left >= chipRect.right && resetRect.right <= innerWidth + 1 &&
+            Math.abs(resetRect.right - $('members-active-filters').getBoundingClientRect().right) <= 1;
+          resetFilters.click(); await settle();
+          results.resetClearsAndHides = filters.search.value === '' && $('members-active-filters').hidden &&
+            $('members-list').rows.length === 2;
+          filters.showSuspended.checked = true; $('members-filters').oninput();
+          results.checkboxShowsReset = !$('members-active-filters').hidden && resetFilters.getClientRects().length > 0;
+          filters.showSuspended.checked = false; $('members-filters').oninput();
           filters.showSuspended.checked = true; $('members-filters').oninput();
           results.withSuspended = $('members-list').rows.length;
           $('select-results').click();
@@ -436,7 +453,8 @@ test("member UI edits, filters, imports, applies macros and prints safely across
       assert.equal(results.branchLocked, true);
       assert.equal(results.branchCardFilters, true); assert.equal(results.summaryNoHint, true);
       for (const key of ["branchClickAgainClears", "yearChipPressed", "statusCombined", "statusChipToggle",
-        "yearChipToggle", "advancedCollapsed", "advancedExpanded", "specialtiesNotButtonGrid", "specialtySummary", "specialtyRemove", "noAssignmentMacro"])
+        "yearChipToggle", "advancedCollapsed", "advancedExpanded", "advancedCensusFilters", "resetHiddenWithoutFilters",
+        "resetRightOfActiveFilters", "resetClearsAndHides", "checkboxShowsReset", "specialtiesNotButtonGrid", "specialtySummary", "specialtyRemove", "noAssignmentMacro"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.branchRows, 1); assert.equal(results.yearRows, 1); assert.equal(results.fieldMatch, 1);
       assert.equal(results.birthRows, 1); assert.equal(results.birthGroup, true);

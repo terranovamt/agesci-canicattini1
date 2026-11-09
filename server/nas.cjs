@@ -239,12 +239,14 @@ async function createNasServer({
           response,
           200,
           fs.readFileSync(path.join(siteRoot, "config/site.js"), "utf8") +
-            "\nwindow.NAS=" + JSON.stringify({ user: people.user(sessionId(request)), basePath }) + ";\n",
+            "\nwindow.NAS=" + JSON.stringify({ ...people.client(sessionId(request)), basePath }) + ";\n",
           "application/javascript; charset=utf-8",
         );
       }
-      if (url.pathname === "/api/session" && method === "GET")
-        return send(response, 200, { authenticated: authorized(request), user: people.user(sessionId(request)) });
+      if (url.pathname === "/api/session" && method === "GET") {
+        const current = people.client(sessionId(request));
+        return send(response, 200, { authenticated: !!current.user, ...current });
+      }
       if (url.pathname === "/calendars/events.json" && ["GET", "HEAD"].includes(method)) {
         const snapshot = path.join(dataDir, "calendars/events.json");
         return send(

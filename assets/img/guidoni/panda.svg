@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160" role="img" aria-labelledby="title">
+  <title id="title">Guidone Panda</title>
+  <path d="M23 8v145" fill="none" stroke="#76512d" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 20Q155 12 205 80Q155 148 30 140Z" fill="#fff" stroke="#5c5660" stroke-width="2"/>
+  <g id="simbolo" transform="translate(118 80)" stroke="#242424" stroke-width="2" stroke-linejoin="round">
+    <circle cx="-24" cy="-26" r="13" fill="#242424"/>
+    <circle cx="24" cy="-26" r="13" fill="#242424"/>
+    <circle r="36" fill="#f5cb31"/>
+    <path d="M-21-12q9-6 13 4 2 12-9 14-11 0-4-18Zm42 0q-9-6-13 4-2 12 9 14 11 0 4-18Z" fill="#242424"/>
+    <circle cx="-12" cy="-2" r="3" fill="#fff" stroke="none"/>
+    <circle cx="12" cy="-2" r="3" fill="#fff" stroke="none"/>
+    <path d="m-6 10 6 5 6-5Z" fill="#242424"/>
+    <path d="M0 15v5m-9-1q5 6 9 1 4 5 9-1" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

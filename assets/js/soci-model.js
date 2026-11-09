@@ -92,13 +92,13 @@
   const sestigliaColors = {
     Bianchi: '#ffffff', Neri: '#242424', Rossi: '#cc3038', Grigi: '#898989',
     Bruni: '#74482b', Fulvi: '#c07832', Gialli: '#f5cb31', Verdi: '#398258',
-    Azzurri: '#5096d3', Blu: '#25477e', Arancioni: '#ed8e32', Viola: '#8459a2',
+    Azzurri: '#5096d3', Blu: '#2e64ab', Arancioni: '#ed8e32', Viola: '#8459a2',
   };
   function unitKey(name) { return String(name || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it'); }
   const patrolColors = {
     Arancione: ['#ed8e32', 'Gaiezza, buon carattere'],
     Azzurro: ['#5096d3', "Altezza d'ideali, intelligenza"],
-    Bianco: ['#ffffff', 'Purezza, onesta'], Blu: ['#25477e', 'Inventiva, osservazione'],
+    Bianco: ['#ffffff', 'Purezza, onesta'], Blu: ['#2e64ab', 'Inventiva, osservazione'],
     Giallo: ['#f5cb31', 'Laboriosita, probita, abilita'], Grigio: ['#898989', 'Dolcezza, pazienza'],
     Marrone: ['#74482b', 'Furberia, capacita'], Nero: ['#242424', 'Forza, sicurezza'],
     Rosso: ['#cc3038', 'Coraggio, generosita'], 'Verde chiaro': ['#82b857', 'Speranza, prodezza'],
@@ -138,7 +138,8 @@
     ['Lupo', 'Lupi', 'Giallo', 'Nero'], ['Mangusta', 'Manguste', 'Marrone', 'Arancione'],
     ['Martin', 'Martin', 'Blu', 'Verde'], ['Merlo', 'Merli', 'Nero', 'Kaki'],
     ['Moriglione', 'Moriglioni', 'Giallo', 'Blu marino'], ['Nottola', 'Nottole', 'Nero', 'Nocciola'],
-    ['Orso', 'Orsi', 'Marrone', 'Nero'], ['Pantera', 'Pantere', 'Giallo'],
+    ['Orso', 'Orsi', 'Marrone', 'Nero'], ['Panda', 'Panda', 'Giallo', 'Nero'],
+    ['Pantera', 'Pantere', 'Giallo'],
     ['Pavone', 'Pavoni', 'Verde', 'Blu'], ['Pellicano', 'Pellicani', 'Grigio', 'Viola'],
     ['Pettirosso', 'Pettirossi', 'Castagno', 'Nero'], ['Picchio', 'Picchi', 'Verde', 'Viola'],
     ['Pinguino', 'Pinguini', 'Bianco', 'Nero'], ['Pipistrello', 'Pipistrelli', 'Azzurro', 'Nero'],

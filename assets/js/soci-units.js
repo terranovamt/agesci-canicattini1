@@ -77,7 +77,7 @@
       $('unit-name-hint').textContent = unit ? (branch() === 'L/C' ? 'Il nome identifica la sestiglia' : 'Il nome identifica la squadriglia') + ' e non cambia. Puoi nasconderla per conservarla senza mostrarla.' :
         branch() === 'L/C' ? 'Usa il nome del colore (es. Bianchi, Rossi, Neri). Lo stesso nome ripristina la sestiglia nascosta.' :
           'Scegli un nome dal catalogo: colori e guidone sono definiti nel codice. Lo stesso nome ripristina la squadriglia nascosta.';
-      $('save-unit').textContent = unit ? (branch() === 'L/C' ? 'Salva sestiglia' : 'Salva squadriglia') : 'Crea / ripristina';
+      $('save-unit').textContent = unit ? (branch() === 'L/C' ? 'Salva sestiglia' : 'Salva squadriglia') : 'Crea';
       $('unit-error').textContent = '';
       form.elements.name.setAttribute('list', 'sestiglia-names');
       $('sestiglia-names').replaceChildren(...(branch() === 'L/C' ? Object.keys(M.sestigliaColors) : M.patrolCatalog.map(entry => entry[1])).map(name => {
@@ -186,15 +186,117 @@
     };
     branchSelect.onchange = () => render();
     $('reload-units').onclick = () => perform(reload, $('units-status'), '');
+    const sameAssignment = (member, unitId, role) => {
+      const values = member.values[branch()] || {};
+      const current = visibleUnits().find(unit => M.unitKey(unit.name) === M.unitKey(values[M.unitField(branch())]));
+      return unitId === null ? !current : current?.id === unitId && values.ruolo === role;
+    };
+    // Pointer-based drag (mouse, pen and touch): HTML5 drag never starts on touch screens or from the name button.
+    let dragging = null;
+    const dropLane = (x, y) => document.elementFromPoint(x, y)?.closest('#members-units-panel [data-drop-role]') || null;
+    function highlight(lane) {
+      if (dragging.lane === lane) return;
+      dragging.lane?.classList.remove('unit-drop-active');
+      dragging.lane = lane;
+      lane?.classList.add('unit-drop-active');
+    }
+    function placeGhost(x, y) {
+      dragging.ghost.style.transform = `translate(${x - dragging.offsetX}px, ${y - dragging.offsetY}px)`;
+    }
+    function activateDrag() {
+      const state = dragging;
+      clearTimeout(state.timer);
+      state.active = true;
+      state.card.setPointerCapture(state.pointerId);
+      const rect = state.card.getBoundingClientRect();
+      state.offsetX = state.x - rect.left; state.offsetY = state.y - rect.top;
+      state.ghost = state.card.cloneNode(true);
+      state.ghost.className = 'unit-member unit-drag-ghost';
+      state.ghost.removeAttribute('data-member-id');
+      state.ghost.setAttribute('aria-hidden', 'true');
+      state.ghost.style.width = rect.width + 'px';
+      document.body.append(state.ghost);
+      state.card.classList.add('unit-dragging');
+      document.documentElement.classList.add('unit-drag-in-progress');
+      placeGhost(state.x, state.y);
+      highlight(dropLane(state.x, state.y));
+      $('units-status').textContent = 'Trascinamento di ' + state.member.name + ': rilascia il nome sulla riga di destinazione.';
+    }
+    function stopDrag() {
+      const state = dragging;
+      dragging = null;
+      clearTimeout(state.timer);
+      removeEventListener('pointermove', onDragMove);
+      removeEventListener('pointerup', onDragEnd);
+      removeEventListener('pointercancel', onDragCancel);
+      removeEventListener('keydown', onDragKey);
+      if (!state.active) return state;
+      if (state.card.hasPointerCapture(state.pointerId)) state.card.releasePointerCapture(state.pointerId);
+      state.lane?.classList.remove('unit-drop-active');
+      state.ghost.remove();
+      state.card.classList.remove('unit-dragging');
+      document.documentElement.classList.remove('unit-drag-in-progress');
+      const swallow = event => { event.preventDefault(); event.stopPropagation(); };
+      addEventListener('click', swallow, { capture: true, once: true });
+      // A touch tap can be synthesized after pointerup: ignore only the click that belongs to this gesture.
+      setTimeout(() => removeEventListener('click', swallow, { capture: true }), 350);
+      return state;
+    }
+    function onDragMove(event) {
+      if (!dragging || event.pointerId !== dragging.pointerId) return;
+      if (!dragging.active) {
+        if (Math.hypot(event.clientX - dragging.x, event.clientY - dragging.y) < 8) return;
+        // Touch on the name waits for a long press so that a quick swipe still scrolls the page.
+        if (dragging.hold) { stopDrag(); return; }
+        activateDrag();
+      }
+      event.preventDefault();
+      placeGhost(event.clientX, event.clientY);
+      highlight(dropLane(event.clientX, event.clientY));
+      if (event.clientY < 56) scrollBy({ top: -18, behavior: 'instant' });
+      else if (event.clientY > innerHeight - 56) scrollBy({ top: 18, behavior: 'instant' });
+    }
+    function onDragEnd(event) {
+      if (!dragging || event.pointerId !== dragging.pointerId) return;
+      const state = stopDrag();
+      if (!state.active) return;
+      const lane = dropLane(event.clientX, event.clientY);
+      if (!lane) {
+        $('units-status').textContent = 'Spostamento annullato: rilascia ' + state.member.name + ' su una riga di una ' + (branch() === 'L/C' ? 'sestiglia.' : 'squadriglia.');
+        return;
+      }
+      const unitId = lane.dataset.dropUnit ? Number(lane.dataset.dropUnit) : null, role = lane.dataset.dropRole;
+      if (sameAssignment(state.member, unitId, role)) { $('units-status').textContent = state.member.name + ' e gia in questa posizione.'; return; }
+      requestMove(state.member, unitId, role);
+    }
+    function onDragCancel(event) {
+      if (!dragging || event.pointerId !== dragging.pointerId) return;
+      if (stopDrag().active) $('units-status').textContent = 'Spostamento interrotto dal dispositivo: riprova tenendo premuto il nome.';
+    }
+    function onDragKey(event) {
+      if (event.key !== 'Escape' || !dragging) return;
+      if (stopDrag().active) $('units-status').textContent = 'Spostamento annullato.';
+    }
+    function draggableCard(card, member) {
+      card.classList.add('unit-draggable');
+      card.addEventListener('pointerdown', event => {
+        if (dragging || !event.isPrimary || event.button !== 0 || event.target.closest('.unit-move')) return;
+        const handle = !!event.target.closest('.unit-grip');
+        dragging = { card, member, pointerId: event.pointerId, x: event.clientX, y: event.clientY,
+          active: false, hold: event.pointerType === 'touch' && !handle };
+        if (dragging.hold) dragging.timer = setTimeout(activateDrag, 350);
+        addEventListener('pointermove', onDragMove, { passive: false });
+        addEventListener('pointerup', onDragEnd);
+        addEventListener('pointercancel', onDragCancel);
+        addEventListener('keydown', onDragKey);
+      });
+      card.addEventListener('touchmove', event => { if (dragging?.active && dragging.card === card) event.preventDefault(); }, { passive: false });
+      card.addEventListener('contextmenu', event => { if (dragging?.card === card) event.preventDefault(); });
+      card.addEventListener('dragstart', event => event.preventDefault());
+    }
     function memberCard(member) {
       const card = el('article', undefined, 'unit-member');
       card.dataset.memberId = member.id;
-      card.draggable = member.revision > 0;
-      card.ondragstart = event => {
-        if (!member.revision) { event.preventDefault(); return; }
-        event.dataTransfer.setData('application/x-scout-member', String(member.id));
-        event.dataTransfer.effectAllowed = 'move';
-      };
       const name = el('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
       const move = el('button', '↔', 'unit-move');
@@ -212,23 +314,20 @@
         assignment.scrollIntoView({ block: 'center', behavior: 'smooth' });
         assignment.elements.unitId.focus();
       };
+      if (member.revision) {
+        const grip = el('span', '⋮⋮', 'unit-grip');
+        grip.title = 'Trascina ' + member.name;
+        grip.setAttribute('aria-hidden', 'true');
+        card.append(grip);
+        draggableCard(card, member);
+      }
       card.append(name, move);
       if (!member.revision) card.append(el('small', 'Completa prima la scheda socio.'));
       return card;
     }
     function dropTarget(node, unitId, role) {
-      node.ondragover = event => {
-        if (!event.dataTransfer.types.includes('application/x-scout-member')) return;
-        event.preventDefault(); event.dataTransfer.dropEffect = 'move'; node.classList.add('unit-drop-active');
-      };
-      node.ondragleave = () => node.classList.remove('unit-drop-active');
-      node.ondrop = event => {
-        event.preventDefault(); node.classList.remove('unit-drop-active');
-        const id = Number(event.dataTransfer.getData('application/x-scout-member'));
-        const member = members().find(member => member.id === id);
-        if (!member) { $('units-status').textContent = 'Il socio non appartiene alla branca selezionata.'; return; }
-        requestMove(member, unitId, role);
-      };
+      node.dataset.dropUnit = unitId === null ? '' : unitId;
+      node.dataset.dropRole = role;
     }
     function render() {
       if (!data || !branch()) return;

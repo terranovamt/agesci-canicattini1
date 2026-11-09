@@ -106,3 +106,27 @@ body.people-page > #reserved-content { width: min(1100px, calc(100% - 28px)); ma
 @media (max-width: 350px) {
   .people-page .person-fields { grid-template-columns: minmax(0, 1fr); }
 }
+/* Visualizza come: controllo admin compatto nell'header, ritorno sempre visibile durante la vista capo. */
+.view-as { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: inherit; font-size: 13px }
+:is(.reserved-header, .nas-navbar):has(> .view-as) > :is(.brand, .nas-brand) { margin-right: auto }
+.view-as > summary { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: 999px; font-weight: 700; cursor: pointer; list-style: none }
+.view-as > summary::-webkit-details-marker { display: none }
+.view-as > summary::after { content: "▾"; margin-left: 6px }
+.view-as[open] > summary::after { content: "▴" }
+.view-as-form { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: grid; gap: 8px; width: min(300px, calc(100vw - 32px)); padding: 12px; border-radius: 12px; background: #fff; color: var(--vd, #211638); box-shadow: var(--shadow-overlay, 0 10px 32px rgba(33, 22, 56, .24)) }
+.view-as-form label { font-weight: 700 }
+.view-as-form select { min-height: 44px; padding: 8px; border: 1px solid var(--vl, #aeb0d9); border-radius: 8px; background: #fff; color: inherit; font: inherit }
+.view-as-form .button { min-height: 44px; margin: 0 }
+.view-as-status { margin: 0; font-size: 12px; overflow-wrap: anywhere }
+.view-as-status:empty { display: none }
+.view-as-active { padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--y, #fdc500); color: var(--vd, #211638) }
+.view-as-active .view-as-label { font-weight: 700; overflow-wrap: anywhere }
+.view-as-active .view-as-status { flex-basis: 100% }
+.view-as-return { min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--vd, #211638); color: #fff; font: inherit; font-weight: 700; cursor: pointer }
+.view-as :is(summary, button, select):focus-visible { outline: 3px solid currentColor; outline-offset: 2px }
+.view-as-form :is(button, select):focus-visible, .view-as-return:focus-visible { outline-color: var(--vd, #211638) }
+@media (max-width: 600px) {
+  .view-as { order: 3; flex: 1 1 100%; justify-content: flex-end }
+  .view-as-active { justify-content: space-between; border-radius: 12px }
+  .view-as-form { right: 0 }
+}

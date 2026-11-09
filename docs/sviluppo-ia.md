@@ -211,6 +211,11 @@ capi presenti in `NAS_CAPO_CODES` (l'amministratore resta fuori dall'elenco);
 non permette di creare account o modificare nome e tipologia. Il reset password
 e disponibile solo per questi capi e revoca tutte le loro sessioni. Un capo abilitato
 al login senza branca assegnata non ottiene accesso all'anagrafe.
+"Visualizza come" salva solo `sessions.view_as_id` sulla sessione admin:
+`people.user()` restituisce il capo come utente effettivo per ogni endpoint,
+con `actorId` non serializzato per gli audit (proposer/reviewer dei passaggi);
+`people.client()` alimenta `window.NAS.viewAs`. `POST/DELETE
+/api/auth/view-as` richiedono l'admin reale; target non piu' valido = 409.
 L'amministratore ha accesso completo; un capo assegnato legge/modifica solo
 schede della stessa branca locale e vede solo i valori educativi di quella
 branca. Anche macro e aggiunta campi rispettano questo ambito. Import, nuove

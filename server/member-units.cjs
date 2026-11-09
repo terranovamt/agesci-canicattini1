@@ -40,9 +40,10 @@ function createMemberUnits(db) {
   const history = id => db.prepare("SELECT year,branch,unit,role FROM member_assignment_history WHERE person_id=? ORDER BY year DESC,branch").all(id);
   checkpoint();
   const configuration = () => db.prepare("SELECT environment,revision FROM member_branch_settings WHERE branch='L/C'").get();
+  const sestigliaColor = name => Object.entries(M.sestigliaColors).find(([key]) => M.unitKey(key) === M.unitKey(name))?.[1];
   const all = () => db.prepare("SELECT * FROM member_units ORDER BY branch,name COLLATE NOCASE").all()
     .map(row => ({ id: row.id, branch: row.branch, name: row.name,
-      color: (row.branch === "E/G" && M.patrolIdentity(row.name)?.color) || row.color,
+      color: (row.branch === "E/G" ? M.patrolIdentity(row.name)?.color : sestigliaColor(row.name)) || row.color,
       color2: (row.branch === "E/G" && M.patrolIdentity(row.name)?.color2) || row.color2,
       emblem: row.emblem, hidden: !!row.hidden, revision: row.revision }));
   const groupName = (value, max = 80) => {
@@ -56,7 +57,7 @@ function createMemberUnits(db) {
     .get(branch, M.unitKey(name));
   const ensure = (branch, name, legacy = false) => {
     name = groupName(name, legacy ? 2000 : 80);
-    const color = Object.entries(M.sestigliaColors).find(([key]) => M.unitKey(key) === M.unitKey(name))?.[1] || "#898989";
+    const color = sestigliaColor(name) || "#898989";
     db.prepare(`INSERT OR IGNORE INTO member_units(branch,name_key,name,color,color2)
       VALUES(?,?,?,?,?)`).run(branch, M.unitKey(name), name, branch === "L/C" ? color : "#ffffff", "#ffffff");
     return find(branch, name);
@@ -114,7 +115,7 @@ function createMemberUnits(db) {
   };
   function unitColor(branch, name, value) {
     const result = color(value);
-    const expected = Object.entries(M.sestigliaColors).find(([key]) => M.unitKey(key) === M.unitKey(name))?.[1];
+    const expected = sestigliaColor(name);
     if (branch === "L/C" && expected && result !== expected)
       fail(400, "Il colore della sestiglia deve corrispondere al suo nome.");
     return result;

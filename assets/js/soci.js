@@ -215,6 +215,7 @@
       container.append(button);
     }
     container.hidden = !container.children.length;
+    $('members-active-filters').hidden = container.hidden;
   }
   function renderTransfers() {
     $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
@@ -621,7 +622,13 @@
   };
   filters.onsubmit = event => event.preventDefault();
   filters.oninput = () => { if (data) render(); };
-  filters.onreset = () => setTimeout(() => { if (data) render(); }, 0);
+  filters.onreset = () => setTimeout(() => {
+    if (data) render();
+    if (document.activeElement === document.body || document.activeElement?.id === 'members-reset-filters') {
+      const advanced = $('members-advanced-search');
+      (advanced.open ? filters.elements.search : advanced.querySelector('summary')).focus();
+    }
+  }, 0);
   $('select-results').onclick = () => { results().forEach(member => selected.add(member.id)); render(); };
   $('clear-selection').onclick = () => { selected.clear(); render(); };
   $('new-member').onclick = () => openMember(null);

@@ -241,3 +241,85 @@ test("concurrent first accesses do not overwrite the winning password", async ()
     assert.deepEqual(responses.map(r => r.status).sort(), [200, 401]);
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
 });
+
+test("admin view-as applies the chief's server permissions, keeps the admin identity and returns explicitly", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-view-as-"));
+  let app = await start(directory, "7654321,7654322,7654323");
+  try {
+    assert.equal((await app.login()).status, 200);
+    const admin = app.cookie();
+    const list = (await (await app.request("people")).json()).people;
+    const [eg, rs, none] = ["7654321", "7654322", "7654323"].map(code => list.find(person => person.code === code));
+    assert.equal((await app.request("people/" + eg.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
+    assert.equal((await app.request("people/" + rs.id, "PATCH", { serviceBranch: "R/S" })).status, 200);
+    assert.equal((await app.login("7654321", password, password)).status, 200);
+    const capo = app.cookie();
+    const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+    const hashes = () => db.prepare("SELECT census_code,password_hash,service_branch FROM people ORDER BY id").all();
+    const before = JSON.stringify(hashes());
+    // A chief can neither start nor end a view, nor forge one via body fields.
+    for (const [method, data] of [["POST", { personId: rs.id }], ["DELETE", undefined]])
+      assert.equal((await app.request("auth/view-as", method, data, capo)).status, 403);
+    assert.equal((await app.request("auth/view-as", "POST", { personId: rs.id }, "")).status, 401);
+    assert.equal((await app.request("auth/view-as", "POST", { personId: rs.id }, admin, "http://evil.example")).status, 403);
+    // Only active, allowlisted, non-admin chiefs with a service branch are valid targets.
+    const adminId = db.prepare("SELECT id FROM people WHERE census_code='23816938'").get().id;
+    for (const personId of [adminId, none.id, 999999])
+      assert.equal((await app.request("auth/view-as", "POST", { personId }, admin)).status, 404);
+    for (const data of [{}, { personId: "1" }, { personId: eg.id, code: "23816938" }])
+      assert.equal((await app.request("auth/view-as", "POST", data, admin)).status, 400);
+    assert.equal((await app.request("auth/view-as", "GET", undefined, admin)).status, 405);
+    // The target needs no password: rs never completed first access.
+    const started = await app.request("auth/view-as", "POST", { personId: rs.id }, admin);
+    assert.equal(started.status, 200);
+    const view = await started.json();
+    assert.equal(started.headers.get("set-cookie"), null);
+    assert.deepEqual(view.viewAs, { adminName: "Amministratore", target: { id: rs.id, name: rs.name, serviceBranch: "R/S" } });
+    assert.equal(view.user.code, "7654322");
+    assert.equal(view.user.admin, false);
+    assert.equal(JSON.stringify(view).includes("password"), false);
+    assert.equal(JSON.stringify(view).includes("actorId"), false);
+    const me = (await (await app.request("auth/me", "GET", undefined, admin)).json()).user;
+    assert.deepEqual([me.code, me.admin, me.serviceBranch, me.viewAs.adminName], ["7654322", false, "R/S", "Amministratore"]);
+    const session = await (await app.request("session", "GET", undefined, admin)).json();
+    assert.equal(session.authenticated, true);
+    assert.equal(session.viewAs.target.id, rs.id);
+    // Every admin-only endpoint now enforces the chief's permissions on the server.
+    for (const [route, method, data] of [["people", "GET"], ["people/" + eg.id, "PATCH", { serviceBranch: "R/S" }],
+      ["people/" + eg.id + "/password", "DELETE"], ["metrics", "GET"], ["metrics?view=summary", "GET"],
+      ["members/overview", "GET"], ["members/import", "POST", {}], ["members", "POST", {}]])
+      assert.equal((await app.request(route, method, data, admin)).status, 403, route);
+    assert.equal((await app.request("metrics?view=live", "GET", undefined, admin)).status, 200);
+    assert.equal((await app.request("members", "GET", undefined, admin)).status, 200);
+    assert.equal((await app.request("authorize", "GET", undefined, admin)).status, 204);
+    assert.equal((await app.request("auth/view-as", "POST", { personId: eg.id }, admin)).status, 409);
+    assert.equal(JSON.stringify(hashes()), before);
+    assert.equal((await app.request("auth/me", "GET", undefined, capo)).status, 200);
+    // Revoking the target's branch from another admin session yields an explicit error, never admin rights.
+    assert.equal((await app.login()).status, 200);
+    const otherAdmin = app.cookie();
+    assert.equal((await app.request("people/" + rs.id, "PATCH", { serviceBranch: "" }, otherAdmin)).status, 200);
+    for (const [route, method] of [["auth/me", "GET"], ["people", "GET"], ["members", "GET"], ["authorize", "GET"]]) {
+      const response = await app.request(route, method, undefined, admin);
+      assert.equal(response.status, 409, route);
+      assert.match(await response.text(), /torna amministratore/);
+    }
+    const stale = await (await app.request("session", "GET", undefined, admin)).json();
+    assert.deepEqual([stale.authenticated, stale.user, stale.viewAs.target], [false, null, null]);
+    const returned = await app.request("auth/view-as", "DELETE", undefined, admin);
+    assert.equal(returned.status, 200);
+    assert.deepEqual(await returned.json(), { user: (await (await app.request("auth/me", "GET", undefined, admin)).json()).user, viewAs: null });
+    assert.equal((await app.request("people", "GET", undefined, admin)).status, 200);
+    assert.equal((await app.request("auth/view-as", "DELETE", undefined, admin)).status, 200);
+    // A forged view on a chief session is ignored as an invalid session, not honored.
+    db.prepare("UPDATE sessions SET view_as_id=? WHERE person_id=?").run(eg.id, eg.id);
+    assert.equal((await app.request("auth/me", "GET", undefined, capo)).status, 401);
+    // Starting a view again survives restart only until admin sessions are revoked at boot.
+    assert.equal((await app.request("auth/view-as", "POST", { personId: eg.id }, admin)).status, 200);
+    db.close();
+    await app.close();
+    app = await start(directory, "7654321,7654322,7654323");
+    assert.equal((await app.request("auth/me", "GET", undefined, admin)).status, 401);
+    assert.equal((await app.request("auth/view-as", "DELETE", undefined, admin)).status, 401);
+  } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
+});

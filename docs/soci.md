@@ -18,6 +18,15 @@ al libro soci, anche con login abilitato. Import, nuovi account e modelli
 documentali restano amministrativi. L'assegnazione non cambia la branca
 anagrafica Adulti e non concede il login.
 
+**Visualizza come** (in alto, accanto ad Area riservata) e' riservato
+all'amministratore: elenca i capi configurati con branca di servizio e apre la
+stessa sessione con i permessi server del capo scelto, senza password del capo e
+senza modificarne credenziali o branca. Le azioni amministrative restano negate
+finche' non si preme **Torna admin**, sempre visibile nell'header. I passaggi
+proposti o confermati in questa vista restano attribuiti all'amministratore.
+Se il capo perde abilitazione o branca, le API rispondono 409 finche' non si
+torna admin; ogni riavvio chiude comunque le sessioni admin.
+
 ## Primo import e aggiornamenti
 
 1. Fare un backup SQLite secondo la guida Synology prima di un import
@@ -187,7 +196,13 @@ unità devono essere leggibili a colpo d'occhio, anche su telefono.
 Le assegnazioni restano nella schermata gruppi: non introdurre un nuovo
 dialogo «Sposta» dalle card o dalla scheda personale. Presenze e assenze alle
 attività sono sviluppi futuri, non funzioni già implementate.
-Trascinare un socio sulla riga desiderata oppure premere
+Trascinare il nome di un socio (o la maniglia ⋮⋮) sulla riga desiderata di
+un'altra sestiglia/squadriglia o su **Senza gruppo**: il trascinamento usa
+Pointer Events e funziona con mouse, penna e touch (sul nome serve una breve
+pressione prolungata, cosi lo scorrimento della pagina resta libero; la
+maniglia parte subito). Il rilascio trasferisce l'assegnazione esistente con il
+ruolo della riga, con revisione e storico gestiti dal server; non crea soci.
+Rilasciare fuori dalle righe o premere Esc annulla. In alternativa premere
 la freccia accanto al nome e usare **Inserisci o sposta un socio**, disponibile anche
 da telefono e tastiera. Lo spostamento non cambia branca e conserva gli altri
 campi educativi. Capo e vice ammettono una sola persona: prima liberare il
@@ -195,7 +210,7 @@ posto occupato. Le stesse regole valgono per schede e macro; duplicati
 precedenti e ruoli non riconosciuti sono segnalati, non cancellati.
 
 **Nascondi** conserva identita, colori, simbolo e assegnazioni.
-**Gruppi nascosti** consente il ripristino; anche ricreare lo stesso nome
+**Gruppi nascosti** consente il ripristino; anche **Crea** con lo stesso nome
 (ignorando maiuscole e spazi superflui) recupera il gruppo esistente senza
 sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
 **Senza gruppo / da verificare**, con l'assegnazione conservata indicata.
@@ -210,6 +225,9 @@ rettangolo diviso in due sotto il nome; le voci monocolore usano due meta
 uguali. Nome singolare e plurale sono equivalenti per colori e immagini,
 non per l'identita del gruppo. Le tre varianti Gallo sono esplicite: non
 si sceglie arbitrariamente un abbinamento per un vecchio nome ambiguo.
+Panda (giallo/nero) e solo E/G. Il Blu condiviso da sestiglie e squadriglie
+e `#2e64ab`, piu chiaro e distinto da Blu reale e Blu marino; le sestiglie Blu
+esistenti mostrano il nuovo colore canonico.
 I colori locali dei nomi fuori catalogo restano conservati.
 Per creare una nuova squadriglia fuori catalogo occorre aggiungerne prima
 nome e colori nel codice; quelle locali gia archiviate restano ripristinabili.

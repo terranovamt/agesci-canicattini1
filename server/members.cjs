@@ -281,7 +281,7 @@ function createMembers(db, people) {
             const member = get(transfer.person_id);
             return { id: transfer.id, personId: member.id, name: member.name, code: member.code,
               birthYear: member.profile.birthDate?.slice(0, 4) || "", source: transfer.source, target: transfer.target,
-              revision: transfer.revision, canConfirm: transfer.proposer_id !== current.id &&
+              revision: transfer.revision, canConfirm: transfer.proposer_id !== current.actorId &&
                 (current.admin || transfer.target === current.serviceBranch),
               canCancel: current.admin || transfer.source === current.serviceBranch };
           });
@@ -409,7 +409,7 @@ function createMembers(db, people) {
               if (db.prepare("SELECT id FROM member_transfers WHERE person_id=? AND status='pending'").get(member.id))
                 fail(409, "Passaggio gia' in attesa di conferma");
               db.prepare("INSERT INTO member_transfers(person_id,source,target,proposer_id,member_revision) VALUES(?,?,?,?,?)")
-                .run(member.id, member.branch, targetBranch, user().id, member.revision);
+                .run(member.id, member.branch, targetBranch, user().actorId, member.revision);
             }
           }
         });
@@ -423,7 +423,7 @@ function createMembers(db, people) {
         if (transfer.status !== "pending" || transfer.revision !== value?.revision) fail(409, "Passaggio gia' modificato: ricarica");
         if (!["confirm", "reject", "cancel"].includes(value.action)) fail(400, "Azione passaggio non valida");
         if (value.action === "cancel") access(transfer.source);
-        else if (transfer.proposer_id === current.id || (!current.admin && current.serviceBranch !== transfer.target))
+        else if (transfer.proposer_id === current.actorId || (!current.admin && current.serviceBranch !== transfer.target))
           fail(403, "Serve la conferma di un altro capo della branca di destinazione");
         transaction(() => {
           if (value.action === "confirm") {
@@ -434,7 +434,7 @@ function createMembers(db, people) {
             writeProfile(member, transfer.target, member.profile);
           }
           db.prepare("UPDATE member_transfers SET status=?,revision=revision+1,reviewer_id=? WHERE id=?")
-            .run({ confirm: "confirmed", reject: "rejected", cancel: "cancelled" }[value.action], current.id, transfer.id);
+            .run({ confirm: "confirmed", reject: "rejected", cancel: "cancelled" }[value.action], current.actorId, transfer.id);
         });
         send(response, 200, { ok: true }); return true;
       }
