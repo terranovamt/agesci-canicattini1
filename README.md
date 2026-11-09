@@ -45,8 +45,7 @@ La pagina mostra anche il commit deployato e permette di confrontarlo con
 l'ultimo commit del branch `NAS`. La raccolta browser e' disattivabile e le API
 dei report richiedono una sessione amministrativa.
 
-> 📘 Guida illustrata (stesso stile della presentazione):
-> https://terranovamt.github.io/agesci-canicattini1/area-riservata/assemblea/guida.html
+> 📘 [Guida illustrata](area-riservata/assemblea/guida.html) (stesso stile della presentazione).
 
 ## Documentazione
 
