@@ -73,6 +73,18 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.loaded = !$('members-app').hidden;
           results.width = window.innerWidth;
           results.fits = document.documentElement.scrollWidth <= window.innerWidth;
+          results.buttonLayout = [...document.querySelectorAll('.members-toolbar, .members-dialog-actions')]
+            .every(group => {
+              const buttons = [...group.querySelectorAll('button,a.button')].filter(button => button.getClientRects().length);
+              return buttons.every((button, index) => {
+                const rect = button.getBoundingClientRect();
+                return rect.width >= 44 && rect.left >= -1 && rect.right <= innerWidth + 1 &&
+                  buttons.slice(index + 1).every(other => {
+                    const next = other.getBoundingClientRect();
+                    return rect.right <= next.left + 1 || next.right <= rect.left + 1 || rect.bottom <= next.top + 1 || next.bottom <= rect.top + 1;
+                  });
+              });
+            });
           results.safeName = !!document.querySelector('.member-name') && !document.querySelector('.member-name img');
           results.rows = $('members-list').rows.length;
           results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
@@ -103,6 +115,9 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           document.querySelector('.member-name').click();
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
+          const dialogRect = $('member-dialog').getBoundingClientRect();
+          results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
+            $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
           results.branchLocked = form.elements.branch.disabled;
           results.prefilled = form.elements['extra:squadriglia'].value;
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
@@ -155,7 +170,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` : "")
       .replace("</head>", `<style>${["theme", "home", "nas", "soci"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
-    for (const width of [375, 1440]) {
+    for (const width of [320, 360, 375, 768, 1440]) {
       const file = path.join(directory, "fixture.html");
       const page = source.replace("</body>", `<script>${exercise}</script></body>`);
       fs.writeFileSync(file, `<!doctype html><body><script>
@@ -180,6 +195,8 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.equal(results.failure, undefined, JSON.stringify(results));
       assert.deepEqual(results.errors, []);
       assert.equal(results.width, width); assert.equal(results.fits, true);
+      assert.equal(results.buttonLayout, true, JSON.stringify(results));
+      assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "clearedCsv", "newEditableCode"]) assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.rows, 2);

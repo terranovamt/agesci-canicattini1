@@ -42,6 +42,9 @@
       }
       .hd img {
         height: 44px;
+        width: auto;
+        object-fit: contain;
+        flex: 0 0 auto;
       }
       .hero {
         background: linear-gradient(135deg, var(--v), var(--vd));
@@ -325,7 +328,7 @@
   <body>
     <div class="hd">
       <b>Guida · Assemblea di Gruppo</b
-      ><img src="../../assets/img/logo.webp" alt="" decoding="async" loading="lazy" width="350" height="400" />
+      ><img src="../../assets/img/logo-grande.webp" alt="" decoding="async" loading="lazy" width="460" height="526" />
     </div>
     <div class="hero">
       <h1>Come usare la presentazione</h1>
@@ -546,8 +549,9 @@
           </li>
           <li>
             Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano
-            <mark>gialli</mark>; Ripristina riporta un campo all'originale. Elimina e <b>+ Aggiungi</b> tolgono o
-            aggiungono persone, punti e righe.
+            <mark>gialli</mark>; Ripristina riporta un campo al valore pubblicato. Per gli elenchi, <b>Rimuovi</b>
+            elimina una riga e <b>+ Aggiungi elemento</b> resta disponibile anche quando l'elenco è vuoto. Orari e
+            testi lunghi hanno controlli dedicati per facilitarne la compilazione.
           </li>
           <li>
             Premi <b>Salva su GitHub (dati.js)</b>: serve un token con permesso di scrittura. Attendi GitHub Pages

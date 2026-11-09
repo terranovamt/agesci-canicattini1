@@ -47,9 +47,12 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
       assert.equal((await app.request("metrics" + suffix, "GET", undefined, admin)).status, 200);
     }
     const list = await (await app.request("people")).json();
-    assert.equal(list.people.length, 3);
-    assert.equal(list.people.filter(p => p.admin).length, 1);
+    assert.deepEqual(list.people.map(person => person.code).sort(), ["7654321", "7654322"]);
+    assert.equal(list.people.some(person => person.admin), false);
     assert.equal(JSON.stringify(list).includes("password_hash"), false);
+    const id = list.people.find(person => person.code === "7654321").id;
+    assert.equal((await app.request("people/" + id, "PATCH", { serviceBranch: "E/G" }, admin)).status, 200);
+    assert.equal((await app.request("people/" + id, "PATCH", { name: "Changed", serviceBranch: "R/S" }, admin)).status, 400);
     assert.deepEqual(await (await app.request("auth/status", "POST", { code: "7654321" })).json(), { firstAccess: true });
     assert.equal((await app.login("7654321", password, "wrong")).status, 400);
     assert.equal((await app.login("7654321", "short", "short")).status, 400);
@@ -67,7 +70,6 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
     assert.match(encoded, /^scrypt\$[a-f0-9]{64}\$[a-f0-9]{128}$/);
     assert.equal(encoded.includes(password), false);
     db.close();
-    const id = list.people.find(p => p.code === "7654321").id;
     assert.equal((await app.request("people/" + id + "/password", "DELETE", undefined, capo)).status, 403);
     assert.equal((await app.request("people/" + id + "/password", "DELETE", undefined, admin)).status, 200);
     assert.equal((await app.request("auth/me", "GET", undefined, capo)).status, 401);
@@ -107,14 +109,14 @@ test("legacy admin becomes an ordinary capo and existing accounts survive schema
     assert.equal((await app.login("23816938", password)).status, 200);
     const admin = app.cookie();
     const people = (await (await app.request("people")).json()).people;
-    assert.equal(people.find(p => p.code === "23816938").admin, true);
-    assert.equal(people.find(p => p.code === "23816938").name, "Existing person");
+    assert.equal(people.some(p => p.code === "23816938"), false);
     const oldAdmin = people.find(p => p.code === "1238005");
     assert.equal(oldAdmin.admin, false);
     assert.equal(oldAdmin.hasPassword, false);
     assert.equal((await app.login("1238005", password, password)).status, 200);
     assert.equal((await app.request("people")).status, 403);
-    assert.equal((await app.request("people/" + oldAdmin.id, "PATCH", { name: oldAdmin.name, kind: "ragazzo" }, admin)).status, 200);
+    assert.equal((await app.request("people/" + oldAdmin.id, "PATCH", { name: oldAdmin.name, kind: "ragazzo" }, admin)).status, 400);
+    assert.equal((await app.request("people/" + oldAdmin.id, "PATCH", { serviceBranch: "R/S" }, admin)).status, 200);
     const verify = new DatabaseSync(path.join(directory, "site.sqlite"));
     assert.deepEqual(verify.prepare("PRAGMA foreign_key_check").all(), []);
     verify.close();
@@ -141,19 +143,20 @@ test("NAS allowlist, ragazzi and env-only admin restrictions survive restart", a
     const admin = app.cookie();
     const list = await (await app.request("people")).json();
     const capoId = list.people.find(p => p.code === "7654321").id;
-    assert.equal((await app.request("people/" + capoId, "PATCH", { name: "Ragazzo", kind: "ragazzo" })).status, 200);
-    assert.equal((await app.login("7654321", password, password)).status, 403);
-    assert.equal((await app.request("people", "POST", { code: "7654323", name: "Capo extra", kind: "capo" })).status, 201);
+    assert.equal((await app.request("people/" + capoId, "PATCH", { name: "Ragazzo", kind: "ragazzo" })).status, 400);
+    assert.equal((await app.request("people/" + capoId, "PATCH", { serviceBranch: "L/C" })).status, 200);
+    assert.equal((await app.login("7654321", password, password)).status, 200);
+    assert.equal((await app.request("people", "POST", { code: "7654323", name: "Capo extra", kind: "capo" }, admin)).status, 405);
     assert.equal((await app.login("7654323", password, password)).status, 403);
-    const adminId = list.people.find(p => p.admin).id;
-    assert.equal((await app.request("people/" + adminId, "PATCH", { name: "Admin", kind: "ragazzo" })).status, 400);
+    const adminId = (await (await app.request("auth/me", "GET", undefined, admin)).json()).user.id;
+    assert.equal((await app.request("people/" + adminId, "PATCH", { serviceBranch: "L/C" }, admin)).status, 404);
     assert.equal((await app.login("7654322", password, password)).status, 200);
     const capo = app.cookie();
     await app.close();
     app = await start(directory, "");
     assert.equal((await app.request("auth/me", "GET", undefined, capo)).status, 401);
     await app.login();
-    assert.equal((await app.request("people/" + adminId + "/password", "DELETE")).status, 400);
+    assert.equal((await app.request("people/" + adminId + "/password", "DELETE")).status, 404);
     assert.equal((await app.request("auth/me", "GET", undefined, admin)).status, 401);
     await app.close();
     app = await start(directory, "");
@@ -200,7 +203,8 @@ test("admin env password replaces legacy hash and changes on restart without aff
     assert.equal((await app.login()).status, 401);
     assert.equal((await app.login("23816938", newPassword)).status, 200);
     const list = await (await app.request("people")).json();
-    assert.equal(list.people.find(p => p.admin).hasPassword, true);
+    assert.equal(list.people.some(p => p.admin), false);
+    assert.equal((await (await app.request("auth/me")).json()).user.hasPassword, true);
     const migrated = new DatabaseSync(path.join(directory, "site.sqlite"));
     assert.equal(migrated.prepare("SELECT password_hash FROM people WHERE census_code='23816938'").get().password_hash, null);
     assert.equal(migrated.prepare("SELECT * FROM auth_settings WHERE name='admin_initialized'").get(), undefined);
@@ -224,7 +228,7 @@ test("new capo passwords require eight characters and all four character classes
     assert.equal((await app.login(codes[0], "Canic@ttini1")).status, 200);
     assert.equal((await app.login(codes[1], "Aa1@" + "a".repeat(124), "Aa1@" + "a".repeat(124))).status, 200);
     await app.login();
-    assert.equal((await app.request("people", "POST", { code: "765 4329", name: "Test", kind: "capo" })).status, 400);
+    assert.equal((await app.request("people", "POST", { code: "765 4329", name: "Test", kind: "capo" })).status, 405);
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
 });
 

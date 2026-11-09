@@ -178,6 +178,53 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('#calendar-info').open = false;
           }
           if (page === 2) {
+            doc.querySelector('[data-tab="json"]').click();
+            const originalJson = doc.querySelector('#json-text').value;
+            const originalSlides = JSON.parse(originalJson).slide.length;
+            doc.querySelector('[data-tab="ordine"]').click();
+            const selector = doc.querySelector('#nuova-slide-modello');
+            const template = [...selector.options].find(option => option.textContent === 'ordine del giorno');
+            if (!template) throw new Error('Template ordine del giorno non trovato');
+            selector.value = template.value;
+            const addSlide = doc.querySelector('.slide-add button');
+            if (!addSlide) throw new Error('Comando aggiungi slide non trovato');
+            addSlide.click();
+            const editor = doc.querySelector('#slide-editor');
+            if (!editor.open) throw new Error('Editor della nuova slide non aperto');
+            const editorBox = editor.getBoundingClientRect();
+            let list = doc.querySelector('#slide-editor-campi fieldset');
+            const removeItem = list?.querySelector('.remove');
+            if (!removeItem) throw new Error('Comando rimuovi elemento non trovato');
+            removeItem.click();
+            list = doc.querySelector('#slide-editor-campi fieldset');
+            const addEmpty = list.querySelector('.add');
+            if (!addEmpty) throw new Error('Comando aggiungi elemento scomparso su elenco vuoto');
+            const canAddAfterEmpty = !!addEmpty && list.querySelectorAll('.field').length === 0;
+            addEmpty.click();
+            list = doc.querySelector('#slide-editor-campi fieldset');
+            const restoredItem = list.querySelector('fieldset');
+            results.push({
+              slideEditorFits: editorBox.left >= 0 && editorBox.right <= width &&
+                editor.scrollWidth <= editor.clientWidth,
+              canAddAfterEmpty,
+              restoredItem: !!restoredItem && restoredItem.querySelectorAll('.field').length === 2,
+              restoredControls: [...editor.querySelectorAll('.add, .remove')].every(button => {
+                const box = button.getBoundingClientRect();
+                return box.width >= 40 && box.left >= 0 && box.right <= width;
+              }),
+            });
+            doc.querySelector('#slide-editor-chiudi').click();
+            doc.querySelector('[data-tab="json"]').click();
+            const addedSlide = JSON.parse(doc.querySelector('#json-text').value).slide.length === originalSlides + 1;
+            doc.querySelector('#json-text').value = originalJson;
+            doc.querySelector('#json-apply').click();
+            results.push({
+              width,
+              addedSlide,
+              restoredOriginal:
+                JSON.stringify(JSON.parse(doc.querySelector('#json-text').value)) ===
+                JSON.stringify(JSON.parse(originalJson)),
+            });
             for (const section of ['ordine', 'json', 'generale']) {
               doc.querySelector('[data-tab="' + section + '"]').click();
               results.push({ page, width, section, overflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth });
@@ -481,6 +528,16 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(results.find((item) => "remaining" in item).remaining, 4);
     for (const item of results.filter((item) => "reachable" in item)) {
       assert.equal(item.reachable, true, "setup fields must be reachable above the action bar at width " + item.width);
+    }
+    for (const item of results.filter((item) => "slideEditorFits" in item)) {
+      assert.equal(item.slideEditorFits, true, "slide editor fits at width " + item.width);
+      assert.equal(item.canAddAfterEmpty, true, "empty lists remain editable at width " + item.width);
+      assert.equal(item.restoredItem, true, "adding restores the correct item schema at width " + item.width);
+      assert.equal(item.restoredControls, true, "array actions remain reachable at width " + item.width);
+    }
+    for (const item of results.filter((item) => "addedSlide" in item)) {
+      assert.equal(item.addedSlide, true, "new slides can be added at width " + item.width);
+      assert.equal(item.restoredOriginal, true, "browser check restores original data at width " + item.width);
     }
     for (const item of results.filter((item) => "wizardOpened" in item)) assert.equal(item.wizardOpened, true);
     for (const item of results.filter((item) => "fits" in item)) {

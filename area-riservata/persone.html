@@ -17,23 +17,11 @@
   </header>
   <main id="reserved-content">
     <h1>Accessi dei capi</h1>
-    <p><a class="button button-primary" href="soci.html">Libro soci: schede, importazione AGESCI e percorsi</a></p>
-    <p>Solo l’amministratore può gestire l’elenco, che mostra esclusivamente i capi. Le schede dei ragazzi restano nel Libro soci, senza accesso all’area riservata.</p>
+    <p>Qui compaiono solo i capi abilitati in <code>NAS_CAPO_CODES</code> nel file .env. Per ciascuno puoi assegnare la branca di servizio o reimpostare la password; non è possibile aggiungere account o modificare nomi e tipologie.</p>
     <p id="people-status" role="status" aria-live="polite"></p>
     <section id="people-app" hidden>
-      <h2>Aggiungi un capo</h2>
-      <form id="person-form" class="people-form">
-        <label>Codice censimento<input name="code" inputmode="numeric" minlength="5" maxlength="9" pattern="[0-9]{5,9}" title="Da 5 a 9 cifre, senza spazi" required placeholder="7654321"></label>
-        <label>Nome e cognome<input name="name" maxlength="120" required autocomplete="off"></label>
-        <input name="kind" type="hidden" value="capo">
-        <label>Branca di servizio<select name="serviceBranch"><option value="">Nessuna branca</option><option value="L/C">L/C</option><option value="E/G">E/G</option><option value="R/S">R/S</option></select></label>
-        <button class="button button-primary" type="submit">Aggiungi capo</button>
-      </form>
-      <p>Solo i codici presenti in NAS_CAPO_CODES nel file .env sono abilitati al login; l’amministratore è sempre abilitato. I codici configurati vengono aggiunti automaticamente all’elenco come capi: qui puoi aggiornare i nomi.</p>
-      <p>Assegna ai capi una branca di servizio L/C, E/G o R/S: potranno consultare e modificare solo le schede della propria branca e confermarne gli ingressi. Senza assegnazione non possono aprire il libro soci. Questa scelta non abilita il login e non modifica la loro branca anagrafica Adulti.</p>
-      <p>I capi abilitati impostano la password al primo accesso. Dopo “Cancella password” tutte le sessioni del capo vengono revocate e al prossimo accesso saranno richieste password e conferma. La password amministratore si modifica soltanto con NAS_ADMIN_PASSWORD in nas.env (o .env), non da questo elenco.</p>
-      <p>Supervisiona il primo accesso e quello successivo al reset: conoscere un codice senza password permette di attivare l’account.</p>
-      <h2>Elenco capi</h2>
+      <h2>Capi abilitati dall’ambiente</h2>
+      <p>Il cambio di branca limita la consultazione delle schede ai dati educativi della branca assegnata. Il reset revoca tutte le sessioni del capo: al prossimo accesso dovrà impostare una nuova password. Supervisiona il primo accesso e quello successivo al reset: chi conosce il codice censimento può inizializzare la password. La password amministratore si modifica solo con <code>NAS_ADMIN_PASSWORD</code> nel file .env.</p>
       <button id="reload-people" class="button button-secondary" type="button">Ricarica elenco</button>
       <div id="people-list" class="people-list"></div>
     </section>

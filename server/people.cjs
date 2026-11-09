@@ -39,9 +39,11 @@ async function matches(password, encoded) {
 
 async function createPeople(database, adminPassword, configuredCodes = "") {
   validatePassword(adminPassword);
-  const allowed = new Set([ADMIN_CODE]);
+  const configured = new Set();
   for (const value of configuredCodes.split(",").filter((value) => value.trim()))
-    allowed.add(code(value.trim()));
+    configured.add(code(value.trim()));
+  configured.delete(ADMIN_CODE);
+  const allowed = new Set([ADMIN_CODE, ...configured]);
   database.exec(`
     CREATE TABLE IF NOT EXISTS people (
       id INTEGER PRIMARY KEY, census_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
@@ -118,13 +120,6 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
     if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
     if (!current.admin) fail(403, "Operazione riservata all'amministratore");
   };
-  const validatePerson = (value) => {
-    if (typeof value?.name !== "string" || !value.name.trim() || value.name.trim().length > 120 ||
-        !["capo", "ragazzo"].includes(value.kind)) fail(400, "Nome o tipologia non validi");
-    if (value.serviceBranch !== undefined && !["", "L/C", "E/G", "R/S"].includes(value.serviceBranch))
-      fail(400, "Branca di servizio non valida");
-    if (value.kind === "ragazzo" && value.serviceBranch) fail(400, "Solo i capi hanno una branca di servizio");
-  };
   return {
     user,
     async handle(route, request, response, { body, send, cookie, sessionId, rateLimit, clearLimit, ip, seconds }) {
@@ -171,38 +166,28 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
       if (!route.startsWith("/api/people")) return false;
       requireAdmin(sessionId(request));
       if (route === "/api/people" && method === "GET") {
-        send(response, 200, { people: database.prepare("SELECT * FROM people ORDER BY name,census_code").all().map(person) });
+        const codes = [...configured];
+        const people = codes.length
+          ? database.prepare(`SELECT * FROM people WHERE kind='capo' AND census_code IN (${codes.map(() => "?").join(",")}) ORDER BY name,census_code`).all(...codes).map(person)
+          : [];
+        send(response, 200, { people });
         return true;
       }
-      if (route === "/api/people" && method === "POST") {
-        const value = await body(request, 4096);
-        validatePerson(value);
-        const censusCode = code(value.code);
-        if (byCode(censusCode)) fail(409, "Il codice censimento esiste gia'");
-        database.prepare("INSERT INTO people(census_code,name,kind,service_branch) VALUES(?,?,?,?)")
-          .run(censusCode, value.name.trim(), value.kind, value.serviceBranch || "");
-        send(response, 201, { ok: true });
-        return true;
-      }
+      if (route === "/api/people") fail(405, "Metodo non consentito");
       const match = /^\/api\/people\/(\d+)(\/password)?$/.exec(route);
       if (!match) fail(404, "Persona non trovata");
       const current = database.prepare("SELECT * FROM people WHERE id=?").get(Number(match[1]));
-      if (!current) fail(404, "Persona non trovata");
+      if (!current || !configured.has(current.census_code) || current.kind !== "capo")
+        fail(404, "Capo non trovato nell'elenco configurato");
       if (match[2] && method === "DELETE") {
-        if (current.census_code === ADMIN_CODE)
-          fail(400, "Modifica NAS_ADMIN_PASSWORD in nas.env (o .env): la password amministratore non e' nel database");
-        if (current.kind !== "capo") fail(400, "I ragazzi non hanno password");
         database.prepare("UPDATE people SET password_hash=NULL WHERE id=?").run(current.id);
         database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
       } else if (!match[2] && method === "PATCH") {
         const value = await body(request, 4096);
-        validatePerson(value);
-        if (current.census_code === ADMIN_CODE && value.kind !== "capo")
-          fail(400, "L'amministratore deve restare capo");
-        database.prepare(`UPDATE people SET name=?,kind=?,service_branch=?,
-          password_hash=CASE WHEN ?='ragazzo' THEN NULL ELSE password_hash END WHERE id=?`)
-          .run(value.name.trim(), value.kind, value.kind === "ragazzo" ? "" : value.serviceBranch ?? current.service_branch, value.kind, current.id);
-        if (current.kind !== value.kind) database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
+        if (!value || Object.keys(value).length !== 1 || !Object.hasOwn(value, "serviceBranch") ||
+            !["", "L/C", "E/G", "R/S"].includes(value.serviceBranch))
+          fail(400, "E' possibile modificare solo una branca di servizio valida");
+        database.prepare("UPDATE people SET service_branch=? WHERE id=?").run(value.serviceBranch, current.id);
       } else fail(405, "Metodo non consentito");
       send(response, 200, { ok: true });
       return true;

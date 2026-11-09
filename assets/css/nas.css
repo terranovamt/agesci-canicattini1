@@ -35,15 +35,23 @@ body.reserved-page .reserved-header .brand,
 .password-visibility-slash { display: none }
 .password-visibility[aria-pressed="true"] .password-visibility-slash { display: block }
 .password-visibility:disabled { display: none }
-.people-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0 }
-.people-form label { display: grid; gap: 8px }
-.people-form input, .people-form select, .people-list input, .people-list select { width: 100%; padding: 10px; border: 1px solid var(--vl); border-radius: 8px; background: #fff; color: var(--vd) }
+.people-list select { width: 100%; padding: 10px; border: 1px solid var(--vl); border-radius: 8px; background: #fff; color: var(--vd) }
 .people-list { display: grid; gap: 16px }
 .person-card { padding: 20px; background: #fff; border: 1px solid var(--vl); border-radius: 16px }
 .person-card h3 { margin: 0 0 12px }
-.person-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 12px }
+.person-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 12px }
 .person-fields label { display: grid; gap: 8px }
 .person-actions { display: flex; flex-wrap: wrap; gap: 12px }
 @media (max-width: 600px) {
-  .people-form, .person-fields { grid-template-columns: 1fr }
+  body.reserved-page > .reserved-header { gap: 8px; padding: 10px 16px; }
+  body.reserved-page > .reserved-header .brand { min-width: 0; padding: 6px 8px; }
+  body.reserved-page > .reserved-header > a:not(.brand) { max-width: 45%; font-size: 12px; text-align: right; overflow-wrap: anywhere; }
+  body.reserved-page > #reserved-content { width: calc(100% - 28px); margin: 20px auto; }
+  #reserved-content > h1 { font-size: clamp(1.7rem, 8vw, 2.4rem); line-height: 1.1; }
+  #reserved-content .button { max-width: 100%; white-space: normal; text-align: center; overflow-wrap: anywhere; }
+  .person-fields { gap: 12px; }
+  .person-card { min-width: 0; padding: 14px; }
+  .person-card h3 { overflow-wrap: anywhere; font-size: 1rem; }
+  .person-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .person-actions .button { width: 100%; margin: 0; }
 }

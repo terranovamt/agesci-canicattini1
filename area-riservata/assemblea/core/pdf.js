@@ -11,7 +11,7 @@ async function exportPdf() {
     const r = h('<div class="slide in"></div>'); ps.append(r);
     const o = sc.f(r, D); o.show(o.steps);        /* ultimo passo = stato finale */
     if (r.dataset.hd !== undefined) {
-      const hd = h('<div class="hd"><span></span><img src="../../assets/img/logo.webp"></div>');
+      const hd = h('<div class="hd"><span></span><img src="../../assets/img/logo-grande.webp"></div>');
       hd.firstChild.textContent = r.dataset.hd; ps.append(hd); fitTitle(hd.firstChild, 30, 14, 2);
     }
   });

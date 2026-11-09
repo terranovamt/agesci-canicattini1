@@ -12,6 +12,7 @@
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
   const getAt = (o, p) => p.reduce((x, k) => (x == null ? undefined : x[k]), o);
+  const arrayKey = (path) => JSON.stringify(path.map((part) => typeof part === "number" ? "*" : part));
   const setAt = (o, p, v) => {
     const t = getAt(o, p.slice(0, -1));
     if (v === undefined) {
@@ -64,6 +65,7 @@
     saving = false;
   const open = new Set(["assemblea"]);
   const collapsed = new WeakSet();
+  const arraySchemas = new Map();
 
   function toast(msg) {
     document.querySelectorAll(".toast").forEach((x) => x.remove());
@@ -105,6 +107,7 @@
     base = newBase;
     published = clone(base);
     edit = M.applyPatch(clone(base), pending);
+    arraySchemas.clear();
     render();
     status("dati.js caricato", "ok");
   }
@@ -126,26 +129,34 @@
       input = el("input", { type: "checkbox", checked: value });
       input.onchange = () => commit(!input.checked && b === undefined ? undefined : input.checked);
     } else if (typeof value === "number") {
-      input = el("input", { type: "number", step: "any", value: String(value) });
+      const key = String(path.at(-1));
+      const step = /importo|avanzo|saldo/i.test(key) || !Number.isInteger(value) ? "0.01" : "1";
+      input = el("input", { type: "number", step, inputMode: step === "1" ? "numeric" : "decimal", value: String(value) });
       input.oninput = () => {
         if (input.value !== "" && !isNaN(+input.value)) commit(+input.value);
       };
     } else {
-      const long = String(value ?? "").length > 70 || /\n/.test(value);
-      input = el(long ? "textarea" : "input", { value: value ?? "" });
-      if (long) {
-        input.rows = Math.min(8, Math.ceil(String(value).length / 60) + 1);
-      }
+      const key = String(path.at(-1));
+      const parentKey = String(path.at(-2) ?? "");
+      const type = key === "data_ora" ? "datetime-local"
+        : /(?:^|_)orario$|^prima_convocazione$|^seconda_convocazione$/.test(key) ? "time"
+          : "";
+      const long = !type && (String(value ?? "").length > 70 || /\n/.test(value) ||
+        /^(?:testo|nota|descrizione|regola|citazione|paragrafi|sottopunti|percorso)$/.test(key) ||
+        /^(?:paragrafi|sottopunti)$/.test(parentKey));
+      input = el(long ? "textarea" : "input", { ...(type ? { type } : {}), value: value ?? "" });
+      if (long) input.rows = Math.min(8, Math.max(3, Math.ceil(String(value).length / 60) + 1));
       input.oninput = () => commit(input.value);
     }
     const id = "f" + path.join("_").replace(/[^\w-]/g, "");
     input.id = lab.htmlFor = id;
+    input.setAttribute("aria-label", label);
     const reset = el(
       "button",
-      { className: "reset", type: "button", title: "Ripristina il valore di dati.js" },
+      { className: "reset", type: "button", title: "Ripristina il valore pubblicato" },
       icon(icons.reset),
     );
-    reset.setAttribute("aria-label", "Ripristina il valore di dati.js");
+    reset.setAttribute("aria-label", "Ripristina il valore pubblicato");
     reset.onclick = () => {
       if (b === undefined) {
         setAt(edit, path, undefined);
@@ -161,14 +172,49 @@
     mark();
     return wrap;
   }
-  const human = (k) => String(k).replace(/_/g, " ");
+  const LABELS = {
+    anno_esercizio: "Anno di esercizio",
+    anno_scout: "Anno scout",
+    assemblea: "Assemblea",
+    titolo: "Titolo",
+    titolo_barra: "Titolo nella barra",
+    sottotitolo: "Sottotitolo",
+    data: "Data",
+    data_ora: "Data e ora",
+    prima_convocazione: "Orario prima convocazione",
+    seconda_convocazione: "Orario seconda convocazione",
+    luogo: "Luogo",
+    nome: "Nome",
+    ruolo: "Ruolo",
+    nota: "Nota",
+    nota_generale: "Nota generale",
+    testo: "Testo",
+    descrizione: "Descrizione",
+    importo: "Importo",
+    importo_anno_corrente: "Importo anno corrente",
+    importo_anno_precedente: "Importo anno precedente",
+    riferimento_articolo: "Articolo di riferimento",
+    slide_collegata: "Collegamento alla slide",
+    completati: "Punti completati",
+    nascosta: "Nascosta",
+  };
+  const human = (k) => LABELS[k] || String(k).replace(/_/g, " ");
 
   function node(path, value, label) {
     if (Array.isArray(value)) {
       const fs = el("fieldset", {}, el("legend", { textContent: label + " (" + value.length + ")" }));
+      const key = arrayKey(path);
+      if (value.length) arraySchemas.set(key, clone(value.at(-1)));
       value.forEach((item, i) => {
-        const child = node(path.concat(i), item, "#" + (i + 1));
-        const rm = el("button", { type: "button", className: "sec", title: "Togli questo elemento", textContent: "✕" });
+        const childLabel = typeof item === "object" && item !== null ? "#" + (i + 1) : label + " " + (i + 1);
+        const child = node(path.concat(i), item, childLabel);
+        const rm = el("button", {
+          type: "button",
+          className: "sec remove",
+          title: "Rimuovi elemento " + (i + 1),
+          textContent: "Rimuovi",
+        });
+        rm.setAttribute("aria-label", "Rimuovi elemento " + (i + 1) + " da " + label);
         rm.onclick = () => {
           setAt(edit, path.concat(i), undefined);
           render();
@@ -177,14 +223,14 @@
         else child.append(rm);
         fs.append(child);
       });
-      if (value.length) {
-        const add = el("button", { type: "button", className: "sec add", textContent: "+ Aggiungi" });
-        add.onclick = () => {
-          getAt(edit, path).push(blank(value.at(-1)));
-          render();
-        };
-        fs.append(add);
-      }
+      const add = el("button", { type: "button", className: "sec add", textContent: "+ Aggiungi elemento" });
+      add.setAttribute("aria-label", "Aggiungi elemento a " + label);
+      add.onclick = () => {
+        const template = arraySchemas.get(key) ?? getAt(base, path)?.at(-1) ?? "";
+        getAt(edit, path).push(blank(template));
+        render();
+      };
+      fs.append(add);
       return fs;
     }
     if (plain(value)) {

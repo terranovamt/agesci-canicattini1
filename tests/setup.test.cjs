@@ -32,6 +32,13 @@ function setup(options = {}) {
       hidden: false,
       attributes: {},
       classList: { toggle() {}, add() {}, remove() {} },
+      set innerHTML(value) {
+        this._innerHTML = value;
+        this.children = [];
+      },
+      get innerHTML() {
+        return this._innerHTML || "";
+      },
       append(...children) {
         this.children.push(...children);
       },
@@ -67,7 +74,7 @@ function setup(options = {}) {
     if (!elements.has(s)) elements.set(s, element("div"));
     return elements.get(s);
   };
-  for (const name of ["generale", "ordine", "json"]) {
+  for (const name of ["generale", "ordine", "bilancio", "json"]) {
     const tab = element("button");
     tab.dataset.tab = name;
     tabs.push(tab);
@@ -232,6 +239,15 @@ function orderRows(t) {
 function button(row, title) {
   return row.children.find((c) => c.title === title);
 }
+function fieldsetAt(t, selector) {
+  const pending = [...t.$("#campi").children];
+  while (pending.length) {
+    const child = pending.shift();
+    if (child.tagName === "FIELDSET" && child.children[0]?.textContent?.startsWith(selector)) return child;
+    pending.push(...child.children);
+  }
+  return undefined;
+}
 const sampleSlides = () => [
   { tipo: "slide_titolo", titolo: "Intro" },
   { tipo: "slide_divisore_sezione", titolo: "A" },
@@ -259,6 +275,69 @@ test("adding a slide creates a valid template and copies without duplicating ids
   data = t.data();
   assert.equal(data.slide.at(-1).tipo, "slide_testo_articoli");
   assert.equal(data.slide.at(-1).articoli[0].paragrafi[0], "Testo");
+});
+
+test("array controls stay available after deleting the last item and restore its schema", async () => {
+  const t = setup();
+  await flush();
+  t.setSlides(sampleSlides());
+  t.tab("json");
+  const data = t.data();
+  data.soglie_percentuali_esito = [10, 20];
+  t.$("#json-text").value = JSON.stringify(data);
+  t.$("#json-apply").onclick();
+  t.tab("bilancio");
+
+  let list = fieldsetAt(t, "soglie percentuali esito");
+  assert.ok(list, "percentage list is rendered as an editable fieldset");
+  assert.equal(list.children.filter((child) => child.className === "field").length, 2);
+  const remove = (index) => {
+    list = fieldsetAt(t, "soglie percentuali esito");
+    const row = list.children.find((child) => child.className === "field" &&
+      child.children.some((item) => item.title === "Rimuovi elemento " + index));
+    const control = row.children.find((item) => item.title === "Rimuovi elemento " + index);
+    assert.ok(control);
+    assert.match(control.getAttribute("aria-label"), /soglie percentuali esito/);
+    control.onclick();
+  };
+  remove(1);
+  remove(1);
+  list = fieldsetAt(t, "soglie percentuali esito");
+  assert.equal(list.children.length, 2, "empty list still has legend and add action");
+  const add = list.children[1];
+  assert.equal(add.textContent, "+ Aggiungi elemento");
+  assert.equal(add.getAttribute("aria-label"), "Aggiungi elemento a soglie percentuali esito");
+  add.onclick();
+  assert.deepEqual(t.data().soglie_percentuali_esito, [0]);
+  t.tab("bilancio");
+  list = fieldsetAt(t, "soglie percentuali esito");
+  const input = list.children.find((child) => child.className === "field").children[1];
+  assert.equal(input.tagName, "INPUT");
+  assert.equal(input.type, "number");
+  assert.equal(input.step, "1");
+});
+
+test("setup gives dates, times and prose fields suitable controls and labels", async () => {
+  const t = setup();
+  await flush();
+  t.setSlides([{ tipo: "slide_qr_live", data_ora: "2026-11-20T20:30" }]);
+  t.tab("ordine");
+  button(orderRows(t)[0], "Modifica i contenuti").onclick();
+  assert.equal(t.$("#fslide_0_data_ora").type, "datetime-local");
+
+  t.$("#slide-editor-chiudi").onclick();
+  const data = t.data();
+  data.assemblea.prima_convocazione = "20:30";
+  data.slide = [{ tipo: "slide_testo_articoli", articoli: [{ titolo: "Titolo breve", paragrafi: ["Paragrafo"] }] }];
+  t.$("#json-text").value = JSON.stringify(data);
+  t.$("#json-apply").onclick();
+  t.tab("generale");
+  const time = t.$("#fassemblea_prima_convocazione");
+  assert.equal(time.type, "time");
+  assert.equal(time.getAttribute("aria-label"), "Orario prima convocazione");
+  t.tab("ordine");
+  button(orderRows(t)[0], "Modifica i contenuti").onclick();
+  assert.equal(t.$("#fslide_0_articoli_0_paragrafi_0").tagName, "TEXTAREA");
 });
 
 test("slide order controls use accessible SVG icons", async () => {
@@ -331,7 +410,7 @@ test("new slide type selector covers every supported renderer", async () => {
   });
   for (const type of types)
     assert.ok(
-      select.children.some((o) => o.textContent === type),
+      select.children.some((o) => o.textContent.toLowerCase() === type),
       type,
     );
   assert.equal(html.includes('data-tab="contenuti"'), false);

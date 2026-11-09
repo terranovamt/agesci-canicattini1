@@ -142,7 +142,11 @@ Prefisso pubblico: `${NAS.basePath}/api/members`. Il browser riusa
 `ACCESSO.request`, con credenziali same-origin e no-store. Tutte le operazioni,
 anche GET, verificano sessione e ambito server-side. `people.service_branch`
 e una colonna TEXT migrata con default vuoto, esposta come `serviceBranch`;
-solo l'amministratore puo assegnarla tramite `/api/people`. Un capo abilitato
+solo l'amministratore puo assegnarla tramite `/api/people/:id`, con un payload
+limitato al solo `serviceBranch`. La gestione accessi mostra esclusivamente i
+capi presenti in `NAS_CAPO_CODES` (l'amministratore resta fuori dall'elenco);
+non permette di creare account o modificare nome e tipologia. Il reset password
+e disponibile solo per questi capi e revoca tutte le loro sessioni. Un capo abilitato
 al login senza branca assegnata non ottiene accesso all'anagrafe.
 L'amministratore ha accesso completo; un capo assegnato legge/modifica solo
 schede della stessa branca locale e vede solo i valori educativi di quella

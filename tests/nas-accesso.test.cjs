@@ -131,14 +131,15 @@ test('NAS returning access shows only password; changing code clears both creden
   assert.equal(t.calls[1][0], 'auth/status');
 });
 
-test('NAS census inputs accept five to nine digits without disclosing the admin code', () => {
-  for (const file of ['index.html', 'persone.html']) {
-    const html = fs.readFileSync(path.join(__dirname, '../area-riservata/', file), 'utf8');
-    const input = html.match(/<input[^>]+(?:id="census-code"|name="code")[^>]*>/)[0];
-    assert.match(input, /minlength="5"/);
-    assert.match(input, /maxlength="9"/);
-    assert.match(input, /pattern="\[0-9\]\{5,9\}"/);
-    assert.match(input, /placeholder="7654321"/);
-    assert.doesNotMatch(input, /23816938/);
-  }
+test('NAS login validates census codes and access management exposes no account-creation form', () => {
+  const login = fs.readFileSync(path.join(__dirname, '../area-riservata/index.html'), 'utf8');
+  const input = login.match(/<input[^>]+id="census-code"[^>]*>/)[0];
+  assert.match(input, /minlength="5"/);
+  assert.match(input, /maxlength="9"/);
+  assert.match(input, /pattern="\[0-9\]\{5,9\}"/);
+  assert.match(input, /placeholder="7654321"/);
+  assert.doesNotMatch(input, /23816938/);
+  const access = fs.readFileSync(path.join(__dirname, '../area-riservata/persone.html'), 'utf8');
+  assert.match(access, /NAS_CAPO_CODES/);
+  assert.doesNotMatch(access, /name="code"|name="kind"|Aggiungi capo/);
 });

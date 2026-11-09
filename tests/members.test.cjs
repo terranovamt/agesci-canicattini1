@@ -142,7 +142,7 @@ test("service branches constrain every staff operation and passages require a di
   let state = await app.snapshot();
   const chiefs = ["7654321", "7654322", "7654323"].map(code => state.members.find(m => m.code === code));
   for (const [i, chief] of chiefs.entries())
-    assert.equal((await app.request("people/" + chief.id, "PATCH", { name: chief.name, kind: "capo", serviceBranch: M.branches[i] })).status, 200);
+    assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: M.branches[i] })).status, 200);
   const adminCookie = app.cookie();
   let lc = state.members.find(m => m.code === "012341"), eg = state.members.find(m => m.code === "012343");
   // A historical branch value must not be exposed to the chief of the current branch.
@@ -195,7 +195,7 @@ test("service branches constrain every staff operation and passages require a di
   const all = await (await app.request("members", "GET", undefined, "http://localhost", adminCookie)).json();
   assert.equal(all.members.find(m => m.id === lc.id).values["L/C"].ruolo, "Capo sestiglia");
   // Assignment changes take effect on existing sessions and survive restart.
-  assert.equal((await app.request("people/" + chiefs[1].id, "PATCH", { name: chiefs[1].name, kind: "capo", serviceBranch: "" }, "http://localhost", adminCookie)).status, 200);
+  assert.equal((await app.request("people/" + chiefs[1].id, "PATCH", { serviceBranch: "" }, "http://localhost", adminCookie)).status, 200);
   assert.equal((await app.request("members", "GET", undefined, "http://localhost", egCookie)).status, 403);
   await app.close(); app = await start(directory, "7654321,7654322,7654323");
   await app.login("7654321");
@@ -209,7 +209,7 @@ test("pending passages survive restart, conflict with profile changes and can be
   await app.login(); await app.import(csv([{ BRANCA: "Branca L/C" }]));
   let state = await app.snapshot(), member = state.members.find(m => m.code === "012345");
   const chief = state.members.find(m => m.code === "7654321");
-  assert.equal((await app.request("people/" + chief.id, "PATCH", { name: chief.name, kind: "capo", serviceBranch: "E/G" })).status, 200);
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
   const propose = () => app.request("members/macro", "POST", { action: "passage", branch: "E/G", members: [{ id: member.id, revision: member.revision }] });
   assert.equal((await propose()).status, 200);
   await app.close(); app = await start(directory); await app.login();
@@ -300,7 +300,7 @@ test("members retain annual history, educational fields, account permissions and
   assert.equal((await app.snapshot()).members.find(m => m.id === member.id).branch, "E/G");
   const proposal = (await app.snapshot()).transfers[0];
   const capo = (await app.snapshot()).members.find(m => m.code === "7654321");
-  assert.equal((await app.request("people/" + capo.id, "PATCH", { name: capo.name, kind: "capo", serviceBranch: "R/S" })).status, 200);
+  assert.equal((await app.request("people/" + capo.id, "PATCH", { serviceBranch: "R/S" })).status, 200);
   await app.login("7654321");
   assert.equal((await app.request("members/transfers/" + proposal.id, "PATCH", { action: "confirm", revision: proposal.revision })).status, 200);
   await app.login();
