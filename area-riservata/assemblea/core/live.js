@@ -80,31 +80,51 @@
   css.textContent = `
     #nav,#cnt{display:none!important}
     #lv-bar [hidden]{display:none!important}
-    #lv-bar{position:fixed;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;gap:8px;padding:0 10px;
+    #lv-bar{position:fixed;left:0;right:0;bottom:0;height:calc(76px + env(safe-area-inset-bottom,0px));display:flex;
+      align-items:flex-end;justify-content:center;gap:6px;padding:0 max(10px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
       background:var(--vd);color:#fff;z-index:50;font:600 14px Montserrat,sans-serif;user-select:none}
-    #lv-bar button{border:0;border-radius:12px;height:46px;min-width:52px;font:700 22px Montserrat,sans-serif;
-      background:var(--v);color:#fff;cursor:pointer}
+    #lv-bar button{box-sizing:border-box;border:0;border-radius:12px;height:44px;min-width:44px;flex:0 0 auto;
+      font:700 20px Montserrat,sans-serif;background:var(--v);color:#fff;cursor:pointer}
     #lv-bar button:disabled{opacity:.3;cursor:not-allowed}
     [data-slide-link][aria-disabled="true"]{cursor:not-allowed!important}
     #lv-bar button:active:not(:disabled){background:var(--v2)}
+    #lv-bar button:focus-visible{outline:3px solid var(--y);outline-offset:2px}
     #lv-m{display:flex;align-items:center;justify-content:center}
     #lv-m svg{position:static;flex:none}
     #lv-bar button,#lv-n{transition:transform .3s}
     body.lv-rot #lv-bar button,body.lv-rot #lv-n{transform:rotate(90deg)}
-    @media(max-width:360px){#lv-bar{gap:4px;padding:0 6px}#lv-bar button{min-width:40px}}
-    #lv-c{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-    #lv-l{height:40px!important;min-width:0!important;max-width:100%;font-size:14px!important;padding:0 12px;background:var(--y)!important;color:var(--vd)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    @media(max-width:360px){#lv-l{font-size:12px!important;padding:0 8px}}
+    #lv-c{position:absolute;left:10px;right:10px;top:3px;height:26px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:1px;min-width:0;pointer-events:none}
+    #lv-status{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:14px;
+      text-align:center}
+    #lv-n{font-size:11px;line-height:12px;font-variant-numeric:tabular-nums}
+    #lv-l{height:44px!important;width:auto;min-width:44px!important;max-width:180px;padding:0 10px;
+      background:var(--y)!important;color:var(--vd)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #lv-l[aria-hidden="true"]{visibility:hidden}
     #lv-l svg{position:static;vertical-align:-3px;margin-right:6px}
-    body.lv-rot #lv-l{width:46px;height:46px!important;padding:0;border-radius:50%!important}
+    body.lv-rot #lv-l{width:44px;height:44px!important;padding:0;border-radius:12px!important}
     body.lv-rot #lv-l svg{margin:0}
-    body.lv-rot #lv-l span{display:none}`;
+    body.lv-rot #lv-l span{display:none}
+    @media(max-width:560px){
+      #lv-bar{gap:4px;padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+      #lv-l{width:44px;padding:0!important}
+      #lv-l svg{display:none}
+      #lv-l span{font-size:0}
+      #lv-l span:after{content:"LIVE";font-size:12px}
+    }
+    @media(max-width:1024px){
+      body.lv-rot #lv-l{width:44px;padding:0!important}
+      body.lv-rot #lv-l svg{display:none}
+      body.lv-rot #lv-l span{display:inline;font-size:0}
+      body.lv-rot #lv-l span:after{content:"LIVE";font-size:12px}
+    }
+    @media(prefers-reduced-motion:reduce){#lv-bar button,#lv-n{transition:none!important}}`;
   document.head.append(css);
 
   const bar = document.createElement("div");
   bar.id = "lv-bar";
   bar.innerHTML =
-    '<button id="lv-p" aria-label="Indietro">‹</button><button id="lv-m" aria-label="Ordine del giorno" title="Vai ai punti dell’ordine del giorno" style="min-width:44px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-n">…</span><button id="lv-l" hidden aria-label="Vai alla slide attuale"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg><span>Slide attuale</span></button></div><button id="lv-r" aria-label="Ruota">⟳</button><button id="lv-x" aria-label="Avanti">›</button>';
+    '<button id="lv-p" aria-label="Slide precedente" title="Slide precedente">‹</button><button id="lv-m" aria-label="Apri ordine del giorno" title="Vai ai punti dell’ordine del giorno"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><div id="lv-c"><span id="lv-status" role="status" aria-live="polite">In attesa della diretta</span><span id="lv-n">…</span></div><button id="lv-l" aria-label="Torna alla diretta" title="Torna alla diretta" aria-hidden="true" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 7-7 7M13 5l7 7-7 7"/></svg><span>Torna alla diretta</span></button><button id="lv-r" aria-label="Ruota la presentazione" title="Ruota la presentazione">⟳</button><button id="lv-x" aria-label="Slide successiva" title="Slide successiva">›</button>';
   document.body.append(bar);
   ["click", "touchstart", "touchend"].forEach((ev) => bar.addEventListener(ev, (e) => e.stopPropagation()));
   const $ = (id) => bar.querySelector("#" + id);
@@ -138,11 +158,29 @@
   function ui() {
     if (!scenes.length) return;
     const here = enc(si, sk);
+    const behind = here < lim;
     bn.textContent = si + 1 + " / " + scenes.length;
     bp.disabled = !si && !sk;
     bx.disabled = here >= lim;
-    bl.hidden = here >= lim;
-    bn.hidden = here < lim;
+    bl.setAttribute("aria-hidden", String(!behind));
+    bl.tabIndex = behind ? 0 : -1;
+    const status = $("lv-status");
+    const message = !ricevuto
+      ? connesso
+        ? "Collegato · in attesa della diretta"
+        : erroreLive
+          ? "Connessione interrotta · nuovo tentativo automatico"
+          : "Connessione alla diretta in corso"
+      : !connesso
+        ? fallback
+          ? behind
+            ? "Aggiornamento automatico · stai rivedendo"
+            : "Aggiornamento automatico · sei alla diretta"
+          : "Connessione interrotta · nuovo tentativo automatico"
+        : behind
+          ? "Stai rivedendo · tocca LIVE per tornare"
+          : "Collegato · sei alla diretta";
+    if (status.textContent !== message) status.textContent = message;
     $("lv-m").disabled = enc(odgIdx(), 0) > lim;
     document.querySelectorAll("[data-slide-link]").forEach((el) => {
       const i = scenes.findIndex((sc) => sc.id === el.dataset.slideLink);
@@ -195,6 +233,7 @@
       (e) => {
         if (bar.contains(e.target)) return;
         if (ev === "click" && e.target.closest?.("[data-live-control]")) return;
+        if (ev === "keydown" && e.target.closest?.("[data-live-control]") && ["Enter", " "].includes(e.key)) return;
         e.stopImmediatePropagation();
         if (!cur) return;
         if (ev === "keydown") {
@@ -238,6 +277,9 @@
   );
   let connesso = false,
     lettura = false,
+    ricevuto = false,
+    fallback = false,
+    erroreLive = false,
     versione = 0;
   const put = (m, patch) => {
     if (m.path === "/") S = patch ? Object.assign(S, m.data) : m.data || {};
@@ -245,11 +287,21 @@
     on();
   };
   const ricevi = (e, patch) => {
-    put(JSON.parse(e.data), patch);
     connesso = true;
+    ricevuto = true;
+    fallback = false;
+    erroreLive = false;
     versione++;
+    put(JSON.parse(e.data), patch);
     bn.title = "Sincronizzazione live attiva";
+    ui();
   };
+  es.addEventListener("open", () => {
+    connesso = true;
+    fallback = false;
+    erroreLive = false;
+    ui();
+  });
   es.addEventListener("put", (e) => ricevi(e, false));
   es.addEventListener("patch", (e) => ricevi(e, true));
   const poll = async () => {
@@ -262,6 +314,8 @@
       const d = await r.json();
       if (!connesso && v === versione) {
         S = d || {};
+        ricevuto = true;
+        fallback = true;
         on();
       }
     } catch (e) {
@@ -274,9 +328,12 @@
   const errore = () => {
     window.NAS_TELEMETRY?.event("stream-reconnect");
     connesso = false;
+    fallback = false;
+    erroreLive = true;
     versione++;
     bn.title = "Connessione live interrotta: controllo periodico attivo";
     console.warn("Connessione live interrotta; attivo il controllo REST");
+    ui();
     poll();
   };
   es.addEventListener("error", errore);

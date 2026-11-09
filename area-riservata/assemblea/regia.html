@@ -17,15 +17,18 @@
       <img src="../../assets/img/logo-grande.webp" alt="" decoding="async" width="460" height="526" />
       <h1>Regia</h1>
       <span id="b-assemblea" class="pill">Assemblea…</span>
-      <span id="b-live" class="pill">Live…</span>
-      <span id="b-fb" class="pill">Server...</span>
+      <details class="header-status">
+        <summary>Connessione</summary>
+        <div><span id="b-live" class="pill">Stato non verificato</span>
+        <span id="b-fb" class="pill">Server...</span></div>
+      </details>
       <span class="sp"></span>
       <button
         id="schermo"
         hidden
         title="Finestra con sole slide: mettila a schermo intero sul secondo schermo o condividila"
       >
-        ▣ Apri schermo presentazione
+        Schermo ↗
       </button>
       <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
       <button id="esci" class="sec" hidden>Esci</button>
@@ -46,12 +49,14 @@
       <p id="login-err" class="err" role="alert"></p>
     </section>
 
-    <section id="avviso" class="avviso" role="status" hidden>
-      <h2>ASSEMBLEA NON INIZIATA</h2>
+    <details id="avviso" class="avviso" hidden>
+      <summary id="avviso-titolo">Anteprima · assemblea non iniziata</summary>
+      <div>
       <p>Sei in modalità anteprima: il pubblico vede la home del gruppo, non queste slide.</p>
       <p>Prepara e salva dati.js dal setup, attendi la pubblicazione, poi premi Avvia live qui in regia.</p>
       <a class="btn" href="setup.html" target="assemblea-setup">Apri il setup</a>
-    </section>
+      </div>
+    </details>
 
     <main id="app" hidden>
       <section class="avvio-live">
@@ -60,7 +65,7 @@
       </section>
       <section class="onda">
         <div class="lbl">
-          <b id="onda-dot" class="dot" hidden></b><span id="onda-label">Anteprima</span> <span id="pos"></span>
+          Corrente · <b id="onda-dot" class="dot" hidden></b><span id="onda-label">Stato non verificato</span> <span id="pos"></span>
         </div>
         <div class="fit">
           <div id="onda-frame" class="frame"><iframe id="principale" title="Anteprima presentazione"></iframe></div>
@@ -77,6 +82,8 @@
           </div>
         </div>
         <h3 id="titolo-next">…</h3>
+      </section>
+      <section class="comandi" aria-label="Comandi presentazione">
         <div class="cmd">
           <button id="prev" class="big-btn sec" aria-label="Slide precedente">‹<small>Indietro</small></button>
           <button id="next" class="big-btn" aria-label="Slide successiva">›<small>Avanti</small></button>
@@ -93,7 +100,7 @@
         </p>
       </section>
 
-      <nav class="section-nav regia-section-nav" data-section-nav data-section-mobile aria-label="Strumenti della regia" hidden>
+      <nav class="section-nav regia-section-nav" data-section-nav aria-label="Strumenti della regia" hidden>
         <button type="button" data-section-target="regia-slides-panel">Slide</button>
         <button type="button" data-section-target="regia-data-panel">Dati live</button>
         <button type="button" data-section-target="regia-server-panel">Server</button>
@@ -103,9 +110,11 @@
         <details class="note">
           <summary>Come funziona</summary>
           Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si
-          aggiornano entro circa 10 secondi. Questi dati sono pubblici.
+          aggiornano entro circa 10 secondi. Questi dati sono pubblici e salvati nella patch live, non nel file dati.js.
+          Per i dati statici usa il setup.
         </details>
         <form id="dati-live-form">
+          <p id="dati-live-pending" role="status" aria-live="polite">Nessuna modifica in attesa</p>
           <fieldset id="dati-live-campi" disabled></fieldset>
           <div class="mini">
             <button id="dati-live-pubblica" type="submit" disabled>Pubblica live</button>
@@ -141,14 +150,14 @@
         </div>
         <div id="nas-monitor" hidden>
           <div class="monitor-heading">
-            <h3>Server live</h3>
+            <h3>Metriche server</h3>
             <button id="nas-expand" class="sec" type="button">Apri monitor</button>
           </div>
           <p id="nas-status" class="monitor-status" role="status" aria-live="polite">Caricamento...</p>
           <p id="nas-alerts" class="monitor-alert" role="status" hidden></p>
           <div class="nas-kpi">
             <div><b id="nas-streams">-</b><span>Connessioni live SSE</span></div>
-            <div><b id="nas-online">-</b><span>Spettatori live adesso</span></div>
+            <div><b id="nas-online">-</b><span>Dispositivi presentazione</span></div>
             <div><b id="nas-cpu">-</b><span>CPU backend / un core</span></div>
             <div><b id="nas-ram">-</b><span>RAM processo backend</span></div>
             <div><b id="nas-host-cpu">-</b><span>CPU intero NAS</span></div>
@@ -170,13 +179,14 @@
 
       <section id="regia-slides-panel" class="lista card" data-section-panel>
         <h3>Slide</h3>
+        <p class="salto-note">Salto diretto alla slide selezionata: in diretta cambia subito la presentazione.</p>
         <ol id="slide"></ol>
       </section>
     </main>
 
     <dialog id="nas-monitor-dialog" aria-labelledby="nas-dialog-title">
       <div class="monitor-heading">
-        <h2 id="nas-dialog-title">Server live</h2>
+        <h2 id="nas-dialog-title">Metriche server · non stato assemblea</h2>
         <button id="nas-close" class="sec" type="button">Chiudi</button>
       </div>
       <div id="nas-monitor-expanded"></div>

@@ -146,7 +146,7 @@
         ...data.branches.map(item => makeCount(item.branch, item.count, "group-census-branch")),
       );
       $("dashboard-group-status").textContent = data.year
-        ? `Censimenti AGESCI importati · anno ${data.year}. Conteggio per branca di censimento, inclusi gli status importati senza modificarli.`
+        ? `Censimenti AGESCI · anno ${data.year} · tutti gli status importati.`
         : "Nessun censimento AGESCI importato.";
     } catch (error) {
       $("dashboard-group-status").textContent = error.message;

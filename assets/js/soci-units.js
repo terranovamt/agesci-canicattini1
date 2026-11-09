@@ -74,10 +74,10 @@
       $('unit-editor-title').textContent = unit ? 'Colori e simbolo · ' + unit.name : branch() === 'L/C' ? 'Nuova sestiglia' : 'Nuova squadriglia';
       $('unit-appearance').hidden = branch() === 'E/G';
       $('unit-color2-label').hidden = $('unit-emblem-controls').hidden = branch() === 'L/C';
-      $('unit-name-hint').textContent = unit ? 'Il nome identifica il gruppo e non cambia. Nascondilo per conservarlo senza mostrarlo.' :
+      $('unit-name-hint').textContent = unit ? (branch() === 'L/C' ? 'Il nome identifica la sestiglia' : 'Il nome identifica la squadriglia') + ' e non cambia. Puoi nasconderla per conservarla senza mostrarla.' :
         branch() === 'L/C' ? 'Usa il nome del colore (es. Bianchi, Rossi, Neri). Lo stesso nome ripristina la sestiglia nascosta.' :
           'Scegli un nome dal catalogo: colori e guidone sono definiti nel codice. Lo stesso nome ripristina la squadriglia nascosta.';
-      $('save-unit').textContent = unit ? 'Salva gruppo' : 'Crea / ripristina';
+      $('save-unit').textContent = unit ? (branch() === 'L/C' ? 'Salva sestiglia' : 'Salva squadriglia') : 'Crea / ripristina';
       $('unit-error').textContent = '';
       form.elements.name.setAttribute('list', 'sestiglia-names');
       $('sestiglia-names').replaceChildren(...(branch() === 'L/C' ? Object.keys(M.sestigliaColors) : M.patrolCatalog.map(entry => entry[1])).map(name => {
@@ -185,7 +185,7 @@
       }, $('units-status'));
     };
     branchSelect.onchange = () => render();
-    $('reload-units').onclick = () => perform(reload, $('units-status'));
+    $('reload-units').onclick = () => perform(reload, $('units-status'), '');
     function memberCard(member) {
       const card = el('article', undefined, 'unit-member');
       card.dataset.memberId = member.id;
@@ -243,7 +243,7 @@
       $('lc-environment-form').elements.environment.value = environment();
       const available = members();
       options(assignment.elements.memberId, [['', 'Scegli un socio'], ...available.map(member => [member.id, member.name])]);
-      options(assignment.elements.unitId, [['', 'Senza gruppo'], ...visibleUnits().map(unit => [unit.id, unit.name])]);
+      options(assignment.elements.unitId, [['', lc ? 'Senza sestiglia' : 'Senza squadriglia'], ...visibleUnits().map(unit => [unit.id, unit.name])]);
       options(assignment.elements.role, roles.map(role => [role, role]));
       assignment.elements.unitId.onchange();
       const previousUnassigned = $('unit-unassigned').querySelector('details');
@@ -252,15 +252,15 @@
       unassigned.open = previousUnassigned?.dataset.branch === branch() ? previousUnassigned.open : !visibleUnits().length;
       const groupedIds = new Set(visibleUnits().map(unit => M.unitKey(unit.name)));
       const outside = available.filter(member => !groupedIds.has(M.unitKey(member.values[branch()]?.[M.unitField(branch())])));
-      unassigned.append(el('summary', 'Senza gruppo / da verificare · ' + outside.length));
+      unassigned.append(el('summary', (lc ? 'Senza sestiglia' : 'Senza squadriglia') + ' / da verificare · ' + outside.length));
       const unassignedList = el('div', undefined, 'unit-unassigned-list');
       outside.forEach(member => {
         const card = memberCard(member);
         const group = member.values[branch()]?.[M.unitField(branch())];
-        if (group) card.append(el('small', 'Assegnazione conservata: ' + group + ' (gruppo nascosto o non disponibile)'));
+        if (group) card.append(el('small', 'Assegnazione conservata: ' + group + (lc ? ' (sestiglia nascosta o non disponibile)' : ' (squadriglia nascosta o non disponibile)')));
         unassignedList.append(card);
       });
-      if (!outside.length) unassignedList.append(el('p', 'Tutti i soci visibili hanno un gruppo.'));
+      if (!outside.length) unassignedList.append(el('p', lc ? 'Tutti i ragazzi visibili hanno una sestiglia.' : 'Tutti i ragazzi visibili hanno una squadriglia.'));
       unassigned.append(unassignedList); dropTarget(unassigned, null, '');
       $('unit-unassigned').replaceChildren(unassigned);
       $('units-board').replaceChildren(...visibleUnits().map(unit => {
@@ -269,6 +269,9 @@
         const heading = el('div', undefined, 'unit-heading');
         const title = el('div', undefined, 'unit-title');
         title.append(el('h3', unit.name));
+        const assigned = available.filter(member => M.unitKey(member.values[branch()]?.[M.unitField(branch())]) === M.unitKey(unit.name));
+        const count = el('output', assigned.length + (assigned.length === 1 ? ' ragazzo' : ' ragazzi'), 'unit-member-count');
+        count.setAttribute('aria-label', `${unit.name}: ${assigned.length} ${assigned.length === 1 ? 'ragazzo assegnato' : 'ragazzi assegnati'}`);
         if (!lc) {
           const identity = M.patrolIdentity(unit.name);
           const colors = el('span', undefined, 'unit-colors');
@@ -280,6 +283,7 @@
           }
           title.append(colors);
         }
+        title.append(count);
         heading.append(symbol(unit), title);
         const hide = el('button', '×', 'unit-hide');
         hide.type = 'button'; hide.onclick = () => {
@@ -290,7 +294,6 @@
         hide.title = 'Nascondi ' + unit.name;
         heading.append(hide);
         card.append(heading);
-        const assigned = available.filter(member => M.unitKey(member.values[branch()]?.[M.unitField(branch())]) === M.unitKey(unit.name));
         for (const [index, role] of roles.entries()) {
           const lane = el('section', undefined, 'unit-role-lane');
           lane.classList.add(['unit-chief', 'unit-deputy', 'unit-regular', 'unit-newcomer'][index]);
@@ -327,7 +330,7 @@
       }));
       if (!visibleUnits().length) $('units-board').append(el('p', lc ? 'Aggiungi la prima sestiglia.' : 'Aggiungi la prima squadriglia.'));
       const hidden = data.units.filter(unit => unit.branch === branch() && unit.hidden);
-      $('units-hidden').querySelector('summary').textContent = 'Gruppi nascosti · ' + hidden.length;
+      $('units-hidden').querySelector('summary').textContent = (lc ? 'Sestiglie nascoste' : 'Squadriglie nascoste') + ' · ' + hidden.length;
       $('units-hidden-list').replaceChildren(...hidden.map(unit => {
         const row = el('div', undefined, 'unit-hidden-row');
         const restore = el('button', 'Ripristina ' + unit.name, 'button button-secondary');

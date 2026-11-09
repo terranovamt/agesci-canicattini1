@@ -334,3 +334,65 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
   html { scroll-behavior: auto }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important }
 }
+
+/* Dashboard only: keep the shared reserved and public layouts unchanged. */
+body.reserved-page.dashboard-page > #reserved-content { width: min(calc(100% - 32px), 1120px); margin: 24px auto }
+body.reserved-page.dashboard-page > #reserved-content:has(#login:not([hidden])) { max-width: 580px }
+.dashboard-page .dashboard-intro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; max-width: none; margin-bottom: 20px }
+body.dashboard-page .dashboard-intro h1 { font-size: clamp(28px, 4vw, 38px) }
+.dashboard-page .dashboard-intro .text-button { min-height: 44px }
+.dashboard-page #login { padding: clamp(18px, 3vw, 24px) }
+.dashboard-page #legacy-login-hint { margin: 0 }
+.dashboard-page .accesso { margin-bottom: 0 }
+.dashboard-page .dashboard-login-status, .dashboard-page #accesso-stato { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--v); border-radius: var(--radius-sm); background: var(--bg); color: var(--v); font-size: 14px; overflow-wrap: anywhere }
+.dashboard-page .dashboard-login-status:empty { display: none }
+.dashboard-page .dashboard-login-status[data-state="error"], .dashboard-page #accesso-stato[data-state="error"] { border-color: var(--r-strong); color: var(--r-strong) }
+.dashboard-page .group-census-overview { padding: 18px; margin-bottom: 16px }
+.dashboard-page .group-census-overview h2 { font-size: 22px }
+.dashboard-page .group-census-status { margin: 8px 0; font-size: 12px }
+.dashboard-page .group-census-counts { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 12px }
+.dashboard-page .group-census-counts > div { padding: 10px }
+.dashboard-page .group-census-counts .group-census-total { grid-column: auto }
+.dashboard-page .group-census-counts dt { font-size: 12px }
+.dashboard-page .group-census-counts dd { margin-top: 2px; font-size: 24px }
+.dashboard-page .dashboard-secondary { padding: 0 18px; margin: 0 0 16px; border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w) }
+.dashboard-page .dashboard-secondary > summary { min-height: 48px; padding: 10px 0; cursor: pointer; color: var(--v); font-weight: 700 }
+.dashboard-page .dashboard-secondary .metrics-heading a { display: inline-flex; align-items: center; min-height: 44px }
+.dashboard-page .metrics-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px }
+.dashboard-page .metrics-overview dd { font-size: 22px }
+.dashboard-page .dashboard-work-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; margin-top: 0; gap: 16px }
+.dashboard-page .dashboard-tool h3 { margin-top: 0 }
+.dashboard-page .dashboard-tool { padding: clamp(18px, 2.4vw, 28px) }
+.dashboard-page .dashboard-tool-coming { padding: 18px; box-shadow: none }
+.dashboard-page .dashboard-coming-label { margin-top: 8px !important; font-size: 11px !important }
+.dashboard-page .dashboard-tool-coming > p:last-child { flex: none; margin: 8px 0 0 }
+.dashboard-page .dashboard-workflow { margin-top: 0; padding: clamp(18px, 3vw, 28px) }
+.dashboard-page .dashboard-publication-notice { margin: 8px 0 20px; padding: 12px 16px; border-left: 3px solid var(--v); background: var(--bg); color: var(--v2); font-size: 14px }
+.dashboard-page .dashboard-assembly-steps { padding: 0; margin: 0; list-style: none; gap: 16px }
+.dashboard-page .dashboard-assembly-steps > li { padding: 18px; border: 1px solid var(--vl); box-shadow: none }
+.dashboard-page .dashboard-assembly-steps h3 { margin-top: 12px }
+.dashboard-page :is(a[href], button, summary):focus-visible { outline: 3px solid var(--v); outline-offset: 3px }
+.dashboard-page .assembly-overview :is(a[href], button):focus-visible { outline-color: var(--y) }
+@media (min-width: 601px) and (max-width: 1000px) {
+  .dashboard-page .dashboard-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px }
+  .dashboard-page .dashboard-work-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .dashboard-page .dashboard-assembly-steps { grid-template-columns: 1fr; gap: 12px }
+  .dashboard-page .dashboard-assembly-steps > li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 16px; align-items: start }
+  .dashboard-page .dashboard-assembly-steps .tool-number { grid-column: 1; grid-row: 1 / 3 }
+  .dashboard-page .dashboard-assembly-steps h3 { grid-column: 2; margin: 0 }
+  .dashboard-page .dashboard-assembly-steps p { grid-column: 2; margin: 0 }
+  .dashboard-page .dashboard-assembly-steps .button { grid-column: 3; grid-row: 1 / 3; align-self: center; max-width: 180px }
+  .dashboard-page .assembly-overview, .dashboard-page .library-overview { padding: 20px }
+  .dashboard-page .assembly-overview h3 { font-size: 25px }
+}
+@media (max-width: 600px) {
+  body.reserved-page.dashboard-page > #reserved-content { margin: 16px auto }
+  .dashboard-page .dashboard-overview { gap: 16px }
+  .dashboard-page .dashboard-work-tools { grid-template-columns: 1fr }
+  .dashboard-page .dashboard-assembly-steps { gap: 12px }
+  .dashboard-page .group-census-counts { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+  .dashboard-page .group-census-counts > div { padding: 8px }
+  .dashboard-page .group-census-counts .group-census-total { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px }
+  .dashboard-page .group-census-counts .group-census-total dd { margin: 0 }
+  .dashboard-page .metrics-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+}

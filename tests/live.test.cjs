@@ -72,7 +72,12 @@ function viewer(isMobile, read, visitorId) {
       style: {},
       append() {},
       addEventListener() {},
-      setAttribute() {},
+      setAttribute(name, value) {
+        this[name] = value;
+      },
+      removeAttribute(name) {
+        delete this[name];
+      },
       contains: (target) => Object.values(elements).includes(target),
       querySelector: (selector) => (elements[selector] ||= element()),
     };
@@ -156,6 +161,28 @@ test("healthy SSE uses no initial or periodic REST reads, fallback stops on reco
   poll();
   assert.equal(v.reads.length, 2);
   assert.equal(v.context.sk, 2);
+});
+
+test("public controls explain review, reconnection, automatic updates, and returning live", async () => {
+  const v = viewer(false);
+  v.context.go(1, 0);
+  const status = v.elements["#lv-status"];
+  const liveButton = v.elements["#lv-l"];
+  assert.match(status.textContent, /Stai rivedendo/);
+  assert.equal(liveButton["aria-hidden"], "false");
+  assert.equal(liveButton.tabIndex, 0);
+
+  v.streams.error();
+  assert.match(status.textContent, /Connessione interrotta/);
+  await flush();
+  assert.match(status.textContent, /Aggiornamento automatico/);
+
+  v.streams.open();
+  assert.match(status.textContent, /Stai rivedendo/);
+  v.context.go(2, 0);
+  assert.match(status.textContent, /sei alla diretta/);
+  assert.equal(liveButton["aria-hidden"], "true");
+  assert.equal(liveButton.tabIndex, -1);
 });
 
 test("pending fallback cannot overwrite a newer SSE state and reads never overlap", async () => {

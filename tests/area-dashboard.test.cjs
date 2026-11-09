@@ -2,7 +2,6 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const os = require("node:os");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
 const { renderHtml } = require("../tools/site-layout.cjs");
@@ -127,18 +126,163 @@ test("dashboard separates tools, summary and workflow into named sections", () =
   assert.match(html, /data-section-target="dashboard-assembly-panel">Assemblea di gruppo/);
   assert.match(html, /data-section-target="dashboard-summary-panel"/);
   assert.match(html, /id="activities-coming-title">Attività e campi/);
-  assert.match(html, /In arrivo · da progettare/);
+  assert.match(html, /Non operativo · da progettare/);
   assert.doesNotMatch(html.slice(html.indexOf('id="activities-coming-title"'), html.indexOf("</article>", html.indexOf('id="activities-coming-title"'))), /<a\b|<button\b/);
-  assert.match(html, /<strong>Pubblica<\/strong><span>Pubblica le modifiche/);
+  assert.match(html, /class="dashboard-publication-notice"/);
+  assert.doesNotMatch(html, /Benvenuto|Il gruppo, a colpo|Dal lavoro alla presentazione/);
+  assert.match(html, /<details id="dashboard-metrics"[^>]*hidden>/);
+  assert.match(html, /non indica lo stato della diretta/);
+  assert.match(html, /<form id="nas-login-form"[\s\S]*id="accesso-stato"[\s\S]*?<\/form>/);
+  assert.match(html, /<form id="login-form"[\s\S]*id="legacy-accesso-stato"[\s\S]*?<\/form>/);
+  assert.ok(html.indexOf('data-section-target="dashboard-work-panel"') <
+    html.indexOf('data-section-target="dashboard-summary-panel"'));
+  assert.ok(html.indexOf('data-section-target="dashboard-summary-panel"') <
+    html.indexOf('data-section-target="dashboard-assembly-panel"'));
   assert.doesNotMatch(html, /Salva sul NAS/);
   const assembly = html.slice(html.indexOf('<section class="dashboard-workflow"'), html.indexOf('</main>'));
   assert.equal((assembly.match(/class="tool-number"/g) || []).length, 3);
+  assert.equal((assembly.match(/<ol\b/g) || []).length, 1);
+  assert.match(assembly, /<h3>Setup<\/h3>[\s\S]*<h3>Documenti<\/h3>[\s\S]*<h3>Regia<\/h3>/);
 });
 
-test("member and access actions fit and stay separated on the dashboard", { skip: !chrome }, () => {
+function loginHarness({ nas = true, firstAccess = false, admin = false, serviceBranch = "LC" } = {}) {
+  const elements = new Map();
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, {
+      id, hidden: false, value: "", type: "password", disabled: false, dataset: {}, attributes: {},
+      setAttribute(name, value) {
+        this.attributes[name] = value;
+        if (name === "data-state") this.dataset.state = value;
+      },
+      removeAttribute(name) { delete this.attributes[name]; },
+      focus() { this.focused = true; },
+      querySelector() { return get(id + "-submit"); },
+      insertBefore(child) { child.parent = this; },
+    });
+    return elements.get(id);
+  };
+  get("accesso-stato").parent = get("nas-login-form");
+  get("legacy-accesso-stato").parent = get("login-form");
+  get("esci").hidden = get("riservata").hidden = true;
+  const calls = [];
+  let releaseStatus, releaseLogin, loadCount = 0;
+  const access = {
+    verificata: () => false,
+    chiave: () => "",
+    request(route, method, data) {
+      calls.push({ route, method, data });
+      return new Promise(resolve => { releaseStatus = () => resolve({ firstAccess }); });
+    },
+    entra(...args) {
+      calls.push({ args });
+      return new Promise((resolve, reject) => {
+        releaseLogin = error => error ? reject(new Error(error)) : resolve();
+      });
+    },
+    esci: async () => { throw new Error("Server non raggiungibile"); },
+  };
+  const window = {
+    ACCESSO: access,
+    AREA_DASHBOARD: { load() { loadCount++; } },
+    ...(nas ? { NAS: { user: { admin, serviceBranch } } } : {}),
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-riservata.js"), "utf8"), {
+    window, document: { getElementById: get }, location: { replace() {} },
+  });
+  return { get, calls, status: () => releaseStatus(), login: error => releaseLogin(error), loads: () => loadCount };
+}
+
+for (const firstAccess of [false, true]) {
+  test(`NAS login keeps local feedback, password visibility and ${firstAccess ? "first access" : "password"} flow`, async () => {
+    const app = loginHarness({ firstAccess });
+    const get = app.get, form = get("nas-login-form"), status = get("accesso-stato");
+    assert.equal(status.parent, form);
+    get("census-code").value = "1234567";
+    const check = form.onsubmit({ preventDefault() {} });
+    assert.equal(status.dataset.state, "pending");
+    assert.equal(form.attributes["aria-busy"], "true");
+    assert.equal(get("census-code").disabled, true);
+    app.status();
+    await check;
+    assert.equal(status.dataset.state, "info");
+    assert.equal(form.attributes["aria-busy"], "false");
+    assert.equal(get("password-fields").hidden, false);
+    assert.equal(get("confirmation-field").hidden, !firstAccess);
+    assert.equal(get("nas-confirmation").required, firstAccess);
+    assert.equal(get("nas-password").autocomplete, firstAccess ? "new-password" : "current-password");
+    assert.equal(get("nas-password").focused, true);
+    get("nas-password").value = "Password1!";
+    get("nas-confirmation").value = "Password1!";
+    get("toggle-nas-password").onclick();
+    assert.equal(get("nas-password").type, "text");
+    const failure = form.onsubmit({ preventDefault() {} });
+    assert.match(status.textContent, /Accesso in corso/);
+    app.login("Credenziali non valide");
+    await failure;
+    assert.equal(status.dataset.state, "error");
+    assert.match(status.textContent, /Accesso non riuscito: Credenziali non valide/);
+    assert.equal(get("nas-password").value, "");
+    assert.equal(get("nas-password").type, "password");
+    assert.equal(get("nas-login-form-submit").disabled, false);
+    get("nas-password").value = get("nas-confirmation").value = "Password1!";
+    const success = form.onsubmit({ preventDefault() {} });
+    app.login();
+    await success;
+    const args = app.calls.at(-1).args;
+    assert.equal(args[1], "1234567");
+    assert.equal(args[2], firstAccess ? "Password1!" : undefined);
+    assert.equal(get("login").hidden, true);
+    assert.equal(get("riservata").hidden, false);
+    assert.equal(get("esci").hidden, false);
+    assert.equal(get("people-tool").hidden, false);
+    assert.equal(get("people-access-tool").hidden, true);
+    assert.equal(app.loads(), 1);
+    await get("esci").onclick();
+    assert.match(get("dashboard-session-status").textContent, /Uscita non riuscita/);
+    assert.equal(status.textContent, "");
+  });
+}
+
+test("changing census code clears password flow and feedback", async () => {
+  const app = loginHarness({ firstAccess: true });
+  const get = app.get;
+  get("census-code").value = "1234567";
+  const pending = get("nas-login-form").onsubmit({ preventDefault() {} });
+  app.status();
+  await pending;
+  get("nas-password").value = get("nas-confirmation").value = "Password1!";
+  get("census-code").oninput();
+  assert.equal(get("accesso-stato").textContent, "");
+  assert.equal(get("password-fields").hidden, true);
+  assert.equal(get("nas-password").disabled, true);
+  assert.equal(get("nas-confirmation").disabled, true);
+  assert.equal(get("nas-password").value, "");
+});
+
+test("legacy login distinguishes pending and error within its own form", async () => {
+  const app = loginHarness({ nas: false });
+  const get = app.get, form = get("login-form"), status = get("legacy-accesso-stato");
+  get("chiave").value = " key ";
+  form.onsubmit({ preventDefault() {} });
+  assert.equal(status.parent, form);
+  assert.equal(status.dataset.state, "pending");
+  app.login("Chiave errata");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(status.dataset.state, "error");
+  assert.equal(get("login").hidden, false);
+  form.onsubmit({ preventDefault() {} });
+  app.login();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get("riservata").hidden, false);
+  assert.equal(status.textContent, "");
+  assert.equal(app.loads(), 1);
+});
+
+test("dashboard login and all panels adapt across six device layouts", { skip: !chrome }, t => {
   const root = path.join(__dirname, "..");
   const read = file => fs.readFileSync(path.join(root, file), "utf8");
-  const css = ["assets/css/theme.css", "assets/css/home.css", "assets/css/nas.css"].map(read).join("\n");
+  const css = ["assets/css/theme.css", "assets/css/home.css", "assets/css/nas-metrics.css",
+    "assets/css/nas.css", "assets/css/section-nav.css"].map(read).join("\n");
   const page = renderHtml(read("area-riservata/index.html"), "area-riservata/index.html")
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, "")
@@ -146,8 +290,16 @@ test("member and access actions fit and stay separated on the dashboard", { skip
     .replace("</body>", `<script>
       document.getElementById("riservata").hidden = false;
       document.getElementById("people-tool").hidden = false;
-      const actions = [...document.querySelectorAll(".people-tool-actions .button")];
-      const boxes = actions.map(action => action.getBoundingClientRect());
+      document.getElementById("esci").hidden = false;
+      document.querySelector("[data-section-nav]").hidden = false;
+      document.getElementById("dashboard-metrics").hidden = false;
+      document.getElementById("dashboard-metrics").open = true;
+      document.getElementById("accesso-stato").textContent = "Accesso non riuscito: verifica le credenziali e riprova.";
+      const feedback = document.getElementById("accesso-stato");
+      feedback.dataset.state = "pending";
+      const pendingColor = getComputedStyle(feedback).color;
+      feedback.dataset.state = "error";
+      const errorColor = getComputedStyle(feedback).color;
       const overview = document.getElementById("dashboard-group-overview");
       overview.hidden = false;
       const counts = document.getElementById("dashboard-group-counts");
@@ -160,28 +312,102 @@ test("member and access actions fit and stay separated on the dashboard", { skip
         item.className = className; term.textContent = label; value.textContent = String(count);
         item.append(term, value); counts.append(item);
       }
-      const countRects = [...counts.children].map(item => item.getBoundingClientRect());
-      const activity = document.querySelector(".dashboard-tool-coming");
-      const activityRect = activity.getBoundingClientRect();
+      document.getElementById("dashboard-assembly-title").textContent = "Assemblea del gruppo Canicattini 1";
+      document.getElementById("dashboard-assembly-details").textContent =
+        "Esercizio 2026 · Anno scout 2026/2027 · 9 novembre · Convocazioni: 18:00 / 19:00 · 12 slide visibili";
+      for (let i = 0; i < 3; i++) {
+        const li = document.createElement("li"), link = document.createElement("a");
+        link.textContent = "Documento preparatorio del gruppo " + (i + 1);
+        link.href = "../documents/pdf/documento-" + i + ".pdf";
+        li.append(link); document.getElementById("dashboard-document-links").append(li);
+      }
+      ${read("assets/js/shared/section-nav.js")}
+      const visible = control => control.getClientRects().length && !control.disabled;
+      const measure = name => {
+        const controls = [...document.querySelectorAll("a[href], button, summary, input")].filter(visible);
+        const navButton = document.querySelector("[data-section-target]");
+        navButton.focus();
+        return {
+          name,
+          availableWidth: document.documentElement.clientWidth,
+          fits: document.documentElement.scrollWidth <= innerWidth,
+          touchFits: controls.every(control => {
+            const box = control.getBoundingClientRect();
+            return box.height >= 44 && box.width >= 44 && box.left >= 0 && box.right <= innerWidth;
+          }),
+          noClipping: controls.every(control => control.scrollWidth <= control.clientWidth + 1),
+          keyboardFocus: navButton.matches(":focus-visible") &&
+            parseFloat(getComputedStyle(navButton).outlineWidth) >= 3,
+          contentWidth: Math.round(document.getElementById("reserved-content").getBoundingClientRect().width),
+        };
+      };
+      const panels = [];
+      document.getElementById("login").hidden = true;
+      for (const [name, id] of [
+        ["tools", "dashboard-work-panel"], ["summary", "dashboard-summary-panel"], ["assembly", "dashboard-assembly-panel"],
+      ]) {
+        document.querySelector('[data-section-target="' + id + '"]').click();
+        const measured = measure(name);
+        measured.onlySelected = [...document.querySelectorAll("[data-section-panel]")].every(panel =>
+          panel.hidden === (panel.id !== id));
+        if (name === "tools") {
+          const actions = [...document.querySelectorAll(".people-tool-actions .button")];
+          const boxes = actions.map(action => action.getBoundingClientRect());
+          const activity = document.querySelector(".dashboard-tool-coming");
+          const activityRect = activity.getBoundingClientRect();
+          measured.separated = boxes[0].right + 10 <= boxes[1].left || boxes[0].bottom + 10 <= boxes[1].top;
+          measured.activityCompact = activityRect.height < 210 && activity.textContent.includes("Non operativo") &&
+            activity.querySelectorAll("a,button").length === 0;
+          measured.links = actions.map(action => action.getAttribute("href"));
+          measured.toolColumns = getComputedStyle(document.querySelector(".dashboard-work-tools")).gridTemplateColumns.split(" ").length;
+        }
+        if (name === "summary") {
+          const rects = [...counts.children].map(item => item.getBoundingClientRect());
+          measured.censusFits = rects.length === 5 && rects.every(box => box.width >= 44 && box.right <= innerWidth);
+          measured.branchesOneRow = rects.slice(1).every(box => box.top === rects[1].top);
+          measured.overviewColumns = getComputedStyle(document.querySelector(".dashboard-overview")).gridTemplateColumns.split(" ").length;
+        }
+        if (name === "assembly") {
+          measured.stepColumns = getComputedStyle(document.querySelector(".dashboard-assembly-steps")).gridTemplateColumns.split(" ").length;
+          measured.stepHeights = [...document.querySelectorAll(".dashboard-assembly-steps > li")].map(li =>
+            Math.round(li.getBoundingClientRect().height));
+        }
+        panels.push(measured);
+      }
+      document.getElementById("riservata").hidden = true;
+      document.getElementById("esci").hidden = true;
+      document.getElementById("login").hidden = false;
+      document.getElementById("login-form").hidden = true;
+      document.getElementById("nas-login-form").hidden = false;
+      const login = [];
+      for (const [name, password, confirmation] of [
+        ["code", false, false], ["password", true, false], ["firstAccess", true, true],
+      ]) {
+        document.getElementById("password-fields").hidden = !password;
+        document.getElementById("confirmation-field").hidden = !confirmation;
+        for (const id of ["nas-password", "toggle-nas-password"]) document.getElementById(id).disabled = !password;
+        for (const id of ["nas-confirmation", "toggle-nas-confirmation"]) document.getElementById(id).disabled = !confirmation;
+        const measured = measure(name);
+        delete measured.keyboardFocus;
+        measured.cardWidth = Math.round(document.getElementById("login").getBoundingClientRect().width);
+        login.push(measured);
+      }
       const result = document.createElement("pre");
       result.id = "layout-result";
       result.textContent = JSON.stringify({
         width: innerWidth,
-        fits: document.documentElement.scrollWidth <= innerWidth,
-        controlsFit: boxes.every(box => box.width >= 44 && box.height >= 44 && box.left >= 0 && box.right <= innerWidth),
-        separated: boxes[0].right + 10 <= boxes[1].left || boxes[0].bottom + 10 <= boxes[1].top,
-        censusFits: countRects.length === 5 && countRects.every(box => box.width >= 44 && box.left >= 0 && box.right <= innerWidth),
-        activityFits: activityRect.width >= 44 && activityRect.left >= 0 && activityRect.right <= innerWidth &&
-          activity.textContent.includes("In arrivo") && activity.querySelectorAll("a,button").length === 0,
-        links: actions.map(action => action.getAttribute("href")),
+        height: innerHeight,
+        feedbackDistinct: pendingColor !== errorColor,
+        panels, login,
       });
       document.body.append(result);
     </script></body>`);
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "dashboard-layout-"));
+  const directory = path.join(root, ".dashboard-layout-" + process.pid);
+  fs.mkdirSync(directory);
   try {
     const file = path.join(directory, "fixture.html");
-    for (const width of [375, 768, 1024, 1440]) {
-      fs.writeFileSync(file, `<!doctype html><body><iframe style="border:0;width:${width}px;height:1000px"></iframe><script>
+    for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390]]) {
+      fs.writeFileSync(file, `<!doctype html><body><iframe style="border:0;width:${width}px;height:${height}px"></iframe><script>
         const frame = document.querySelector("iframe");
         frame.onload = () => {
           const result = frame.contentDocument.getElementById("layout-result");
@@ -191,19 +417,40 @@ test("member and access actions fit and stay separated on the dashboard", { skip
       </script>`);
       const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
         "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, "profile-" + width),
-        "--window-size=" + width + ",1000", "--virtual-time-budget=3000", "--dump-dom", "file://" + file],
-      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024 });
+        "--window-size=" + width + "," + height, "--virtual-time-budget=1000", "--dump-dom", "file://" + file],
+      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024,
+        cwd: directory, env: { ...process.env, TMPDIR: "." } });
       assert.equal(browser.status, 0, browser.stderr);
       const result = browser.stdout.match(/<pre id="layout-result">([^<]+)<\/pre>/)?.[1];
       assert.ok(result, browser.stdout.slice(-2000));
       const measured = JSON.parse(result);
       assert.equal(measured.width, width);
-      assert.equal(measured.fits, true, "dashboard fits at " + width);
-      assert.equal(measured.controlsFit, true, "buttons fit at " + width);
-      assert.equal(measured.separated, true, "buttons are separated at " + width);
-      assert.equal(measured.censusFits, true, "census summary fits at " + width);
-      assert.equal(measured.activityFits, true, "activity placeholder is compact and noninteractive at " + width);
-      assert.deepEqual(measured.links, ["soci.html", "persone.html"]);
+      assert.equal(measured.height, height);
+      assert.equal(measured.feedbackDistinct, true, "pending feedback is not styled as an error");
+      for (const state of [...measured.panels, ...measured.login]) {
+        const label = width + "x" + height + " " + state.name;
+        assert.equal(state.fits, true, "page fits: " + label);
+        assert.equal(state.touchFits, true, "all controls fit and are at least 44px: " + label);
+        assert.equal(state.noClipping, true, "no clipped controls: " + label);
+      }
+      for (const panel of measured.panels) {
+        assert.equal(panel.onlySelected, true);
+        assert.equal(panel.keyboardFocus, true);
+        assert.equal(panel.contentWidth, Math.min(panel.availableWidth - 32, 1120));
+      }
+      const [tools, summary, assembly] = measured.panels;
+      assert.equal(tools.separated, true);
+      assert.equal(tools.activityCompact, true);
+      assert.deepEqual(tools.links, ["soci.html", "persone.html"]);
+      assert.equal(tools.toolColumns, width > 600 ? 2 : 1);
+      assert.equal(summary.censusFits, true);
+      assert.equal(summary.branchesOneRow, true);
+      assert.equal(summary.overviewColumns, width > 600 ? 2 : 1);
+      assert.equal(assembly.stepColumns, width > 1000 ? 3 : 1);
+      for (const login of measured.login) assert.equal(login.cardWidth, Math.min(login.availableWidth - 32, 580));
+      t.diagnostic(`${width}x${height}: dashboard ${tools.contentWidth}px; login ${measured.login[0].cardWidth}px; ` +
+        `columns tools/summary/assembly ${tools.toolColumns}/${summary.overviewColumns}/${assembly.stepColumns}; ` +
+        `step heights ${assembly.stepHeights.join("/")}px`);
     }
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });

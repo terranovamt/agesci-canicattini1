@@ -1,5 +1,11 @@
 (function () {
   const A = window.ACCESSO;
+  const feedback = document.getElementById(window.NAS ? 'accesso-stato' : 'legacy-accesso-stato');
+  function loginFeedback(form, state, message) {
+    feedback.setAttribute('data-state', state);
+    form.setAttribute('aria-busy', String(state === 'pending'));
+    feedback.textContent = message;
+  }
   if (window.NAS) {
     const form = document.getElementById('nas-login-form');
     const code = document.getElementById('census-code');
@@ -9,7 +15,6 @@
     const toggleConfirmation = document.getElementById('toggle-nas-confirmation');
     const fields = document.getElementById('password-fields');
     const repeat = document.getElementById('confirmation-field');
-    const status = document.getElementById('accesso-stato');
     const button = form.querySelector('button[type="submit"]');
     let checkedCode = '';
     function visibilityLabel(input, visible) {
@@ -47,16 +52,17 @@
       password.value = confirmation.value = '';
       document.getElementById('login').hidden = true;
       document.getElementById('riservata').hidden = false;
+      document.getElementById('esci').hidden = false;
       document.getElementById('people-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
       document.getElementById('people-access-tool').hidden = !window.NAS.user.admin;
-      status.textContent = '';
+      loginFeedback(form, '', '');
       window.AREA_DASHBOARD.load();
     }
-    code.oninput = () => { resetFields(); status.textContent = '' };
+    code.oninput = () => { resetFields(); loginFeedback(form, '', '') };
     form.onsubmit = async e => {
       e.preventDefault();
       button.disabled = code.disabled = true;
-      status.textContent = 'Verifica in corso...';
+      loginFeedback(form, 'pending', checkedCode ? 'Accesso in corso…' : 'Verifica del codice in corso…');
       try {
         if (!checkedCode) {
           const result = await A.request('auth/status', 'POST', { code: code.value });
@@ -75,7 +81,7 @@
           password.title = result.firstAccess ? 'Almeno 8 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale, come @' : '';
           password.autocomplete = result.firstAccess ? 'new-password' : 'current-password';
           button.textContent = result.firstAccess ? 'Imposta password e accedi' : 'Accedi';
-          status.textContent = '';
+          loginFeedback(form, 'info', result.firstAccess ? 'Primo accesso: scegli e conferma la password.' : 'Codice verificato. Inserisci la password.');
           password.focus();
         } else {
           await A.entra(password.value, checkedCode, confirmation.disabled ? undefined : confirmation.value);
@@ -85,7 +91,7 @@
           showTools();
         }
       } catch (error) {
-        status.textContent = error.message;
+        loginFeedback(form, 'error', 'Accesso non riuscito: ' + error.message);
         password.value = confirmation.value = '';
         conceal(password, togglePassword);
         conceal(confirmation, toggleConfirmation);
@@ -93,29 +99,33 @@
     };
     document.getElementById('esci').onclick = async () => {
       try { await A.esci(); location.replace('../') }
-      catch (error) { status.textContent = error.message }
+      catch (error) {
+        const sessionStatus = document.getElementById('dashboard-session-status');
+        sessionStatus.dataset.state = 'error';
+        sessionStatus.textContent = 'Uscita non riuscita: ' + error.message;
+      }
     };
     if (A.verificata()) showTools();
     return;
   }
   const form = document.getElementById('login-form');
   const input = document.getElementById('chiave');
-  const stato = document.getElementById('accesso-stato');
   function mostraStrumenti() {
     input.value = '';
     document.getElementById('login').hidden = true;
     document.getElementById('riservata').hidden = false;
-    stato.textContent = '';
+    document.getElementById('esci').hidden = false;
+    loginFeedback(form, '', '');
     window.AREA_DASHBOARD.load();
   }
   async function login(key) {
     form.querySelector('button').disabled = true;
-    stato.textContent = 'Verifica della chiave...';
+    loginFeedback(form, 'pending', 'Verifica della chiave in corso…');
     try {
       await A.entra(key);
       mostraStrumenti();
     } catch (e) {
-      stato.textContent = e.message;
+      loginFeedback(form, 'error', 'Accesso non riuscito: ' + e.message);
       document.getElementById('login').hidden = false;
       document.getElementById('riservata').hidden = true;
     } finally { form.querySelector('button').disabled = false }

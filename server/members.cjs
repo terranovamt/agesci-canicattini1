@@ -214,8 +214,7 @@ function createMembers(db, people) {
       .run(member.id, branch, JSON.stringify(validated));
   };
   const snapshot = () => ({
-    members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id))
-      .filter(member => !M.pendingCoca(member.profile)),
+    members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id)),
     fields: fields(), templates: templates(),
     group: JSON.parse(db.prepare("SELECT data FROM member_group WHERE id=1").get()?.data || "{}"),
     units: units.all(), lc: units.configuration(),
@@ -269,7 +268,7 @@ function createMembers(db, people) {
         result.currentYear = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
           JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
         if (!current.admin) {
-          result.members = result.members.filter(member => member.branch === current.serviceBranch)
+          result.members = result.members.filter(member => member.branch === current.serviceBranch && !M.pendingCoca(member.profile))
             .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} },
               assignmentHistory: member.assignmentHistory.filter(item => item.branch === member.branch) }));
           result.fields = result.fields.filter(field => field.branch === current.serviceBranch);

@@ -20,29 +20,28 @@
 
     <main id="app" hidden>
       <nav class="tabs" aria-label="Sezioni del setup">
-        <p class="nav-label">Preparazione assemblea</p>
-        <button data-tab="generale" class="on" aria-pressed="true">Generale<small>Data, luogo e orari</small></button>
-        <button data-tab="ordine" aria-pressed="false">Slide<small>Contenuti e sequenza</small></button>
-        <button data-tab="bilancio" aria-pressed="false">Bilancio<small>Rendiconto e patrimonio</small></button>
-        <button data-tab="json" aria-pressed="false">JSON<small>Editor avanzato dei dati</small></button>
-        <span class="sep"></span>
-        <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
-        <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
-        <div class="year-launch">
-          <p>Un nuovo ciclo per il gruppo</p>
-          <button id="nuovo-anno" type="button" disabled>
-            Setup nuovo anno<small>Compila, controlla e conferma</small>
-          </button>
+        <div class="primary-tabs">
+          <button data-tab="generale" class="on" aria-pressed="true">Generale</button>
+          <button data-tab="ordine" aria-pressed="false">Slide</button>
+          <button data-tab="bilancio" aria-pressed="false">Bilancio</button>
         </div>
-        <span class="links"
+        <details id="setup-tools" class="setup-tools">
+          <summary>Strumenti <small>JSON · Guida · Limiti · Nuovo anno</small></summary>
+          <div class="tools-actions">
+            <button data-tab="json" aria-pressed="false">JSON</button>
+            <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
+            <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
+            <button id="nuovo-anno" type="button" disabled>Setup nuovo anno</button>
+          </div>
+          <span class="links"
           ><a id="apri-regia" target="assemblea-regia">Apri regia ↗</a
           ><a href="./" target="assemblea-pubblico">Vista pubblico ↗</a
           ><a href="../documenti.html">Gestisci PDF →</a></span
-        >
+          >
+        </details>
       </nav>
       <section class="workspace" aria-labelledby="workspace-title">
         <div class="workspace-heading">
-          <p class="workspace-eyebrow">Area di lavoro</p>
           <h2 id="workspace-title">Informazioni generali</h2>
           <p id="intro" class="intro"></p>
         </div>
@@ -54,6 +53,16 @@
           </p>
         </details>
         <nav id="balance-nav" class="balance-nav" aria-label="Sezioni del bilancio" hidden>
+          <label for="balance-select">Sezione del bilancio</label>
+          <select id="balance-select">
+            <option value="entrate">Entrate</option>
+            <option value="uscite">Uscite</option>
+            <option value="soglie_percentuali_esito">Soglie percentuali</option>
+            <option value="storico_avanzo_per_anno">Storico avanzi</option>
+            <option value="censimenti">Censimenti</option>
+            <option value="patrimonio">Patrimonio</option>
+            <option value="altri">Altri dati</option>
+          </select>
           <button type="button" data-balance="entrate" aria-pressed="true">Entrate</button>
           <button type="button" data-balance="uscite" aria-pressed="false">Uscite</button>
           <button type="button" data-balance="soglie_percentuali_esito" aria-pressed="false">Soglie</button>
@@ -64,17 +73,25 @@
         </nav>
         <div id="campi"></div>
         <div id="json" hidden>
-          <textarea id="json-text" spellcheck="false"></textarea>
-          <div class="row"><button id="json-apply">Applica JSON</button><span id="json-err" class="err"></span></div>
+          <label for="json-text">Testo JSON</label>
+          <p id="json-state" class="hint" role="status">Il testo rispecchia la bozza.</p>
+          <textarea id="json-text" spellcheck="false" aria-describedby="json-state json-err"></textarea>
+          <div class="row">
+            <button id="json-apply">Applica alla bozza</button>
+            <button id="json-discard" class="sec" disabled>Scarta testo</button>
+          </div>
+          <p id="json-err" class="err" role="alert"></p>
         </div>
+        <a id="doc-link" href="guida.html#setup" target="_blank" rel="noopener" hidden>Apri la guida in una nuova scheda ↗</a>
         <iframe id="doc" title="Guida" hidden></iframe>
       </section>
     </main>
 
     <footer id="bar" hidden>
       <span id="dirty" role="status" aria-live="polite"></span>
-      <button id="annulla" class="sec" disabled>Annulla</button>
-      <button id="salva-gh" disabled>Salva su GitHub (dati.js)</button>
+      <button id="annulla" class="sec" disabled>Scarta modifiche</button>
+      <button id="salva-gh" aria-describedby="save-destination" disabled>Salva dati base</button>
+      <span id="save-destination" class="hint"></span>
       <details class="more">
         <summary title="Altro" aria-label="Altre azioni">⋯</summary>
         <div>
@@ -85,11 +102,13 @@
       </details>
     </footer>
 
-    <dialog id="slide-editor">
+    <dialog id="slide-editor" aria-labelledby="slide-editor-titolo">
       <h2 id="slide-editor-titolo">Modifica slide</h2>
       <div id="slide-editor-campi"></div>
-      <button id="slide-editor-chiudi" type="button">Fine modifica</button>
-      <p>Modifiche non ancora salvate.</p>
+      <div class="dialog-actions">
+        <p class="hint">Modifiche nella bozza, non ancora salvate.</p>
+        <button id="slide-editor-chiudi" type="button">Fine modifica</button>
+      </div>
     </dialog>
 
     <dialog id="gh">

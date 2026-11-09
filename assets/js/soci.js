@@ -130,6 +130,7 @@
   function updateSelection() {
     $('members-count').textContent = `${results().length} risultati · ${selected.size} selezionati`;
     $('open-macro').disabled = $('open-documents').disabled = !selected.size;
+    $('members-selection').hidden = !selected.size;
   }
   function render() {
     const visible = results(), rows = [];
@@ -169,7 +170,8 @@
       checkbox.type = 'checkbox'; checkbox.checked = selected.has(member.id);
       checkbox.setAttribute('aria-label', 'Seleziona ' + member.name);
       checkbox.onchange = () => { checkbox.checked ? selected.add(member.id) : selected.delete(member.id); updateSelection(); };
-      checkCell.append(checkbox);
+      const checkLabel = node('label', undefined, 'members-row-select');
+      checkLabel.append(checkbox); checkCell.append(checkLabel);
       const nameCell = node('td'), name = node('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
       nameCell.append(name, node('span', member.code, 'member-code'));
@@ -189,34 +191,30 @@
   }
   function renderQuickFilters() {
     const container = $('members-quick-filters');
-    const groups = [
-      ['Anno censimento', 'year', 'Ultimo disponibile', filters.elements.year],
-      ['Stato AGESCI', 'status', 'Tutti gli stati', filters.elements.status],
-    ];
-    container.replaceChildren(...groups.map(([label, key, allLabel, select]) => {
-      const group = node('section', undefined, 'members-quick-filter-group');
-      group.setAttribute('aria-label', label);
-      group.append(node('h3', label));
-      const buttons = node('div', undefined, 'members-quick-filter-options');
-      const values = [...select.options].filter(option => option.value);
-      const entries = [[ '', allLabel ], ...values.map(option => [option.value, option.textContent])];
-      entries.forEach(([value, text]) => {
-        const button = node('button', text, 'members-filter-chip');
-        button.type = 'button';
-        button.setAttribute('aria-pressed', String(select.value === value));
-        button.onclick = () => {
-          select.value = select.value === value && value ? '' : value;
-          render();
-          [...container.querySelectorAll(`[data-filter-key="${key}"]`)]
-            .find(item => item.dataset.filterValue === select.value)?.focus();
-        };
-        button.dataset.filterKey = key;
-        button.dataset.filterValue = value;
-        buttons.append(button);
-      });
-      group.append(buttons);
-      return group;
-    }));
+    container.replaceChildren();
+    for (const [key, label] of Object.entries({
+      search: 'Ricerca', branch: 'Branca', year: 'Anno censimento', status: 'Stato AGESCI',
+      showSuspended: 'Sospesi inclusi', minAge: 'Età minima', maxAge: 'Età massima',
+      birthYear: 'Anno di nascita', groupBirthYear: 'Raggruppati per nascita', quality: 'Verifica',
+      field: 'Campo educativo', value: 'Valore', missing: 'Campo educativo vuoto',
+    })) {
+      const control = filters.elements[key], checked = control.type === 'checkbox';
+      if (checked ? !control.checked : !control.value) continue;
+      const value = control.tagName === 'SELECT' ? control.selectedOptions[0].textContent : control.value;
+      const text = checked ? label : `${label}: ${value}`;
+      const button = node('button', text + ' ×', 'members-filter-chip');
+      button.type = 'button'; button.dataset.filterKey = key;
+      button.setAttribute('aria-label', 'Rimuovi filtro ' + text);
+      button.onclick = () => {
+        if (checked) control.checked = false;
+        else control.value = '';
+        if (key === 'field') { filters.elements.value.value = ''; filters.elements.missing.checked = false; }
+        render();
+        (container.querySelector('button') || filters.elements.search).focus();
+      };
+      container.append(button);
+    }
+    container.hidden = !container.children.length;
   }
   function renderTransfers() {
     $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
@@ -255,21 +253,25 @@
     render();
     unitBoard.update(data);
   }
-  async function run(action, errorTarget = $('members-status')) {
+  async function run(action, errorTarget = $('members-status'), successMessage = 'Operazione completata.') {
     if (busy) return;
     busy = true;
     $('members-app').inert = true;
     document.querySelectorAll('dialog button').forEach(button => { button.disabled = true; });
-    errorTarget.textContent = 'Operazione in corso...';
-    try { await action(); errorTarget.textContent = ''; $('members-status').textContent = 'Operazione completata.'; }
+    errorTarget.textContent = 'Operazione in corso...'; errorTarget.dataset.tone = 'progress';
+    try {
+      await action(); errorTarget.textContent = '';
+      $('members-status').textContent = successMessage;
+      $('members-status').dataset.tone = 'success';
+    }
     catch (error) {
-      errorTarget.textContent = error.message;
+      errorTarget.textContent = error.message; errorTarget.dataset.tone = 'error';
       if (!window.NAS.user) {
         data = null; selected.clear(); preview = null;
         $('members-app').hidden = true;
         $('members-list').replaceChildren(); $('members-print').replaceChildren();
         document.querySelectorAll('dialog').forEach(dialog => dialog.close());
-        $('members-status').textContent = error.message;
+        $('members-status').textContent = error.message; $('members-status').dataset.tone = 'error';
       }
     }
     finally {
@@ -307,7 +309,7 @@
       if (key === 'fullName') { control.required = true; field.classList.add('members-wide'); }
       if (key === 'taxCode') { control.maxLength = 16; control.pattern = '[A-Za-z0-9]{16}'; }
       if (key === 'phone') control.type = 'tel';
-      if (key === 'email') { control.inputMode = 'email'; field.classList.add('members-wide'); }
+      if (key === 'email') { control.type = 'email'; field.classList.add('members-wide'); }
       grid.append(field);
     }
     const remove = node('button', 'Rimuovi responsabile', 'button button-secondary');
@@ -346,7 +348,7 @@
       const history = node('details'), list = node('div');
       history.append(node('summary', 'Storico assegnazioni per anno'));
       for (const item of (editing?.assignmentHistory || []).filter(item => item.branch === educationBranch))
-        list.append(node('p', `${item.year} · ${item.unit || 'Senza gruppo'} · ${item.role || 'Nessun ruolo'}`));
+        list.append(node('p', `${item.year} · ${item.unit || (lc ? 'Senza sestiglia' : 'Senza squadriglia')} · ${item.role || 'Nessun ruolo'}`));
       if (!list.children.length) list.append(node('p', 'Nessuno storico registrato. Le assegnazioni precedenti all’attivazione dello storico non sono ricostruibili.'));
       history.append(list); card.append(history); assignment.append(card);
     }
@@ -371,7 +373,8 @@
     $('member-section-next').hidden = memberSection === memberSections.length - 1;
     $('member-save').hidden = false;
     if (focus) $('member-tab-' + memberSections[memberSection]).focus();
-    $('member-dialog').scrollTop = 0;
+    $('member-panel-' + memberSections[memberSection]).scrollTop = 0;
+    if (focus) $('member-tab-' + memberSections[memberSection]).scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function openMember(member) {
     editing = member;
@@ -394,6 +397,7 @@
     ]) {
       target.replaceChildren(...keys.map(key => {
         const definition = key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
+          : key === 'email' ? { type: 'email' } : key === 'phone' ? { type: 'tel' }
           : key === 'sex' ? { type: 'select', options: ['M', 'F'] }
           : key === 'digital' ? { type: 'select', options: ['True', 'False'] }
           : {};
@@ -499,11 +503,11 @@
       $('import-dialog').close(); await load();
     }, $('import-error'));
   };
-  function macroInputs() {
+  function macroInputs(resetBranch = false) {
     const f = macroForm.elements, fieldAction = f.action.value === 'field';
     if (!fieldAction) options(f.branch, [[M.nextBranch(chosen()[0]?.branch), M.nextBranch(chosen()[0]?.branch) || 'Nessuna branca successiva']]);
     else {
-      const branch = chosen()[0]?.branch;
+      const branch = resetBranch ? chosen()[0]?.branch : f.branch.value;
       branchOptions(f.branch);
       if (branch) f.branch.value = branch;
     }
@@ -516,11 +520,15 @@
     $('macro-value').replaceChildren();
     const definition = fields.find(field => field.key === f.key.value);
     if (fieldAction && definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
+    $('macro-replacement-warning').hidden = !fieldAction || definition?.type !== 'multiselect';
   }
-  macroForm.elements.branch.onchange = macroForm.elements.action.onchange = macroInputs;
+  macroForm.elements.branch.onchange = () => macroInputs();
+  macroForm.elements.action.onchange = () => macroInputs(true);
   macroForm.elements.key.onchange = () => {
     const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === macroForm.elements.key.value);
-    $('macro-value').replaceChildren(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
+    $('macro-value').replaceChildren();
+    if (definition) $('macro-value').append(input('Nuovo valore (vuoto per cancellare)', 'value', '', { ...educationDefinition(definition), max: 2000 }));
+    $('macro-replacement-warning').hidden = definition?.type !== 'multiselect';
   };
   $('open-macro').onclick = () => {
     $('macro-error').textContent = '';
@@ -529,23 +537,44 @@
     const passage = [...macroForm.elements.action.options].find(option => option.value === 'passage');
     passage.disabled = !M.nextBranch(chosen()[0]?.branch) || chosen().some(member => member.branch !== chosen()[0].branch);
     if (passage.disabled) macroForm.elements.action.value = 'field';
-    macroInputs(); $('macro-dialog').showModal();
+    macroInputs(true); $('macro-dialog').showModal();
   };
   macroForm.onsubmit = event => {
     event.preventDefault();
-    if (!confirm(`Applicare la macro a ${selected.size} soci?`)) return;
     const value = Object.fromEntries(new FormData(macroForm));
     const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === value.key);
+    if (!selected.size || (value.action === 'field' && (!definition || !editableEducation(definition)))) {
+      $('macro-error').textContent = 'Seleziona soci e un campo educativo valido.';
+      return;
+    }
+    const replacement = value.action === 'field' && definition.type === 'multiselect';
+    if (!confirm(`Applicare la macro a ${selected.size} soci?` + (replacement ? ' La lista sostituirà tutte le selezioni precedenti del campo; se vuota, le cancellerà.' : ''))) return;
     if (value.action === 'field' && definition?.type === 'multiselect') value.value = new FormData(macroForm).getAll('value');
     value.branch = macroForm.elements.branch.value;
     value.members = chosen().map(member => ({ id: member.id, revision: member.revision }));
     run(async () => { await A.request('members/macro', 'POST', value); $('macro-dialog').close(); await load(); }, $('macro-error'));
   };
-  $('field-form').onsubmit = event => {
+  const fieldForm = $('field-form');
+  let suggestedKey = '';
+  fieldForm.elements.label.oninput = () => {
+    if (!fieldForm.elements.key.value || fieldForm.elements.key.value === suggestedKey) {
+      suggestedKey = fieldForm.elements.label.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+/, '').replace(/-+$/, '').slice(0, 40);
+      fieldForm.elements.key.value = suggestedKey;
+    }
+  };
+  function fieldOptions() {
+    const choice = fieldForm.elements.type.value === 'select';
+    $('field-options-label').hidden = !choice;
+    fieldForm.elements.options.disabled = !choice;
+  }
+  fieldForm.elements.type.onchange = fieldOptions;
+  fieldOptions();
+  fieldForm.onsubmit = event => {
     event.preventDefault();
     const form = event.currentTarget, payload = Object.fromEntries(new FormData(form));
-    payload.options = payload.options.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
-    run(async () => { await A.request('members/fields', 'POST', payload); form.reset(); await load(); });
+    payload.options = (payload.options || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+    run(async () => { await A.request('members/fields', 'POST', payload); form.reset(); suggestedKey = ''; fieldOptions(); await load(); });
   };
   $('template-form').onsubmit = event => {
     event.preventDefault();
@@ -559,7 +588,7 @@
         codice: member.code, branca: member.branch, anno: census(member)?.year || 'Non indicato',
         email: member.profile.email || '', cellulare: member.profile.phone || '',
         data: new Date().toLocaleDateString('it-IT'),
-        percorso: data.fields.filter(field => field.branch === member.branch).map(field => {
+        percorso: data.fields.filter(field => field.branch === member.branch && !legacyPista(field)).map(field => {
           const value = member.values[member.branch]?.[field.key];
           return `${field.label}: ${(Array.isArray(value) ? value.join('; ') : value) || 'Non indicato'}`;
         }).join('\n') };
@@ -601,7 +630,7 @@
     $('import-section-nav').dispatchEvent(new CustomEvent('section-select', { detail: preview ? 'import-review-panel' : 'import-source-panel' }));
     $('import-dialog').showModal();
   };
-  $('reload-members').onclick = () => run(load);
+  $('reload-members').onclick = () => run(load, undefined, '');
   const dirty = () => $('member-dialog').open && formSnapshot !== JSON.stringify([...new FormData(profileForm)]);
   const canClose = dialog => !busy && (dialog.id !== 'member-dialog' || !dirty() || confirm('Chiudere senza salvare le modifiche alla scheda?'));
   document.querySelectorAll('[data-close]').forEach(button => {
@@ -616,5 +645,5 @@
     $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';
     return;
   }
-  run(load);
+  run(load, undefined, '');
 })();

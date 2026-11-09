@@ -10,6 +10,16 @@
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim();
   const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   let vista, chiave, campi = [], occupato = false;
+  const modificati = () => campi.filter(c => c.input.value !== c.iniziale);
+  function pending() {
+    const n = modificati().length;
+    $('#dati-live-pending').textContent = n ? n + (n === 1 ? ' modifica in attesa' : ' modifiche in attesa') : 'Nessuna modifica in attesa';
+  }
+  function erroreCampo(c, messaggio) {
+    c.errore.textContent = messaggio;
+    c.input.setAttribute('aria-invalid', String(!!messaggio));
+    if (messaggio) c.input.focus();
+  }
 
   function stato(msg, errore = false) {
     $('#dati-live-stato').textContent = msg;
@@ -57,9 +67,17 @@
       c.iniziale = c.numero ? String(c.originale ?? '') : testo(c.originale);
       input.value = c.iniziale;
       c.input = input;
-      label.append(input);
+      const errore = document.createElement('span');
+      errore.id = input.id + '-errore';
+      errore.className = 'err';
+      errore.setAttribute('aria-live', 'polite');
+      input.setAttribute('aria-describedby', errore.id);
+      c.errore = errore;
+      input.oninput = () => { erroreCampo(c, ''); pending() };
+      label.append(input, errore);
       return label;
     }));
+    pending();
   }
   async function ricarica() {
     if (occupato) return;
@@ -77,12 +95,17 @@
     if (occupato) return;
     blocca(true);
     try {
-      const cambiati = campi.filter(c => c.input.value !== c.iniziale);
+      campi.forEach(c => erroreCampo(c, ''));
+      const cambiati = modificati();
       if (!cambiati.length) { stato('Nessuna modifica da pubblicare.'); return }
       const valori = cambiati.map(c => {
         if (!c.numero) return escape(c.input.value.trim());
         const n = c.input.value.trim() === '' ? null : Number(c.input.value);
-        if (n !== null && (!Number.isSafeInteger(n) || n < 0)) throw new Error('I presenti devono essere un numero intero maggiore o uguale a zero.');
+        if (n !== null && (!Number.isSafeInteger(n) || n < 0)) {
+          const messaggio = 'I presenti devono essere un numero intero maggiore o uguale a zero.';
+          erroreCampo(c, messaggio);
+          throw new Error(messaggio);
+        }
         return n;
       });
       const patch = await leggiPatch();
@@ -91,8 +114,11 @@
       const disponibili = definizioni(attuale);
       cambiati.forEach((c, i) => {
         const d = disponibili.find(d => same(d.path, c.path));
-        if (!d || d.identita !== c.identita || !same(at(attuale, c.path), c.originale))
-          throw new Error('Questi campi sono cambiati in dati.js o in un’altra regia. Ricarica i valori prima di pubblicare.');
+        if (!d || d.identita !== c.identita || !same(at(attuale, c.path), c.originale)) {
+          const messaggio = 'Campo cambiato in dati.js o in un’altra regia. Ricarica i valori prima di pubblicare.';
+          erroreCampo(c, messaggio);
+          throw new Error(messaggio);
+        }
         at(edit, c.path.slice(0, -1))[c.path.at(-1)] = valori[i];
       });
       const nuova = M.diffPatch(base, edit);
@@ -106,13 +132,18 @@
       vista.MODIFICHE.ready = true;
       vista.refreshDati();
       render(edit);
-      stato('Pubblicato live. Proiettore e regia aggiornati; telefoni entro circa 10 secondi.');
+      stato('Pubblicato live nella patch. Aggiornamento richiesto agli schermi; telefoni entro circa 10 secondi.');
     } catch (e) { stato(e.message, true) }
-    finally { blocca(false) }
+    finally {
+      blocca(false);
+      pending();
+      campi.find(c => c.errore.textContent)?.input.focus();
+    }
   }
   $('#dati-live-form').onsubmit = pubblica;
   $('#dati-live-ricarica').onclick = () => {
-    if (campi.some(c => c.input.value !== c.iniziale) && !confirm('Scartare le modifiche non pubblicate e ricaricare i valori?')) return;
+    if (occupato) return;
+    if (modificati().length && !confirm('Scartare le modifiche non pubblicate e ricaricare i valori?')) return;
     ricarica();
   };
   window.REGIA_DATI = { avvia(w, k) { vista = w; chiave = k; ricarica() } };

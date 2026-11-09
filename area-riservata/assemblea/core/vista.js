@@ -12,10 +12,20 @@
     .vista-schermo.idle,.vista-schermo.idle *{cursor:none!important}
     #vs-hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99;background:rgba(33,22,56,.85);color:#fff;
       font:600 15px Montserrat,sans-serif;padding:10px 18px;border-radius:99px;pointer-events:none;transition:opacity .4s}
+    #vista-context{position:fixed;left:0;right:0;bottom:0;min-height:32px;
+      padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+      background:var(--out);color:var(--w);font:600 12px/16px Montserrat,sans-serif;text-align:center;pointer-events:none}
     :fullscreen #vs-hint,#vs-hint.off{opacity:0}`;
   document.head.append(css);
   const ch = 'BroadcastChannel' in window ? new BroadcastChannel('assemblea-schermo') : null;
   const send = m => { try { ch && ch.postMessage(m) } catch (e) { } };
+  if (V === 'anteprima') {
+    const label = document.createElement('div');
+    label.id = 'vista-context';
+    label.textContent = 'Anteprima · solo visualizzazione';
+    document.body.append(label);
+    fit();
+  }
   const clamp = (i, k) => {
     i = Math.max(0, Math.min(i | 0, scenes.length - 1));
     return [i, Math.max(0, k | 0)];
@@ -34,6 +44,8 @@
   /* blocca click, tastiera e swipe originali: comanda solo la dashboard */
   const KEYS = { ArrowRight: 'next', ArrowDown: 'next', PageDown: 'next', ' ': 'next', Enter: 'next', ArrowLeft: 'prev', ArrowUp: 'prev', PageUp: 'prev' };
   ['click', 'keydown', 'touchstart', 'touchend', 'wheel'].forEach(ev => addEventListener(ev, e => {
+    if (ev === 'click' && e.target.closest?.('[data-live-control]')) return;
+    if (ev === 'keydown' && e.target.closest?.('[data-live-control]') && ['Enter', ' '].includes(e.key)) return;
     e.stopImmediatePropagation();
     if (ev === 'keydown' && KEYS[e.key]) { e.preventDefault(); if (V === 'schermo') send({ tipo: 'cmd', c: KEYS[e.key] }) }
     if (ev === 'click' && V === 'schermo') {

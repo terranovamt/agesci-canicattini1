@@ -59,68 +59,6 @@ function fixture(file, css, scripts) {
     );
 }
 
-test("document deletion updates immediately and rolls back when the server rejects it", async () => {
-  const nodes = new Map();
-  const element = () => ({
-    children: [],
-    value: "",
-    hidden: false,
-    disabled: false,
-    textContent: "",
-    append(...children) {
-      this.children.push(...children);
-    },
-    replaceChildren(...children) {
-      this.children = children;
-    },
-    querySelectorAll() {
-      return [];
-    },
-    setAttribute() {},
-    focus() {},
-    scrollIntoView() {},
-  });
-  const get = (id) => {
-    if (!nodes.has(id)) nodes.set(id, element());
-    return nodes.get(id);
-  };
-  const document = { getElementById: get, createElement: element };
-  let rejectSave;
-  const items = [{ file: "test.pdf", title: "Test PDF", description: "Documento" }];
-  const context = {
-    window: {
-      ACCESSO: { verificata: () => true },
-      LIVE: { nas: true },
-      DOCUMENTS: {
-        tokenKey: "test-token",
-        load: async () => items,
-        apply: () => [],
-        save: () =>
-          new Promise((resolve, reject) => {
-            rejectSave = reject;
-          }),
-      },
-    },
-    document,
-    localStorage: { getItem: () => "", setItem() {} },
-    confirm: () => true,
-    Date,
-    location: { replace() {} },
-    addEventListener() {},
-  };
-  require("node:vm").runInNewContext(read("assets/js/gestione-documenti.js"), context);
-  await new Promise((resolve) => setImmediate(resolve));
-  const remove = get("managed-documents").children[0].children[3].children[1];
-  const pending = remove.onclick();
-  assert.equal(get("managed-documents").children[0].textContent.startsWith("Nessun PDF"), true);
-  assert.equal(get("save-document").disabled, true);
-  rejectSave(new Error("Server non disponibile"));
-  await pending;
-  assert.equal(get("managed-documents").children[0].children[0].textContent, "Test PDF");
-  assert.equal(get("documents-message").textContent, "Server non disponibile");
-  assert.equal(get("save-document").disabled, false);
-});
-
 test("public documents and management work in a browser at all required widths", { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "group-documents-"));
   const pages = [
@@ -427,40 +365,160 @@ test("public documents and management work in a browser at all required widths",
           results.push({ latestTitles: [...doc.querySelectorAll('#documents-list .document-card h3')].map(node => node.textContent) });
         } else if (page === 1) {
           const win = frame.contentWindow;
-          const input = doc.querySelector('#document-file');
-          const transfer = new win.DataTransfer();
-          transfer.items.add(new win.File(['%PDF-1.7\\nfixture'], 'nuovo.pdf', { type: 'application/pdf' }));
-          input.files = transfer.files;
-          doc.querySelector('#document-title').value = 'Documento nuovo';
-          doc.querySelector('#document-description').value = 'Descrizione di prova';
-          doc.querySelector('#document-year').value = '2027';
-          doc.querySelector('#document-published-at').value = '2027-02-03';
-          doc.querySelector('#document-assembly-year').value = '2026';
-          doc.querySelector('#document-assembly-type').value = 'verbale';
+          const originalFetch = win.fetch;
+          const tick = () => new Promise(resolve => setTimeout(resolve, 5));
+          const texts = selector => [...doc.querySelectorAll(selector)].map(node => node.textContent.trim());
+          const slotStates = () => [...doc.querySelectorAll('#preparatory-slots .slot')].map(slot =>
+            slot.classList.contains('is-missing') ? 'missing' : slot.classList.contains('is-unknown') ? 'unknown' : 'ok');
           const saved = () => new Promise(resolve => {
             const observer = new win.MutationObserver(() => {
               if (!doc.querySelector('#save-document').disabled) { observer.disconnect(); resolve() }
             });
             observer.observe(doc.querySelector('#save-document'), { attributes: true });
           });
+          results.push({ initialSlots: texts('#preparatory-slots .slot-type'), initialStates: slotStates(),
+            initialCount: doc.querySelectorAll('.managed-document').length,
+            source: doc.querySelector('#documents-source').textContent,
+            credentialsHiddenInPreview: doc.querySelector('#github-credentials').hidden,
+            publicWarning: doc.querySelector('#publish-destination').textContent,
+            techSecondary: [...doc.querySelectorAll('.managed-document .doc-tech')].every(details => !details.open),
+            deleteDistinct: [...doc.querySelectorAll('.managed-document')].every(article =>
+              article.querySelectorAll('.danger').length === 1 && article.querySelector('.danger').textContent === 'Elimina') });
+          doc.querySelector('#new-document').click();
+          const input = doc.querySelector('#document-file');
+          const transfer = new win.DataTransfer();
+          transfer.items.add(new win.File(['%PDF-1.7\\nfixture'], 'nuovo.pdf', { type: 'application/pdf' }));
+          input.files = transfer.files;
+          input.dispatchEvent(new win.Event('change', { bubbles: true }));
+          doc.querySelector('#document-title').value = 'Documento nuovo';
+          doc.querySelector('#document-description').value = 'Descrizione di prova';
+          doc.querySelector('#document-year').value = '2027';
+          doc.querySelector('#document-published-at').value = '2027-02-03';
+          const assemblyHiddenForGeneral = doc.querySelector('#assembly-fields').hidden;
+          doc.querySelector('#document-kind-preparatory').click();
+          doc.querySelector('#document-assembly-type').value = 'verbale';
+          results.push({ assemblyHiddenForGeneral, assemblyShown: !doc.querySelector('#assembly-fields').hidden,
+            typeWithoutYearBlocked: !doc.querySelector('#document-form').checkValidity() &&
+              doc.querySelector('#document-assembly-year').validity.valueMissing });
+          doc.querySelector('#document-assembly-year').value = '2026';
+          let release = null, posts = 0;
+          win.fetch = (url, options) => {
+            if (options?.method !== 'POST') return originalFetch(url, options);
+            posts++;
+            return new Promise(resolve => { release = resolve });
+          };
+          const failed = saved();
+          doc.querySelector('#document-form').requestSubmit();
+          while (!release) await tick();
+          results.push({ pendingCount: doc.querySelectorAll('.managed-document').length,
+            pendingMessage: doc.querySelector('#documents-message').textContent,
+            pendingLocked: doc.querySelector('#save-document').disabled && doc.querySelector('#reload-documents').disabled });
+          release({ ok: false, status: 503, text: async () => 'Server non disponibile' });
+          await failed;
+          results.push({ failedMessage: doc.querySelector('#documents-message').textContent,
+            failedCount: doc.querySelectorAll('.managed-document').length,
+            draftKept: doc.querySelector('#document-title').value === 'Documento nuovo' &&
+              doc.querySelector('#document-file').files.length === 1 &&
+              doc.querySelector('#document-assembly-type').value === 'verbale' &&
+              doc.querySelector('#document-kind-preparatory').checked });
+          win.fetch = originalFetch;
           const uploaded = saved();
           doc.querySelector('#document-form').requestSubmit();
           await uploaded;
-          results.push({ uploaded: doc.querySelectorAll('.managed-document').length,
-            status: doc.querySelector('#documents-message').textContent });
-          doc.querySelector('.managed-document:last-child button').click();
+          results.push({ uploaded: doc.querySelectorAll('.managed-document').length, posts,
+            status: doc.querySelector('#documents-message').textContent, uploadedStates: slotStates() });
+          doc.querySelector('.managed-document[data-file="nuovo.pdf"] button').click();
+          const yearBox = doc.querySelector('#document-year').getBoundingClientRect();
+          const dateBox = doc.querySelector('#document-published-at').getBoundingClientRect();
+          const assemblyYearBox = doc.querySelector('#document-assembly-year').getBoundingClientRect();
+          const assemblyTypeBox = doc.querySelector('#document-assembly-type').getBoundingClientRect();
           results.push({ editedYear: doc.querySelector('#document-year').value,
-            editedDate: doc.querySelector('#document-published-at').value });
-          results.push({ assemblyYear: doc.querySelector('#document-assembly-year').value });
+            editedDate: doc.querySelector('#document-published-at').value,
+            assemblyYear: doc.querySelector('#document-assembly-year').value,
+            editPreparatory: doc.querySelector('#document-kind-preparatory').checked,
+            currentFile: doc.querySelector('#current-file-link').textContent,
+            currentFileHref: doc.querySelector('#current-file-link').getAttribute('href'),
+            replacementOptional: !doc.querySelector('#document-file').required && !doc.querySelector('#current-file').hidden,
+            pairedDates: Math.abs(yearBox.top - dateBox.top) <= 1 && yearBox.right <= dateBox.left,
+            pairedAssembly: Math.abs(assemblyYearBox.top - assemblyTypeBox.top) <= 1 });
           doc.querySelector('#document-title').value = 'Titolo modificato';
+          doc.querySelector('#document-title').dispatchEvent(new win.Event('input', { bubbles: true }));
+          let asked = 0;
+          win.confirm = () => { asked++; return false };
+          await doc.querySelector('#reload-documents').onclick();
+          results.push({ dirtyReloadAsked: asked, dirtyReloadKept: doc.querySelector('#document-title').value === 'Titolo modificato' });
+          win.confirm = () => true;
           const edited = saved();
           doc.querySelector('#document-form').requestSubmit();
           await edited;
-          results.push({ edited: doc.querySelector('.managed-document:last-child h3').textContent });
+          results.push({ edited: doc.querySelector('.managed-document[data-file="nuovo.pdf"] h3').textContent });
           const deleted = saved();
-          doc.querySelector('.managed-document:last-child .danger').click();
+          doc.querySelector('.managed-document[data-file="nuovo.pdf"] .danger').click();
           await deleted;
           results.push({ remaining: doc.querySelectorAll('.managed-document').length });
+          win.fetch = async () => ({ ok: false, status: 503 });
+          await doc.querySelector('#reload-documents').onclick();
+          results.push({ loadError: !!doc.querySelector('#managed-documents .state-error'),
+            errorStates: slotStates(), errorSaveDisabled: doc.querySelector('#save-document').disabled,
+            errorMessageClass: doc.querySelector('#documents-message').className });
+          win.fetch = async () => ({ ok: true, json: async () => [] });
+          await doc.querySelector('#reload-documents').onclick();
+          results.push({ emptyState: !!doc.querySelector('#managed-documents .state-empty'), emptyStates: slotStates() });
+          doc.querySelector('#preparatory-slots .slot[data-type="bilancio"] button').click();
+          results.push({ prefillKind: doc.querySelector('#document-kind-preparatory').checked,
+            prefillType: doc.querySelector('#document-assembly-type').value,
+            prefillYear: doc.querySelector('#document-assembly-year').value,
+            prefillVisible: !doc.querySelector('#documents-edit-panel').hidden });
+          win.fetch = originalFetch;
+          await doc.querySelector('#reload-documents').onclick();
+          doc.querySelector('.managed-document button').click();
+          const credentials = doc.querySelector('#github-credentials');
+          credentials.hidden = false;
+          credentials.open = true;
+          for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [1180, 820], [390, 844], [844, 390]]) {
+            frame.style.width = width + 'px';
+            frame.style.height = height + 'px';
+            const nav = doc.querySelector('#documents-section-nav');
+            await tick();
+            // Headless virtual time may delay matchMedia change events: reapply the selection like the listener does.
+            nav.dispatchEvent(new win.CustomEvent('section-select', { detail: 'documents-library-panel' }));
+            const tabs = nav.getClientRects().length > 0;
+            for (const panel of tabs ? ['documents-library-panel', 'documents-edit-panel'] : ['both']) {
+              if (tabs) nav.dispatchEvent(new win.CustomEvent('section-select', { detail: panel }));
+              doc.querySelectorAll('.doc-tech').forEach(details => { details.open = true });
+              win.scrollTo(0, 0);
+              await tick();
+              const small = [...doc.querySelectorAll('#documents-app button, #documents-app select, #documents-app input:not([type=radio]), #documents-app summary, #documents-app a, #documents-app .choice')]
+                .filter(control => control.getClientRects().length)
+                .filter(control => {
+                  const box = control.getBoundingClientRect();
+                  return box.height < 44 || box.width < 44 || box.left < 0 || box.right > width;
+                })
+                .map(control => control.id || control.className || control.textContent.trim());
+              const library = doc.querySelector('#documents-library-panel').getBoundingClientRect();
+              const form = doc.querySelector('#documents-edit-panel').getBoundingClientRect();
+              const visible = id => !doc.getElementById(id).hidden && doc.getElementById(id).getClientRects().length > 0;
+              const content = doc.querySelector('main').getBoundingClientRect();
+              results.push({ viewport: width + 'x' + height, panel, tabs,
+                viewportFits: doc.documentElement.scrollWidth <= doc.documentElement.clientWidth, small,
+                sideBySide: visible('documents-library-panel') && visible('documents-edit-panel') &&
+                  Math.abs(library.top - form.top) <= 1 && library.right <= form.left,
+                stacked: visible('documents-library-panel') && visible('documents-edit-panel') && library.bottom <= form.top,
+                contentRatio: Math.round(content.width / width * 100) / 100,
+                slots: [...doc.querySelectorAll('#preparatory-slots .slot-type')].map(node => node.textContent).join(','),
+                reloadUsable: !doc.querySelector('#reload-documents').disabled && doc.querySelector('#reload-documents').getClientRects().length > 0,
+                tokenUsable: doc.querySelector('#document-token').getBoundingClientRect().width >= 200,
+                saveUsable: panel === 'documents-library-panel' || (!doc.querySelector('#save-document').disabled &&
+                  doc.querySelector('#save-document').getBoundingClientRect().width >= 44) });
+              doc.querySelectorAll('.doc-tech').forEach(details => { details.open = false });
+            }
+          }
+          credentials.hidden = true;
+          doc.querySelector('#documents-section-nav').dispatchEvent(new win.CustomEvent('section-select', { detail: 'documents-library-panel' }));
+          doc.querySelector('#document-title').focus();
+          const focused = doc.activeElement === doc.querySelector('#document-title') &&
+            win.getComputedStyle(doc.querySelector('#document-title')).outlineStyle !== 'none';
+          results.push({ keyboardFocus: focused });
         } else if (page === 5) {
           results.push({ archiveCards: doc.querySelectorAll('.document-card').length,
             archiveYear: [...doc.querySelector('#documents-year').options].map(option => option.value) });
@@ -496,7 +554,9 @@ test("public documents and management work in a browser at all required widths",
           results.push({ dashboard: doc.querySelector('#riservata').hidden === false,
             assembly: doc.querySelector('#dashboard-assembly-title').textContent,
             documents: doc.querySelectorAll('#dashboard-document-links li').length,
-            tools: doc.querySelectorAll('.dashboard-tools .dashboard-tool').length });
+            tools: doc.querySelectorAll('#dashboard-assembly-panel .dashboard-assembly-steps > .dashboard-tool').length,
+            toolLinks: [...doc.querySelectorAll('#dashboard-assembly-panel .dashboard-assembly-steps > .dashboard-tool > a')]
+              .map(link => link.getAttribute('href')) });
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#dashboard-documents-retry').onclick();
           results.push({ dashboardError: !doc.querySelector('#dashboard-documents-retry').hidden });
@@ -590,10 +650,73 @@ test("public documents and management work in a browser at all required widths",
     assert.match(results.find((item) => "error" in item).error, /503/);
     assert.match(results.find((item) => "empty" in item).empty, /Non ci sono ancora/);
     assert.equal(results.find((item) => "retryHidden" in item).retryHidden, true);
-    assert.equal(results.find((item) => "uploaded" in item).uploaded, 5, JSON.stringify(results));
-    assert.match(results.find((item) => "uploaded" in item).status, /Salvato/);
-    assert.equal(results.find((item) => "edited" in item).edited, "Titolo modificato");
-    assert.equal(results.find((item) => "remaining" in item).remaining, 4);
+    const manage = Object.assign({}, ...results.filter((item) => "initialSlots" in item || "pendingCount" in item ||
+      "failedMessage" in item || "uploaded" in item || "editPreparatory" in item || "dirtyReloadAsked" in item ||
+      "edited" in item || "remaining" in item || "loadError" in item || "emptyState" in item || "prefillKind" in item ||
+      "assemblyShown" in item));
+    const model = require("../assets/js/documents-model.js");
+    const year = new Date().getFullYear();
+    const expectedStates = model.preparatorySlots(JSON.parse(read("documents/index.json")), year)
+      .map((slot) => (slot.document ? "ok" : "missing"));
+    assert.deepEqual(manage.initialSlots, ["Convocazione", "Regolamento", "PEG", "Bilancio", "Verbale"]);
+    assert.deepEqual(manage.initialStates, expectedStates);
+    assert.equal(manage.initialCount, 4);
+    assert.match(manage.source, /anteprima locale/);
+    assert.equal(manage.credentialsHiddenInPreview, true);
+    assert.match(manage.publicWarning, /PDF pubblici/);
+    assert.equal(manage.techSecondary, true);
+    assert.equal(manage.deleteDistinct, true);
+    assert.equal(manage.assemblyHiddenForGeneral, true);
+    assert.equal(manage.assemblyShown, true);
+    assert.equal(manage.typeWithoutYearBlocked, true, "a preparatory type without year must not be ignored");
+    assert.equal(manage.pendingCount, 4, "no optimistic success-shaped list before the save completes");
+    assert.match(manage.pendingMessage, /in corso/);
+    assert.equal(manage.pendingLocked, true);
+    assert.match(manage.failedMessage, /^Non salvato: Server non disponibile/);
+    assert.equal(manage.failedCount, 4);
+    assert.equal(manage.draftKept, true, "a failed save keeps the draft");
+    assert.equal(manage.uploaded, 5, JSON.stringify(results));
+    assert.equal(manage.posts, 1);
+    assert.match(manage.status, /Salvato/);
+    if (year === 2026) assert.deepEqual(manage.uploadedStates, ["ok", "ok", "ok", "ok", "ok"]);
+    assert.equal(manage.editPreparatory, true);
+    assert.equal(manage.currentFile, "nuovo.pdf");
+    assert.equal(manage.currentFileHref, "../documents/pdf/nuovo.pdf");
+    assert.equal(manage.replacementOptional, true);
+    assert.equal(manage.pairedDates, true);
+    assert.equal(manage.pairedAssembly, true);
+    assert.equal(manage.dirtyReloadAsked, 1);
+    assert.equal(manage.dirtyReloadKept, true);
+    assert.equal(manage.edited, "Titolo modificato");
+    assert.equal(manage.remaining, 4);
+    assert.equal(manage.loadError, true);
+    assert.deepEqual(manage.errorStates, ["unknown", "unknown", "unknown", "unknown", "unknown"]);
+    assert.equal(manage.errorSaveDisabled, true);
+    assert.equal(manage.errorMessageClass, "error");
+    assert.equal(manage.emptyState, true);
+    assert.deepEqual(manage.emptyStates, ["missing", "missing", "missing", "missing", "missing"]);
+    assert.equal(manage.prefillKind, true);
+    assert.equal(manage.prefillType, "bilancio");
+    assert.equal(manage.prefillYear, String(year));
+    assert.equal(manage.prefillVisible, true);
+    const viewports = results.filter((item) => "viewport" in item);
+    const layouts = Object.fromEntries(viewports.map((item) => [item.viewport, item.tabs]));
+    assert.deepEqual(layouts, { "1920x1080": false, "1366x768": false, "820x1180": false, "1180x820": false,
+      "390x844": true, "844x390": false });
+    for (const item of viewports) {
+      const where = item.viewport + " " + item.panel;
+      assert.equal(item.viewportFits, true, where + " must not overflow");
+      assert.deepEqual(item.small, [], where + " controls must be at least 44px and inside the viewport");
+      assert.equal(item.slots, "Convocazione,Regolamento,PEG,Bilancio,Verbale", where);
+      assert.equal(item.reloadUsable, true, where);
+      assert.equal(item.tokenUsable, true, where);
+      assert.equal(item.saveUsable, true, where);
+      const width = Number(item.viewport.split("x")[0]);
+      if (width >= 1100) assert.equal(item.sideBySide, true, where + " shows library and form side by side");
+      else if (!item.tabs) assert.equal(item.stacked, true, where + " stacks library above the form");
+      assert.ok(item.contentRatio >= (width >= 1900 ? 0.74 : 0.95), where + " leaves no huge empty margins: " + item.contentRatio);
+    }
+    assert.equal(results.find((item) => "keyboardFocus" in item).keyboardFocus, true);
     for (const item of results.filter((item) => "reachable" in item)) {
       assert.equal(item.reachable, true, "setup fields must be reachable above the action bar at width " + item.width);
     }
@@ -638,6 +761,7 @@ test("public documents and management work in a browser at all required widths",
     assert.match(dashboard.assembly, /Assemblea/);
     assert.equal(dashboard.documents, 3);
     assert.equal(dashboard.tools, 3);
+    assert.deepEqual(dashboard.toolLinks, ["assemblea/setup.html", "documenti.html", "assemblea/regia.html"]);
     assert.equal(results.find((item) => "dashboardError" in item).dashboardError, true);
     assert.equal(results.find((item) => "assemblyError" in item).assemblyError, true);
     assert.match(results.find((item) => "assemblyErrorText" in item).assemblyErrorText, /Impossibile/);

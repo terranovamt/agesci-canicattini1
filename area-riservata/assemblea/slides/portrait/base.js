@@ -5,34 +5,51 @@ const PORTRAIT = {},
   PORTRAIT_UTIL = {};
 (function () {
   const HDH = 92;
-  let PM = innerWidth < 820 && innerHeight > innerWidth,
+  let PM = innerWidth <= 1024 && innerHeight > innerWidth,
     SH = 1280;
   let rotated = false,
     exporting = false;
   removeEventListener('resize', fit);
   /* ---------- palco ---------- */ fit = function () {
-    const W = innerWidth,
-      H = innerHeight - (window.LIVE?.ruolo === 'pubblico' && !matchMedia('(pointer: coarse)').matches ? 64 : 0);
+    const rootStyle = getComputedStyle(document.documentElement);
+    const safe = (side) => parseFloat(rootStyle.getPropertyValue(`--lv-safe-${side}`)) || 0;
+    const left = safe('left'),
+      top = safe('top'),
+      W = Math.max(1, innerWidth - left - safe('right')),
+      bar = window.LIVE?.ruolo === 'pubblico' ? document.getElementById('lv-bar') : null,
+      context = window.LIVE?.vista === 'anteprima' ? document.getElementById('vista-context') : null,
+      H = Math.max(1, innerHeight - top - (bar?.getBoundingClientRect().height || context?.getBoundingClientRect().height || safe('bottom')));
     const previous = PM,
       previousHeight = SH;
-    PM = !exporting && !rotated && W < 820 && innerHeight > W;
+    PM = !exporting && !rotated && W <= 1024 && innerHeight > innerWidth;
     document.body.classList.toggle('pm', PM);
     if (PM) {
       const k = W / 720;
       SH = H / k;
       st.style.width = '720px';
       st.style.height = SH + 'px';
-      st.style.transform = `scale(${k})`;
+      st.style.transform = `translate(${left}px,${top}px) scale(${k})`;
     } else {
       const k = rotated ? Math.min(W / 720, H / 1280) : Math.min(W / 1280, H / 720);
       st.style.width = '1280px';
       st.style.height = '720px';
       st.style.transform = rotated
-        ? `translate(${(W - 720 * k) / 2 + 720 * k}px,${(H - 1280 * k) / 2}px) rotate(90deg) scale(${k})`
-        : `translate(${(W - 1280 * k) / 2}px,${(H - 720 * k) / 2}px) scale(${k})`;
+        ? `translate(${left + (W - 720 * k) / 2 + 720 * k}px,${top + (H - 1280 * k) / 2}px) rotate(90deg) scale(${k})`
+        : `translate(${left + (W - 1280 * k) / 2}px,${top + (H - 720 * k) / 2}px) scale(${k})`;
     }
-    if (!exporting && (PM !== previous || (PM && Math.abs(SH - previousHeight) > 1)) && window.DATI && scenes.length)
+    if (!exporting && (PM !== previous || (PM && Math.abs(SH - previousHeight) > 1)) && window.DATI && scenes.length) {
+      const position = cur ? { id: scenes[si]?.id, index: si, step: sk } : null;
+      const returnPosition = saved ? { ...saved } : null;
       start(window.DATI);
+      saved = returnPosition;
+      bB.style.display = saved && si !== saved.i ? 'flex' : 'none';
+      if (saved) bB.lastChild.textContent = 'Slide ' + (saved.i + 1);
+      if (position) {
+        const byId = position.id ? scenes.findIndex((scene) => scene.id === position.id) : -1;
+        const index = byId >= 0 ? byId : Math.min(position.index, scenes.length - 1);
+        if (si !== index || sk !== position.step) go(index, position.step);
+      }
+    }
   };
   window.mobileLayout = {
     rotate(value) {
@@ -45,7 +62,7 @@ const PORTRAIT = {},
   /* su touch i controlli si nascondono dopo 3 s; il primo tocco li fa solo ricomparire */
   if (matchMedia('(pointer: coarse)').matches) {
     const css = document.createElement('style');
-    css.textContent = '#lv-bar,#nav{transition:opacity .4s}body.idle #lv-bar,body.idle #nav{opacity:0;pointer-events:none}';
+    css.textContent = '#lv-bar,#nav{transition:opacity .4s}body.idle #lv-bar,body.idle #nav{opacity:0;pointer-events:none}body.idle #lv-bar:focus-within,body.idle #nav:focus-within{opacity:1;pointer-events:auto}@media(prefers-reduced-motion:reduce){#lv-bar,#nav{transition:none}}';
     document.head.append(css);
     let idleTimer,
       wasIdle = false;

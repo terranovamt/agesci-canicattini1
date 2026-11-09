@@ -1,6 +1,5 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
@@ -10,8 +9,8 @@ const read = file => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
 const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
   spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
 
-test("compact unit board supports fixed colors, ordered rows, dragging, moves and LC environments at five widths", { skip: !chrome }, () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "member-units-browser-"));
+test("compact unit board supports fixed colors, ordered rows, dragging, moves and LC environments across six responsive viewports", { skip: !chrome }, t => {
+  const directory = fs.mkdtempSync(path.join(__dirname, "..", ".member-units-browser-"));
   try {
     const snapshot = {
       currentYear: "2026", group: {}, templates: [], transfers: [], fields: M.defaultFields,
@@ -25,7 +24,8 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
         const id = index + 1, branch = id <= 2 ? "L/C" : "E/G";
         const values = id === 3 ? { squadriglia: "Aquile", ruolo: "Capo squadriglia" }
           : id === 5 ? { squadriglia: "Aquile", ruolo: "Ruolo storico" }
-            : id === 6 ? { squadriglia: "Nascosti", ruolo: "Piede tenero" } : {};
+            : id === 6 ? { squadriglia: "Nascosti", ruolo: "Piede tenero" }
+              : id === 7 ? { squadriglia: "Aquile", ruolo: "Squadrigliere" } : {};
         return { id, code: "01234" + id, name: "Persona " + id, kind: "ragazzo", branch, revision: 1,
           profile: { givenName: "Persona", surname: String(id) }, values: { [branch]: values },
           censuses: [{ year: "2026", statusCode: id === 7 ? "D" : "A" }] };
@@ -101,6 +101,8 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           assignment.elements.memberId.value = '1'; assignment.elements.unitId.value = '10'; assignment.elements.unitId.onchange();
           assignment.elements.role.value = 'Cucciolo'; submit(assignment); await settle();
           check(!!document.querySelector('[data-unit-id="10"] [data-role="Cucciolo"] [data-member-id="1"]'), 'accessibleMove');
+          check(document.querySelector('[data-unit-id="10"] .unit-member-count').textContent === '1 ragazzo' &&
+            document.querySelector('[data-unit-id="10"] .unit-member-count').getAttribute('aria-label') === 'Bianchi: 1 ragazzo assegnato', 'lcCount');
           document.querySelector('[data-unit-id="10"] [data-member-id="1"] .unit-move').click();
           check($('unit-assignment').open && assignment.elements.memberId.value === '1' &&
             assignment.elements.role.value === 'Cucciolo', 'moveShortcut');
@@ -137,6 +139,8 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
             !!document.querySelector('[data-unit-id="1"] .unit-newcomer'), 'compactRows');
           check($('units-board').textContent.includes('Ruolo storico') &&
             $('unit-unassigned').textContent.includes('Assegnazione conservata: Nascosti'), 'legacyVisible');
+          check(document.querySelector('[data-unit-id="1"] .unit-member-count').textContent === '2 ragazzi' &&
+            document.querySelector('[data-unit-id="2"] .unit-member-count').textContent === '0 ragazzi', 'countsIncludeLegacy');
           const drag = (id, unitId, role) => {
             const transfer = new DataTransfer(), member = document.querySelector('.unit-member[data-member-id="' + id + '"]');
             member.dispatchEvent(new DragEvent('dragstart', {dataTransfer: transfer, bubbles: true}));
@@ -150,6 +154,10 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           drag(4, 1, 'Capo squadriglia'); await settle();
           check(!!document.querySelector('[data-unit-id="1"] [data-role="Capo squadriglia"] [data-member-id="4"]') &&
             !!document.querySelector('[data-unit-id="2"] [data-role="Squadrigliere"] [data-member-id="3"]'), 'dragMove');
+          check(document.querySelector('[data-unit-id="1"] .unit-member-count').textContent === '2 ragazzi' &&
+            document.querySelector('[data-unit-id="2"] .unit-member-count').textContent === '1 ragazzo', 'countsAfterMove');
+          check(![...document.querySelectorAll('dialog')].some(dialog => /sposta/i.test(dialog.id)) &&
+            $('units-hidden').querySelector('summary').textContent.includes('Squadriglie nascoste'), 'noMoveDialog');
           const band = document.querySelector('[data-unit-id="1"] .unit-colors');
           check(band.children.length === 2 && band.getAttribute('aria-label') === 'Verde / Nero' &&
             band.children[0].style.backgroundColor === 'rgb(57, 130, 88)' &&
@@ -168,6 +176,25 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           }
           const unitCard = document.querySelector('[data-unit-id="2"]');
           check(unitCard.getBoundingClientRect().height <= 430, 'compactHeight');
+          check(unitCard.getBoundingClientRect().width <= 360, 'cardNotStretched');
+          snapshot.units.push(...['Lupi', 'Volpi', 'Cobra', 'Tigri'].map((name, index) => ({
+            id: 20 + index, name, branch: 'E/G', color: '#ffffff', color2: '#242424', hidden: false, revision: 1
+          })));
+          $('reload-units').click(); await settle();
+          const cards = [...$('units-board').querySelectorAll('.scout-unit')];
+          const columns = new Set(cards.map(card => Math.round(card.getBoundingClientRect().left))).size;
+          results.measures = { columns, boardWidth: Math.round($('units-board').getBoundingClientRect().width), cardWidth: Math.round(cards[0].getBoundingClientRect().width),
+            cardHeight: Math.round(cards[1].getBoundingClientRect().height) };
+          check(columns >= (innerWidth >= 1366 ? 4 : innerWidth >= 820 ? 2 : 1), 'usefulColumns');
+          check(cards.every(card => card.getBoundingClientRect().width <= 360) && fits(), 'boardGridFits');
+          check([...$('units-board').querySelectorAll('.unit-chief')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(70, 38, 120)') &&
+            [...$('units-board').querySelectorAll('.unit-deputy')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(230, 218, 241)') &&
+            [...$('units-board').querySelectorAll('.unit-newcomer')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(255, 240, 196)'), 'roleContrast');
+          $('unit-assignment').open = true;
+          check([...$('unit-assignment-form').querySelectorAll('select, button')].every(control => {
+            const rect = control.getBoundingClientRect();
+            return rect.height >= 44 && rect.left >= 0 && rect.right <= innerWidth + 1;
+          }), 'assignmentFits');
           check(!errors.length, 'noErrors');
         } catch (error) { results.failure = error.message; results.errors = errors; }
         const output = document.createElement('pre'); output.id = 'unit-result';
@@ -182,10 +209,10 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
       })
       .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`)
       .replace("</body>", `<script>${exercise}</script></body>`);
-    for (const width of [320, 375, 768, 1024, 1440]) {
+    for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390]]) {
       const file = path.join(directory, "fixture.html");
       fs.writeFileSync(file, `<!doctype html><body><script>
-        const frame = document.createElement('iframe'); frame.style.cssText = 'border:0;width:${width}px;height:1000px';
+        const frame = document.createElement('iframe'); frame.style.cssText = 'border:0;width:${width}px;height:${height}px';
         document.body.append(frame); frame.srcdoc = ${JSON.stringify(page).replace(/</g, "\\u003c")};
         const timer = setInterval(() => {
           const result = frame.contentDocument?.getElementById('unit-result');
@@ -195,7 +222,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
       const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
         "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, "profile-" + width),
         "--virtual-time-budget=7000", "--dump-dom", "file://" + file],
-      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024 });
+      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: path.join(__dirname, "..") } });
       assert.equal(browser.status, 0, browser.stderr);
       const encoded = /<pre id="unit-result">([^<]+)<\/pre>/.exec(browser.stdout)?.[1];
       assert.ok(encoded, browser.stdout.slice(-3000));
@@ -204,8 +231,10 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
       for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "moveShortcut", "fixedEditor", "unknownNameError", "lcFits", "cerchio", "cerchioSheet",
         "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove",
         "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
-        "egFits", "touchTargets", "noErrors", "unassignedCompact"])
+        "egFits", "touchTargets", "noErrors", "unassignedCompact", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
+        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "assignmentFits"])
         assert.equal(results[key], true, width + " " + key + ": " + JSON.stringify(results));
+      t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
     }
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });

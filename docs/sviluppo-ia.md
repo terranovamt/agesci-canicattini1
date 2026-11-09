@@ -93,6 +93,14 @@ non equivale a un collaudo di rete o di container sul NAS.
   che sopravvivano al riavvio. Solo i percorsi pubblici previsti da
   `PUBLIC_STATE` sono leggibili senza login; le modifiche allo stato richiedono
   sessione. Monitoraggio e presenze live hanno contatori distinti.
+- **Setup e regia:** le modifiche locali del setup sono una bozza; chiudere
+  l'editor o premere **Applica alla bozza** nel JSON non salva i contenuti di
+  base. **Salva dati base** aggiorna `dati.js` sul NAS oppure su GitHub nella
+  modalità statica.
+  La regia pubblica invece una patch live separata, che prevale sui campi
+  corrispondenti della base. Il setup non legge né cancella questa patch.
+  Nella guida distinguere i due contesti: token GitHub, regole e quote Firebase
+  non sono requisiti universali del NAS.
 - **Deploy:** i file persistenti stanno fuori dalla release sotto il volume
   dati; la release è codice statico/backend. In caso di healthcheck fallito,
   `update.sh` tenta il ripristino del codice precedente, ma non ripristina
@@ -121,7 +129,7 @@ questa guida, nei test o nella memoria dell'assistente.
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
-- La scheda socio mantiene i pannelli Anagrafica, Contatti, Genitori, Consensi, Percorso e
+- La scheda socio mantiene i pannelli Anagrafica, Contatti, Genitori, Percorso e
   Censimenti nel DOM mentre si naviga. Non ricreare i campi al cambio pannello:
   valori e bozze devono sopravvivere; il salvataggio resta esplicito.
 - Gli accessi amministrativi sono presentati per branca e filtrabili senza
@@ -134,6 +142,8 @@ questa guida, nei test o nella memoria dell'assistente.
   `aria-pressed`/`aria-controls`; l'evento `section-select` apre un pannello
   dai flussi applicativi (modifica PDF, analisi import). La validazione
   mostra il pannello del primo campo non valido.
+- Statistiche sito non usa tab: versione NAS, visite, server e segnalazioni
+  restano visibili insieme nella stessa pagina, anche su mobile.
 - `data-section-mobile` limita il cambio visibilita a 760px: in regia
   anteprime e comandi diretta restano sempre disponibili, mentre Slide,
   Dati live e Server sono alternativi su telefono e affiancati su desktop.
@@ -143,12 +153,19 @@ questa guida, nei test o nella memoria dell'assistente.
   rende accessibili anche eventuali chiavi di bilancio non standard.
 - Audit schermate: dashboard (Strumenti/Riepilogo/Assemblea di gruppo; il
   terzo pannello contiene il percorso e le tre card 01/02/03), gestione
-  PDF (Biblioteca/Carica), statistiche (Visite/Server/Segnalazioni/Versione),
+  PDF (Biblioteca/Carica), statistiche (sezioni simultanee, non tab),
   Libro soci (Ricerca/Passaggi/Campi e modelli), import (CSV/Controllo).
   Macro e stampa restano flussi brevi a singola attivita; setup conserva
   editor slide, wizard nuovo anno e strumenti avanzati separati.
   Home, archivio, assemblea pubblica, PEG e guida mantengono lettura libera
   e navigazione ad ancore; player, alias PEG e 404 non richiedono tab.
+  La guida mantiene tutti i contenuti ricercabili nel browser, con indice
+  completo anche per Home e assemblea; il toggle mobile richiude solo l'indice.
+  Quando lo spazio lo consente l'indice è laterale e resta nel viewport;
+  testo a misura di lettura e tabelle etichettate su schermi stretti evitano
+  righe troppo lunghe o caratteri ridotti per far entrare i contenuti.
+  Preservare deep-link e modalità `?embed` / `solo=limiti`, senza coprire i
+  titoli con gli elementi sticky.
   Non inserire una seconda intestazione su documenti, regia, guida o player.
 - Verificare le interazioni browser in
   `tests/documents-browser.test.cjs`, `tests/members-browser.test.cjs` e
@@ -156,6 +173,9 @@ questa guida, nei test o nella memoria dell'assistente.
   `tests/section-navigation-browser.test.cjs` copre l'inventario completo
   a 375/768/1024/1440px (markup/CSS/controller condiviso); i test specifici
   coprono dati, salvataggi, import e autorizzazioni con servizi simulati.
+  `tests/guida-browser.test.cjs` verifica indice, ancore e contesti della guida
+  su desktop, laptop, tablet e telefono nelle due orientazioni applicabili,
+  comprese le varianti embed e `solo=limiti`.
 
 ### Persistenza
 
@@ -234,8 +254,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - La UI genitori usa solo `fullName`, senza i due input `givenName`/`surname`;
   legge ancora i nomi verificati preesistenti. Il reimport per CF conserva anche
   il nome completo corretto localmente.
-- `M.pendingCoca` esclude dallo snapshot soci i profili con FoCa valorizzato e
-  CoCa assente/No. Non eliminare profili o cambiare permessi. I consensi elencati
+- `M.pendingCoca` esclude dalle viste dei soli capi i profili con FoCa valorizzato e
+  CoCa assente/No; l'admin riceve tutte le schede, senza questo filtro.
+  Non eliminare profili o cambiare permessi. I consensi elencati
   in `M.ignoredProfileFields` sono ignorati da import, API profilo e export;
   eventuali JSON storici non richiedono cancellazioni massive.
 - Nella scheda, assegnazione e ruolo sono un riepilogo in sola lettura;
@@ -279,6 +300,10 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - La board usa righe compatte C/VC, membri senza titoli e nuovi ingressi
   su fondo distinto. Conservare `data-role`, aria-label completi e bersagli
   drag/tastiera da almeno 44px anche senza intestazioni per ogni ruolo.
+  Nomi, ruoli e conteggio per unità devono restare leggibili a colpo d'occhio.
+  Le assegnazioni restano nella schermata gruppi, senza nuovi dialoghi
+  «Sposta» dalle card o dalla scheda personale. Presenze/assenze alle attività sono
+  requisiti futuri, non ancora implementati.
 - `M.patrolCatalog`/`M.patrolIdentity` fissano colori e alias singolare/plurale
   forniti dal gruppo; API e UI applicano lo stesso catalogo senza cancellare
   i dati locali precedenti. Gallo ha tre varianti esplicite; non indovinarne una.

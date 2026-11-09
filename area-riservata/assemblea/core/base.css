@@ -3,6 +3,10 @@
 
 /* ============ Token specifici alla presentazione ============ */
 :root {
+  --lv-safe-top: env(safe-area-inset-top, 0px);
+  --lv-safe-right: env(safe-area-inset-right, 0px);
+  --lv-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --lv-safe-left: env(safe-area-inset-left, 0px);
   /* testi e sfondi */
   --ink: var(--vd);
   --muted: var(--v2);
@@ -206,6 +210,73 @@ body {
   font-size: 19px;
   color: var(--vd);
   font-variant-numeric: tabular-nums
+}
+
+.odg-list {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none
+}
+
+.odg-row {
+  gap: 0;
+  padding: 0
+}
+
+.odg-action {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 0 28px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none
+}
+
+button.odg-action {
+  border: 0;
+  background: transparent;
+  cursor: pointer
+}
+
+.odg-action:focus-visible {
+  outline: 4px solid var(--v);
+  outline-offset: -6px;
+  border-radius: 12px
+}
+
+.odg-row .odg-number {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--v);
+  color: var(--y);
+  font: 800 28px Montserrat, sans-serif
+}
+
+.odg-row .odg-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--vd);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odg-row,
+  .odg-action {
+    transition: none !important
+  }
 }
 
 .fade {

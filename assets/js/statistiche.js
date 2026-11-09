@@ -35,13 +35,9 @@
     "stream-reconnect": "Diretta in riconnessione",
     "server-error": "Errore server",
   };
-  const counters = [
-    "stats-visits",
-    "stats-views",
-    "stats-people",
-    "stats-live-unique",
+  // Live values describe "now" and are cleared on failure; daily aggregates stay visible but marked stale.
+  const liveCounters = [
     "stats-online",
-    "stats-errors",
     "stats-site-tabs",
     "stats-site-visible",
     "stats-presentation",
@@ -50,16 +46,56 @@
     "stats-api-errors",
     "stats-limited",
   ];
-  const count = (value) => (Number.isFinite(value) ? value.toLocaleString("it-IT") : "-");
-  const time = (value) => new Date(value).toLocaleTimeString("it-IT", { timeZone: "Europe/Rome" });
+  const dayCounters = ["stats-visits", "stats-views", "stats-people", "stats-live-unique", "stats-errors"];
+  const NBSP = "\u00a0";
+  const MISSING = "n.d.";
+  const FAILED = "—";
+  const formats = {
+    count: (value) => Math.round(value).toLocaleString("it-IT"),
+    ms: (value) => Math.round(value).toLocaleString("it-IT") + NBSP + "ms",
+    percent: (value) => value.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%",
+  };
+  const format = (value, kind = "count") => (Number.isFinite(value) ? formats[kind](value) : MISSING);
+  const romeTime = { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Rome" };
+  const time = (value) => new Date(value).toLocaleTimeString("it-IT", romeTime);
   const date = (value) =>
     new Date(value).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", timeZone: "Europe/Rome" });
+  const dateTime = (value) => date(value) + " " + time(value);
+  const isoDay = (day, year = false) =>
+    typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day)
+      ? day.slice(8, 10) + "/" + day.slice(5, 7) + (year ? "/" + day.slice(0, 4) : "")
+      : "n.d.";
+  const plural = (value, one, many) => format(value) + " " + (value === 1 ? one : many);
+  function setValue(id, value, kind = "count") {
+    const element = $(id);
+    element.textContent = format(value, kind);
+    element.dataset.state = Number.isFinite(value) ? "measured" : "missing";
+    if (Number.isFinite(value)) element.removeAttribute?.("title");
+    else element.setAttribute("title", "Dato non disponibile per questo periodo");
+  }
+  function setFailed(id) {
+    const element = $(id);
+    element.textContent = FAILED;
+    element.dataset.state = "error";
+    element.setAttribute("title", "Dato non aggiornato: lettura delle statistiche non riuscita");
+  }
+  function setStale(id) {
+    const element = $(id);
+    if (element.dataset.state !== "measured" && element.dataset.state !== "stale") return setFailed(id);
+    element.dataset.state = "stale";
+    element.setAttribute("title", "Ultimo valore ricevuto, non aggiornato");
+  }
   const chartNamespace = "http://www.w3.org/2000/svg";
   const performanceSeries = [
-    { key: "online", id: "online", name: "Persone collegate al sito", color: "online", unit: "", peakUnit: "" },
-    { key: "p95Ms", id: "latency", name: "Tempo di risposta API p95", color: "latency", unit: " ms", peakUnit: " ms" },
-    { key: "cpuPercent", id: "cpu", name: "Utilizzo CPU del NAS", color: "cpu", unit: "%", peakUnit: "%" },
-    { key: "memoryPercent", id: "ram", name: "Utilizzo RAM del NAS", color: "ram", unit: "%", peakUnit: "%" },
+    { key: "online", id: "online", name: "Persone collegate al sito", color: "online", kind: "count" },
+    { key: "p95Ms", id: "latency", name: "Tempo di risposta API p95", color: "latency", kind: "ms" },
+    { key: "cpuPercent", id: "cpu", name: "Utilizzo CPU del NAS", color: "cpu", kind: "percent" },
+    { key: "memoryPercent", id: "ram", name: "Utilizzo RAM del NAS", color: "ram", kind: "percent" },
+  ];
+  const historySeries = [
+    { key: "visits", name: "Visite sito", color: "visits", kind: "count", fill: true },
+    { key: "views", name: "Pagine viste", color: "views", kind: "count" },
+    { key: "people", name: "Persone uniche", color: "connections", kind: "count" },
   ];
   let historyDays = 30;
   let checkedRelease = "";
@@ -67,224 +103,177 @@
   let dailySignature = null;
   let dailyHistory = [];
   let performanceSignature = null;
+  let performanceHistory = [];
+  let lastSuccess = null;
+  let failed = false;
+  const unavailable = () => (failed ? "Dati non disponibili" : "In attesa dei dati");
   const chart = $("stats-history-chart");
   const chartElement = (name, attributes = {}) => {
     const element = document.createElementNS(chartNamespace, name);
     for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
     return element;
   };
-  function drawChart(target, rows, series, options = {}) {
-    const { width, height, xStart, xEnd, yStart, yEnd } = options;
+  // Integer-only steps for counts and ms keep tick labels unique; percentages use divisors of 100.
+  function axis(maximum, kind, maxTicks) {
+    const target = Math.max(kind === "percent" ? 10 : 1, maximum);
+    const steps =
+      kind === "percent"
+        ? [1, 2, 5, 10, 20, 25, 50, 100]
+        : Array.from({ length: 30 }, (_, index) => [1, 2, 5][index % 3] * 10 ** Math.floor(index / 3));
+    const step = steps.find((value) => Math.ceil(target / value - 1e-9) <= maxTicks) || steps.at(-1);
+    const top = Math.min(kind === "percent" ? 100 : Infinity, Math.ceil(target / step - 1e-9) * step);
+    const ticks = [];
+    for (let value = top; value >= 0; value -= step) ticks.push(Math.round(value * 10) / 10);
+    return { top, ticks };
+  }
+  function chartWidth(target, fallback) {
+    const measured = Math.round(target.getBoundingClientRect?.().width || target.clientWidth || 0);
+    return measured >= 200 ? measured : fallback;
+  }
+  function drawChart(target, rows, seriesList, options) {
+    const width = chartWidth(target, options.width);
+    const height = options.height(width);
+    target.setAttribute("viewBox", "0 0 " + width + " " + height);
     target.replaceChildren();
-    delete target.dataset.latest;
-    delete target.dataset.peak;
-    delete target.dataset.points;
-    delete target.dataset.lastX;
-    delete target.dataset.lastY;
+    for (const key of ["latest", "peak", "points", "lastX", "lastY"]) delete target.dataset[key];
     const title = chartElement("title");
-    title.textContent = series.name;
+    title.textContent = options.title;
     target.append(title);
-    const available = rows
-      .map((row, index) => ({ index, value: row?.[series.key], sampledAt: row?.sampledAt, day: row?.day }))
-      .filter((point) => Number.isFinite(point.value));
-    if (!available.length) {
+    const values = seriesList.flatMap((series) => rows.map((row) => row?.[series.key]).filter(Number.isFinite));
+    if (!values.length) {
       const empty = chartElement("text", {
         x: width / 2,
-        y: (yStart + yEnd) / 2,
+        y: height / 2,
         "text-anchor": "middle",
         class: "statistics-chart-empty",
       });
-      empty.textContent = "In attesa dei campioni";
+      empty.textContent = options.empty;
       target.append(empty);
-      return;
+      return null;
     }
-    const maxValue = options.maxValue ?? Math.max(1, ...available.map((point) => point.value));
-    const ticks = options.ticks || 4;
-    const x = (index) => (rows.length > 1 ? xStart + ((xEnd - xStart) * index) / (rows.length - 1) : xStart + (xEnd - xStart) / 2);
-    const y = (value) => yEnd - ((yEnd - yStart) * value) / maxValue;
-    for (let tick = 0; tick <= ticks; tick++) {
-      const value = (maxValue * (ticks - tick)) / ticks;
+    const kind = seriesList[0].kind;
+    const scale = axis(Math.max(...values), kind, options.ticks);
+    const tickLabels = scale.ticks.map((value) => format(value, kind));
+    const xStart = 14 + Math.max(...tickLabels.map((label) => label.length)) * 7;
+    const xEnd = width - 14;
+    const yStart = 14;
+    const yEnd = height - 32;
+    const x = (index) => (rows.length > 1 ? xStart + ((xEnd - xStart) * index) / (rows.length - 1) : (xStart + xEnd) / 2);
+    const y = (value) => yEnd - ((yEnd - yStart) * value) / scale.top;
+    scale.ticks.forEach((value, index) => {
       const position = y(value);
       target.append(chartElement("line", { x1: xStart, y1: position, x2: xEnd, y2: position, class: "chart-grid" }));
       const label = chartElement("text", { x: xStart - 7, y: position + 4, "text-anchor": "end", class: "chart-axis-label" });
-      label.textContent = (series.unit === "%"
-        ? value.toLocaleString("it-IT", { maximumFractionDigits: 2 })
-        : count(Math.round(value))) + series.unit;
+      label.textContent = tickLabels[index];
       target.append(label);
-    }
-    let segment = [];
-    const segments = [];
-    for (let index = 0; index < rows.length; index++) {
-      const value = rows[index]?.[series.key];
-      if (!Number.isFinite(value)) {
-        if (segment.length) segments.push(segment);
-        segment = [];
-        continue;
-      }
-      segment.push({ index, value, sampledAt: rows[index].sampledAt, day: rows[index].day });
-    }
-    if (segment.length) segments.push(segment);
-    const last = available.at(-1);
-    const lastX = x(last.index);
-    const lastY = y(last.value);
-    for (const points of segments) {
-      const path = points
-        .map((point, index) => (index ? "L" : "M") + x(point.index).toFixed(1) + "," + y(point.value).toFixed(1))
-        .join(" ");
-      target.append(chartElement("path", { d: path, class: "chart-series chart-" + series.color }));
-      for (const point of points) {
-        const titleText =
-          (point.day || time(point.sampledAt)) + ": " + series.name + " " + count(point.value) + series.unit;
-        const circle = chartElement("circle", {
-          cx: x(point.index),
-          cy: y(point.value),
-          r: rows.length < 32 ? 3 : 1.8,
-          class: "chart-point chart-" + series.color,
-          tabindex: 0,
-          "aria-label": titleText,
-        });
-        const tooltip = chartElement("title");
-        tooltip.textContent = titleText;
-        circle.append(tooltip);
-        target.append(circle);
-      }
-    }
-    if (options.fill && segments.length) {
-      for (const points of segments) {
-        if (points.length < 2) continue;
-        const d =
-          points
-            .map((point, index) => (index ? "L" : "M") + x(point.index).toFixed(1) + "," + y(point.value).toFixed(1))
-            .join(" ") +
-          " L" +
-          x(points.at(-1).index).toFixed(1) +
-          "," +
-          yEnd +
-          " L" +
-          x(points[0].index).toFixed(1) +
-          "," +
-          yEnd +
-          " Z";
-        const fill = chartElement("path", { d, class: "chart-area chart-" + series.color + "-area" });
-        target.insertBefore(fill, target.children[2]);
-      }
-    }
-    const first = available[0];
-    const middle = available[Math.floor((available.length - 1) / 2)];
-    for (const [index, point] of [first, middle, last].entries()) {
+    });
+    const positions = [...new Set([0, Math.floor((rows.length - 1) / 2), rows.length - 1])];
+    let previous = "";
+    for (const position of positions) {
+      const text = options.xLabel(rows[position]);
+      if (!text || text === previous) continue;
+      previous = text;
       const label = chartElement("text", {
-        x: x(point.index),
-        y: height - 11,
-        "text-anchor": index === 0 ? "start" : index === 2 ? "end" : "middle",
+        x: x(position),
+        y: height - 10,
+        "text-anchor": position === 0 ? "start" : position === rows.length - 1 ? "end" : "middle",
         class: "chart-axis-label",
       });
-      label.textContent = options.daily ? point.day.slice(5) : time(point.sampledAt);
+      label.textContent = text;
       target.append(label);
+    }
+    const summaries = [];
+    for (const series of seriesList) {
+      const segments = [];
+      let segment = [];
+      rows.forEach((row, index) => {
+        const value = row?.[series.key];
+        if (Number.isFinite(value)) segment.push({ index, value, row });
+        else if (segment.length) segments.push(segment), (segment = []);
+      });
+      if (segment.length) segments.push(segment);
+      for (const points of segments) {
+        const path = points
+          .map((point, index) => (index ? "L" : "M") + x(point.index).toFixed(1) + "," + y(point.value).toFixed(1))
+          .join(" ");
+        if (series.fill && points.length > 1) {
+          const area =
+            path + " L" + x(points.at(-1).index).toFixed(1) + "," + yEnd + " L" + x(points[0].index).toFixed(1) + "," + yEnd + " Z";
+          target.append(chartElement("path", { d: area, class: "chart-area chart-" + series.color + "-area" }));
+        }
+        target.append(chartElement("path", { d: path, class: "chart-series chart-" + series.color }));
+        if (rows.length > options.maxPoints) continue;
+        for (const point of points) {
+          const text = options.pointLabel(point.row) + ": " + series.name + " " + format(point.value, series.kind);
+          const circle = chartElement("circle", {
+            cx: x(point.index),
+            cy: y(point.value),
+            r: rows.length < 32 ? 3.5 : 2,
+            class: "chart-point chart-" + series.color,
+            tabindex: 0,
+            "aria-label": text,
+          });
+          const tooltip = chartElement("title");
+          tooltip.textContent = text;
+          circle.append(tooltip);
+          target.append(circle);
+        }
+      }
+      const available = segments.flat();
+      if (!available.length) continue;
+      const last = available.at(-1);
+      const peak = Math.max(...available.map((point) => point.value));
+      summaries.push({ series, last, peak, count: available.length, lastX: x(last.index), lastY: y(last.value) });
     }
     const description = chartElement("desc");
     description.textContent =
-      available.length +
-      " campioni. Ultimo: " +
-      count(last.value) +
-      series.unit +
-      "; massimo: " +
-      count(Math.max(...available.map((point) => point.value))) +
-      series.unit +
-      ".";
+      options.description +
+      " " +
+      summaries
+        .map(
+          (summary) =>
+            summary.series.name +
+            ": " +
+            summary.count +
+            " valori su " +
+            rows.length +
+            ", ultimo " +
+            format(summary.last.value, summary.series.kind) +
+            " (" +
+            options.pointLabel(summary.last.row) +
+            "), massimo " +
+            format(summary.peak, summary.series.kind) +
+            ".",
+        )
+        .join(" ");
     target.append(description);
-    target.dataset.latest = String(last.value);
-    target.dataset.peak = String(Math.max(...available.map((point) => point.value)));
-    target.dataset.points = String(available.length);
-    target.dataset.lastX = String(lastX);
-    target.dataset.lastY = String(lastY);
+    const single = summaries.length === 1 ? summaries[0] : null;
+    if (single) {
+      target.dataset.latest = String(single.last.value);
+      target.dataset.peak = String(single.peak);
+      target.dataset.points = String(single.count);
+      target.dataset.lastX = String(single.lastX);
+      target.dataset.lastY = String(single.lastY);
+    }
+    return single;
   }
   function renderHistory(data) {
     const selected = data.slice(0, historyDays).reverse();
-    const values = selected.flatMap((day) => [day.visits, day.views, day.people]).filter(Number.isFinite);
-    const maximum = Math.max(1, ...values);
-    chart.replaceChildren();
-    const title = chartElement("title");
-    title.textContent = "Andamento giornaliero: visite, pagine viste e persone uniche sull’intero sito";
-    chart.append(title);
-    for (let tick = 0; tick <= 4; tick++) {
-      const y = 20 + (202 * tick) / 4;
-      chart.append(chartElement("line", { x1: 58, y1: y, x2: 700, y2: y, class: "chart-grid" }));
-      const label = chartElement("text", { x: 50, y: y + 4, "text-anchor": "end", class: "chart-axis-label" });
-      label.textContent = count(Math.round((maximum * (4 - tick)) / 4));
-      chart.append(label);
-    }
-    for (const [key, color] of [
-      ["visits", "visits"],
-      ["views", "views"],
-      ["people", "connections"],
-    ]) {
-      const series = { key, name: key === "visits" ? "Visite sito" : key === "views" ? "Pagine viste" : "Persone uniche", color, unit: "" };
-      const values = selected.map((day) => day[key]);
-      let segment = [];
-      const segments = [];
-      for (let index = 0; index < selected.length; index++) {
-        if (!Number.isFinite(values[index])) {
-          if (segment.length) segments.push(segment);
-          segment = [];
-          continue;
-        }
-        segment.push({ index, value: values[index] });
-      }
-      if (segment.length) segments.push(segment);
-      for (const points of segments) {
-        const path = points.map((point, index) => {
-          const x = selected.length > 1 ? 58 + (642 * point.index) / (selected.length - 1) : 379;
-          const y = 222 - (202 * point.value) / maximum;
-          return (index ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1);
-        }).join(" ");
-        if (key === "visits" && points.length > 1) {
-          const area =
-            path +
-            " L" +
-            (selected.length > 1 ? 58 + (642 * points.at(-1).index) / (selected.length - 1) : 379) +
-            ",222 L" +
-            (selected.length > 1 ? 58 + (642 * points[0].index) / (selected.length - 1) : 379) +
-            ",222 Z";
-          chart.append(chartElement("path", { d: area, class: "chart-area chart-visits-area" }));
-        }
-        chart.append(chartElement("path", { d: path, class: "chart-series chart-" + color }));
-        if (selected.length <= 31)
-          for (const point of points) {
-            const x = selected.length > 1 ? 58 + (642 * point.index) / (selected.length - 1) : 379;
-            const y = 222 - (202 * point.value) / maximum;
-            const circle = chartElement("circle", {
-              cx: x,
-              cy: y,
-              r: 3,
-              class: "chart-point chart-" + color,
-              tabindex: 0,
-              "aria-label": selected[point.index].day + ": " + series.name + " " + count(point.value),
-            });
-            const tooltip = chartElement("title");
-            tooltip.textContent = selected[point.index].day + ": " + series.name + " " + count(point.value);
-            circle.append(tooltip);
-            chart.append(circle);
-          }
-      }
-    }
-    if (selected.length) {
-      for (const [index, position] of [0, Math.floor((selected.length - 1) / 2), selected.length - 1].entries()) {
-        const label = chartElement("text", {
-          x: selected.length > 1 ? 58 + (642 * position) / (selected.length - 1) : 379,
-          y: 261,
-          "text-anchor": index === 0 ? "start" : index === 2 ? "end" : "middle",
-          class: "chart-axis-label",
-        });
-        label.textContent = selected[position].day.slice(5);
-        chart.append(label);
-      }
-    }
-    const description = chartElement("desc");
-    description.textContent =
-      "Intervallo di " +
-      historyDays +
-      " giorni. Visite e pagine viste; le persone uniche sono disponibili dalla data di attivazione del conteggio.";
-    chart.append(description);
+    $("stats-history-description").textContent =
+      "Persone uniche, visite e pagine viste sull’intero sito · " +
+      (historyDays === 365 ? "ultimi 12 mesi" : "ultimi " + historyDays + " giorni") +
+      ", un valore al giorno (ora italiana).";
+    drawChart(chart, selected, historySeries, {
+      width: 720,
+      height: (width) => (width < 520 ? 230 : 280),
+      ticks: 4,
+      maxPoints: 31,
+      title: "Andamento giornaliero: visite, pagine viste e persone uniche sull’intero sito",
+      empty: lastSuccess !== null ? "Nessun dato giornaliero" : unavailable(),
+      xLabel: (day) => isoDay(day?.day),
+      pointLabel: (day) => isoDay(day?.day, true),
+      description: "Intervallo di " + historyDays + " giorni; i giorni non raccolti restano vuoti e non valgono zero.",
+    });
     $("stats-history-note").textContent = selected.some((day) => day.people === null)
       ? "Il conteggio delle persone uniche parte dall’attivazione; i giorni precedenti sono indicati come non raccolti."
       : "Ogni browser conta una volta al giorno: più schede o pagine dello stesso browser non aumentano le persone uniche.";
@@ -293,11 +282,11 @@
     for (const day of selected.slice().reverse()) {
       const row = document.createElement("tr");
       for (const value of [
-        date(Date.parse(day.day + "T12:00:00Z")),
-        Number.isFinite(day.people) ? count(day.people) : "Non raccolto",
-        day.visits === null ? "Non raccolto" : count(day.visits),
-        day.views === null ? "Non raccolto" : count(day.views),
-        day.liveUnique === null ? "Non raccolto" : count(day.liveUnique),
+        isoDay(day.day, true),
+        Number.isFinite(day.people) ? format(day.people) : "Non raccolto",
+        Number.isFinite(day.visits) ? format(day.visits) : "Non raccolto",
+        Number.isFinite(day.views) ? format(day.views) : "Non raccolto",
+        Number.isFinite(day.liveUnique) ? format(day.liveUnique) : "Non raccolto",
       ]) {
         const cell = document.createElement("td");
         cell.textContent = value;
@@ -315,9 +304,12 @@
       ? labels[pages[0]?.page] && pages[1]
         ? labels[pages[0].page] + " e " + labels[pages[1].page] + " raccolgono il " + Math.round((lead / total) * 100) + "% delle pagine viste."
         : "Le pagine più viste oggi."
-      : "Nessuna pagina vista oggi.";
-    $("stats-distribution-total").textContent =
-      count(pageViews) + " visualizzazioni oggi · le visite contano browser, non pagine.";
+      : Number.isFinite(pageViews)
+        ? "Nessuna pagina vista oggi."
+        : "Distribuzione non disponibile.";
+    $("stats-distribution-total").textContent = Number.isFinite(pageViews)
+      ? plural(pageViews, "pagina vista", "pagine viste") + " oggi · le visite contano browser, non pagine."
+      : "Totale pagine viste non disponibile.";
     for (const page of pages.slice(0, 5)) {
       const item = document.createElement("div");
       item.className = "statistics-page-bar";
@@ -326,7 +318,7 @@
       const name = document.createElement("span");
       name.textContent = labels[page.page] || page.page;
       const value = document.createElement("strong");
-      value.textContent = count(page.views);
+      value.textContent = format(page.views);
       heading.append(name, value);
       const track = document.createElement("div");
       track.className = "statistics-page-bar-track";
@@ -339,47 +331,59 @@
   }
   function renderPerformance(history) {
     const data = Array.isArray(history) ? history : [];
-    let validSamples = 0;
+    performanceHistory = data;
     const signature = data
-      .map((sample) =>
-        sample
-          ? [sample.sampledAt, ...performanceSeries.map((series) => sample[series.key])].join(":")
-          : "",
-      )
+      .map((sample) => (sample ? [sample.sampledAt, ...performanceSeries.map((series) => sample[series.key])].join(":") : ""))
       .join("|");
     if (signature === performanceSignature) return;
     performanceSignature = signature;
+    const windowSize = data.length || 60;
+    const counts = [];
     for (const series of performanceSeries) {
-      const values = data.map((sample) => sample?.[series.key]);
-      validSamples = Math.max(validSamples, values.filter(Number.isFinite).length);
-      const svg = $("stats-hour-" + series.id);
-      drawChart(
-        svg,
-        data,
-        series,
-        {
-          width: 340,
-          height: 170,
-          xStart: 48,
-          xEnd: 330,
-          yStart: 16,
-          yEnd: 125,
-          maxValue: series.key.endsWith("Percent")
-            ? Math.min(100, Math.max(10, Math.max(...values.filter(Number.isFinite)) + 5))
-            : undefined,
-          ticks: 2,
-        },
-      );
-      const latest = svg.dataset.latest;
-      const peak = svg.dataset.peak;
-      $("stats-hour-" + series.id + "-current").textContent =
-        latest === undefined ? "-" : count(Number(latest)) + series.unit;
-      $("stats-hour-" + series.id + "-peak").textContent =
-        peak === undefined ? "Nessun campione" : "Picco " + count(Number(peak)) + series.peakUnit;
+      const summary = drawChart($("stats-hour-" + series.id), data, [series], {
+        width: 340,
+        height: () => 180,
+        ticks: 3,
+        maxPoints: 60,
+        title: series.name + " nell’ultima ora",
+        empty: data.length ? "Nessun campione in questa finestra" : unavailable(),
+        xLabel: (sample) => (Number.isFinite(sample?.sampledAt) ? time(sample.sampledAt) : ""),
+        pointLabel: (sample) => (Number.isFinite(sample?.sampledAt) ? dateTime(sample.sampledAt) : "orario non disponibile"),
+        description: "Un campione al minuto; i minuti senza campione restano vuoti e non valgono zero.",
+      });
+      const current = $("stats-hour-" + series.id + "-current");
+      const sample = $("stats-hour-" + series.id + "-sample");
+      counts.push(summary ? summary.count : 0);
+      if (summary) {
+        current.textContent = format(summary.last.value, series.kind);
+        current.dataset.state = "measured";
+        $("stats-hour-" + series.id + "-peak").textContent = "Picco 60 min: " + format(summary.peak, series.kind);
+        sample.textContent =
+          "Ultimo campione " +
+          (Number.isFinite(summary.last.row.sampledAt) ? time(summary.last.row.sampledAt) : "n.d.") +
+          " · " +
+          summary.count +
+          "/" +
+          windowSize +
+          " minuti con dati";
+      } else {
+        current.textContent = data.length ? MISSING : failed ? FAILED : "-";
+        current.dataset.state = data.length ? "missing" : failed ? "error" : "pending";
+        $("stats-hour-" + series.id + "-peak").textContent = data.length || failed ? "Nessun campione" : "-";
+        sample.textContent = data.length
+          ? "0/" + windowSize + " minuti con dati: misura non rilevata in questa finestra"
+          : unavailable();
+      }
     }
-    $("stats-hour-note").textContent = validSamples < 60
-      ? "Campioni reali raccolti: " + validSamples + " su 60 minuti. Il grafico si completa dopo un’ora."
-      : "Campioni reali del NAS: uno al minuto. Nessun dato mancante viene sostituito con zero.";
+    $("stats-hour-note").textContent = data.length
+      ? "Campioni per serie su " +
+        windowSize +
+        " minuti: " +
+        performanceSeries.map((series, index) => series.name.replace(/ del NAS| al sito/, "") + " " + counts[index]).join(", ") +
+        ". I minuti senza campione restano vuoti; uno zero nel grafico è un valore misurato."
+      : failed
+        ? "Campioni dell’ultima ora non disponibili."
+        : "";
   }
   function rows(id, values, empty = "Nessun dato registrato") {
     const body = $(id);
@@ -409,7 +413,7 @@
       label.textContent = kinds[event.kind] || event.kind;
       const timestamp = document.createElement("time");
       timestamp.dateTime = new Date(event.time).toISOString();
-      timestamp.textContent = time(event.time);
+      timestamp.textContent = dateTime(event.time);
       summary.append(badge, label, timestamp);
       const description = document.createElement("p");
       description.className = "metrics-event-detail";
@@ -423,14 +427,20 @@
       list.append(item);
     }
   }
+  function setReleaseCheck(enabled, reason) {
+    const button = $("stats-release-check");
+    const note = $("stats-release-check-reason");
+    button.disabled = !enabled;
+    note.hidden = enabled;
+    note.textContent = enabled ? "" : reason;
+  }
   async function checkRelease(revision) {
     if (checkingRelease) return;
     checkingRelease = true;
-    const button = $("stats-release-check");
     const status = $("stats-release-status");
     const latestVersion = $("stats-release-latest");
     const latestLink = $("stats-release-latest-commit");
-    button.disabled = true;
+    $("stats-release-check").disabled = true;
     latestVersion.hidden = true;
     status.textContent = "Confronto con l’ultimo commit del branch NAS…";
     try {
@@ -450,13 +460,48 @@
         revision.toLowerCase() === latest.sha.toLowerCase()
           ? "Il NAS è all’ultimo commit del branch NAS."
           : "È disponibile un aggiornamento rispetto al branch NAS.";
+      status.textContent += " Verificato alle " + time(Date.now()) + ".";
     } catch (error) {
-      status.textContent = "Confronto non riuscito: " + error.message;
+      status.textContent = "Confronto con GitHub non riuscito: " + error.message + ". La versione del NAS resta quella indicata sopra.";
       latestVersion.hidden = true;
     } finally {
       checkingRelease = false;
-      button.disabled = false;
+      $("stats-release-check").disabled = !checkedRelease;
     }
+  }
+  function renderRelease(release) {
+    const releaseLink = $("stats-release-commit");
+    const revision = $("stats-release-revision");
+    if (typeof release === "string" && /^[a-f0-9]{40}$/i.test(release)) {
+      releaseLink.hidden = false;
+      revision.hidden = true;
+      releaseLink.textContent = release.slice(0, 12);
+      releaseLink.title = release;
+      releaseLink.href = "https://github.com/terranovamt/agesci-canicattini1/commit/" + release;
+      releaseLink.target = "_blank";
+      releaseLink.rel = "noopener";
+      $("stats-release-branch").textContent = "Branch NAS · revisione completa " + release;
+      setReleaseCheck(!checkingRelease, "");
+      if (checkedRelease !== release) {
+        checkedRelease = release;
+        checkRelease(release);
+      }
+      return;
+    }
+    checkedRelease = "";
+    releaseLink.hidden = true;
+    revision.hidden = false;
+    $("stats-release-branch").textContent = "Branch NAS";
+    $("stats-release-latest").hidden = true;
+    if (typeof release === "string" && release) {
+      revision.textContent = "«" + release + "» · versione locale";
+      $("stats-release-status").textContent =
+        "Versione locale non confrontabile con il branch NAS: la revisione non è un commit Git completo.";
+    } else {
+      revision.textContent = "non comunicato dal server";
+      $("stats-release-status").textContent = "Il server non ha indicato la versione deployata.";
+    }
+    setReleaseCheck(false, "Verifica disattivata: serve l’hash completo (40 caratteri) del commit deployato.");
   }
   $("stats-release-check").addEventListener("click", () => {
     if (checkedRelease) checkRelease(checkedRelease);
@@ -471,55 +516,65 @@
     });
   });
   $("statistics-data").hidden = false;
+  let layoutKey = "";
+  const relayout = () => {
+    const key = [chart, ...performanceSeries.map((series) => $("stats-hour-" + series.id))]
+      .map((target) => chartWidth(target, 0))
+      .join(",");
+    if (key === layoutKey) return;
+    layoutKey = key;
+    renderHistory(dailyHistory);
+    performanceSignature = null;
+    renderPerformance(performanceHistory);
+  };
+  if (typeof ResizeObserver === "function") new ResizeObserver(relayout).observe($("statistics-data"));
+  else window.addEventListener?.("resize", relayout);
   window.NAS_METRICS.watch({
     render(data) {
-      const { traffic, api } = data;
+      const traffic = data.traffic || {};
+      const today = traffic.today || {};
+      const api = data.api || {};
+      const sampledAt = Number.isFinite(data.sampledAt) ? data.sampledAt : Date.now();
+      lastSuccess = sampledAt;
+      failed = false;
+      $("statistics-data").dataset.state = "fresh";
       $("statistics-status").textContent =
-        (data.enabled ? "Aggiornato · " : "Raccolta browser disattivata · ") + time(data.sampledAt) + " Europe/Rome";
+        (data.enabled
+          ? "Dati attuali delle " + time(sampledAt) + " (ora italiana) · aggiornamento automatico ogni 5 secondi."
+          : "Raccolta dal browser disattivata: presenze e schede non vengono rilevate · dati server delle " +
+            time(sampledAt) +
+            " (ora italiana).");
       $("statistics-status").className = "metrics-status";
-      const release = data.service?.release;
-      const releaseLink = $("stats-release-commit");
-      if (typeof release === "string" && /^[a-f0-9]{40}$/i.test(release)) {
-        releaseLink.hidden = false;
-        releaseLink.textContent = release.slice(0, 12);
-        releaseLink.href = "https://github.com/terranovamt/agesci-canicattini1/commit/" + release;
-        releaseLink.target = "_blank";
-        releaseLink.rel = "noopener";
-        $("stats-release-branch").textContent = "Branch NAS · revisione completa " + release;
-        if (checkedRelease !== release) {
-          checkedRelease = release;
-          checkRelease(release);
-        }
-      } else {
-        releaseLink.hidden = true;
-        $("stats-release-branch").textContent = "Branch NAS";
-        $("stats-release-status").textContent =
-          typeof release === "string" && release ? "Revisione: " + release + " (non identificata come commit Git)." : "Versione deployata non disponibile.";
-      }
+      renderRelease(data.service?.release);
       for (const [id, value] of Object.entries({
-        "stats-visits": traffic.today.visits,
-        "stats-views": traffic.today.views,
-        "stats-people": traffic.today.people,
-        "stats-live-unique": traffic.today.liveUnique,
+        "stats-visits": today.visits,
+        "stats-views": today.views,
+        "stats-people": today.people,
+        "stats-live-unique": today.liveUnique,
         "stats-online": data.enabled ? traffic.people : null,
-        "stats-errors": traffic.today.errors,
+        "stats-errors": today.errors,
         "stats-site-tabs": data.enabled ? traffic.online : null,
         "stats-site-visible": data.enabled ? traffic.visible : null,
         "stats-presentation": traffic.presentationDevices,
-        "stats-streams": traffic.liveStreams,
         "stats-api-errors": api.errors5xx,
         "stats-limited": api.limited,
       }))
-        $(id).textContent = count(value);
-      $("stats-latency").textContent = Number.isFinite(api.p95Ms) ? Math.round(api.p95Ms) + " ms" : "-";
+        setValue(id, value);
+      setValue("stats-latency", api.p95Ms, "ms");
+      setValue("stats-streams", traffic.liveStreams);
+      if (Number.isFinite(traffic.liveStreams) && Number.isFinite(traffic.liveLimit))
+        $("stats-streams").textContent = format(traffic.liveStreams) + NBSP + "/" + NBSP + format(traffic.liveLimit);
+      if (!Number.isFinite(api.p95Ms) && Number.isFinite(api.sampleCount) && api.sampleCount === 0)
+        $("stats-latency").setAttribute("title", "Nessuna richiesta API negli ultimi 5 minuti");
+      const totals = traffic.totals || {};
       $("stats-totals").textContent =
-        "Dall’" +
-        traffic.totals.started +
+        "Dal " +
+        isoDay(totals.started, true) +
         " · " +
-        count(traffic.totals.visits) +
-        " visite al sito · " +
-        count(traffic.totals.views) +
-        " pagine viste.";
+        plural(totals.visits, "visita", "visite") +
+        " al sito · " +
+        plural(totals.views, "pagina vista", "pagine viste") +
+        ".";
       const nextDaily = Array.isArray(traffic.daily) ? traffic.daily : [];
       const nextSignature = nextDaily.map((day) => [day.day, day.visits, day.views, day.people, day.liveUnique].join(":")).join("|");
       dailyHistory = nextDaily;
@@ -527,36 +582,48 @@
         dailySignature = nextSignature;
         renderHistory(nextDaily);
       }
-      renderDistribution(traffic.pages, traffic.today.views);
+      renderDistribution(Array.isArray(traffic.pages) ? traffic.pages : [], today.views);
       renderPerformance(data.performance?.hourly);
-      const sessions = traffic.sessions.map((session) => [
+      const sessions = (Array.isArray(traffic.sessions) ? traffic.sessions : []).map((session) => [
         labels[session.page] || session.page,
         session.visible ? "In primo piano" : "In background",
-        Number.isFinite(session.latencyMs) ? Math.round(session.latencyMs) + " ms" : "-",
+        Number.isFinite(session.latencyMs) ? formats.ms(session.latencyMs) : MISSING,
         time(session.lastSeen),
       ]);
-      rows("stats-sessions", sessions);
+      rows("stats-sessions", sessions, "Nessuna scheda aperta adesso");
+      const eventsList = Array.isArray(data.events) ? data.events : [];
       const events = $("stats-events");
-      if (!events.dataset.signature || events.dataset.signature !== JSON.stringify(data.events)) {
-        events.dataset.signature = JSON.stringify(data.events);
-        renderEvents(data.events);
+      if (!events.dataset.signature || events.dataset.signature !== JSON.stringify(eventsList)) {
+        events.dataset.signature = JSON.stringify(eventsList);
+        renderEvents(eventsList);
       }
-      $("stats-no-events").hidden = data.events.length > 0;
-      $("stats-no-events").textContent = data.events.length
-        ? data.events.length + " segnalazioni recenti · apri ogni riga per i dettagli."
+      $("stats-no-events").hidden = false;
+      $("stats-no-events").textContent = eventsList.length
+        ? plural(eventsList.length, "segnalazione recente", "segnalazioni recenti") + " (più recenti in alto) · apri ogni riga per i dettagli."
         : "Nessuna segnalazione recente.";
     },
     error(message) {
-      $("statistics-status").textContent = message;
+      const failure = message + ". Il problema riguarda la lettura delle statistiche e non indica di per sé un guasto del NAS.";
+      failed = true;
       $("statistics-status").className = "metrics-status err";
-      for (const id of counters) $(id).textContent = "-";
-      $("stats-totals").textContent = "Dati non aggiornati";
+      for (const id of liveCounters) setFailed(id);
+      rows("stats-sessions", [], "Dati non disponibili");
+      if (lastSuccess !== null) {
+        $("statistics-data").dataset.state = "stale";
+        $("statistics-status").textContent =
+          failure + " Grafici e totali del giorno restano quelli delle " + time(lastSuccess) + ", non aggiornati.";
+        for (const id of dayCounters) setStale(id);
+        return;
+      }
+      $("statistics-data").dataset.state = "error";
+      $("statistics-status").textContent = failure + " Nessun dato ricevuto finora.";
+      for (const id of dayCounters) setFailed(id);
+      $("stats-totals").textContent = "Totali non disponibili.";
       dailySignature = null;
       dailyHistory = [];
       renderHistory([]);
-      renderDistribution([], 0);
+      renderDistribution([], null);
       renderPerformance([]);
-      rows("stats-sessions", [], "Dati non disponibili");
       renderEvents([]);
       $("stats-no-events").hidden = false;
       $("stats-no-events").textContent = "Segnalazioni non disponibili.";

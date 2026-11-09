@@ -65,7 +65,9 @@
     edit,
     view = "generale",
     balanceSection = "entrate",
-    saving = false;
+    saving = false,
+    jsonPending = false,
+    jsonBase;
   const open = new Set(["assemblea"]);
   const collapsed = new WeakSet();
   const arraySchemas = new Map();
@@ -104,6 +106,20 @@
     return clone(window.DATI);
   }
   const dirty = () => !same(edit, published);
+  const unsaved = () => dirty() || jsonPending;
+
+  function refreshJson() {
+    if (jsonPending) return;
+    $("#json-text").value = JSON.stringify(edit, null, 2);
+    jsonBase = clone(edit);
+  }
+
+  function discardJson() {
+    jsonPending = false;
+    $("#json-err").textContent = "";
+    refreshJson();
+    updateDirty();
+  }
 
   function sync(newBase, snapshot) {
     const pending = snapshot ? M.diffPatch(snapshot, edit) : undefined;
@@ -305,14 +321,11 @@
   }
 
   function box(id, title, sub, badges, fill) {
-    const d = el("details", { className: "box", open: open.has(id) || view === "bilancio" });
+    const d = el("section", { className: "form-section" });
     d.dataset.id = id;
-    d.ontoggle = () => {
-      d.open ? open.add(id) : open.delete(id);
-    };
     d.append(
       el(
-        "summary",
+        "h3",
         {},
         el("span", { className: "t", textContent: title }),
         sub ? el("small", { textContent: sub }) : null,
@@ -332,7 +345,7 @@
     ordine:
       "Aggiungi, modifica, duplica o nascondi le slide. Collassa un divisore per spostare tutta la sezione: trascinala oppure usa i pulsanti Sposta su e Sposta giù.",
     bilancio: "Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.",
-    json: "Tutti i dati di dati.js e le modifiche locali in formato JSON.",
+    json: "Modifica il testo e applicalo alla bozza. Solo «Salva dati base» salva sulla destinazione indicata.",
   };
   const TITOLI = {
     generale: "Informazioni generali",
@@ -576,6 +589,11 @@
         moved = org[i] !== i && org[i] >= 0;
       const btn = (glyph, title, fn, dis) => {
         const b = el("button", { type: "button", className: "ic", title, disabled: !!dis }, icon(icons[glyph]));
+        if (glyph === "edit") {
+          b.className += " slide-edit";
+          b.append(el("span", { textContent: "Modifica" }));
+        }
+        if (glyph === "trash") b.className += " slide-delete";
         b.setAttribute("aria-label", title);
         b.onclick = fn;
         return b;
@@ -676,10 +694,15 @@
         altri: Object.keys(edit).filter(key => !["slide", ...GENERALE, "entrate", "uscite",
           "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti", "patrimonio", "nota_beni_durevoli"].includes(key)),
       };
-      renderSezioni(c, groups[balanceSection] || groups.entrate);
+      const keys = groups[balanceSection] || groups.entrate;
+      renderSezioni(c, keys);
+      if (!keys.some(key => key in edit))
+        c.append(el("p", { className: "empty-state", textContent: balanceSection === "altri"
+          ? "Nessun altro dato presente. Tutti i dati del bilancio sono nelle altre sezioni."
+          : "Nessun dato presente in questa sezione." }));
     }
     else if (view === "ordine" && Array.isArray(edit.slide)) renderOrdine(c);
-    if (view === "json") $("#json-text").value = JSON.stringify(edit, null, 2);
+    if (view === "json") refreshJson();
     scrollTo(0, y);
     updateDirty();
     if ($("#slide-editor").open) renderEditor();
@@ -688,6 +711,8 @@
   function go(tab) {
     const prev = view;
     view = tab;
+    $("#app").dataset.view = tab;
+    if (["json", "guida", "limiti"].includes(tab)) $("#setup-tools").open = true;
     document.querySelectorAll(".tabs button").forEach((x) => {
       if (!x.dataset.tab) return;
       x.classList.toggle("on", x.dataset.tab === tab);
@@ -699,11 +724,16 @@
     $("#campi").hidden = doc || tab === "json";
     $("#json").hidden = tab !== "json";
     $("#doc").hidden = !doc;
+    $("#doc-link").hidden = !doc;
+    $(".workflow-note").hidden = doc || tab === "generale";
     $("#balance-nav").hidden = tab !== "bilancio";
     $("#intro").hidden = doc;
     $("#intro").textContent = INTRO[tab] || "";
     if (doc) {
-      const src = "guida.html?embed" + (tab === "limiti" ? "&solo=limiti" : "");
+      const anchor = tab === "limiti" ? "limiti" : "setup";
+      const src = "guida.html?embed" + (tab === "limiti" ? "&solo=limiti" : "") + "#" + anchor;
+      $("#doc-link").href = "guida.html#" + anchor;
+      $("#doc-link").textContent = tab === "limiti" ? "Apri i limiti in una nuova scheda ↗" : "Apri la guida al setup in una nuova scheda ↗";
       if ($("#doc").getAttribute("src") !== src) $("#doc").src = src;
     } else if (edit) {
       if (prev !== tab) scrollTo(0, 0);
@@ -713,6 +743,7 @@
   document.querySelectorAll("[data-balance]").forEach((button) => {
     button.onclick = () => {
       balanceSection = button.dataset.balance;
+      $("#balance-select").value = balanceSection;
       document.querySelectorAll("[data-balance]").forEach((item) =>
         item.setAttribute("aria-pressed", String(item === button)),
       );
@@ -720,20 +751,28 @@
       scrollTo(0, 0);
     };
   });
+  $("#balance-select").onchange = () => {
+    const button = [...document.querySelectorAll("[data-balance]")]
+      .find(item => item.dataset.balance === $("#balance-select").value);
+    if (button) button.onclick();
+  };
 
   function updateDirty() {
     const d = dirty();
-    $("#dirty").textContent = d
-      ? nas
-        ? "Modifiche non pubblicate"
-        : "● Modifiche non salvate su GitHub"
-      : "✓ Nessuna modifica locale";
-    $("#dirty").style.color = d ? "var(--r-strong)" : "var(--g-strong)";
+    $("#dirty").textContent = jsonPending
+      ? (d ? "Bozza modificata · " : "") + "Testo JSON non applicato"
+      : d ? "● Bozza non salvata" : "✓ Nessuna modifica locale";
+    $("#dirty").style.color = d || jsonPending ? "var(--r-strong)" : "var(--g-strong)";
+    $("#json-state").textContent = jsonPending
+      ? "Testo non applicato: la bozza non è cambiata. Applica o scarta il testo prima di salvare."
+      : "Il testo rispecchia la bozza.";
+    $("#json-discard").disabled = !jsonPending || saving;
+    $("#json-apply").disabled = saving;
     $("#salva-gh").textContent = saving
-      ? nas ? "Pubblicazione in corso…" : "Salvataggio in corso…"
-      : nas ? "Pubblica" : "Salva su GitHub (dati.js)";
-    $("#salva-gh").disabled = !d || saving;
-    $("#annulla").disabled = !d || saving;
+      ? "Salvataggio in corso…" : "Salva dati base";
+    $("#save-destination").textContent = nas ? "Destinazione: NAS · dati.js" : "Destinazione: GitHub · dati.js";
+    $("#salva-gh").disabled = !d || jsonPending || saving;
+    $("#annulla").disabled = !unsaved() || saving;
     $("#nuovo-anno").disabled = !edit || saving;
   }
 
@@ -798,7 +837,7 @@
     return r.json();
   }
   async function salvaGitHub() {
-    if (saving || !edit) return;
+    if (saving || !edit || jsonPending) return;
     if (!nas && !GH.repo) return toast('⚠ Imposta "github" in config/site.js');
     saving = true;
     updateDirty();
@@ -873,18 +912,25 @@
   $("#esci-area").onclick = () => {
     if (
       edit &&
-      dirty() &&
+      unsaved() &&
       !confirm(nas ? "Uscire senza pubblicare le modifiche?" : "Uscire senza salvare le modifiche su GitHub?")
     )
       return;
     localStorage.removeItem(TK);
     window.ACCESSO.esci();
     if (published) edit = clone(published);
+    jsonPending = false;
     location.replace("../../");
   };
   $("#annulla").onclick = () => {
+    if (saving || !confirm("Scartare tutte le modifiche alla bozza e l’eventuale testo JSON non applicato? I dati salvati resteranno invariati.")) return;
     edit = clone(published);
+    discardJson();
     render();
+  };
+  $("#json-discard").onclick = () => {
+    if (saving || !confirm("Scartare il testo JSON non applicato? La bozza resterà invariata.")) return;
+    discardJson();
   };
   $("#scarica").onclick = async () => {
     let txt;
@@ -905,14 +951,17 @@
   });
   if (window.NUOVO_ANNO)
     window.NUOVO_ANNO.mount({
-      getData: () => edit,
+      getData: () => {
+        if (jsonPending) throw new Error("Applica alla bozza o scarta il testo JSON prima di avviare il nuovo anno.");
+        return edit;
+      },
       apply(data) {
         edit = data;
         go("generale");
         status(
           nas
-            ? "Nuovo anno applicato: pubblica le modifiche"
-            : "Nuovo anno applicato alla bozza: salva su GitHub per pubblicare",
+            ? "Nuovo anno nella bozza: salva i dati base sul NAS"
+            : "Nuovo anno nella bozza: salva i dati base su GitHub",
           "live",
         );
         toast("Nuovo anno pronto. Nessuna pubblicazione effettuata.");
@@ -927,20 +976,30 @@
       $("#doc").style.height = d.documentElement.scrollHeight + "px";
     } catch (e) {}
   };
+  $("#json-text").oninput = () => {
+    jsonPending = $("#json-text").value !== JSON.stringify(jsonBase, null, 2);
+    $("#json-err").textContent = "";
+    updateDirty();
+  };
   $("#json-apply").onclick = () => {
+    if (saving) return;
     try {
       const v = JSON.parse($("#json-text").value);
       if (!plain(v) || !Array.isArray(v.slide)) throw new Error('serve un oggetto con la lista "slide"');
+      if (jsonPending && !same(jsonBase, edit) &&
+          !confirm("La bozza è cambiata dopo l’apertura del testo JSON. Sostituirla con questo testo? Annulla per conservare entrambi.")) return;
       edit = v;
+      jsonPending = false;
       $("#json-err").textContent = "";
       render();
-      toast(nas ? "Applicato: ora premi Pubblica" : "Applicato: ora premi Salva su GitHub");
+      refreshJson();
+      toast("Applicato alla bozza. Per salvare premi «Salva dati base».");
     } catch (e) {
       $("#json-err").textContent = "JSON non valido: " + e.message;
     }
   };
   addEventListener("beforeunload", (e) => {
-    if (edit && dirty()) e.preventDefault();
+    if (edit && unsaved()) e.preventDefault();
   });
 
   history.replaceState(null, "", location.pathname + location.hash);

@@ -2,7 +2,6 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const { once } = require("node:events");
 const { spawn, spawnSync } = require("node:child_process");
-const os = require("node:os");
 const path = require("node:path");
 const { test } = require("node:test");
 const { createPreviewServer, transformConfig } = require("../tools/preview.cjs");
@@ -154,7 +153,7 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
     t.skip("Chromium non disponibile");
     return;
   }
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "site-migration-"));
+  const directory = await fs.mkdtemp(path.join(__dirname, "../.preview-browser-"));
   const browser = spawn(
     chrome,
     [
@@ -169,7 +168,8 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
       "--remote-debugging-pipe",
       "--user-data-dir=" + directory,
     ],
-    { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
+    { cwd: directory, env: { ...process.env, TMPDIR: "." },
+      stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
   );
   let sequence = 0,
     buffer = "";
@@ -235,18 +235,31 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
         ["/area-riservata/assemblea/", /id="msg" style="display: none;"/, /class="qrq"/],
         [
           "/area-riservata/assemblea/regia.html",
-          /id="principale"[^>]+src="index\.html\?vista=principale/,
+          /id="principale"[^>]+src="\.\/\?vista=principale/,
           /id="b-assemblea"[^>]*>Assemblea attiva/,
         ],
         ["/peg/edizioni/2026-2028.html#scelta", /id="scelta"/, /class="peg-page"/],
       ];
       const { targetId } = await command("Target.createTarget", { url: "about:blank" });
       const { sessionId } = await command("Target.attachToTarget", { targetId, flatten: true });
+      await command("Page.enable", {}, sessionId);
       await command("Runtime.enable", {}, sessionId);
       await command("Network.enable", {}, sessionId);
       for (const [page, ...patterns] of cases) {
         const requestStart = requests.length;
         await command("Page.navigate", { url: origin + page }, sessionId);
+        if (page === "/area-riservata/") {
+          await command("Runtime.evaluate", {
+            expression: `(async () => {
+              while (document.readyState !== "complete") await new Promise(resolve => setTimeout(resolve, 20));
+              if (!window.ACCESSO.verificata()) {
+                document.getElementById("chiave").value = "preview-locale";
+                document.getElementById("login-form").requestSubmit();
+              }
+            })()`,
+            awaitPromise: true,
+          }, sessionId);
+        }
         const deadline = Date.now() + 5000;
         let html = "";
         do {
@@ -265,6 +278,17 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
             if (error.message !== "Inspected target navigated or closed") throw error;
           }
         } while (patterns.some((pattern) => !pattern.test(html)) && Date.now() < deadline);
+        assert.deepEqual(exceptions, [], page);
+        if (patterns.some(pattern => !pattern.test(html))) {
+          const diagnostic = await command("Runtime.evaluate", {
+            expression: `JSON.stringify({ready:document.readyState, access:window.ACCESSO?.verificata(),
+              key:sessionStorage.getItem("canicattini-area-chiave"), dashboard:!!window.AREA_DASHBOARD,
+              scripts:[...document.scripts].map(script=>script.src)})`,
+            returnByValue: true,
+          }, sessionId);
+          assert.fail(page + " missing " + patterns.filter(pattern => !pattern.test(html)).join(", ") +
+            " " + diagnostic.result.value + " recent requests:" + JSON.stringify(requests.slice(requestStart).slice(-10)));
+        }
         for (const pattern of patterns) assert.match(html, pattern, page);
         if (page === "/assemblea/") {
           assert.equal(
@@ -284,7 +308,8 @@ test("canonical pages load dynamic data in a real browser", { timeout: 60000 }, 
             sessionId,
           );
           const documents = JSON.parse(result.value);
-          assert.equal(documents.cards, 4);
+          assert.equal(documents.cards, 5);
+          assert.equal(documents.downloads.length, 4);
           for (const pdf of documents.downloads) {
             const response = await fetch(pdf);
             assert.equal(response.status, 200, pdf);

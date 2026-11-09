@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="../assets/css/home.css" />
     <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
     <link rel="stylesheet" href="../assets/css/nas.css" />
-    <link rel="stylesheet" href="../assets/css/section-nav.css" />
   </head>
   <body class="reserved-page metrics-page">
     <header class="reserved-header">
@@ -29,37 +28,33 @@
       </div>
       <p id="statistics-status" class="metrics-status" role="status" aria-live="polite">Verifica accesso...</p>
       <div id="statistics-data" hidden>
-        <nav class="section-nav" data-section-nav aria-label="Sezioni statistiche" hidden>
-          <button type="button" data-section-target="statistics-traffic">Visite e andamento</button>
-          <button type="button" data-section-target="statistics-server">Server live</button>
-          <button type="button" data-section-target="statistics-diagnostic-panel">Segnalazioni</button>
-          <button type="button" data-section-target="statistics-version">Versione NAS</button>
-        </nav>
-        <div id="statistics-version" data-section-panel>
+        <div id="statistics-version">
         <section class="statistics-release" aria-labelledby="statistics-release-title">
           <div class="statistics-release-heading">
             <div>
               <h2 id="statistics-release-title">Versione NAS</h2>
               <p id="stats-release-branch" class="metrics-status">Branch NAS</p>
             </div>
-            <button id="stats-release-check" type="button">Verifica aggiornamento</button>
+            <button id="stats-release-check" type="button" disabled aria-describedby="stats-release-check-reason">Verifica aggiornamento</button>
           </div>
-          <p class="statistics-release-version">Commit deployato: <a id="stats-release-commit" hidden></a></p>
+          <p class="statistics-release-version">Commit deployato: <a id="stats-release-commit" hidden></a><span id="stats-release-revision">in attesa del server…</span></p>
           <p id="stats-release-status" class="metrics-status" role="status" aria-live="polite">In attesa della versione del server…</p>
+          <p id="stats-release-check-reason" class="metrics-status statistics-release-reason">Verifica disponibile quando il server comunica il commit Git deployato.</p>
           <p id="stats-release-latest" class="metrics-status" hidden>
             Ultimo commit NAS: <a id="stats-release-latest-commit" target="_blank" rel="noopener"></a>
           </p>
         </section>
         </div>
-        <div id="statistics-traffic" data-section-panel>
+        <div id="statistics-traffic">
         <section class="metrics-section" aria-labelledby="statistics-today">
           <h2 id="statistics-today">Il sito oggi</h2>
+          <p class="metrics-status statistics-period-note">«Oggi»: dalla mezzanotte, ora italiana. «Adesso»: rilevato all’ultimo aggiornamento.</p>
           <dl class="metrics-overview statistics-kpis">
-            <div><dt>Persone collegate ora</dt><dd id="stats-online">-</dd></div>
-            <div><dt>Persone uniche oggi</dt><dd id="stats-people">-</dd></div>
-            <div><dt>Visite al sito</dt><dd id="stats-visits">-</dd></div>
-            <div><dt>Pagine viste</dt><dd id="stats-views">-</dd></div>
-            <div><dt>Segnalazioni oggi</dt><dd id="stats-errors">-</dd></div>
+            <div><dt>Persone collegate · adesso</dt><dd id="stats-online">-</dd></div>
+            <div><dt>Persone uniche · oggi</dt><dd id="stats-people">-</dd></div>
+            <div><dt>Visite al sito · oggi</dt><dd id="stats-visits">-</dd></div>
+            <div><dt>Pagine viste · oggi</dt><dd id="stats-views">-</dd></div>
+            <div><dt>Segnalazioni · oggi</dt><dd id="stats-errors">-</dd></div>
           </dl>
         </section>
         <div class="statistics-main">
@@ -67,7 +62,7 @@
             <div class="statistics-history-heading">
               <div>
                 <h2 id="statistics-history">Andamento del sito</h2>
-                <p id="stats-history-description" class="metrics-status">Persone uniche, visite e pagine viste sull’intero sito.</p>
+                <p id="stats-history-description" class="metrics-status">Persone uniche, visite e pagine viste sull’intero sito · ultimi 30 giorni, un valore al giorno.</p>
               </div>
               <div class="statistics-range" role="group" aria-label="Intervallo dello storico">
                 <button type="button" data-history-days="7" aria-pressed="false">7 giorni</button>
@@ -99,68 +94,88 @@
             <h2 id="stats-distribution-title">Caricamento…</h2>
             <p id="stats-distribution-total" class="metrics-status"></p>
             <div id="stats-pages" class="statistics-page-bars"></div>
-            <p class="metrics-status">Visualizzazioni di pagina, non persone uniche.</p>
+            <p class="metrics-status">Pagine viste oggi (dalla mezzanotte, ora italiana), non persone uniche.</p>
           </section>
         </div>
         </div>
-        <div id="statistics-server" data-section-panel>
+        <div id="statistics-server">
         <section class="metrics-section statistics-hourly" aria-labelledby="statistics-hourly-title">
           <div class="statistics-history-heading">
             <div>
               <h2 id="statistics-hourly-title">L’ultima ora, in quattro grafici</h2>
-              <p class="metrics-status">Presenze live, risposta API, CPU e RAM del NAS · campioni ogni minuto</p>
+              <p class="metrics-status">Presenze live, risposta API, CPU e RAM del NAS · un campione al minuto per serie. Il valore grande è l’ultimo campione registrato, non il dato attuale.</p>
             </div>
-            <span class="metrics-live-badge"><i></i> Ultimi 60 minuti</span>
+            <span class="metrics-live-badge">Finestra: ultimi 60 minuti</span>
           </div>
           <div class="statistics-hourly-grid">
             <article class="statistics-hour-card" data-hourly="online">
-              <h3>Presenze live</h3><p>Persone collegate all’intero sito</p>
+              <h3>Presenze live</h3><p>Persone collegate all’intero sito · numero</p>
               <div class="statistics-hour-values"><strong id="stats-hour-online-current">-</strong><span id="stats-hour-online-peak">-</span></div>
+              <p id="stats-hour-online-sample" class="statistics-hour-sample">-</p>
               <svg id="stats-hour-online" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Persone collegate all’intero sito nell’ultima ora"></svg>
             </article>
             <article class="statistics-hour-card" data-hourly="latency">
-              <h3>Risposta API</h3><p>Tempo p95 su 5 minuti · ms</p>
+              <h3>Risposta API</h3><p>Tempo p95 sui 5 minuti precedenti · millisecondi</p>
               <div class="statistics-hour-values"><strong id="stats-hour-latency-current">-</strong><span id="stats-hour-latency-peak">-</span></div>
+              <p id="stats-hour-latency-sample" class="statistics-hour-sample">-</p>
               <svg id="stats-hour-latency" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Tempo di risposta API p95 nell’ultima ora, in millisecondi"></svg>
             </article>
             <article class="statistics-hour-card" data-hourly="cpu">
-              <h3>CPU NAS</h3><p>Utilizzo processore · %</p>
+              <h3>CPU NAS</h3><p>Utilizzo processore · percentuale</p>
               <div class="statistics-hour-values"><strong id="stats-hour-cpu-current">-</strong><span id="stats-hour-cpu-peak">-</span></div>
+              <p id="stats-hour-cpu-sample" class="statistics-hour-sample">-</p>
               <svg id="stats-hour-cpu" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Utilizzo CPU del NAS nell’ultima ora, in percentuale"></svg>
             </article>
             <article class="statistics-hour-card" data-hourly="ram">
-              <h3>RAM NAS</h3><p>Memoria utilizzata · %</p>
+              <h3>RAM NAS</h3><p>Memoria utilizzata · percentuale</p>
               <div class="statistics-hour-values"><strong id="stats-hour-ram-current">-</strong><span id="stats-hour-ram-peak">-</span></div>
+              <p id="stats-hour-ram-sample" class="statistics-hour-sample">-</p>
               <svg id="stats-hour-ram" class="statistics-chart" viewBox="0 0 340 170" role="img" aria-label="Utilizzo RAM del NAS nell’ultima ora, in percentuale"></svg>
             </article>
           </div>
           <p id="stats-hour-note" class="metrics-status" role="status"></p>
         </section>
         </div>
-        <div class="statistics-bottom" id="statistics-diagnostic-panel" data-section-panel>
+        <div class="statistics-bottom" id="statistics-diagnostic-panel">
           <section class="metrics-section statistics-alerts" aria-labelledby="statistics-diagnostics">
             <div class="statistics-history-heading">
-              <h2 id="statistics-diagnostics">Segnalazioni</h2>
+              <h2 id="statistics-diagnostics">Diagnostica e segnalazioni</h2>
               <p id="stats-no-events" class="metrics-status">Nessuna segnalazione recente.</p>
             </div>
-            <dl class="metrics-overview statistics-diagnostic-counters">
-              <div><dt>Risposta API p95 / 5 min</dt><dd id="stats-latency">-</dd></div>
-              <div><dt>Errori API 5xx / 5 min</dt><dd id="stats-api-errors">-</dd></div>
-              <div><dt>Richieste limitate / 5 min</dt><dd id="stats-limited">-</dd></div>
-              <div><dt>Schede aperte</dt><dd id="stats-site-tabs">-</dd></div>
-              <div><dt>Schede in primo piano</dt><dd id="stats-site-visible">-</dd></div>
-              <div><dt>Spettatori presentazione</dt><dd id="stats-presentation">-</dd></div>
-              <div><dt>Unici della diretta oggi</dt><dd id="stats-live-unique">-</dd></div>
-              <div><dt>Flussi SSE tecnici attivi</dt><dd id="stats-streams">-</dd></div>
-            </dl>
             <ol id="stats-events" class="metrics-events"></ol>
+            <div class="statistics-diagnostic-groups">
+              <div class="statistics-diagnostic-group" role="group" aria-labelledby="stats-group-api">
+                <h3 id="stats-group-api">Risposte API · ultimi 5 minuti</h3>
+                <dl class="metrics-overview statistics-diagnostic-counters">
+                  <div><dt>Tempo di risposta p95</dt><dd id="stats-latency">-</dd></div>
+                  <div><dt>Errori server 5xx</dt><dd id="stats-api-errors">-</dd></div>
+                  <div><dt>Richieste limitate (HTTP 429)</dt><dd id="stats-limited">-</dd></div>
+                </dl>
+              </div>
+              <div class="statistics-diagnostic-group" role="group" aria-labelledby="stats-group-now">
+                <h3 id="stats-group-now">Connessioni · adesso</h3>
+                <dl class="metrics-overview statistics-diagnostic-counters">
+                  <div><dt>Schede aperte</dt><dd id="stats-site-tabs">-</dd></div>
+                  <div><dt>Schede in primo piano</dt><dd id="stats-site-visible">-</dd></div>
+                  <div><dt>Spettatori presentazione</dt><dd id="stats-presentation">-</dd></div>
+                  <div><dt>Flussi SSE tecnici attivi</dt><dd id="stats-streams">-</dd></div>
+                </dl>
+                <p class="statistics-diagnostic-help">SSE (Server-Sent Events): connessioni che il browser tiene aperte per ricevere diretta e presentazione in tempo reale. Un dispositivo può aprirne più d’una, quindi non corrispondono alle persone.</p>
+              </div>
+              <div class="statistics-diagnostic-group" role="group" aria-labelledby="stats-group-day">
+                <h3 id="stats-group-day">Diretta · oggi</h3>
+                <dl class="metrics-overview statistics-diagnostic-counters">
+                  <div><dt>Persone uniche della diretta</dt><dd id="stats-live-unique">-</dd></div>
+                </dl>
+              </div>
+            </div>
           </section>
           <section class="metrics-section statistics-release-details" aria-label="Totali del sito e schede aperte">
             <p id="stats-totals" class="metrics-status">-</p>
             <details class="statistics-sessions">
               <summary>Schede aperte</summary>
               <table class="metrics-table">
-                <thead><tr><th scope="col">Pagina</th><th scope="col">Stato</th><th scope="col">Risposta browser</th><th scope="col">Ultimo segnale</th></tr></thead>
+                <thead><tr><th scope="col">Pagina</th><th scope="col">Stato</th><th scope="col">Risposta browser (ms)</th><th scope="col">Ultimo segnale</th></tr></thead>
                 <tbody id="stats-sessions"></tbody>
               </table>
             </details>
@@ -174,6 +189,5 @@
     <script src="../assets/js/shared/accesso.js" defer></script>
     <script src="../assets/js/shared/nas-metrics.js" defer></script>
     <script src="../assets/js/statistiche.js" defer></script>
-    <script src="../assets/js/shared/section-nav.js" defer></script>
   </body>
 </html>

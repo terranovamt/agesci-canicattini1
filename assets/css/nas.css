@@ -79,3 +79,30 @@ body.reserved-page .reserved-header .brand,
   .person-actions .button[type="submit"] { grid-column: 1 / -1; grid-row: 2; }
   .person-actions .button:not([type="submit"]) { grid-column: 1 / -1; grid-row: 3; }
 }
+body.people-page > #reserved-content { width: min(1100px, calc(100% - 28px)); margin: 20px auto; }
+.people-page .people-list-heading { margin: 0 0 12px; }
+.people-page .people-list-heading h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.2; }
+.people-page #people-status { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--v); background: #fff; overflow-wrap: anywhere; }
+.people-page #people-login { display: inline-flex; align-items: center; min-height: 44px; }
+.people-page [hidden] { display: none !important; }
+.people-page .people-branches { flex-wrap: wrap; overflow: visible; margin: 8px 0 12px; padding: 2px; gap: 6px; }
+.people-page .people-branch-filter { padding: 8px 12px; }
+.people-page .people-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; align-items: start; }
+.people-page .person-card { padding: 12px; }
+.people-page .person-card h2 { margin: 0 0 4px; font-size: 1.05rem; line-height: 1.35; overflow-wrap: anywhere; }
+.people-page .person-identity { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--v2); overflow-wrap: anywhere; }
+.people-page .person-fields { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; margin: 0; }
+.people-page .person-fields label { min-width: 0; font-size: 13px; gap: 4px; }
+.people-page select { min-height: 44px; font: inherit; }
+.people-page .person-actions { display: flex; margin-top: 8px; }
+.people-page .person-actions:empty { display: none; }
+.people-page .button { min-height: 44px; margin: 0; padding: 8px 12px; font-size: 13px; }
+.people-page .person-actions .button { width: auto; }
+.people-page .person-feedback { margin: 8px 0 0; color: var(--v); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.people-page .person-feedback-error { color: #982b22; font-weight: 700; }
+.people-page :is(button, select, summary, a, [tabindex]):focus-visible { outline: 3px solid #6d4514; outline-offset: 3px; }
+.people-page .people-help { margin-top: 14px; padding: 8px 12px; }
+.people-page .people-help code { overflow-wrap: anywhere; }
+@media (max-width: 350px) {
+  .people-page .person-fields { grid-template-columns: minmax(0, 1fr); }
+}

@@ -708,9 +708,9 @@ test("profiles, custom fields, templates and bulk macros validate and rollback a
   db.close();
 });
 
-test("FoCa without CoCa is hidden, consents are ignored and annual assignments survive imports and restart", async t => {
+test("admin sees all fourteen adults regardless of FoCa/CoCa, consents are ignored and annual assignments persist", async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-member-history-"));
-  let app = await start(directory);
+  let app = await start(directory, "");
   t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
   await app.login();
   const headers = [...columns, "LIVELLO FOCA", "INGRESSO COCA", "CONSENSO 2A", "CONSENSO RIVISTE"];
@@ -718,10 +718,17 @@ test("FoCa without CoCa is hidden, consents are ignored and annual assignments s
     { "ANNO SCOUT": "2025", BRANCA: "Branca L/C", "CONSENSO 2A": "SI" },
     { "CODICE SOCIO": "012346", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "" },
     { "CODICE SOCIO": "012347", BRANCA: "Branca Adulti", "LIVELLO FOCA": "CFT", "INGRESSO COCA": "2025" },
+    ...Array.from({ length: 12 }, (_, index) => ({
+      "CODICE SOCIO": String(560000 + index), BRANCA: "Branca Adulti",
+      "LIVELLO FOCA": "CFT", "INGRESSO COCA": "",
+    })),
   ], headers));
   let state = await app.snapshot();
-  assert.equal(state.members.some(member => member.code === "012346"), false);
+  assert.equal(state.members.some(member => member.code === "012346"), true);
   assert.equal(state.members.some(member => member.code === "012347"), true);
+  assert.equal(state.members.filter(member => member.branch === "Adulti").length, 14);
+  const overview = await (await app.request("members/overview")).json();
+  assert.equal(overview.branches.find(item => item.branch === "Adulti").count, 14);
   let member = state.members.find(member => member.code === "012345");
   assert.equal(member.profile.consent2a, undefined);
   const createUnit = async name => {
@@ -759,7 +766,7 @@ test("FoCa without CoCa is hidden, consents are ignored and annual assignments s
   assert.equal(Object.hasOwn(stored, "consent2a"), false);
   assert.equal(db.prepare("SELECT count(*) AS n FROM member_profiles").get().n >= 3, true);
   db.close();
-  await app.close(); app = await start(directory); await app.login();
+  await app.close(); app = await start(directory, ""); await app.login();
   assert.deepEqual(await app.snapshot(), persisted);
   assert.equal(M.pendingCoca({ foca: "CFT", coca: "NO" }), true);
   assert.equal(M.pendingCoca({ foca: "", coca: "" }), false);

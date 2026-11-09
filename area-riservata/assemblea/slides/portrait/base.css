@@ -160,10 +160,99 @@ body.pm .pb {
   color: var(--ink);
 }
 
+body.pm .odp-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.45em;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.pm .odc {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 0.75em;
+  border-left: 0.3em solid var(--v);
+  border-radius: 0.5em;
+  background: var(--w);
+  box-shadow: 0 0.15em 0.6em var(--shadow);
+  opacity: 0;
+  transform: translateY(0.35em);
+  transition: opacity 0.35s, transform 0.35s, background-color 0.25s;
+}
+
+body.pm .odc.on {
+  opacity: 1;
+  transform: none;
+}
+
+body.pm .odc.hl {
+  background: color-mix(in srgb, var(--y) 22%, var(--w));
+  box-shadow: inset 0.3em 0 0 var(--y), 0 0.15em 0.6em var(--shadow);
+}
+
+body.pm .odp-action {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.odp-action {
+  cursor: pointer;
+}
+
+.odp-action:focus-visible {
+  outline: 3px solid var(--v);
+  outline-offset: -4px;
+  border-radius: 0.35em;
+}
+
+body.pm .odc b {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65em;
+  height: 1.65em;
+  border-radius: 50%;
+  background: var(--v);
+  color: var(--y);
+  font-size: 0.8em;
+}
+
+body.pm .odt {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
 /* durante il calcolo del font le schede non hanno lo scarto dell'animazione di entrata */
 body.pm .fitting .ent {
   transform: none !important;
   transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.pm .odc {
+    transition: none !important;
+    transform: none;
+  }
 }
 
 /* i titoli non spezzano mai una parola: il font si riduce finché ogni parola sta in riga */

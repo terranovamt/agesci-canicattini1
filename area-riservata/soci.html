@@ -36,21 +36,26 @@
         <div><h2>Soci per branca</h2><p>Premi una branca per filtrare, ripremila per rimuovere il filtro.</p></div>
       </div>
       <div id="members-summary" class="members-summary"></div>
-      <div class="members-toolbar">
+      <div class="members-toolbar members-primary-actions">
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
+        <details class="members-secondary-actions">
+          <summary>Altre azioni</summary>
+          <div class="members-toolbar">
         <button id="open-import" class="button button-secondary" type="button">Importa CSV AGESCI</button>
         <button id="export-members" class="button button-secondary" type="button">Esporta risultati</button>
         <button id="reload-members" class="button button-secondary" type="button">Ricarica</button>
+          </div>
+        </details>
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
         <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
-        <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
         <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
         <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
         <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
         <details id="members-advanced-search" class="members-advanced-search">
           <summary>Ricerca avanzata <span>Età, dati da verificare e percorso educativo</span></summary>
           <div class="members-filters-advanced">
+            <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
             <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
             <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
             <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
@@ -63,11 +68,13 @@
         </details>
         <button class="button button-secondary" type="reset">Azzera filtri</button>
       </form>
-      <div id="members-quick-filters" class="members-quick-filters" aria-label="Filtri rapidi per anno e status"></div>
+      <div id="members-quick-filters" class="members-quick-filters" aria-label="Filtri attivi" hidden></div>
       <div class="members-result-bar">
         <p id="members-count" role="status"></p>
         <div class="members-toolbar">
           <button id="select-results" class="button button-secondary" type="button">Seleziona risultati</button>
+        </div>
+        <div id="members-selection" class="members-toolbar" role="group" aria-label="Azioni sui soci selezionati" hidden>
           <button id="clear-selection" class="button button-secondary" type="button">Deseleziona</button>
           <button id="open-macro" class="button button-primary" type="button">Azioni rapide</button>
           <button id="open-documents" class="button button-secondary" type="button">Genera documenti</button>
@@ -87,7 +94,7 @@
         </div>
         <p id="units-status" role="status" aria-live="polite"></p>
         <div class="members-toolbar">
-          <button id="new-unit" type="button" class="button button-primary">Aggiungi gruppo</button>
+          <button id="new-unit" type="button" class="button button-primary">Aggiungi sestiglia</button>
           <button id="units-new-member" type="button" class="button button-secondary">Nuovo socio</button>
           <button id="reload-units" type="button" class="button button-secondary">Ricarica</button>
         </div>
@@ -112,7 +119,7 @@
         <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome per spostarlo.</p>
         <div id="unit-unassigned"></div>
         <div id="units-board" class="units-board"></div>
-        <details id="units-hidden"><summary>Gruppi nascosti</summary><div id="units-hidden-list"></div></details>
+        <details id="units-hidden"><summary>Sestiglie nascoste</summary><div id="units-hidden-list"></div></details>
       </section>
       <section id="members-transfer-panel" class="members-settings" data-section-panel aria-labelledby="transfers-title">
         <h2 id="transfers-title">Passaggi in attesa</h2>
@@ -126,7 +133,7 @@
             <label>Nome del campo<input name="label" required maxlength="100" placeholder="Es. Obiettivo personale"></label>
             <label>Chiave univoca<input name="key" required pattern="[a-z][a-z0-9-]{0,39}" maxlength="40" placeholder="obiettivo-personale"></label>
             <label>Tipo<select name="type"><option value="text">Testo</option><option value="date">Data</option><option value="select">Scelta</option></select></label>
-            <label>Opzioni (una per riga, solo per Scelta)<textarea name="options" rows="3"></textarea></label>
+            <label id="field-options-label" hidden>Opzioni (una per riga)<textarea name="options" rows="3" disabled></textarea></label>
             <button class="button button-primary" type="submit">Aggiungi campo</button>
           </form>
           <form id="template-form"><h2>Nuovo modello documento</h2>
@@ -178,7 +185,7 @@
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
           <label>Branca locale<select name="branch" required></select></label>
         </div>
-        <h3>Anagrafica</h3><div id="member-profile" class="members-form-grid"></div>
+        <div id="member-profile" class="members-form-grid"></div>
       </section>
       <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" hidden>
         <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
@@ -233,6 +240,7 @@
       <label>Branca<select name="branch" required></select></label>
       <label id="macro-field-label">Campo<select name="key"></select></label>
       <div id="macro-value"></div>
+      <p id="macro-replacement-warning" role="status" hidden>La lista scelta sostituisce tutte le selezioni precedenti del campo per ogni socio selezionato. Una lista vuota le cancella.</p>
       <p>Seleziona i soci per anno di nascita e decidi tu quando proporre L/C → E/G → R/S. Il passaggio viene applicato solo dopo la conferma della destinazione e conserva i percorsi precedenti.</p>
       <button class="button button-primary" type="submit">Applica ai soci selezionati</button>
     </form>

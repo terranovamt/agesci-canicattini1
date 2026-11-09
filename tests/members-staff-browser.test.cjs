@@ -1,6 +1,5 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
@@ -12,7 +11,7 @@ const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
 test("staff UI hides admin tools, constrains fields and exposes destination confirmation", { skip: !chrome }, () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "members-staff-browser-"));
+  const directory = fs.mkdtempSync(path.join(root, ".members-staff-browser-"));
   try {
     const snapshot = { currentYear: "2027", group: {}, units: [], lc: { environment: "Branco", revision: 1 }, templates: [{ id: 1, title: "Internal", body: "{{nome}}" }],
       fields: M.defaultFields.filter(field => field.branch === "E/G"),
@@ -39,18 +38,25 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
         try {
           await wait();
           result.width = innerWidth;
+          result.height = innerHeight;
           result.loaded = !$('members-app').hidden;
           result.hidden = ['members-access-link','new-member','open-import','template-form'].every(id => getComputedStyle($(id)).display === 'none');
           result.scope = [...$('field-form').elements.branch.options].map(option => option.value);
+          result.selectionInitiallyHidden = $('members-selection').hidden;
           result.confirmVisible = $('members-transfers').textContent.includes('Conferma ingresso');
           $('members-transfers').querySelector('button').click(); await wait();
           result.approval = calls.find(call => call.route === 'members/transfers/1').value;
           document.querySelector('.member-name').click();
           result.branchLocked = $('member-form').elements.branch.disabled;
+          result.tabsFit = [...$('member-section-nav').querySelectorAll('button')].every(button => {
+            const rect = button.getBoundingClientRect();
+            return rect.height >= 44 && rect.left >= 0 && rect.right <= innerWidth;
+          });
           result.assignmentReadOnly = !$('member-form').elements['extra:ruolo'] &&
             !$('member-form').elements['extra:squadriglia'] && $('member-assignment').textContent.includes('Squadriglie');
           document.querySelector('[data-close=member-dialog]').click();
           $('select-results').click(); $('open-macro').click();
+          result.selectionVisible = !$('members-selection').hidden;
           const macro = $('macro-form');
           macro.elements.action.value = 'passage'; macro.elements.action.onchange();
           result.target = macro.elements.branch.value;
@@ -72,10 +78,10 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       .replace("</head>", `<style>${["theme", "home", "nas", "soci"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`)
       .replace("</body>", `<script>${exercise}</script></body>`);
     const file = path.join(directory, "fixture.html");
-    for (const width of [375, 768, 1024, 1440]) {
+    for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390]]) {
       fs.writeFileSync(file, `<!doctype html><body><script>
         const frame = document.createElement('iframe');
-        frame.style.cssText = 'border:0;width:${width}px;height:1000px'; document.body.append(frame);
+        frame.style.cssText = 'border:0;width:${width}px;height:${height}px'; document.body.append(frame);
         frame.srcdoc = ${JSON.stringify(page).replace(/</g, "\\u003c")};
         const timer = setInterval(() => {
           const result = frame.contentDocument?.getElementById('staff-result');
@@ -85,14 +91,15 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
         "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, "profile-" + width),
         "--window-size=" + width + ",1000", "--virtual-time-budget=6000", "--dump-dom", "file://" + file],
-      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024 });
+      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: root } });
       assert.equal(browser.status, 0, browser.stderr);
       const encoded = /<pre id="staff-result">([^<]+)<\/pre>/.exec(browser.stdout)?.[1];
       assert.ok(encoded, browser.stdout.slice(-2000));
       const measured = JSON.parse(Buffer.from(encoded, "base64").toString());
       assert.equal(measured.error, undefined, JSON.stringify(measured));
       assert.equal(measured.width, width);
-      for (const key of ["loaded", "hidden", "confirmVisible", "branchLocked", "noEducationalInput", "fits"])
+      assert.equal(measured.height, height);
+      for (const key of ["loaded", "hidden", "confirmVisible", "branchLocked", "noEducationalInput", "fits", "selectionInitiallyHidden", "selectionVisible", "tabsFit"])
         assert.equal(measured[key], true, key + " at " + width + ": " + JSON.stringify(measured));
       assert.deepEqual(measured.scope, ["E/G"]);
       assert.equal(measured.assignmentReadOnly, true);

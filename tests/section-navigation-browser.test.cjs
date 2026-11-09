@@ -1,8 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 const { renderHtml } = require('../tools/site-layout.cjs');
 const root = path.join(__dirname, '..');
@@ -13,6 +12,31 @@ const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'pe
   '404.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'area-riservata/persone.html',
   'area-riservata/soci.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
   'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html', 'area-riservata/assemblea/index.html'];
+const viewports = [
+  [1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390],
+  [375, 900], [768, 900], [1024, 900], [1440, 900],
+];
+const statisticsSections = ['statistics-version', 'statistics-traffic', 'statistics-server', 'statistics-diagnostic-panel'];
+const applicationRoots = {
+  'area-riservata/index.html': '#riservata',
+  'area-riservata/documenti.html': '#documents-app',
+  'area-riservata/persone.html': '#people-app',
+  'area-riservata/soci.html': '#members-app',
+  'area-riservata/statistiche.html': '#statistics-data',
+  'area-riservata/assemblea/setup.html': '#app',
+  'area-riservata/assemblea/regia.html': '#app',
+  'area-riservata/assemblea/guida.html': 'main',
+  'area-riservata/assemblea/index.html': '#stage',
+};
+
+test('statistics displays all sections together without tabs', () => {
+  const html = read('area-riservata/statistiche.html');
+  assert.doesNotMatch(html, /data-section-nav|data-section-panel|section-nav\.(?:js|css)/);
+  for (const id of statisticsSections) {
+    assert.match(html, new RegExp(`<div[^>]*id="${id}"[^>]*>`));
+    assert.doesNotMatch(html.match(new RegExp(`<div[^>]*id="${id}"[^>]*>`))[0], /\bhidden\b/);
+  }
+});
 
 function fixture(file) {
   const css = [];
@@ -23,7 +47,8 @@ function fixture(file) {
       return '';
     })
     .replace(/<script\b[\s\S]*?<\/script>/g, '')
-    .replace(/<iframe\b[\s\S]*?<\/iframe>/g, '')
+    .replace(/<iframe\b([^>]*)>[\s\S]*?<\/iframe>/g, (_, attributes) =>
+      `<iframe${attributes.replace(/\s(?:src|srcdoc)="[^"]*"/g, '')} srcdoc="<!doctype html><title>Anteprima locale</title>"></iframe>`)
     .replace(/<img\b[^>]*>/g, tag => tag.replace(/src="[^"]*"/, 'src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22460%22 height=%22526%22/%3E"'))
     .replace('</head>', `<style>${css.join('\n')}</style></head>`)
     .replace('</body>', `<script>
@@ -33,7 +58,7 @@ function fixture(file) {
       ${read('assets/js/nas-nav.js')}
       ${read('assets/js/shared/section-nav.js')}
       ${file === 'area-riservata/assemblea/index.html' ? read('area-riservata/assemblea/core/base.js') : ''}
-      const allowed = ['riservata', 'members-app', 'people-app', 'statistics-data', 'app'];
+      const allowed = ['riservata', 'documents-app', 'members-app', 'people-app', 'statistics-data', 'app'];
       allowed.forEach(id => { const node = document.getElementById(id); if (node) node.hidden = false; });
       for (const id of ['login', 'accesso', 'avviso']) {
         const node = document.getElementById(id); if (node) node.hidden = true;
@@ -41,79 +66,180 @@ function fixture(file) {
     </script></body>`);
 }
 
-test('all screens fit four viewports and section navigation preserves panels and drafts', { skip: !chrome }, () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'section-navigation-'));
+test('all screens fit real responsive viewports and section navigation preserves panels and drafts',
+  { skip: !chrome, timeout: 120000 }, async t => {
+  const dir = fs.mkdtempSync(path.join(__dirname, '.section-navigation-'));
+  let browser, socket;
   try {
-    const html = `<!doctype html><body><script>
-      const pages = ${JSON.stringify(pages.map(fixture)).replace(/</g, '\\u003c')};
-      const results = [];
-      (async () => {
+    const html = `<!doctype html><body style="margin:0"><script>
+      window.runResponsive = async () => {
+        const pages = ${JSON.stringify(pages.map(fixture)).replace(/</g, '\\u003c')};
+        const names = ${JSON.stringify(pages)};
+        const results = [];
         for (let page = 0; page < pages.length; page++) {
           const frame = document.createElement('iframe');
-          frame.style.cssText = 'border:0;height:900px';
+          frame.style.cssText = 'display:block;border:0;width:1920px;height:1080px';
           document.body.append(frame);
           const loaded = new Promise(resolve => frame.onload = resolve);
           frame.srcdoc = pages[page]; await loaded;
           const doc = frame.contentDocument;
-          for (const width of [375, 768, 1024, 1440]) {
+          const win = frame.contentWindow;
+          const visible = node => !!node && node.getClientRects().length > 0 &&
+            win.getComputedStyle(node).visibility !== 'hidden';
+          for (const [width, height] of ${JSON.stringify(viewports)}) {
             frame.style.width = width + 'px';
-            await new Promise(resolve => setTimeout(resolve, 25));
+            frame.style.height = height + 'px';
+            // Real time lets resize/media-query events settle without virtual-time/rAF races.
+            await new Promise(resolve => setTimeout(resolve, 40));
+            const record = values => results.push({ page: names[page], width, height, ...values });
+            const measureOverflow = scope => {
+              const client = doc.documentElement.clientWidth;
+              const fits = doc.documentElement.scrollWidth <= client + 1;
+              record({ scope, fits, overflow: doc.documentElement.scrollWidth - client,
+                offenders: fits ? [] : [...doc.body.querySelectorAll('*')].filter(visible)
+                  .filter(node => { const box = node.getBoundingClientRect(); return box.left < -1 || box.right > client + 1; })
+                  .slice(0, 6).map(node => node.tagName.toLowerCase() + (node.id ? '#' + node.id : '')) });
+            };
+            record({ dimensions: win.innerWidth === width && win.innerHeight === height });
+            const applicationRoot = ${JSON.stringify(applicationRoots)}[names[page]];
+            if (applicationRoot) record({ applicationVisible: visible(doc.querySelector(applicationRoot)) });
             const navs = [...doc.querySelectorAll('[data-section-nav]')];
+            if (names[page] === 'area-riservata/statistiche.html') {
+              record({ allStatisticsVisible: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&
+                ${JSON.stringify(statisticsSections)}.every(id => visible(doc.getElementById(id))) });
+            }
             for (const nav of navs) {
+              const dialog = nav.closest('dialog');
+              const openDialog = dialog && !dialog.open;
+              if (openDialog) dialog.showModal();
               const buttons = [...nav.querySelectorAll('[data-section-target]')];
               const panels = buttons.map(button => doc.getElementById(button.dataset.sectionTarget));
-              if (panels.some(panel => !panel || panels.some(other => other !== panel && other.contains(panel))))
-                throw new Error('Nested or missing section: ' + page);
-              const input = panels[0].querySelector('input:not([type=file])');
-              if (input) input.value = 'draft-preserved';
+              if (!buttons.length || new Set(panels).size !== buttons.length ||
+                  panels.some(panel => !panel || panels.some(other => other !== panel && other.contains(panel))))
+                throw new Error('Nested, duplicate or missing section: ' + names[page]);
+              const drafts = panels.map(panel => panel.querySelector(
+                'textarea:not([disabled]), input:not([type]):not([disabled]), input[type=text]:not([disabled]), input[type=search]:not([disabled])'
+              )).filter(Boolean);
+              drafts.forEach((input, i) => { input.value = 'draft-preserved-' + i; });
               for (let index = 0; index < buttons.length; index++) {
                 buttons[index].click();
                 const exclusive = !nav.hasAttribute('data-section-mobile') || width <= 760;
-                results.push({ page, width, section: buttons[index].textContent, visible:
-                  panels.every((panel, i) => panel.hidden === (exclusive && i !== index)),
+                record({ section: buttons[index].dataset.sectionTarget,
+                  visible: panels.every((panel, i) => panel.hidden === (exclusive && i !== index)),
+                  panelVisibility: panels.every((panel, i) => visible(panel) === (!exclusive || i === index)),
                   selected: buttons[index].getAttribute('aria-pressed') === 'true',
-                  retained: !input || input.value === 'draft-preserved',
-                  fits: doc.documentElement.scrollWidth <= doc.documentElement.clientWidth });
-                if (nav.getClientRects().length) {
+                  aria: buttons.every((button, i) => button.getAttribute('aria-controls') === panels[i].id &&
+                    button.getAttribute('aria-pressed') === String(i === index)),
+                  retained: drafts.every((input, i) => input.value === 'draft-preserved-' + i),
+                  drafts: drafts.length });
+                measureOverflow(buttons[index].dataset.sectionTarget);
+                if (!nav.hasAttribute('data-section-mobile') || width <= 760)
+                  record({ section: buttons[index].dataset.sectionTarget, navigationVisible: visible(nav) });
+                if (visible(nav)) {
                   const boxes = buttons.map(button => button.getBoundingClientRect());
-                  results.push({ page, width, touch: boxes.every(box => box.height >= 44 && box.width >= 44),
+                  record({ section: buttons[index].dataset.sectionTarget,
+                    touch: boxes.every(box => box.height >= 44 && box.width >= 44),
                     separate: boxes.every((box, i) => boxes.slice(i + 1).every(next =>
                       box.right <= next.left + 1 || next.right <= box.left + 1 ||
-                      box.bottom <= next.top + 1 || next.bottom <= box.top + 1)) });
+                      box.bottom <= next.top + 1 || next.bottom <= box.top + 1)),
+                    navWithinViewport: boxes.every(box => box.left >= -1 && box.right <= width + 1) });
                 }
               }
-              nav.dispatchEvent(new frame.contentWindow.CustomEvent('section-select', { detail: panels[0].id }));
-              results.push({ page, width, programmatic: buttons[0].getAttribute('aria-pressed') === 'true' });
+              nav.dispatchEvent(new win.CustomEvent('section-select', { detail: panels[0].id }));
+              record({ programmatic: buttons[0].getAttribute('aria-pressed') === 'true',
+                programmaticPanel: visible(panels[0]),
+                retainedAfterReturn: drafts.every((input, i) => input.value === 'draft-preserved-' + i) });
+              if (openDialog) dialog.close();
             }
+            measureOverflow('page');
             const stage = doc.getElementById('stage')?.getBoundingClientRect();
-            results.push({ page, width, fits: stage ? stage.left >= -1 && stage.right <= width + 1 &&
-                stage.top >= -1 && stage.bottom <= frame.contentWindow.innerHeight + 1 :
-                doc.documentElement.scrollWidth <= doc.documentElement.clientWidth,
-              noErrors: frame.contentWindow.errors.length === 0,
-              noDuplicateHeader: doc.querySelectorAll('header').length <= 1 });
+            if (stage) record({ stageWithinViewport: stage.width > 0 && stage.height > 0 &&
+              stage.left >= -1 && stage.right <= width + 1 && stage.top >= -1 && stage.bottom <= height + 1,
+              stage: { left: stage.left, right: stage.right, top: stage.top, bottom: stage.bottom } });
+            record({ noErrors: win.errors.length === 0, errors: win.errors,
+              noDuplicateHeader: doc.querySelectorAll('body > header').length <= 1 });
           }
           frame.remove();
         }
-        const out = document.createElement('pre'); out.id = 'result';
-        out.textContent = btoa(JSON.stringify(results)); document.body.append(out);
-      })().catch(error => { const out = document.createElement('pre'); out.id = 'failure'; out.textContent = error.message; document.body.append(out); });
+        return results;
+      };
     </script>`;
     const file = path.join(dir, 'fixture.html');
     fs.writeFileSync(file, html);
-    const run = spawnSync(chrome, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-      '--no-proxy-server', '--virtual-time-budget=15000', '--dump-dom', 'file://' + file],
-    { encoding: 'utf8', timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
-    assert.equal(run.status, 0, run.stderr);
-    assert.doesNotMatch(run.stdout, /<pre id="failure">/);
-    const output = run.stdout.match(/<pre id="result">([^<]+)<\/pre>/);
-    assert.ok(output, run.stdout.slice(-2000));
-    const results = JSON.parse(Buffer.from(output[1], 'base64').toString());
+    const profile = path.join(dir, 'profile');
+    browser = spawn(chrome, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+      '--no-proxy-server', '--user-data-dir=' + profile, '--remote-debugging-port=0',
+      '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
+      '--window-size=2100,1400', 'file://' + file], { stdio: 'ignore' });
+    const deadline = Date.now() + 20000;
+    const portFile = path.join(profile, 'DevToolsActivePort');
+    while (!fs.existsSync(portFile) && Date.now() < deadline)
+      await new Promise(resolve => setTimeout(resolve, 50));
+    assert.ok(fs.existsSync(portFile), 'Chrome did not expose its isolated debugging port');
+    const port = fs.readFileSync(portFile, 'utf8').split('\n')[0];
+    const targets = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json();
+    socket = new WebSocket(targets.find(target => target.type === 'page').webSocketDebuggerUrl);
+    await new Promise((resolve, reject) => {
+      socket.addEventListener('open', resolve, { once: true });
+      socket.addEventListener('error', reject, { once: true });
+    });
+    let nextId = 0;
+    function command(method, params) {
+      const id = ++nextId;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          socket.removeEventListener('message', receive);
+          reject(new Error('Chrome command timed out: ' + method));
+        }, 90000);
+        const receive = event => {
+          const message = JSON.parse(event.data);
+          if (message.id !== id) return;
+          clearTimeout(timer);
+          socket.removeEventListener('message', receive);
+          if (message.error) reject(new Error(JSON.stringify(message.error)));
+          else resolve(message.result);
+        };
+        socket.addEventListener('message', receive);
+        socket.send(JSON.stringify({ id, method, params }));
+      });
+    }
+    let ready = false;
+    while (!ready && Date.now() < deadline) {
+      const state = await command('Runtime.evaluate', {
+        expression: "document.readyState === 'complete' && typeof runResponsive === 'function'", returnByValue: true,
+      });
+      ready = state.result.value === true;
+      if (!ready) await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    assert.ok(ready, 'Responsive browser fixture did not load');
+    const output = await command('Runtime.evaluate', {
+      expression: 'runResponsive()', awaitPromise: true, returnByValue: true,
+    });
+    assert.ok(!output.exceptionDetails, JSON.stringify(output.exceptionDetails));
+    const results = output.result.value;
+    const failures = [];
     for (const result of results) {
       for (const [key, value] of Object.entries(result)) {
-        if (typeof value === 'boolean') assert.equal(value, true, pages[result.page] + ': ' + JSON.stringify(result));
+        if (value === false) failures.push(key + ': ' + JSON.stringify(result));
       }
     }
-    assert.equal(new Set(results.map(result => result.page)).size, pages.length);
+    assert.equal(failures.length, 0, failures.join('\n'));
+    for (const page of pages)
+      for (const [width, height] of viewports)
+        assert.ok(results.some(result => result.page === page && result.width === width &&
+          result.height === height && result.dimensions), page + ': missing viewport ' + width + 'x' + height);
+    assert.ok(results.some(result => result.drafts > 0), 'Draft retention must exercise real form controls');
+    t.diagnostic(pages.length + ' screens × ' + viewports.length + ' real width/height viewports; ' +
+      results.filter(result => 'selected' in result).length + ' section selections; ' +
+      results.filter(result => result.drafts > 0).length + ' draft-retention checks');
     assert.match(read('peg/index.html'), /2026-2028/);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally {
+    socket?.close();
+    if (browser && browser.exitCode === null) {
+      const closed = new Promise(resolve => browser.once('exit', resolve));
+      browser.kill('SIGTERM');
+      await closed;
+    }
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

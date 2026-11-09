@@ -56,8 +56,10 @@ automaticamente in base a eta o nome.
 Nella scheda, **Genitori** separa i responsabili del campo AGESCI
 `RESP.GENITORIALE DATI`: nome completo originale, CF, comune e data di
 nascita, email e cellulare. Il nome completo non permette di distinguere con
-certezza nomi e cognomi composti: i campi **Nome** e **Cognome** sono da
-verificare e completare manualmente, non vengono indovinati.
+certezza nomi e cognomi composti: si modifica solo **Nome completo**, senza
+campi Nome/Cognome separati e senza suddivisioni automatiche. Eventuali nomi
+verificati delle vecchie schede restano leggibili nel campo unico; CF,
+luogo/data di nascita, email e cellulare restano preservati e modificabili.
 
 Si possono aggiungere o rimuovere responsabili (massimo 20) e modificare i
 campi prima di **Salva scheda**. Il testo originale resta consultabile,
@@ -66,9 +68,10 @@ sono segnalati. Le date non valide non vengono convertite silenziosamente.
 I responsabili strutturati sono conservati nel profilo SQLite ed esportati
 in una colonna JSON del CSV risultati.
 
-Un nuovo import della colonna aggiorna i contatti dalla fonte; conserva nome
-e cognome completati per i responsabili con lo stesso CF, abbinando ciascuna
-occorrenza una sola volta. Una colonna assente non cancella i responsabili;
+Un nuovo import della colonna aggiorna i contatti dalla fonte; conserva il
+nome completo corretto localmente e i precedenti nomi verificati per i
+responsabili con lo stesso CF, abbinando ciascuna occorrenza una sola volta.
+Una colonna assente non cancella i responsabili;
 una presente ma vuota li azzera. L'import non elimina record duplicati.
 
 ## Schede, ricerche ed estrazioni
@@ -78,17 +81,13 @@ percorso educativo e storico annuale AGESCI. Le modifiche manuali non
 riscrivono lo storico ufficiale. Gli account preesistenti senza scheda devono
 essere completati prima di applicare macro.
 
-I soci con livello FoCa valorizzato e ingresso CoCa assente (o No) non sono
-mostrati nel Libro soci, nelle ricerche o negli export; i dati e gli accessi
-restano conservati. FoCa e CoCa non occupano campi nella scheda dei ragazzi.
+L'amministratore vede tutte le schede, anche quelle con livello FoCa
+valorizzato e ingresso CoCa assente (o No). Il filtro FoCa/CoCa si applica
+solo alle viste dei capi, sempre limitate alla propria branca. I dati e gli
+accessi restano conservati. FoCa e CoCa non occupano campi nella scheda dei ragazzi.
 I consensi non sono gestiti da questa interfaccia: le relative colonne CSV
 sono ignorate, non vengono esportate o salvate con il profilo. Gli eventuali
 valori gia presenti nel JSON SQL restano inerti, senza cancellazioni massive.
-
-Per ciascun genitore si modifica solo **Nome completo**, senza ripetere
-Nome e Cognome. Restano CF, luogo/data di nascita, email e cellulare.
-Eventuali nomi/cognomi verificati nelle vecchie schede vengono mostrati in un
-unico campo, senza dividere automaticamente i nomi importati.
 
 La ricerca comprende nome, codice e dati anagrafici. Le schede numeriche per
 branca sono filtri rapidi: premere la branca selezionata una seconda volta
@@ -183,6 +182,11 @@ quindi gli anni precedenti non vengono inventati.
 Le righe sono compatte: **C** su fondo viola per il capo, **VC** su fondo
 lilla per il vice, poi membri senza etichette ripetute e nuovi ingressi
 (Cuccioli/Cocci o Piedi teneri) in fondo su giallo chiaro.
+Requisito stabile della board: nomi, ruoli e conteggio dei soci di ciascuna
+unità devono essere leggibili a colpo d'occhio, anche su telefono.
+Le assegnazioni restano nella schermata gruppi: non introdurre un nuovo
+dialogo «Sposta» dalle card o dalla scheda personale. Presenze e assenze alle
+attività sono sviluppi futuri, non funzioni già implementate.
 Trascinare un socio sulla riga desiderata oppure premere
 la freccia accanto al nome e usare **Inserisci o sposta un socio**, disponibile anche
 da telefono e tastiera. Lo spostamento non cambia branca e conserva gli altri

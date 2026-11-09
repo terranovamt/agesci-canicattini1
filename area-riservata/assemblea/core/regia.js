@@ -14,6 +14,7 @@
     finestra = null;
   let statoAttivo = null,
     cambioStato = false,
+    controlloPending = false,
     versioneStato = 0;
   function pulsantiStato() {
     $("#inizia").hidden = statoAttivo === true;
@@ -21,16 +22,19 @@
     $("#inizia").textContent = cambioStato ? "Avvio in corso…" : "Avvia live";
     $("#termina").hidden = statoAttivo !== true;
     $("#termina").disabled = cambioStato || statoAttivo !== true;
+    $("#termina").textContent = cambioStato ? "Chiusura in corso…" : "Termina assemblea";
   }
   function mostraStato(attiva) {
     statoAttivo = attiva;
     pulsantiStato();
     $("#onda-frame").classList.toggle("big", attiva === true);
     $("#onda-dot").hidden = attiva !== true;
-    $("#onda-label").textContent = attiva ? "In onda" : "Anteprima";
-    $("#principale").title = attiva ? "Slide in onda" : "Anteprima presentazione";
-    pill("#b-assemblea", attiva ? "Assemblea attiva" : "Assemblea non iniziata", attiva ? "ok" : "warn");
+    $("#onda-label").textContent = attiva === true ? "In onda" : attiva === false ? "Anteprima" : "Stato non verificato";
+    $("#principale").title = attiva === true ? "Slide corrente in onda" : attiva === false ? "Anteprima corrente" : "Slide corrente · stato live non verificato";
+    pill("#b-assemblea", attiva === true ? "Assemblea attiva" : attiva === false ? "Assemblea non iniziata" : "Assemblea non verificata", attiva === true ? "ok" : "warn");
     $("#avviso").hidden = attiva === true;
+    $("#avviso-titolo").textContent = attiva === false
+      ? "Anteprima · assemblea non iniziata" : "Stato non verificato · controlla la connessione";
   }
 
   const pill = (sel, testo, cls) => {
@@ -148,7 +152,7 @@
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = cap(t);
-          button.setAttribute("aria-label", `Vai alla slide ${i + 1}: ${cap(t)}`);
+          button.setAttribute("aria-label", `Salto diretto alla slide ${i + 1}: ${cap(t)}. In diretta cambia subito la presentazione.`);
           button.onclick = () => V.vai(i, 0);
           li.append(button);
           return li;
@@ -177,7 +181,8 @@
   $("#odg").onclick = () => V && V.menu();
   $("#pdf").onclick = () => V && V.pdf();
   addEventListener("keydown", (e) => {
-    if (!V || e.target.closest("input,textarea") || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!V || document.querySelector("dialog[open]") || e.target.closest("input,textarea,select,[contenteditable]") || e.altKey || e.ctrlKey || e.metaKey) return;
+    if ([" ", "Enter"].includes(e.key) && e.target.closest("button,a,summary")) return;
     if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) {
       e.preventDefault();
       V.next();
@@ -255,6 +260,8 @@
     return { dati: JSON.parse(t) };
   }
   async function controlla() {
+    if (controlloPending) return;
+    controlloPending = true;
     const t0 = performance.now();
     const versione = versioneStato;
     try {
@@ -291,15 +298,15 @@
       if (versione !== versioneStato || cambioStato) return;
       const attiva = ass.dati?.attiva === true;
       mostraStato(typeof ass.dati?.attiva === "boolean" ? ass.dati.attiva : ass.dati === null ? false : null);
-      if (!attiva) pill("#b-live", "Non live");
+      if (statoAttivo === null) pill("#b-live", "Stato live non verificato", "warn");
+      else if (!attiva) pill("#b-live", "Non live");
       else if (ultimo) {
         const ok = live.dati && live.dati.pos === enc(ultimo.i, ultimo.k);
-        pill("#b-live", ok ? "Pubblico allineato" : "Pubblico in aggiornamento…", ok ? "live" : "warn");
-      }
+        pill("#b-live", ok ? "Posizione pubblicata" : "Posizione in aggiornamento…", ok ? "live" : "warn");
+      } else pill("#b-live", "Posizione non verificata", "warn");
     } catch (e) {
       if (versione !== versioneStato || cambioStato) return;
-      statoAttivo = null;
-      pulsantiStato();
+      mostraStato(null);
       pill("#b-fb", provider + " non raggiungibile", "ko");
       pill("#b-live", "Stato live non verificato", "warn");
       $("#m-conn-t").textContent = "Non disponibile";
@@ -308,6 +315,8 @@
       $("#k-ruoli").textContent = "Presenze non verificabili";
       $("#k-lat").textContent = "–";
       $("#k-agg").textContent = e.message;
+    } finally {
+      controlloPending = false;
     }
   }
 

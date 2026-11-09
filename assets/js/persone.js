@@ -3,146 +3,223 @@
   const app = document.getElementById('people-app');
   const list = document.getElementById('people-list');
   const branchNav = document.getElementById('people-branches');
+  const count = document.getElementById('people-count');
+  const reload = document.getElementById('reload-people');
+  const login = document.getElementById('people-login');
   const A = window.ACCESSO;
+  function announce(message) {
+    status.textContent = message;
+    status.hidden = !message;
+  }
   if (!window.NAS || !window.NAS.user?.admin) {
-    status.textContent = 'Pagina riservata all’amministratore sul NAS.';
+    count.textContent = '';
+    announce(window.NAS && !window.NAS.user ? 'Sessione scaduta. Accedi di nuovo con l’account amministratore.'
+      : 'Pagina riservata all’amministratore sul NAS. Accedi con il suo account.');
+    reload.hidden = true;
+    login.hidden = false;
     return;
   }
   let busy = false;
+  let expired = false;
+  let loaded = false;
   let branchFilter = 'ALL';
   let peopleData = [];
+  let visibleIds = [];
   const branchDrafts = new Map();
-  function field(labelText, input) {
-    const label = document.createElement('label');
-    label.append(document.createTextNode(labelText), input);
-    return label;
+  const feedback = new Map();
+  const branches = ['L/C', 'E/G', 'R/S', ''];
+  const isExpired = error => !window.NAS.user || /sessione.*scadut/i.test(error.message);
+  function expire() {
+    expired = true;
+    login.hidden = false;
+    announce('Sessione scaduta. Accedi di nuovo; le modifiche non salvate restano in questa pagina.');
+  }
+  function chooseVisible() {
+    const branch = branchFilter === 'UNASSIGNED' ? '' : branchFilter;
+    visibleIds = peopleData.filter(person => branchFilter === 'ALL' || (person.serviceBranch || '') === branch)
+      .sort((a, b) => branches.indexOf(a.serviceBranch || '') - branches.indexOf(b.serviceBranch || ''))
+      .map(person => person.id);
   }
   function card(person) {
     const article = document.createElement('article');
     article.className = 'person-card';
-    const title = document.createElement('h3');
-    title.textContent = person.name + ' · ' + person.code;
+    const title = document.createElement('h2');
+    title.textContent = person.name;
+    const identity = document.createElement('p');
+    identity.className = 'person-identity';
+    identity.textContent = `Codice ${person.code} · ${person.hasPassword ? 'Password impostata' : 'Password da inizializzare'}`;
     const edit = document.createElement('form');
     const fields = document.createElement('div');
     fields.className = 'person-fields';
     const service = document.createElement('select');
+    service.id = 'person-branch-' + person.id;
+    service.disabled = busy || expired;
     for (const [value, text] of [['', 'Nessuna branca'], ['L/C', 'L/C'], ['E/G', 'E/G'], ['R/S', 'R/S']]) {
       const option = document.createElement('option');
-      option.value = value; option.textContent = text; service.append(option);
+      option.value = value;
+      option.textContent = text;
+      service.append(option);
     }
-    const originalBranch = person.serviceBranch || '';
-    service.value = branchDrafts.get(person.id) ?? originalBranch;
-    const branchStatus = document.createElement('span');
-    branchStatus.className = 'person-save-status';
-    branchStatus.textContent = service.value === originalBranch ? 'Nessuna modifica' : 'Da salvare';
-    fields.append(field('Branca di servizio', service));
-    service.onchange = () => {
-      if (service.value === originalBranch) branchDrafts.delete(person.id);
-      else branchDrafts.set(person.id, service.value);
-      save.disabled = service.value === originalBranch;
-      branchStatus.textContent = save.disabled ? 'Nessuna modifica' : 'Da salvare';
-      article.classList.toggle('person-card-dirty', !save.disabled);
-    };
-    const hint = document.createElement('p');
-    hint.textContent = person.hasPassword
-      ? 'Password impostata.'
-      : 'Password non impostata: il capo la sceglie al primo accesso.';
-    const actions = document.createElement('div');
-    actions.className = 'person-actions';
+    service.value = branchDrafts.get(person.id) ?? (person.serviceBranch || '');
+    const label = document.createElement('label');
+    label.append(document.createTextNode('Branca di servizio'), service);
     const save = document.createElement('button');
+    save.id = 'person-save-' + person.id;
     save.className = 'button button-secondary';
     save.type = 'submit';
     save.textContent = 'Salva branca';
-    save.disabled = service.value === originalBranch;
-    actions.append(branchStatus);
-    actions.append(save);
+    save.disabled = busy || expired || !branchDrafts.has(person.id);
+    const message = document.createElement('p');
+    message.id = 'person-feedback-' + person.id;
+    message.className = 'person-feedback';
+    message.setAttribute('role', 'status');
+    message.setAttribute('aria-live', 'polite');
+    message.setAttribute('aria-atomic', 'true');
+    message.tabIndex = -1;
+    const state = feedback.get(person.id);
+    message.textContent = state?.text || (branchDrafts.has(person.id) ? 'Branca da salvare.' : '');
+    message.hidden = !message.textContent;
+    message.classList.toggle('person-feedback-error', state?.error === true);
+    service.setAttribute('aria-describedby', message.id);
+    service.setAttribute('aria-invalid', String(state?.error === true && state?.action === 'branch'));
+    article.classList.toggle('person-card-dirty', branchDrafts.has(person.id));
+    article.setAttribute('aria-busy', String(state?.pending === true));
+    service.onchange = () => {
+      if (service.value === (person.serviceBranch || '')) branchDrafts.delete(person.id);
+      else branchDrafts.set(person.id, service.value);
+      feedback.delete(person.id);
+      service.setAttribute('aria-invalid', 'false');
+      save.disabled = !branchDrafts.has(person.id);
+      message.textContent = save.disabled ? '' : 'Branca da salvare.';
+      message.hidden = !message.textContent;
+      message.classList.toggle('person-feedback-error', false);
+      article.classList.toggle('person-card-dirty', !save.disabled);
+    };
     edit.onsubmit = e => {
       e.preventDefault();
-      run(async () => {
-        await A.request('people/' + person.id, 'PATCH', { serviceBranch: service.value });
-        branchDrafts.delete(person.id);
-      });
+      if (!branchDrafts.has(person.id)) return;
+      mutate(person, 'branch', service.value);
     };
+    fields.append(label, save);
+    const actions = document.createElement('div');
+    actions.className = 'person-actions';
     if (person.hasPassword) {
       const reset = document.createElement('button');
+      reset.id = 'person-reset-' + person.id;
       reset.type = 'button';
       reset.className = 'button button-secondary';
       reset.textContent = 'Reimposta password';
+      reset.disabled = busy || expired;
       reset.onclick = () => {
-        const message = 'Reimpostare la password di ' + person.name + '? Tutte le sue sessioni saranno revocate.';
-        if (!confirm(message)) return;
-        run(async () => {
-          await A.request('people/' + person.id + '/password', 'DELETE');
-        });
+        if (busy || expired) return;
+        if (!confirm(`Reimpostare la password di ${person.name} (codice ${person.code})?\n\nTutte le sue sessioni saranno revocate. Non verrà generata né inviata una password. Il capo dovrà sceglierne una al prossimo accesso: supervisiona questa inizializzazione, perché chi conosce il codice censimento potrebbe effettuarla.`)) return;
+        mutate(person, 'password');
       };
       actions.append(reset);
     }
-    edit.append(fields, actions);
-    article.classList.toggle('person-card-dirty', !save.disabled);
-    article.append(title, hint, edit);
+    edit.append(fields, actions, message);
+    article.append(title, identity, edit);
     return article;
   }
-  async function load() {
-    const result = await A.request('people');
-    peopleData = result.people.filter(person => person.kind === 'capo' && !person.admin && person.loginEnabled);
-    app.hidden = false;
-    render();
-  }
-  function render() {
-    const people = peopleData;
-    const branches = ['L/C', 'E/G', 'R/S', ''];
-    const counts = Object.fromEntries(branches.map(branch => [branch, people.filter(person => (person.serviceBranch || '') === branch).length]));
-    if (branchFilter !== 'ALL' && !counts[branchFilter === 'UNASSIGNED' ? '' : branchFilter])
-      branchFilter = 'ALL';
-    const filters = [['ALL', 'Tutte', people.length], ...branches.filter(branch => counts[branch]).map(branch =>
-      [branch || 'UNASSIGNED', branch || 'Da assegnare', counts[branch]])];
-    branchNav.replaceChildren(...filters.map(([value, label, count]) => {
+  function render(focusId) {
+    reload.disabled = busy || expired;
+    const filters = [['ALL', 'Tutte', peopleData.length], ...branches.map(branch =>
+      [branch || 'UNASSIGNED', branch || 'Da assegnare',
+        peopleData.filter(person => (person.serviceBranch || '') === branch).length])]
+      .filter(([value, , total]) => total || value === 'ALL' || value === branchFilter);
+    branchNav.replaceChildren(...filters.map(([value, label, total]) => {
       const button = document.createElement('button');
+      button.id = 'people-filter-' + value.replace('/', '-');
       button.type = 'button';
       button.className = 'people-branch-filter';
       button.setAttribute('aria-pressed', String(branchFilter === value));
-      button.textContent = `${label} · ${count}`;
+      button.textContent = `${label} · ${total}`;
       button.onclick = () => {
         branchFilter = value;
-        render();
-        branchNav.querySelector?.('[aria-pressed="true"]')?.focus?.();
+        chooseVisible();
+        render(button.id);
       };
       return button;
     }));
-    document.getElementById('people-count').textContent =
-      `${people.length} ${people.length === 1 ? 'capo abilitato' : 'capi abilitati'}`;
-    const visibleBranches = branchFilter === 'ALL' ? branches.filter(branch => counts[branch])
-      : [branchFilter === 'UNASSIGNED' ? '' : branchFilter];
-    list.replaceChildren(...(people.length ? visibleBranches.map(branch => {
-      const group = document.createElement('section');
-      group.className = 'people-branch-group';
-      const heading = document.createElement('h3');
-      heading.textContent = branch || 'Da assegnare';
-      const cards = document.createElement('div');
-      cards.className = 'people-branch-cards';
-      cards.append(...people.filter(person => (person.serviceBranch || '') === branch).map(card));
-      group.append(heading, cards);
-      return group;
-    }) : [Object.assign(document.createElement('p'), {
-      textContent: 'Nessun capo configurato in NAS_CAPO_CODES.'
+    count.textContent = `${peopleData.length} ${peopleData.length === 1 ? 'capo abilitato' : 'capi abilitati'}`;
+    const visible = visibleIds.map(id => peopleData.find(person => person.id === id)).filter(Boolean);
+    list.replaceChildren(...(visible.length ? visible.map(card) : [Object.assign(document.createElement('p'), {
+      textContent: peopleData.length ? 'Nessun capo in questa branca. Scegli un altro filtro.'
+        : 'Nessun capo configurato in NAS_CAPO_CODES.'
     })]));
+    if (focusId) document.getElementById(focusId)?.focus();
   }
-  async function run(action) {
-    if (busy) return;
-    busy = true;
-    app.inert = true;
-    status.textContent = 'Operazione in corso...';
-    try {
-      await action();
-      await load();
-      status.textContent = 'Elenco aggiornato.';
-    } catch (error) { status.textContent = error.message }
-    finally { busy = false; app.inert = false }
+  async function fetchPeople() {
+    const result = await A.request('people');
+    if (!Array.isArray(result.people)) throw new Error('Risposta elenco non valida.');
+    peopleData = result.people.filter(person => person.kind === 'capo' && !person.admin && person.loginEnabled);
+    loaded = true;
+    app.hidden = false;
   }
-  document.getElementById('reload-people').onclick = () => {
+  async function load() {
+    if (busy || expired) return;
     if (branchDrafts.size && !confirm('Scartare le branche non salvate e ricaricare?')) return;
-    branchDrafts.clear();
-    run(async () => {});
-  };
-  run(async () => {});
+    busy = true;
+    reload.disabled = true;
+    announce('Caricamento dei capi…');
+    app.setAttribute('aria-busy', 'true');
+    if (loaded) render();
+    try {
+      await fetchPeople();
+      branchDrafts.clear();
+      feedback.clear();
+      chooseVisible();
+      announce('');
+    } catch (error) {
+      if (isExpired(error)) expire();
+      else {
+        if (!loaded) count.textContent = 'Elenco non disponibile';
+        announce(`${loaded ? 'Elenco non aggiornato; dati e bozze conservati.' : 'Impossibile caricare i capi.'} ${error.message} Premi Ricarica per riprovare.`);
+      }
+    } finally {
+      busy = false;
+      app.setAttribute('aria-busy', 'false');
+      if (loaded) render();
+      else reload.disabled = expired;
+    }
+  }
+  async function mutate(person, action, value) {
+    if (busy || expired) return;
+    busy = true;
+    const success = action === 'branch' ? 'Branca salvata.'
+      : 'Password reimpostata. Sessioni revocate. Supervisiona il prossimo accesso: il capo sceglierà la nuova password; nessuna password è stata generata o inviata.';
+    feedback.set(person.id, { pending: true, text: action === 'branch' ? 'Salvataggio branca…' : 'Reset password in corso…' });
+    render('person-feedback-' + person.id);
+    try {
+      await A.request('people/' + person.id + (action === 'password' ? '/password' : ''),
+        action === 'branch' ? 'PATCH' : 'DELETE', action === 'branch' ? { serviceBranch: value } : undefined);
+      if (action === 'branch') {
+        person.serviceBranch = value;
+        branchDrafts.delete(person.id);
+      } else person.hasPassword = false;
+      feedback.set(person.id, { text: success });
+      render('person-feedback-' + person.id);
+      // A failed read must never turn a confirmed write into a failed mutation.
+      try {
+        await fetchPeople();
+      } catch (error) {
+        feedback.set(person.id, { text: `${success} Elenco non aggiornato: ${error.message} Usa Ricarica per leggere i dati, senza ripetere l’operazione.` });
+        if (isExpired(error)) expire();
+      }
+    } catch (error) {
+      feedback.set(person.id, { error: true, action, text: `Operazione non confermata: ${error.message} Le bozze sono conservate. Ricarica l’elenco per verificare lo stato prima di riprovare.` });
+      if (isExpired(error)) expire();
+    } finally {
+      busy = false;
+      // Keep the acted-on card visible until the next filter/reload, even if its branch changed.
+      render('person-feedback-' + person.id);
+    }
+  }
+  reload.onclick = load;
+  window.addEventListener('beforeunload', event => {
+    if (!branchDrafts.size && !busy) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  load();
 })();

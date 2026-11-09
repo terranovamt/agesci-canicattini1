@@ -759,3 +759,228 @@
     flex-direction: column;
   }
 }
+/* Statistiche: regole circoscritte alla pagina (body.metrics-page), non toccano dashboard e regia. */
+.metrics-page .reserved-header nav a,
+.metrics-page .metrics-heading a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+.metrics-page .statistics-page .metrics-status {
+  font-size: 12px;
+}
+.metrics-page .statistics-period-note {
+  margin: 4px 0 0;
+}
+.metrics-page .statistics-release {
+  display: block;
+  padding: 14px 18px;
+}
+.metrics-page .statistics-release > .metrics-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.metrics-page .statistics-release-version {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+.metrics-page #stats-release-revision {
+  color: #3f3749;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.metrics-page .statistics-release button,
+.metrics-page .statistics-release-heading button,
+.metrics-page .statistics-range button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 13px;
+}
+.metrics-page .statistics-release button:disabled {
+  border-color: #dcd7e3;
+  background: #f3f1f6;
+  color: #5d5568;
+  cursor: not-allowed;
+}
+.metrics-page .statistics-release-reason {
+  color: #5d5568;
+}
+.metrics-page .statistics-history-table summary,
+.metrics-page .statistics-sessions summary {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 12px 0;
+  font-size: 13px;
+}
+.metrics-page .metrics-events summary {
+  min-height: 44px;
+}
+.metrics-page .metrics-event-title,
+.metrics-page .metrics-events time,
+.metrics-page .metrics-event-detail {
+  font-size: 12px;
+}
+.metrics-page .statistics-kpis dt,
+.metrics-page .statistics-diagnostic-counters dt {
+  font-size: 12px;
+}
+.metrics-page .statistics-page dd,
+.metrics-page .statistics-hour-values strong,
+.metrics-page .statistics-page-bar-heading strong {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+.metrics-page .statistics-page dd[data-state="missing"],
+.metrics-page .statistics-page dd[data-state="error"],
+.metrics-page .statistics-hour-values strong[data-state="missing"],
+.metrics-page .statistics-hour-values strong[data-state="error"] {
+  color: #5d5568;
+  font-size: 18px;
+  font-weight: 600;
+}
+.metrics-page .statistics-page dd[data-state="stale"] {
+  color: #5d5568;
+  font-style: italic;
+}
+.metrics-page #statistics-data[data-state="stale"] .statistics-chart,
+.metrics-page #statistics-data[data-state="stale"] .statistics-page-bars {
+  opacity: 0.6;
+}
+.metrics-page .statistics-chart-legend,
+.metrics-page .statistics-page-bar-heading {
+  font-size: 12px;
+}
+.metrics-page .statistics-main .statistics-history-heading .metrics-status,
+.metrics-page .statistics-distribution > .metrics-status,
+.metrics-page .statistics-hourly > .metrics-status,
+.metrics-page .statistics-bottom .statistics-history-heading .metrics-status {
+  font-size: 12px;
+}
+.metrics-page .statistics-chart text,
+.metrics-page .statistics-chart .chart-axis-label {
+  font-size: 12px;
+}
+.metrics-page .statistics-chart .statistics-chart-empty {
+  font-size: 13px;
+}
+.metrics-page .metrics-live-badge {
+  font-size: 12px;
+}
+.metrics-page .statistics-hourly-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.metrics-page .statistics-hour-card {
+  padding: 14px 12px 10px;
+}
+.metrics-page .statistics-hour-card h3 {
+  font-size: 14px;
+}
+.metrics-page .statistics-hour-card > p {
+  min-height: 0;
+  margin: 0;
+  font-size: 12px;
+}
+.metrics-page .statistics-hour-values strong {
+  font-size: 26px;
+  letter-spacing: 0;
+}
+.metrics-page .statistics-hour-values span {
+  font-size: 12px;
+}
+.metrics-page .statistics-hour-card > .statistics-hour-sample {
+  margin: 0 0 8px;
+  color: #554c62;
+}
+.metrics-page .statistics-hour-card .statistics-chart {
+  border: 1px solid #ece8f3;
+  border-radius: 8px;
+  background: #fff;
+}
+.metrics-page .statistics-diagnostic-groups {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.metrics-page .statistics-diagnostic-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #ece8f3;
+  border-radius: 10px;
+}
+.metrics-page .statistics-diagnostic-group h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.metrics-page .statistics-diagnostic-counters {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 14px;
+  margin: 8px 0 0;
+}
+.metrics-page .statistics-diagnostic-counters dd {
+  font-size: 20px;
+}
+.metrics-page .statistics-diagnostic-help {
+  margin: 8px 0 0;
+  color: #554c62;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.metrics-page .site-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.reserved-page.metrics-page main.statistics-page {
+  width: 100%;
+  max-width: 1560px;
+  box-sizing: border-box;
+}
+.metrics-page .statistics-bottom {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.metrics-page .statistics-diagnostic-groups {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-items: start;
+}
+@media (min-width: 1280px) {
+  .metrics-page .statistics-hourly-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 960px) {
+  .metrics-page .statistics-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .metrics-page .statistics-main .metrics-section {
+    margin-top: 14px;
+  }
+}
+@media (max-width: 600px) {
+  .metrics-page .statistics-hourly-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metrics-page .statistics-hour-card {
+    padding: 12px 10px 8px;
+  }
+  .metrics-page .statistics-hour-values strong {
+    font-size: 24px;
+  }
+}
+/* Header e footer allineati al contenuto statistiche (max 1560px, rientro 20px / 14px su mobile). */
+body.reserved-page.metrics-page > .reserved-header,
+body.reserved-page.metrics-page > .site-footer {
+  padding-right: max(20px, calc((100% - 1520px) / 2));
+  padding-left: max(20px, calc((100% - 1520px) / 2));
+}
+@media (max-width: 700px) {
+  body.reserved-page.metrics-page > .reserved-header,
+  body.reserved-page.metrics-page > .site-footer {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+}

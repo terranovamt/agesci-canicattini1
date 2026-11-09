@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Guida · Assemblea di Gruppo</title>
     <link rel="stylesheet" href="../../assets/css/theme.css" />
-    <link rel="stylesheet" href="../../assets/css/section-nav.css" />
     <link rel="icon" href="../../assets/img/logo-grande.png" />
     <style>
       * {
@@ -26,8 +25,9 @@
         z-index: 3;
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 10px 18px;
+        gap: 12px;
+        padding: 8px 18px;
+        height: 64px;
         background: var(--v);
         color: var(--w);
         box-shadow: var(--shadow-raised);
@@ -50,13 +50,13 @@
       .hero {
         background: linear-gradient(135deg, var(--v), var(--vd));
         color: var(--w);
-        padding: 46px 20px 70px;
+        padding: 22px 20px;
         text-align: center;
       }
       .hero h1 {
         margin: 0 0 8px;
         font:
-          800 clamp(30px, 7vw, 54px)/1.05 Georgia,
+          800 clamp(28px, 5vw, 38px)/1.1 Georgia,
           serif;
       }
       .hero p {
@@ -64,24 +64,46 @@
         max-width: 620px;
         opacity: 0.85;
       }
-      .hero .bar {
-        width: 90px;
-        height: 6px;
-        border-radius: 3px;
-        background: var(--y);
-        margin: 18px auto 0;
-      }
       main {
-        max-width: 920px;
-        margin: -44px auto 0;
-        padding: 0 14px 60px;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 14px 14px 40px;
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .guide-content { min-width: 0; }
+      .guide-content section > p,
+      .guide-content ol.steps { max-width: 76ch; }
+      .guide-index {
+        position: sticky;
+        top: 76px;
+        z-index: 2;
+        background: var(--bg);
+        border-radius: 12px;
+        padding: 6px;
+        box-shadow: var(--shadow-card);
+        max-height: calc(100dvh - 88px);
+        overflow-y: auto;
+      }
+      .index-title {
+        margin: 6px 10px;
+        font-weight: 800;
+      }
+      .index-toggle { display: none; }
+      .index-toggle span { font-weight: 400; }
+      a:focus-visible, button:focus-visible, pre:focus-visible {
+        outline: 3px solid var(--v);
+        outline-offset: 3px;
       }
       nav.toc {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-        margin-bottom: 18px;
+        flex-direction: column;
+        gap: 4px;
+        padding: 0;
+        margin: 0;
+        background: transparent;
       }
       nav.toc a {
         display: inline-flex;
@@ -91,29 +113,20 @@
         color: var(--v);
         text-decoration: none;
         font-weight: 700;
-        font-size: 14px;
-        padding: 8px 14px;
-        border-radius: 99px;
-        box-shadow: var(--shadow-card);
+        font-size: 15px;
+        padding: 8px 12px;
+        border-radius: 8px;
       }
-      nav.toc a:hover {
+      nav.toc a:hover, nav.toc a[aria-current="location"] {
         background: var(--y);
         color: var(--vd);
       }
-      @media (max-width: 760px) {
-        .hero { padding: 24px 16px 48px; }
-        .hero p { font-size: 14px; }
-        nav.toc { flex-wrap: nowrap; justify-content: start; overflow-x: auto; padding: 6px; }
-        nav.toc a { flex: none; border-radius: 9px; font-size: 13px; }
-        section { padding: 16px; border-radius: 14px; }
-        h2 { font-size: 19px; }
-      }
       section {
-        scroll-margin-top: 76px;
+        scroll-margin-top: 80px;
         background: var(--w);
         border-radius: var(--radius-xl);
-        padding: 22px clamp(16px, 4vw, 30px);
-        margin: 0 0 18px;
+        padding: 20px clamp(16px, 3vw, 26px);
+        margin: 0 0 14px;
         box-shadow: var(--shadow-card);
       }
       h2 {
@@ -144,7 +157,7 @@
       }
       .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
         gap: 12px;
         margin: 12px 0;
       }
@@ -181,6 +194,7 @@
         padding: 1px 6px;
         border-radius: 6px;
         font-size: 0.9em;
+        overflow-wrap: anywhere;
       }
       kbd {
         display: inline-block;
@@ -200,7 +214,7 @@
         border-collapse: separate;
         border-spacing: 0;
         margin: 10px 0;
-        font-size: 14px;
+        font-size: 15px;
         overflow: hidden;
         border-radius: 14px;
       }
@@ -209,6 +223,12 @@
         color: var(--w);
         text-align: left;
         padding: 10px 12px;
+      }
+      caption {
+        text-align: left;
+        font-weight: 700;
+        padding: 6px 0;
+        color: var(--v);
       }
       td {
         padding: 10px 12px;
@@ -246,7 +266,7 @@
         display: grid;
         place-items: center;
         font-weight: 800;
-        font-size: 14px;
+        font-size: 15px;
       }
       .note {
         background: color-mix(in srgb, var(--y) 24%, var(--w));
@@ -292,16 +312,55 @@
         color: var(--v2);
         padding: 0 0 30px;
       }
-      @media (max-width: 600px) {
-        table {
-          display: block;
-          max-width: 100%;
-          overflow-x: auto;
-          font-size: 13px;
+      @media (max-width: 799px) {
+        main { display: block; padding: 10px 12px 30px; }
+        .hero { padding: 16px; }
+        .guide-index {
+          top: 64px;
+          margin-bottom: 12px;
+          max-height: calc(100dvh - 76px);
         }
-        td,
-        th {
-          padding: 8px;
+        .guide-js .index-title { display: none; }
+        .guide-js .index-toggle {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          min-height: 44px;
+          padding: 8px 10px;
+          border: 0;
+          border-radius: 8px;
+          background: var(--w);
+          color: var(--v);
+          font: 700 16px/1.3 system-ui, sans-serif;
+          text-align: left;
+          cursor: pointer;
+        }
+        .guide-js .toc-collapsed nav.toc { display: none; }
+        nav.toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        section { padding: 16px; border-radius: 14px; scroll-margin-top: 136px; }
+        h2 { font-size: 20px; }
+      }
+      @media (max-width: 600px) {
+        .responsive-table, .responsive-table tbody, .responsive-table tr,
+        .responsive-table td, .responsive-table th { display: block; }
+        .responsive-table thead {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+        }
+        .responsive-table tr { padding: 10px 12px; border-bottom: 1px solid var(--vl); }
+        .responsive-table tbody th { border-radius: 6px; padding: 8px; }
+        .responsive-table td { border: 0; padding: 8px 0 0; background: transparent; }
+        .responsive-table tr:nth-child(even) { background: var(--bg); }
+        .responsive-table tr:nth-child(even) td { background: transparent; }
+        .responsive-table td::before {
+          content: attr(data-label) " · ";
+          font-weight: 700;
+          color: var(--v);
         }
       }
       html.emb .hd,
@@ -316,59 +375,76 @@
         margin: 0 auto;
         padding: 0 0 10px;
       }
-      html.solo nav.toc,
-      html.solo main > section:not(#limiti):not(#firebase) {
+      html.emb .guide-index { top: 8px; max-height: calc(100dvh - 16px); }
+      html.emb section { scroll-margin-top: 16px; }
+      @media (max-width: 799px) {
+        html.emb section { scroll-margin-top: 80px; }
+      }
+      html.solo main { display: block; max-width: 920px; }
+      html.solo .guide-index,
+      html.solo .guide-content > section:not(#limiti):not(#firebase) {
         display: none;
+      }
+      html.solo section { scroll-margin-top: 80px; }
+      html.emb.solo section { scroll-margin-top: 16px; }
+      @media print {
+        .hd, .hero, .guide-index, footer { display: none; }
+        main { display: block; padding: 0; }
+        section { box-shadow: none; }
       }
     </style>
     <script>
       /* dentro la pagina di setup (?embed): senza intestazione; con &solo=limiti mostra solo Firebase e limiti */
       const q = new URLSearchParams(location.search);
+      document.documentElement.classList.add("guide-js");
       if (q.has("embed")) document.documentElement.classList.add("emb");
       if (q.get("solo") === "limiti") document.documentElement.classList.add("solo");
       if (q.has("embed"))
         addEventListener("click", (e) => {
           const a = e.target.closest("a[href]");
-          if (a && !a.getAttribute("href").startsWith("#")) a.target = "_blank";
+          if (a && !a.getAttribute("href").startsWith("#")) {
+            a.target = "_blank";
+            a.rel = "noopener";
+          }
         });
     </script>
   </head>
 
   <body>
     <div class="hd reserved-header">
-      <b>Guida · Assemblea di Gruppo</b
+      <b>Guida assemblea</b
       ><img src="../../assets/img/logo-grande.webp" alt="" decoding="async" loading="lazy" width="460" height="526" />
     </div>
     <div class="hero">
-      <h1>Come usare la presentazione</h1>
-      <p>
-        Regia, pubblico sul telefono, modifiche in tempo reale e Firebase: tutto quello che serve sapere prima e durante
-        l'assemblea.
-      </p>
-      <div class="bar"></div>
+      <h1>Preparare e condurre l'assemblea</h1>
+      <p>Prima il setup, poi la regia. Scegli un argomento dall'indice.</p>
     </div>
     <main>
-      <nav class="toc section-nav" aria-label="Sezioni della guida">
-        <a href="#link">Link</a><a href="#regia">Regia</a><a href="#pubblico">Pubblico</a
-        ><a href="#setup">Setup GitHub</a> <a href="#dati">dati.js</a><a href="#firebase">Firebase</a
-        ><a href="#limiti">Limiti gratuiti</a><a href="#problemi">Problemi</a>
-      </nav>
-
+      <aside class="guide-index toc-collapsed">
+        <p class="index-title">In questa guida</p>
+        <button class="index-toggle" type="button" aria-expanded="false" aria-controls="guide-toc">
+          Indice <span id="index-current">Tutti gli argomenti</span>
+        </button>
+        <nav id="guide-toc" class="toc" aria-label="Sezioni della guida">
+          <a href="#link">Link e accesso</a><a href="#ciclo">Home e assemblea</a>
+          <a href="#regia">Regia</a><a href="#pubblico">Pubblico</a><a href="#setup">Setup e bozza</a>
+          <a href="#problemi">Problemi</a><a href="#dati">Avanzate: dati.js</a>
+          <a href="#firebase">Solo Firebase</a><a href="#limiti">Quote Firebase</a>
+        </nav>
+      </aside>
+      <div class="guide-content">
       <section id="link">
         <h2><span class="n">1</span>I link</h2>
         <div class="cards">
           <div class="card g">
-            <b>Pubblico</b>Da condividere (anche col QR della slide 0):<br /><code
-              >terranovamt.github.io/agesci-canicattini1</code
-            >
+            <b>Pubblico</b>Condividi l'indirizzo della home dell'installazione in uso, anche con il QR della slide iniziale.
+            Non usare l'indirizzo GitHub Pages se stai conducendo l'assemblea sul NAS.
           </div>
           <div class="card">
-            <b>Regia</b>Dashboard sul PC (chiede la chiave):<br /><code>…/area-riservata/assemblea/regia.html</code>
+            <b>Regia</b>Dashboard sul PC, dall'area riservata:<br /><code>…/area-riservata/assemblea/regia.html</code>
           </div>
           <div class="card y">
-            <b>Setup</b>Modifica dati.js e salva su GitHub, senza Firebase:<br /><code
-              >terranovamt.github.io/agesci-canicattini1/setup</code
-            >
+            <b>Setup</b>Prepara una bozza e salva i contenuti di base:<br /><code>…/area-riservata/assemblea/setup.html</code>
           </div>
         </div>
         <p>
@@ -377,24 +453,31 @@
         </p>
         <div class="note warn">
           <b>Sicurezza.</b> Non condividere mai la chiave né un vecchio link con <code>?regia=</code>: chi ha la chiave
-          può guidare la presentazione e cambiare i dati. La chiave resta solo nella scheda del browser.
+          può guidare la presentazione e cambiare i dati. Sul NAS usa il tuo accesso all'area riservata;
+          nella modalità Firebase la chiave resta nella sessione della scheda.
+        </div>
+        <div class="note">
+          <b>Quale installazione?</b> Sul <strong>NAS</strong> accesso e salvataggio passano dal server:
+          non serve un token GitHub né configurare Firebase. Nella modalità <strong>GitHub Pages + Firebase</strong>,
+          GitHub conserva i contenuti di base e Firebase gestisce il live. Le istruzioni Firebase e le sue quote
+          in fondo alla guida riguardano solo questa seconda modalità.
         </div>
       </section>
 
       <section id="ciclo">
-        <h2>Home e assemblea</h2>
+        <h2><span class="n">2</span>Home e assemblea</h2>
         <p>
-          Di norma il sito mostra la home del gruppo. Premi <b>Area riservata</b> e inserisci la chiave: viene
-          verificata una volta per sessione della scheda. Poi scegli Setup o Regia. Il setup controlla solo la sessione
-          già verificata, senza richieste Firebase; per salvare serve un token GitHub. La regia continua a usare
-          Firebase.
+          Di norma il sito mostra la home del gruppo. Entra nell'<b>Area riservata</b> con l'accesso previsto
+          dall'installazione, poi scegli Setup o Regia. Il setup prepara i contenuti di base;
+          la regia conduce il live tramite il NAS oppure Firebase.
         </p>
         <ol class="steps">
           <li>
-            Prepara i contenuti nel setup, premi <b>Salva su GitHub (dati.js)</b> e attendi la pubblicazione. Poi entra
-            nella regia con la chiave e premi il grande <b>Avvia live</b> in alto, sopra le anteprime: mantiene le
+            Prepara la bozza nel setup e premi <b>Salva dati base</b>:
+            sul NAS salva sul server, su GitHub attendi anche la pubblicazione Pages. Poi entra
+            nella regia e premi <b>Avvia live</b>: mantiene le
             modifiche live esistenti e riparte dalla slide QR senza ricaricare la presentazione. La dashboard passa in
-            onda alla conferma Firebase; chi è sulla home entra entro circa 10 secondi.
+            onda alla conferma del servizio live; chi è sulla home entra entro circa 10 secondi.
           </li>
           <li>Durante l'assemblea chi apre la home viene portato alla presentazione.</li>
           <li>
@@ -403,19 +486,25 @@
           </li>
         </ol>
         <p>
-          Il setup resta accessibile da <code>/setup</code>. La chiusura non cancella i contenuti. Per usare avvio e
-          chiusura aggiorna le regole Firebase, includendo il nodo <code>assemblea</code> con la stessa chiave.
+          La chiusura non cancella i contenuti. Solo nella modalità Firebase, le regole devono includere il nodo
+          <code>assemblea</code> con la stessa chiave della regia.
         </p>
         <p>
-          La sessione della regia resta nella scheda del browser; <b>Esci dall'area riservata</b> cancella chiave e
-          token GitHub. I contenuti restano pubblici: le scritture live richiedono la chiave Firebase, mentre i commit
-          del setup richiedono un token GitHub autorizzato.
+          Usa <b>Esci dall'area riservata</b> quando hai finito, soprattutto sui dispositivi condivisi.
+          Nella modalità Firebase le scritture live richiedono la chiave, mentre i salvataggi su GitHub
+          richiedono un token autorizzato. Sul NAS valgono la sessione e i permessi dell'utente.
         </p>
       </section>
 
       <section id="regia">
-        <h2><span class="n">2</span>Regia (dashboard)</h2>
-        <p>Apri <code>regia.html</code> sul PC e inserisci la chiave. La dashboard mostra:</p>
+        <h2><span class="n">3</span>Regia (dashboard)</h2>
+        <p>Apri la regia sul PC dall'area riservata. Nella modalità Firebase inserisci la chiave se richiesta.</p>
+        <div class="note">
+          <b>Durante l'assemblea.</b> Avvia il live, guida le slide con Indietro / Avanti e termina l'assemblea
+          per riportare il pubblico alla home. Le modifiche rapide della regia sono una <strong>patch live</strong>:
+          non sono il salvataggio della bozza del setup.
+        </div>
+        <p>La dashboard mostra:</p>
         <div class="cards">
           <div class="card r">
             <b>In onda</b>La slide che vede il pubblico, con numero e passo. Quando l'assemblea non è attiva diventa
@@ -427,24 +516,20 @@
             <b>Indietro / Avanti</b>Due grandi pulsanti, più Inizio, Ordine del giorno ed elenco delle slide cliccabile.
             La slide attiva resta visibile scorrendo solo l'elenco. Su PC, laptop e iPad in orizzontale la dashboard si
             adatta allo schermo e sta tutta nella finestra, senza far scorrere la pagina: le anteprime si
-            ridimensionano, l'elenco slide occupa la colonna sinistra e le note di Firebase si aprono da «Quote e
-            consumi reali».
+            ridimensionano e l'elenco slide occupa la colonna sinistra.
           </div>
           <div class="card">
             <b>Presenti e ufficio di presidenza</b>Inserisci il numero dei presenti, il nome del presidente e i nomi
-            degli scrutatori, poi premi <strong>Pubblica live</strong>. Regia e proiettore si aggiornano subito, i
+            degli scrutatori, poi usa il comando per pubblicare la <strong>patch live</strong>. Regia e proiettore si aggiornano subito, i
             telefoni entro circa 10 secondi. Il numero deve essere un intero non negativo; lascialo vuoto se non è
             ancora noto. Ricarica valori recupera i dati pubblicati. Evita di pubblicare contemporaneamente da più
             regie. Il setup non legge né cancella questi dati live, che restano pubblici nelle slide.
           </div>
           <div class="card y">
-            <b>Firebase</b>Presenze, tempo di risposta e connessioni stimate della presentazione su 100, con percentuale
-            (arancione al 70%, rosso al 90%). Non sono le connessioni ufficiali Firebase. Il budget operativo di
-            download è 360 MB/giorno; verifica la quota vigente del servizio nella console. Consumo reale e spazio
-            totale sono disponibili solo nella console Firebase: le API pubbliche del database non li espongono. Per
-            integrarli si può usare un login Google OAuth nel browser con permessi sul progetto, oppure un backend
-            autorizzato a Google Cloud Monitoring per la lettura automatica. La chiave dell'assemblea non dà accesso a
-            queste API; non inserire credenziali di servizio nel sito.
+            <b>Server e monitoraggio</b>Sul NAS il monitor mostra connessioni live e risorse del server.
+            Nella modalità Firebase trovi presenze, tempo di risposta e connessioni stimate:
+            non sono le connessioni ufficiali della console. Per quote e consumi reali,
+            consulta <a href="#limiti">Quote Firebase</a>. Non inserire credenziali di servizio nel sito.
           </div>
         </div>
         <table>
@@ -469,15 +554,15 @@
           Deve essere aperta nello stesso browser della dashboard.
         </p>
         <p>
-          In alto i badge dicono se l'assemblea è attiva, se il pubblico è allineato alla regia e se Firebase risponde.
+          In alto i badge dicono se l'assemblea è attiva, se il pubblico è allineato alla regia e se il servizio live risponde.
           <b>Avvia live</b> è disponibile quando l'assemblea è inattiva; durante il live compare
           <b>Termina assemblea</b>. Sull'ultima slide compare anche <b>PDF</b>. Se ricarichi la dashboard riparte dalla
-          slide in onda. Il setup si apre dal pulsante <b>Setup</b> o scrivendo <code>/setup</code> nell'indirizzo.
+          slide in onda. Il setup si apre dal collegamento dedicato nell'area riservata.
         </p>
       </section>
 
       <section id="pubblico">
-        <h2><span class="n">3</span>Pubblico sul telefono</h2>
+        <h2><span class="n">4</span>Pubblico sul telefono</h2>
         <div class="cards">
           <div class="card">
             <b>Segue la regia</b>Può tornare indietro ma non andare oltre: in <code>config/site.js</code>,
@@ -508,75 +593,81 @@
       </section>
 
       <section id="setup">
-        <h2><span class="n">4</span>Setup solo GitHub</h2>
-        <p>
-          Il tipo <b>Gruppo invisibile (solo setup)</b> raggruppa le slide come un divisore: puoi collassarlo e spostare
-          tutto il blocco, ma il gruppo non compare nello slideshow o nel PDF. Il titolo serve solo nel setup; le slide
-          contenute restano visibili.
-        </p>
+        <h2><span class="n">5</span>Setup: bozza e contenuti di base</h2>
         <p>
           Per preparare <b>nomi, orari, date, testi, numeri</b>, l'<b>ordine delle slide</b> o nasconderne una, salvando
-          direttamente <code>dati.js</code> su GitHub. Nessun accesso Firebase.
+          i contenuti di base (<code>dati.js</code>). Modificare i campi o chiudere l'editor mantiene solo la
+          <strong>bozza locale</strong>: occorre poi salvarla/pubblicarla. Il setup non usa Firebase e
+          non legge né cancella le patch live della regia.
         </p>
-        <table>
+        <ol class="steps">
+          <li>Entra nell'area riservata e apri il setup.</li>
+          <li>
+            Scegli la scheda o la slide e modifica i campi: quelli cambiati diventano <mark>gialli</mark>.
+            Ripristina riporta un campo al valore pubblicato. Chiudere l'editor non pubblica i dati.
+          </li>
+          <li>
+            Premi <b>Salva dati base</b> nella barra inferiore. <b>Sul NAS</b> salva i contenuti
+            sul server con la sessione autorizzata, senza token GitHub. <b>Su GitHub Pages</b> salva
+            <code>dati.js</code> con un token di scrittura e attendi la pubblicazione (circa un minuto).
+            Controlla l'esito prima di avviare il live dalla regia.
+          </li>
+        </ol>
+        <table class="responsive-table" role="table">
+          <caption>Schede del setup</caption>
+          <thead><tr>
+            <th scope="col">Scheda</th>
+            <th scope="col">Cosa contiene</th>
+          </tr></thead>
+          <tbody>
           <tr>
-            <th>Scheda</th>
-            <th>Cosa contiene</th>
+            <th scope="row">Generale</th>
+            <td data-label="Contenuti">Anno, data, luogo, orari delle convocazioni.</td>
           </tr>
           <tr>
-            <td><b>Generale</b></td>
-            <td>Anno, data, luogo, orari delle convocazioni.</td>
-          </tr>
-          <tr>
-            <td><b>Slide</b></td>
-            <td>
-              Scegli il tipo tra tutti quelli supportati o una copia e premi + Aggiungi slide: si apre l'editor della
-              nuova slide. Elimina la singola slide dopo conferma, nascondi/mostra una slide o apri quella selezionata.
-              Nell'editor puoi cambiare tipo: dopo conferma i campi specifici vengono sostituiti con quelli del nuovo
-              tipo. Fine modifica mantiene le modifiche locali; salva poi su GitHub. Collassa un divisore per spostare
-              tutta la sezione fino al divisore successivo, mantenendo l'ordine interno. Espandi la sezione per spostare
-              le singole slide. Collassare non nasconde le slide al pubblico.
+            <th scope="row">Slide</th>
+            <td data-label="Contenuti">
+              Aggiungi una slide scegliendo un tipo o una copia; aprila per modificarla, nascondila/mostrala
+              o eliminala dopo conferma. Cambiare tipo sostituisce i campi specifici dopo conferma.
+              Collassa un divisore per spostare insieme le slide fino al divisore successivo, mantenendone
+              l'ordine; espandilo per spostarle singolarmente. Collassare non nasconde le slide al pubblico.
             </td>
           </tr>
           <tr>
-            <td><b>Bilancio</b></td>
-            <td>Censimenti, soglie, entrate, uscite, storico avanzi, patrimonio.</td>
+            <th scope="row">Bilancio</th>
+            <td data-label="Contenuti">Censimenti, soglie, entrate, uscite, storico avanzi, patrimonio.</td>
           </tr>
           <tr>
-            <td><b>JSON</b></td>
-            <td>Tutti i dati in JSON, per aggiungere slide o modifiche avanzate.</td>
+            <th scope="row">JSON</th>
+            <td data-label="Contenuti">
+              Tutti i dati in JSON, per modifiche avanzate. Premi <b>Applica alla bozza</b> prima di salvare:
+              applicare il testo non pubblica i contenuti di base.
+            </td>
           </tr>
           <tr>
-            <td><b>Guida</b> · <b>Limiti</b></td>
-            <td>Questa guida e i limiti del piano gratuito.</td>
+            <th scope="row">Guida · Limiti</th>
+            <td data-label="Contenuti">Questa guida e le quote della modalità Firebase.</td>
           </tr>
+          </tbody>
         </table>
-        <ol class="steps">
-          <li>
-            Entra nell'area riservata con la chiave e scegli Setup. Il link diretto
-            <code>…/agesci-canicattini1/setup</code> rimanda al login se non hai una sessione già verificata.
-          </li>
-          <li>
-            Scegli la scheda, apri la sezione o la slide e modifica i campi: quelli cambiati diventano
-            <mark>gialli</mark>; Ripristina riporta un campo al valore pubblicato. Per gli elenchi, <b>Rimuovi</b>
-            elimina una riga e <b>+ Aggiungi elemento</b> resta disponibile anche quando l'elenco è vuoto. Orari e
-            testi lunghi hanno controlli dedicati per facilitarne la compilazione.
-            Su telefono, censiti e presenti sono affiancati per anno; il comando Ripristina compare solo sui
-            campi modificati. Le azioni di salvataggio restano nella barra inferiore.
-          </li>
-          <li>
-            Premi <b>Salva su GitHub (dati.js)</b>: serve un token con permesso di scrittura. Attendi GitHub Pages
-            (circa un minuto) prima di avviare il live dalla regia.
-          </li>
-        </ol>
+        <p>
+          Per gli elenchi, <b>Rimuovi</b> elimina una riga e <b>+ Aggiungi elemento</b> resta disponibile anche
+          quando l'elenco è vuoto. Orari e testi lunghi hanno controlli dedicati. Su telefono, censiti e presenti
+          sono affiancati per anno e Ripristina compare solo sui campi modificati.
+        </p>
+        <p>
+          Il tipo <b>Gruppo invisibile (solo setup)</b> raggruppa le slide come un divisore: puoi collassarlo
+          e spostare tutto il blocco. Il gruppo e il suo titolo non compaiono nello slideshow o nel PDF;
+          le slide contenute restano visibili.
+        </p>
         <div class="cards">
           <div class="card">
             <b>Tutti i campi</b>Anche le slide del Progetto Educativo, il bilancio e il patrimonio. La scheda
             <strong>JSON</strong> permette di aggiungere slide.
           </div>
           <div class="card y">
-            <b>Solo GitHub</b>Il setup legge il file statico, non apre connessioni Firebase e non invia presenze. Il
-            salvataggio unisce le modifiche locali all'ultima versione su GitHub.
+            <b>Salvataggio della base</b>Il setup non apre connessioni Firebase e non invia presenze.
+            Il salvataggio unisce le modifiche locali all'ultima versione dei contenuti sul NAS o su GitHub.
           </div>
           <div class="card r">
             <b>Modifiche live separate</b>I dati pubblicati dalla regia non vengono letti o cancellati dal setup e
@@ -585,8 +676,70 @@
         </div>
       </section>
 
+      <section id="problemi">
+        <h2><span class="n">6</span>Se qualcosa non va</h2>
+        <table class="responsive-table" role="table">
+          <caption>Problemi e verifiche per installazione</caption>
+          <thead><tr>
+            <th scope="col">Problema</th>
+            <th scope="col">Soluzione</th>
+          </tr></thead>
+          <tbody>
+          <tr>
+            <th scope="row">Servizio live non raggiungibile in regia</th>
+            <td data-label="Verifica">
+              Controlla la rete. Sul NAS verifica lo stato del server nel monitor; nella modalità Firebase
+              controlla anche le regole del database.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Dispositivi sempre 0 in regia</th>
+            <td data-label="Verifica">
+              Verifica che il pubblico usi la stessa installazione. Solo su Firebase, controlla che le regole
+              includano il nodo <code>presenza</code>.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Setup: salvataggio non riuscito</th>
+            <td data-label="Verifica">
+              Sul NAS controlla sessione e permessi; se i contenuti sono cambiati, ricarica prima di salvare.
+              Su GitHub usa un token con Contents: Read and write sul repository configurato.
+              Il token GitHub non serve sul NAS.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">“Non trovo dati.js”</th>
+            <td data-label="Verifica">
+              Controlla disponibilità e sintassi del file. Se modificato a mano su GitHub, correggilo o annulla
+              il commit; sul NAS verifica il server e i contenuti pubblicati.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Il pubblico non si sposta</th>
+            <td data-label="Verifica">
+              Controlla che l'assemblea sia attiva e che il telefono usi la stessa installazione, poi ricarica.
+              Per Firebase verifica anche le <a href="#limiti">quote di connessione</a>; sul NAS consulta il monitor.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Modifiche del setup non visibili</th>
+            <td data-label="Verifica">
+              Verifica di aver salvato/pubblicato la bozza. Su GitHub attendi anche Pages (circa un minuto).
+              Se un campo è cambiato dalla regia, prevale la patch live sul NAS o su Firebase:
+              salvare la base non la cancella.
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
+
       <section id="dati">
-        <h2><span class="n">5</span>Modificare dati.js (definitivo)</h2>
+        <h2><span class="n">7</span>Avanzate: dati.js e GitHub</h2>
+        <div class="note">
+          <b>Solo modalità GitHub Pages.</b> Sul NAS usa il salvataggio del setup: il server conserva e serve
+          i contenuti pubblicati. Modificare il file su GitHub non equivale a pubblicare la base sul NAS.
+          Per l'uso ordinario segui <a href="#setup">Setup e bozza</a>.
+        </div>
         <ol class="steps">
           <li>
             Apri
@@ -606,11 +759,13 @@
         </p>
         <div class="note warn">
           <b>Attenzione.</b> A virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e
-          chi apre la pagina vede “Non trovo dati.js”. Durante l'assemblea è più sicuro il setup.
+          chi apre la pagina vede “Non trovo dati.js”. Preferisci il setup per preparare la base;
+          durante l'assemblea usa le modifiche live della regia per i campi previsti.
         </div>
-        <h3>Salva su GitHub dal setup</h3>
+        <h3>Salvare la base su GitHub dal setup</h3>
         <p>
-          La prima volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (dal menu,
+          <b>Salva dati base</b> usa la destinazione dell'installazione. Solo nella modalità GitHub, la prima
+          volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (dal menu,
           <b>Dimentica token GitHub</b> lo cancella):
         </p>
         <ol class="steps">
@@ -631,7 +786,11 @@
       </section>
 
       <section id="firebase">
-        <h2><span class="n">6</span>Firebase</h2>
+        <h2><span class="n">8</span>Solo modalità Firebase</h2>
+        <div class="note">
+          <b>Configurazione avanzata, non necessaria sul NAS.</b> Questa sezione descrive il servizio live
+          della modalità GitHub Pages + Firebase, non il server NAS.
+        </div>
         <h3>Configurare Firebase da zero</h3>
         <p>Basta un account Google e il piano gratuito: nessuna carta, nessuna chiave API, nessun SDK.</p>
         <ol class="steps">
@@ -665,49 +824,52 @@
           Realtime Database <code>assemblea-canicattini1</code> (europe-west1), indirizzo in
           <code>config/site.js</code>.
         </p>
-        <table>
+        <table class="responsive-table" role="table">
+          <caption>Nodi del database Firebase</caption>
+          <thead><tr>
+            <th scope="col">Nodo</th>
+            <th scope="col">Chi scrive</th>
+            <th scope="col">Chi legge</th>
+            <th scope="col">Cosa contiene</th>
+          </tr></thead>
+          <tbody>
           <tr>
-            <th>Nodo</th>
-            <th>Chi scrive</th>
-            <th>Chi legge</th>
-            <th>Cosa contiene</th>
+            <th scope="row"><code>live/stato</code></th>
+            <td data-label="Scrive">regia</td>
+            <td data-label="Legge">tutti</td>
+            <td data-label="Contenuti">posizione: slide × 1000 + passo</td>
           </tr>
           <tr>
-            <td><code>live/stato</code></td>
-            <td>regia</td>
-            <td>tutti</td>
-            <td>posizione: slide × 1000 + passo</td>
+            <th scope="row"><code>modifiche/patch</code></th>
+            <td data-label="Scrive">regia</td>
+            <td data-label="Legge">presentazione</td>
+            <td data-label="Contenuti">differenze rispetto a dati.js</td>
           </tr>
           <tr>
-            <td><code>modifiche/patch</code></td>
-            <td>regia</td>
-            <td>presentazione</td>
-            <td>differenze rispetto a dati.js</td>
+            <th scope="row"><code>modifiche/t</code></th>
+            <td data-label="Scrive">regia</td>
+            <td data-label="Legge">presentazione</td>
+            <td data-label="Contenuti">ora dell'ultima pubblicazione</td>
           </tr>
           <tr>
-            <td><code>modifiche/t</code></td>
-            <td>regia</td>
-            <td>presentazione</td>
-            <td>ora dell'ultima pubblicazione</td>
+            <th scope="row"><code>live/k</code>, <code>modifiche/k</code></th>
+            <td data-label="Scrive">regia</td>
+            <td data-label="Legge">nessuno</td>
+            <td data-label="Contenuti">chiave, controllata dalle regole</td>
           </tr>
           <tr>
-            <td><code>live/k</code>, <code>modifiche/k</code></td>
-            <td>regia</td>
-            <td>nessuno</td>
-            <td>chiave, controllata dalle regole</td>
+            <th scope="row"><code>assemblea/stato</code></th>
+            <td data-label="Scrive">regia</td>
+            <td data-label="Legge">home / presentazione / regia</td>
+            <td data-label="Contenuti"><code>attiva</code>: home o presentazione</td>
           </tr>
           <tr>
-            <td><code>assemblea/stato</code></td>
-            <td>regia</td>
-            <td>home / presentazione / regia</td>
-            <td><code>attiva</code>: home o presentazione</td>
+            <th scope="row"><code>presenza/{id}</code></th>
+            <td data-label="Scrive">ogni dispositivo</td>
+            <td data-label="Legge">tutti</td>
+            <td data-label="Contenuti">ora e ruolo, per contare i collegati</td>
           </tr>
-          <tr>
-            <td><code>presenza/{id}</code></td>
-            <td>ogni dispositivo</td>
-            <td>tutti</td>
-            <td>ora e ruolo, per contare i collegati</td>
-          </tr>
+          </tbody>
         </table>
         <h3>Regole (da fare una volta)</h3>
         <ol class="steps">
@@ -723,7 +885,7 @@
             mai nel repository) e premi <b>Pubblica</b>.
           </li>
         </ol>
-        <pre>
+        <pre tabindex="0" aria-label="Esempio di regole Firebase">
 {
   "rules": {
     ".read": false, ".write": false,
@@ -758,7 +920,11 @@
       </section>
 
       <section id="limiti">
-        <h2><span class="n">7</span>Limiti del piano gratuito (Spark)</h2>
+        <h2><span class="n">9</span>Quote Firebase (Spark)</h2>
+        <div class="note">
+          <b>Solo Firebase.</b> Queste quote non si applicano al NAS: per il server usa il monitor della regia.
+          Le connessioni indicate in regia sono stime; consumo reale e spazio totale si verificano nella console Firebase.
+        </div>
         <div class="cards">
           <div class="card r">
             <span class="big">100</span><b>connessioni simultanee</b>1 connessione SSE per spettatore e per regia.
@@ -773,54 +939,83 @@
         </div>
         <p>
           Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero non seguire la regia. Per
-          assemblee più numerose passa al piano <b>Blaze</b> (a consumo, 200.000 connessioni; per un'assemblea il costo
-          resta praticamente nullo) oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live
+          assemblee più numerose valuta il piano <b>Blaze</b> (a consumo, con quote e costi da verificare)
+          oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live
           con una lettura leggera ogni 10 s, senza occupare una seconda connessione.
         </p>
-        <p style="font-size: 13px; opacity: 0.7">
+        <p>
           Limiti indicativi: verifica quelli aggiornati su
           <a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a>.
         </p>
       </section>
 
-      <section id="problemi">
-        <h2><span class="n">8</span>Se qualcosa non va</h2>
-        <table>
-          <tr>
-            <th>Problema</th>
-            <th>Soluzione</th>
-          </tr>
-          <tr>
-            <td>Badge rosso “Firebase non raggiungibile” in regia</td>
-            <td>Controlla la rete e che le regole Firebase siano aggiornate.</td>
-          </tr>
-          <tr>
-            <td>Dispositivi sempre 0 in regia</td>
-            <td>Regole vecchie senza il nodo <code>presenza</code>: incollale di nuovo.</td>
-          </tr>
-          <tr>
-            <td>Setup: token GitHub non valido</td>
-            <td>Usa un token con Contents: Read and write sul repository. Il setup non usa la chiave Firebase.</td>
-          </tr>
-          <tr>
-            <td>“Non trovo dati.js”</td>
-            <td>Errore di sintassi in dati.js: correggilo su GitHub o annulla l'ultimo commit.</td>
-          </tr>
-          <tr>
-            <td>Il pubblico non si sposta</td>
-            <td>Ricaricare la pagina; avvicinandosi a 100 connessioni complessive vedi i limiti (sezione 7).</td>
-          </tr>
-          <tr>
-            <td>Modifiche su GitHub non visibili</td>
-            <td>
-              Attendi la pubblicazione (~1 min); se un campo è cambiato anche dalla regia, prevale la patch live su
-              Firebase.
-            </td>
-          </tr>
-        </table>
-      </section>
+      </div>
     </main>
     <footer>AGESCI Canicattini 1 · Assemblea di Gruppo</footer>
+    <script>
+      (() => {
+        const index = document.querySelector(".guide-index");
+        const toggle = index.querySelector("button");
+        const links = [...index.querySelectorAll('a[href^="#"]')];
+        const sections = links.map(a => document.querySelector(a.getAttribute("href")));
+        const mobile = matchMedia("(max-width: 799px)");
+        function collapse() {
+          index.classList.add("toc-collapsed");
+          toggle.setAttribute("aria-expanded", "false");
+        }
+        function current(id) {
+          for (const link of links) {
+            if (link.hash === "#" + id) {
+              link.setAttribute("aria-current", "location");
+              document.getElementById("index-current").textContent = link.textContent;
+            } else link.removeAttribute("aria-current");
+          }
+        }
+        toggle.addEventListener("click", () => {
+          const expanded = index.classList.toggle("toc-collapsed") === false;
+          toggle.setAttribute("aria-expanded", String(expanded));
+        });
+        index.addEventListener("keydown", event => {
+          if (event.key === "Escape" && mobile.matches) {
+            collapse();
+            toggle.focus();
+          }
+        });
+        document.addEventListener("click", event => {
+          const link = event.target.closest('a[href^="#"]');
+          if (!link || !sections.some(section => "#" + section.id === link.hash)) return;
+          if (mobile.matches) {
+            collapse();
+            if (index.contains(link)) toggle.focus({ preventScroll: true });
+          }
+          current(link.hash.slice(1));
+        });
+        const syncHash = () => {
+          const id = location.hash.slice(1) || "link";
+          if (mobile.matches && !index.classList.contains("toc-collapsed")) {
+            collapse();
+            const target = sections.find(section => section.id === id);
+            target?.scrollIntoView({ block: "start" });
+          }
+          current(id);
+        };
+        addEventListener("hashchange", syncHash);
+        mobile.addEventListener("change", collapse);
+        let scheduled = false;
+        addEventListener("scroll", () => {
+          if (scheduled || document.documentElement.classList.contains("solo")) return;
+          scheduled = true;
+          requestAnimationFrame(() => {
+            const offset = parseFloat(getComputedStyle(sections[0]).scrollMarginTop) + 2;
+            const passed = sections.filter(section => section.getBoundingClientRect().top <= offset);
+            const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
+            current((atEnd ? sections.at(-1) : passed.at(-1) || sections[0]).id);
+            scheduled = false;
+          });
+        }, { passive: true });
+        syncHash();
+      })();
+    </script>
     <script src="../../assets/js/nas-telemetry.js" defer></script>
   </body>
 </html>

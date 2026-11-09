@@ -83,6 +83,9 @@ function linkSlide(el, point) {
     ev.stopPropagation();
     if (el.getAttribute("aria-disabled") !== "true") jump(point.slide_collegata);
   };
+  el.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") ev.stopPropagation();
+  });
 }
 function pieTransition(from, to, start, end, el) {
   const lo = Math.max(Math.min(from, to), start),

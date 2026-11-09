@@ -82,12 +82,13 @@
   }
   function render() {
     const body = $('year-fields');
+    body.dataset.step = String(step);
     body.replaceChildren();
     $('year-error').textContent = '';
     $('year-progress').textContent = 'Passaggio ' + (step + 1) + ' di ' + steps.length;
     $('year-step-title').textContent = steps[step];
     $('year-back').hidden = step === 0;
-    $('year-next').textContent = step === steps.length - 1 ? 'OK, applica nuovo anno' : 'Continua';
+    $('year-next').textContent = step === steps.length - 1 ? 'Applica alla bozza' : 'Continua';
     $('year-next').disabled = false;
     if (step === 0) {
       body.append(node('p', 'Parti dai dati attualmente aperti nel setup, comprese le modifiche locali. Nessun dato cambia finché non confermi. Il nuovo esercizio deve seguire quello attuale.'));
@@ -158,6 +159,7 @@
       $('year-back').onclick = () => { step--; render() };
       $('year-form').onsubmit = event => {
         event.preventDefault();
+        if (!$('year-form').reportValidity()) return;
         if (step < steps.length - 1) { step++; render(); return }
         try {
           if (JSON.stringify(getData()) !== JSON.stringify(source)) throw new Error('I dati del setup sono cambiati. Chiudi e riapri la procedura per non perderli.');

@@ -15,28 +15,117 @@
     <header class="reserved-header">
       <a href="./">← Area riservata</a>
       <h1>Documenti del gruppo</h1>
-      <a href="../documenti/" target="_blank" rel="noopener">Vedi l’archivio pubblico ↗</a>
+      <a href="../documenti/" target="_blank" rel="noopener">Archivio pubblico ↗</a>
     </header>
     <main id="documents-app" hidden>
-      <section class="publish-info">
-        <h2>Una biblioteca per il gruppo</h2>
-        <p id="publish-destination">
-          Carica un PDF con titolo, descrizione, anno e data di pubblicazione. Tutti i documenti compaiono nell’archivio
-          pubblico; la home mostra soltanto i quattro più recenti. Il salvataggio aggiorna il repository GitHub.
+      <div class="top-bar">
+        <p id="publish-destination" class="public-warning">
+          <strong>PDF pubblici.</strong> Ogni file caricato qui è scaricabile da chiunque nell’archivio pubblico e i
+          quattro più recenti compaiono in home. Non caricare dati personali o riservati.
         </p>
-        <p id="documents-message" role="status" aria-live="polite">Caricamento…</p>
-        <button id="reload-documents" type="button" class="secondary">Ricarica da GitHub</button>
-      </section>
+        <section class="source-bar" aria-label="Sorgente dei documenti">
+          <div class="source-status">
+            <p id="documents-source" class="source-name">Sorgente: …</p>
+            <p id="documents-message" role="status" aria-live="polite">Caricamento…</p>
+          </div>
+          <button id="reload-documents" type="button" class="secondary">Ricarica</button>
+        </section>
+        <p id="nas-session" class="hint" hidden>
+          Accesso con la sessione dell’area riservata del NAS: non serve alcun token.
+        </p>
+        <details id="github-credentials" class="credentials">
+          <summary>Accesso GitHub <span id="token-state" class="token-state"></span></summary>
+          <label for="document-token">Token con permesso Contents: Read and write</label>
+          <input
+            id="document-token"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="github_pat_…"
+            aria-describedby="token-memory"
+          />
+          <p id="token-memory" class="hint">
+            Il token resta solo in questo browser (localStorage, condiviso con il setup assemblea) e viene memorizzato
+            dopo la prima pubblicazione riuscita. Su dispositivi condivisi usa “Dimentica token”.
+          </p>
+          <div class="actions">
+            <button id="connect-github" type="button">Usa token e ricarica</button>
+            <button id="forget-token" type="button" class="secondary">Dimentica token</button>
+          </div>
+        </details>
+      </div>
       <div class="documents-workspace">
-        <nav id="documents-section-nav" class="section-nav" data-section-nav aria-label="Gestione documenti" hidden>
-          <button type="button" data-section-target="documents-library-panel">Documenti pubblicati</button>
+        <nav
+          id="documents-section-nav"
+          class="section-nav"
+          data-section-nav
+          data-section-mobile
+          aria-label="Gestione documenti"
+          hidden
+        >
+          <button type="button" data-section-target="documents-library-panel">Documenti</button>
           <button type="button" data-section-target="documents-edit-panel">Carica / modifica</button>
         </nav>
+        <section id="documents-library-panel" class="panel" data-section-panel aria-labelledby="library-heading">
+          <div class="panel-head">
+            <h2 id="library-heading">Documenti pubblicati</h2>
+            <button id="new-document" type="button">Nuovo documento</button>
+          </div>
+          <section class="preparatory" aria-labelledby="preparatory-heading">
+            <h3 id="preparatory-heading">Preparatori assemblea <span id="preparatory-year"></span></h3>
+            <p class="hint">Ordine fisso, uguale alla pagina pubblica dell’assemblea.</p>
+            <ol id="preparatory-slots" class="slots" aria-busy="true"></ol>
+          </section>
+          <h3 class="list-heading">Tutti i documenti <span id="documents-count" class="count"></span></h3>
+          <div id="managed-documents" class="document-list"></div>
+        </section>
         <section id="documents-edit-panel" class="panel" data-section-panel aria-labelledby="edit-heading">
-          <p class="eyebrow">Pubblicazione</p>
           <h2 id="edit-heading">Nuovo documento</h2>
           <form id="document-form">
-            <label for="document-file">File PDF <span id="file-hint">(obbligatorio)</span></label>
+            <fieldset class="kind" aria-describedby="kind-hint">
+              <legend>Tipo di documento</legend>
+              <div class="kind-options">
+                <label class="choice"
+                  ><input type="radio" name="document-kind" id="document-kind-general" value="general" checked />
+                  Generale</label
+                >
+                <label class="choice"
+                  ><input type="radio" name="document-kind" id="document-kind-preparatory" value="preparatory" />
+                  Preparatorio assemblea</label
+                >
+              </div>
+              <p id="kind-hint" class="hint">I preparatori restano anche nell’archivio pubblico.</p>
+            </fieldset>
+            <div id="assembly-fields" class="field-pair" hidden>
+              <div>
+                <label for="document-assembly-year">Anno assemblea</label>
+                <input
+                  id="document-assembly-year"
+                  type="number"
+                  min="2000"
+                  max="9999"
+                  step="1"
+                  placeholder="Es. 2026"
+                />
+              </div>
+              <div>
+                <label for="document-assembly-type">Tipo preparatorio</label>
+                <select id="document-assembly-type">
+                  <option value="">Scegli…</option>
+                  <option value="convocazione">Convocazione</option>
+                  <option value="regolamento">Regolamento</option>
+                  <option value="peg">PEG</option>
+                  <option value="bilancio">Bilancio</option>
+                  <option value="verbale">Verbale</option>
+                </select>
+              </div>
+            </div>
+            <p id="kind-warning" class="hint warning" role="status" hidden></p>
+            <p id="current-file" class="current-file" hidden>
+              File attuale:
+              <a id="current-file-link" href="#" target="_blank" rel="noopener"></a>
+            </p>
+            <label for="document-file" id="file-label">File PDF <span id="file-hint">(obbligatorio)</span></label>
             <input
               id="document-file"
               type="file"
@@ -44,10 +133,7 @@
               required
               aria-describedby="upload-hint"
             />
-            <p id="upload-hint" class="hint">
-              Il file sarà salvato in documents/pdf. Limite GitHub: meno di 100 MiB. Non caricare informazioni
-              riservate: i PDF sono pubblici.
-            </p>
+            <p id="upload-hint" class="hint">PDF pubblico, inferiore a 100 MiB (limite GitHub).</p>
             <label for="document-title">Titolo nella pagina pubblica</label>
             <input
               id="document-title"
@@ -64,58 +150,23 @@
               required
               placeholder="Spiega in poche parole cosa contiene il documento."
             ></textarea>
-            <label for="document-year">Anno di riferimento</label>
-            <input id="document-year" type="number" min="1900" max="9999" step="1" required />
-            <label for="document-published-at">Data di pubblicazione</label>
-            <input id="document-published-at" type="date" required aria-describedby="date-hint" />
-            <p id="date-hint" class="hint">Determina l’ordine dei documenti nella home, dal più recente.</p>
-            <label for="document-assembly-year">Documento preparatorio: anno dell’assemblea</label>
-            <input
-              id="document-assembly-year"
-              type="number"
-              min="2000"
-              max="9999"
-              step="1"
-              aria-describedby="assembly-year-hint"
-              placeholder="Es. 2026"
-            />
-            <p id="assembly-year-hint" class="hint">
-              Lascia vuoto per i documenti generali. Indicando l’anno, il PDF resta nell’archivio e compare anche tra i
-              preparatori quando coincide con l’anno corrente.
-            </p>
-            <label for="document-assembly-type">Tipo di documento preparatorio</label>
-            <select id="document-assembly-type">
-              <option value="">Documento generale</option>
-              <option value="convocazione">Convocazione</option>
-              <option value="regolamento">Regolamento</option>
-              <option value="peg">PEG</option>
-              <option value="bilancio">Bilancio</option>
-              <option value="verbale">Verbale</option>
-            </select>
-            <p class="hint">Con un anno assemblea, scegli uno dei cinque tipi. L’ordine dei preparatori è fisso.</p>
-            <fieldset id="github-credentials">
-              <legend>Accesso GitHub</legend>
-              <label for="document-token">Token con permesso Contents: Read and write</label>
-              <input id="document-token" type="password" autocomplete="off" placeholder="github_pat_…" />
-              <p class="hint">
-                Usa un token autorizzato per questo repository. Puoi usare quello già memorizzato dal setup. Dopo averlo
-                inserito, premi “Ricarica da GitHub”.
-              </p>
-              <button id="forget-token" type="button" class="secondary">Dimentica token memorizzato</button>
-            </fieldset>
+            <div class="field-pair">
+              <div>
+                <label for="document-year">Anno di riferimento</label>
+                <input id="document-year" type="number" min="1900" max="9999" step="1" required />
+              </div>
+              <div>
+                <label for="document-published-at">Data di pubblicazione</label>
+                <input id="document-published-at" type="date" required aria-describedby="date-hint" />
+              </div>
+            </div>
+            <p id="date-hint" class="hint">La data ordina i documenti, dal più recente.</p>
             <div class="actions">
               <button id="save-document" type="submit" disabled>Pubblica documento</button>
               <button id="cancel-document" type="button" class="secondary" hidden>Annulla modifica</button>
             </div>
-            <p id="publish-timing" class="hint">
-              Dopo il salvataggio, attendi la pubblicazione di GitHub Pages per vedere l’aggiornamento sul sito.
-            </p>
+            <p id="publish-timing" class="hint"></p>
           </form>
-        </section>
-        <section id="documents-library-panel" class="panel" data-section-panel aria-labelledby="library-heading">
-          <p class="eyebrow">Biblioteca</p>
-          <h2 id="library-heading">Documenti pubblicati</h2>
-          <div id="managed-documents"></div>
         </section>
       </div>
     </main>

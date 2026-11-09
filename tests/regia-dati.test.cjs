@@ -28,6 +28,7 @@ function load(options = {}) {
   const elements = new Map(), requests = [], rendered = [];
   const element = () => ({
     value: '', textContent: '', disabled: false, children: [],
+    attributes: {}, setAttribute(k, v) { this.attributes[k] = v }, focus() { this.focused = true },
     append(...children) { this.children.push(...children) },
     replaceChildren(...children) { this.children = children }
   });
@@ -43,6 +44,7 @@ function load(options = {}) {
     fetch: async (url, opts) => {
       requests.push({ url, opts });
       if (opts?.method) {
+        if (options.waitWrite) await options.waitWrite;
         if (options.denied) return { ok: false, status: 403 };
         remote = JSON.parse(opts.body).patch;
         remote = remote === null ? undefined : JSON.parse(remote);
@@ -188,4 +190,37 @@ test('reloading prompts before discarding edits and no changes cause no writes',
   await flush();
   assert.equal(t.requests.length, 1);
   assert.equal(t.inputs()[1].value, 'Anna');
+});
+
+test('pending count and per-field errors retain drafts until a successful publication', async () => {
+  const t = load();
+  await t.start();
+  t.inputs()[0].value = '-1';
+  t.inputs()[0].oninput();
+  assert.equal(t.$('#dati-live-pending').textContent, '1 modifica in attesa');
+  await t.submit();
+  assert.equal(t.inputs()[0].attributes['aria-invalid'], 'true');
+  assert.match(t.$('#dati-live-campi').children[0].children[1].textContent, /numero intero/);
+  assert.equal(t.inputs()[0].value, '-1');
+  t.inputs()[0].value = '12';
+  t.inputs()[0].oninput();
+  assert.equal(t.inputs()[0].attributes['aria-invalid'], 'false');
+  await t.submit();
+  assert.equal(t.$('#dati-live-pending').textContent, 'Nessuna modifica in attesa');
+});
+
+test('publication allows only one pending request and reload cannot discard its draft', async () => {
+  let release;
+  const t = load({ waitWrite: new Promise(resolve => { release = resolve }) });
+  await t.start();
+  t.inputs()[0].value = '12';
+  const first = t.submit();
+  await flush();
+  await t.submit();
+  t.$('#dati-live-ricarica').onclick();
+  assert.equal(t.requests.filter(r => r.opts?.method).length, 1);
+  assert.equal(t.inputs()[0].value, '12');
+  release();
+  await first;
+  assert.equal(t.$('#dati-live-pubblica').disabled, false);
 });
