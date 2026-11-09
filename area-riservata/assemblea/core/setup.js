@@ -11,6 +11,8 @@
   const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const numericGroup = (v) => plain(v) && Object.values(v).some(x => typeof x === "number") &&
+    Object.values(v).every(x => typeof x === "number" || x === null || plain(x));
   const getAt = (o, p) => p.reduce((x, k) => (x == null ? undefined : x[k]), o);
   const arrayKey = (path) => JSON.stringify(path.map((part) => typeof part === "number" ? "*" : part));
   const setAt = (o, p, v) => {
@@ -235,6 +237,7 @@
     }
     if (plain(value)) {
       const fs = el("fieldset", {}, el("legend", { textContent: label }));
+      if (numericGroup(value)) fs.classList.add("numeric-fields");
       Object.entries(value).forEach(([k, v]) => fs.append(node(path.concat(k), v, human(k))));
       return fs;
     }
@@ -600,6 +603,7 @@
         const v = edit[k];
         c.append(
           box(k, human(k), "", same(v, base[k]) ? [] : [badge("modificata")], (body) => {
+            if (numericGroup(v)) body.classList.add("numeric-fields");
             if (plain(v)) Object.entries(v).forEach(([kk, x]) => body.append(node([k, kk], x, human(kk))));
             else body.append(node([k], v, human(k)));
           }),

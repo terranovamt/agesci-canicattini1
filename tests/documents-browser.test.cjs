@@ -16,7 +16,7 @@ function fixture(file, css, scripts) {
   const calendars = read("calendars/events.json");
   const mock = `
     window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
-    window.LIVE = { github: { repo: 'test/repo', ramo: 'test' } };
+    window.LIVE = { nas: ${file === "area-riservata/assemblea/setup.html"}, github: { repo: 'test/repo', ramo: 'test' } };
     window.DOCUMENTS_PREVIEW = true;
     history.replaceState = () => {};
     let items = ${index};
@@ -55,7 +55,7 @@ function fixture(file, css, scripts) {
     })
     .replace(
       "</head>",
-      "<style>" + read("assets/css/theme.css") + read(css) + "</style><script>" + mock + "</script></head>",
+      "<style>" + read("assets/css/nas.css") + read("assets/css/theme.css") + read(css) + "</style><script>" + mock + "</script></head>",
     );
 }
 
@@ -136,6 +136,7 @@ test("public documents and management work in a browser at all required widths",
       "assets/js/gestione-documenti.js",
     ]),
     fixture("area-riservata/assemblea/setup.html", "area-riservata/assemblea/core/setup.css", [
+      "assets/js/nas-nav.js",
       "area-riservata/assemblea/core/salva-dati.js",
       "area-riservata/assemblea/core/modifiche.js",
       "area-riservata/assemblea/core/nuovo-anno-model.js",
@@ -178,6 +179,37 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('#calendar-info').open = false;
           }
           if (page === 2) {
+            doc.querySelector('[data-tab="bilancio"]').click();
+            doc.querySelector('[data-id="censimenti"]').open = true;
+            const currentCensus = doc.getElementById('fcensimenti_censiti_attuali');
+            const currentPresent = doc.getElementById('fcensimenti_presenti_attuali');
+            const historyCensus = doc.getElementById('fcensimenti_storico_per_anno_2022_censiti');
+            const historyPresent = doc.getElementById('fcensimenti_storico_per_anno_2022_presenti');
+            const headerBox = doc.querySelector('.setup-header').getBoundingClientRect();
+            const barBox = doc.querySelector('#bar').getBoundingClientRect();
+            const pairFits = (a, b) => {
+              const first = a.getBoundingClientRect(), second = b.getBoundingClientRect();
+              return Math.abs(first.top - second.top) <= 1 && first.right <= second.left &&
+                first.width >= 100 && second.width >= 100;
+            };
+            results.push({
+              setupWidth: width,
+              singleHeader: doc.querySelectorAll('header').length === 1,
+              compactHeader: width > 520 || headerBox.height <= 80,
+              compactBar: width > 520 || barBox.height <= 100,
+              pairedCensus: width > 520 || pairFits(currentCensus, currentPresent),
+              pairedHistory: width > 520 || pairFits(historyCensus, historyPresent),
+              noInputZoom: width > 520 || parseFloat(frame.contentWindow.getComputedStyle(historyCensus).fontSize) >= 16,
+              compactHistory: width > 520 || historyCensus.closest('fieldset').getBoundingClientRect().height <= 150,
+              barActionsFit: [...doc.querySelectorAll('#bar > button, #bar .more > summary')].every(button => {
+                const rect = button.getBoundingClientRect();
+                return rect.height >= 44 && rect.width >= 44 && rect.left >= 0 && rect.right <= width;
+              }),
+            });
+            frame.contentWindow.scrollTo(0, 100000);
+            const lastCensus = [...doc.querySelectorAll('[data-id="censimenti"] input')].at(-1);
+            results.push({ width, reachable: lastCensus.getBoundingClientRect().bottom <= barBox.top });
+            frame.contentWindow.scrollTo(0, 0);
             doc.querySelector('[data-tab="json"]').click();
             const originalJson = doc.querySelector('#json-text').value;
             const originalSlides = JSON.parse(originalJson).slide.length;
@@ -528,6 +560,10 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(results.find((item) => "remaining" in item).remaining, 4);
     for (const item of results.filter((item) => "reachable" in item)) {
       assert.equal(item.reachable, true, "setup fields must be reachable above the action bar at width " + item.width);
+    }
+    for (const item of results.filter((item) => "setupWidth" in item)) {
+      for (const key of ["singleHeader", "compactHeader", "compactBar", "pairedCensus", "pairedHistory", "noInputZoom", "compactHistory", "barActionsFit"])
+        assert.equal(item[key], true, key + " at setup width " + item.setupWidth);
     }
     for (const item of results.filter((item) => "slideEditorFits" in item)) {
       assert.equal(item.slideEditorFits, true, "slide editor fits at width " + item.width);

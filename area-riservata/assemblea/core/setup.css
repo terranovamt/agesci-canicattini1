@@ -91,7 +91,7 @@ fieldset > legend button { min-height: 40px; padding: 6px 10px; font-size: 12px;
 .row { display: flex; gap: 10px; align-items: center; margin-top: 8px }
 .err { color: var(--r-strong); font-weight: 700; font-size: 13px }
 footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 14px 24px calc(14px + env(safe-area-inset-bottom)); background: var(--w); box-shadow: var(--shadow-raised) }
-@media (max-width: 520px) { body { padding-bottom: 150px } #dirty { flex-basis: 100% } footer button { padding: 9px 10px; font-size: 13px } }
+@media (max-width: 520px) { footer button { padding: 9px 10px; font-size: 13px } }
 #dirty { flex: 1; font-size: 13px; font-weight: 700; min-width: 0 }
 .more { position: relative }
 .more summary { display: grid; place-items: center; min-width: 44px; min-height: 44px; list-style: none; cursor: pointer; font-size: 22px; padding: 4px 10px; border-radius: var(--radius-md); background: var(--bg) }
@@ -132,19 +132,41 @@ dialog a { color: var(--v); font-weight: 700 }
   .tabs button { padding: 12px }
 }
 @media (max-width: 520px) {
-  header { padding: 10px 12px; flex-wrap: wrap }
-  header h1 { font-size: 16px }
-  .pill { white-space: normal }
+  body { padding-bottom: calc(120px + env(safe-area-inset-bottom)); scroll-padding-bottom: 120px }
+  .setup-header { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 2px 10px; padding: 8px 12px }
+  .setup-header .back-link { grid-row: 1 / 3 }
+  .setup-header h1 { font-size: 16px; line-height: 1.3 }
+  .setup-header .pill { justify-self: start; max-width: 100%; padding: 2px 8px; font-size: 10px }
+  main { padding: 12px 12px 24px; gap: 16px }
+  .workspace-heading { margin-bottom: 12px }
+  .workspace-heading h2 { font-size: 22px }
+  .workspace-eyebrow { display: none }
+  .intro { margin: 6px 0; font-size: 13px; line-height: 1.45 }
+  .workflow-note { margin-bottom: 12px }
   .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .tabs button small { font-size: 10px }
+  .tabs button { min-height: 44px; padding: 8px 10px }
+  .tabs button small { display: none }
   .slide-add { grid-template-columns: minmax(0, 1fr) }
   .slide-add button { width: 100% }
-  footer { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) }
+  footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; gap: 6px 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) }
+  #dirty { grid-column: 1 / -1; font-size: 11px; line-height: 1.3 }
+  footer button { min-width: 0; min-height: 44px; white-space: normal }
+  .more > div { max-height: calc(100svh - 180px); overflow-y: auto }
   .ord li { padding: 10px }
-  .field { grid-template-columns: minmax(0, 1fr) auto; padding-left: 7px }
-  fieldset { padding: 8px 8px 12px }
+  .field { grid-template-columns: minmax(0, 1fr); margin: 6px 0; padding: 4px 0; gap: 4px }
+  .field.mod { grid-template-columns: minmax(0, 1fr) 44px; padding-left: 4px }
+  .field .reset { display: none }
+  .field.mod .reset { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 6px }
+  .field.chk { grid-template-columns: auto minmax(0, 1fr) }
+  .field.chk.mod { grid-template-columns: auto minmax(0, 1fr) 44px }
+  .field > label { font-size: 12px }
+  .field input:not([type=checkbox]), .field textarea, .field select { font-size: 16px; padding: 8px; scroll-margin-top: 80px; scroll-margin-bottom: 120px }
+  .numeric-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px }
+  .numeric-fields > fieldset { grid-column: 1 / -1 }
+  fieldset { margin: 10px 0; padding: 6px 8px 8px }
+  fieldset fieldset { border: 0; border-top: 1px solid var(--vl); border-radius: 0; padding: 6px 0 }
   fieldset > legend { max-width: 100% }
-  details.box > .body { padding: 0 12px 16px }
+  details.box > .body { padding: 0 12px 12px }
   #year-dialog { padding: 16px }
   #year-dialog form { max-height: calc(100svh - 56px) }
   .year-review-row { grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) }
