@@ -1,5 +1,18 @@
 # agesci-canicattini1
 
+## Branch e pubblicazione
+
+`main` mantiene il reindirizzamento di GitHub Pages a
+`https://terranovamtt.synology.me/agesci-canicattini1/`.
+Lasciare Pages configurato sul branch `main`, cartella `/ (root)`.
+JavaScript conserva query e frammento; senza JavaScript resta il reindirizzamento
+HTML e il collegamento manuale.
+
+Il sito completo e lo sviluppo corrente sono sul branch `NAS`, aggiornato
+dall'attivita' DSM sul Synology. Non unire `main` in `NAS` o viceversa:
+la home di `NAS` deve restare il sito, non un reindirizzamento.
+La documentazione seguente descrive la versione storica conservata su `main`.
+
 Presentazione dell'**Assemblea di Gruppo AGESCI Canicattini 1**, con regia live,
 spettatori sincronizzati sul telefono e modifiche ai dati in tempo reale.
 
