@@ -36,8 +36,8 @@
         <div><h2>Soci per branca</h2><p>Premi una branca per filtrare, ripremila per rimuovere il filtro.</p></div>
       </div>
       <div id="members-summary" class="members-summary"></div>
-      <p id="members-visibility-note" class="members-note" role="status" hidden></p>
       <button id="members-incoming" class="button button-secondary" type="button" hidden></button>
+      <div class="members-controls">
       <div class="members-toolbar members-primary-actions">
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
         <details class="members-secondary-actions">
@@ -51,7 +51,7 @@
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
         <details id="members-advanced-search" class="members-advanced-search">
-          <summary>Ricerca avanzata <span>Censimento, età, dati da verificare e percorso educativo</span></summary>
+          <summary>Ricerca avanzata</summary>
           <div class="members-filters-advanced">
             <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
             <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
@@ -69,6 +69,7 @@
           </div>
         </details>
       </form>
+      </div>
       <div id="members-active-filters" class="members-active-filters" hidden>
         <div id="members-quick-filters" class="members-quick-filters" role="group" aria-label="Filtri attivi" hidden></div>
         <button id="members-reset-filters" class="button button-secondary" type="reset" form="members-filters">Azzera filtri</button>
@@ -90,6 +91,10 @@
       </table></div>
       <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
       <p id="suspension-note" class="members-note"></p>
+      <details id="members-diagnostics" class="members-diagnostics" hidden>
+        <summary>Dettagli conteggi e visibilità</summary>
+        <p id="members-visibility-note" class="members-note" role="status"></p>
+      </details>
       </div>
       <section id="members-units-panel" data-section-panel aria-labelledby="units-title">
         <div class="members-heading">
@@ -113,7 +118,7 @@
         <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome o la maniglia ⋮⋮ per spostarlo (su touch tieni premuto il nome). Da tastiera: premi Invio sulla maniglia, raggiungi una riga con Tab e premi Invio; Esc annulla.</p>
         <section id="unit-unassigned" class="unit-unassigned" aria-labelledby="unit-available-title" hidden>
           <div class="unit-available-heading">
-            <label class="unit-available-search">Cerca<input id="unit-available-search" type="search" autocomplete="off" placeholder="Cerca…"></label>
+            <label class="unit-available-search"><span class="members-sr-only">Cerca</span><input id="unit-available-search" type="search" autocomplete="off" placeholder="Cerca…"></label>
             <h3 id="unit-available-title">Soci disponibili <span id="unit-available-count"></span></h3>
           </div>
           <p id="unit-available-status" class="members-note" role="status" aria-live="polite"></p>

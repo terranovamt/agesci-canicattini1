@@ -95,8 +95,10 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           result.visibleMemberRows = $('members-list').rows.length;
           result.hidden = ['members-access-link','new-member','open-import','template-form'].every(id => getComputedStyle($(id)).display === 'none');
           result.scope = [...$('field-form').elements.branch.options].map(option => option.value);
+          result.branchSelectorHidden = $('units-branch').closest('label').hidden &&
+            $('units-branch').value === 'E/G';
           result.selectionInitiallyHidden = $('members-selection').hidden;
-          result.populatedNote = !$('members-visibility-note').hidden &&
+          result.populatedNote = $('members-diagnostics').hidden && !$('members-visibility-note').checkVisibility() &&
             $('members-visibility-note').textContent.includes('E/G: 1 soci assegnati alla branca.') &&
             !$('members-visibility-note').textContent.includes('esclusi') && !$('members-visibility-note').textContent.includes('sospesi');
           result.incomingCta = !$('members-incoming').hidden && $('members-incoming').textContent === '1 passaggi da accettare o rifiutare →' &&
@@ -236,7 +238,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       assert.equal(measured.visibleMemberRows, 1);
       for (const key of ["loaded", "hidden", "populatedNote", "incomingCta", "transfersShown", "transfersFit", "confirmVisible", "approvalCleared",
         "searchShown", "branchLocked", "noEducationalInput", "proposeEnabled", "macroClosed", "outgoingPending", "fits", "fitsAfterZero",
-        "selectionInitiallyHidden", "selectionVisible", "tabsFit"])
+        "selectionInitiallyHidden", "selectionVisible", "tabsFit", "branchSelectorHidden"])
         assert.equal(measured[key], true, detail(key));
       assert.deepEqual(measured.scope, ["E/G"]);
       assert.equal(measured.assignmentReadOnly, true);
@@ -251,7 +253,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       assert.equal(pending.empty, true, detail("zeroPending"));
       assert.equal(pending.count, "0 risultati · 0 selezionati");
       assert.equal(pending.card, "0");
-      assert.equal(pending.noteVisible, true, detail("zeroPending"));
+      assert.equal(pending.noteVisible, false, detail("zeroPending"));
       assert.equal(pending.incomingHidden, true, detail("zeroPending"));
       assert.equal(pending.note, "E/G: 2 soci assegnati alla branca. 2 esclusi dalla vista capo: FoCa valorizzato e ingresso Co.Ca. assente o No. " +
         "L’amministratore puo verificarne le schede. I passaggi in ingresso non sono ancora soci della branca: compaiono dopo la conferma.");

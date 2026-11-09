@@ -391,8 +391,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 - `GET members` per capi aggiunge `visibility:{branch,total,
   excludedPendingCoca,excludedLongSuspended}` limitato alla loro branca.
   `total` precede i filtri; sospesi conteggiati dopo FoCa/Co.Ca. per evitare
-  duplicazioni. La UI spiega lo zero senza includere i record FoCa/Co.Ca.
-  esclusi e segnala separatamente i passaggi in ingresso ancora da confermare.
+  duplicazioni. I dettagli diagnostici UI sono riservati all'admin, in un
+  blocco richiudibile sotto la lista, aggregato dai soci gia disponibili.
+  I capi non vedono il riepilogo tecnico; la CTA passaggi resta separata.
 - L'unica azione rapida UI e `Proponi passaggio`, senza select di azione,
   campo o destinazione. Gli aggiornamenti educativi UI sono individuali.
 - Anno di nascita, anno in branca, ruolo e progressione sono distinti.

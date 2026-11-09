@@ -465,6 +465,7 @@
         data = snapshot;
         const branches = window.NAS.user.admin ? ['L/C', 'E/G'] : ['L/C', 'E/G'].filter(branch => branch === window.NAS.user.serviceBranch);
         options(branchSelect, branches.map(branch => [branch, branch]));
+        branchSelect.closest('label').hidden = !window.NAS.user.admin;
         $('units-tab').hidden = !branches.length;
         $('units-new-member').hidden = !window.NAS.user.admin;
         render();

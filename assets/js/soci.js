@@ -165,8 +165,14 @@
       return card;
     }));
     renderQuickFilters();
-    const visibility = data.visibility, visibilityNotes = [];
-    if (visibility) {
+    const visibilityNotes = [];
+    const visibilities = window.NAS.user.admin ? M.branches.map(branch => {
+      const scoped = data.members.filter(member => member.branch === branch);
+      const visible = scoped.filter(member => member.kind === 'ragazzo' || !M.pendingCoca(member.profile));
+      return { branch, total: scoped.length, excludedPendingCoca: scoped.length - visible.length,
+        excludedLongSuspended: visible.filter(member => M.longSuspended(member, data.currentYear)).length };
+    }) : data.visibility ? [data.visibility] : [];
+    for (const visibility of visibilities) {
       visibilityNotes.push(`${M.branchLabel(visibility.branch)}: ${visibility.total} soci assegnati alla branca.`);
       if (visibility.excludedPendingCoca)
         visibilityNotes.push(`${visibility.excludedPendingCoca} esclusi dalla vista capo: FoCa valorizzato e ingresso Co.Ca. assente o No. L’amministratore puo verificarne le schede.`);
@@ -175,11 +181,11 @@
       visibilityNotes.push('I passaggi in ingresso non sono ancora soci della branca: compaiono dopo la conferma.');
     }
     $('members-visibility-note').textContent = visibilityNotes.join(' ');
-    $('members-visibility-note').hidden = !visibility;
+    $('members-diagnostics').hidden = !window.NAS.user.admin;
     $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
     const sortValue = member => {
       switch (sortKey) {
-        case 'age': return age(member);
+        case 'age': return member.profile.birthDate ? -Number(member.profile.birthDate.slice(0, 4)) : null;
         case 'branch': return M.branchLabel(member.branch) || '';
         case 'census': return census(member) ? `${census(member).year} ${census(member).status || ''}` : '';
         case 'contacts': return [member.profile.email, member.profile.phone].filter(Boolean).join(' ');

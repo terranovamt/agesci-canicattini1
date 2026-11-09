@@ -130,6 +130,12 @@ selezionarli di nuovo li azzera. Gli stessi filtri sono disponibili nei campi
 select. **Ricerca avanzata** contiene eta, anno di nascita, verifiche
 anagrafiche e criteri sul percorso educativo; senza anno esplicito viene usato
 l'ultimo disponibile per ogni socio, non un unico anno comune a tutti.
+L'ordinamento **Eta** usa l'anno di nascita, non il compleanno: crescente
+dal piu giovane al piu grande, decrescente nel verso opposto.
+**Altre azioni** e **Ricerca avanzata** sono affiancate in una barra compatta.
+I dettagli dei conteggi e delle esclusioni sono richiudibili e riservati
+all'amministratore; il selettore di branca delle sestiglie/squadriglie
+compare solo per l'amministratore. I capi lavorano nella propria branca.
 
 La dashboard amministrativa mostra il totale dei censimenti AGESCI importati
 nell'anno piu recente e la ripartizione per branca ufficiale. Il riepilogo
@@ -243,7 +249,7 @@ sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
 **Soci disponibili**, con l'assegnazione conservata indicata.
 Il blocco resta aperto in alto ed e fisso durante lo scorrimento (tranne negli
 schermi molto bassi, per non coprire le destinazioni); sparisce quando e vuoto.
-La ricerca **Cerca**, a sinistra del riquadro, evidenzia tutte le occorrenze
+La ricerca **Cerca**, senza titolo aggiuntivo sopra il campo, a sinistra del riquadro, evidenzia tutte le occorrenze
 nei nomi e nasconde i soci che non corrispondono. Trascinare un nome su questo blocco rimuove
 esplicitamente l'assegnazione. Non ci sono frecce o form separati per spostare.
 Da tastiera, premere Invio sulla maniglia, raggiungere una riga di destinazione

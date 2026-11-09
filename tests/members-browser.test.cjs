@@ -87,6 +87,10 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           await settle();
           results.loaded = !$('members-app').hidden;
           results.noInitialSuccess = $('members-status').textContent === '';
+          results.adminDiagnostics = !$('members-diagnostics').hidden && !$('members-diagnostics').open &&
+            $('members-visibility-note').textContent.includes('E/G: 2 soci assegnati alla branca.') &&
+            $('members-visibility-note').textContent.includes('1 sospesi da oltre un anno nascosti');
+          results.adminBranchSelector = !$('units-branch').closest('label').hidden;
           const visibleInViewport = element => { const rect = element.getBoundingClientRect();
             return rect.width > 0 && rect.height > 0 && rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth; };
           results.lowHeightControls = innerHeight > 500 || (visibleInViewport(document.querySelector('#members-app > .section-nav')) &&
@@ -138,7 +142,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           snapshot.members = [10, 9, 14, null].map((years, index) => ({
             ...structuredClone(originalMembers[0]), id: 41 + index, code: '99994' + index,
             name: ['Zeta', 'Beta', 'Alfa', 'Gamma'][index],
-            profile: { birthDate: years === null ? '' : (today.getFullYear() - years) + '-01-01' },
+            profile: { birthDate: years === null ? '' : (today.getFullYear() - years) + (index === 0 ? '-12-31' : '-01-01') },
           }));
           $('reload-members').click(); await settle();
           const codes = () => [...$('members-list').querySelectorAll('td:nth-child(2) .member-code')].map(code => code.textContent).join(',');
@@ -486,7 +490,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.buttonLayout, true, JSON.stringify(results));
       assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
-      for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
+      for (const key of ["loaded", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress",
         "contextualUnitLabels", "assignmentHistory", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",

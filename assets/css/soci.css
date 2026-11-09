@@ -280,6 +280,16 @@
 .members-secondary-actions { min-width: 0; }
 .members-secondary-actions > summary { cursor: pointer; min-height: 44px; padding: 10px 14px; box-sizing: border-box; border: 1px solid #cfc4d9; border-radius: 24px; }
 .members-secondary-actions > .members-toolbar { margin-bottom: 0; }
+.members-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin: .5rem 0; }
+.members-controls .members-primary-actions { margin: 0; }
+.members-controls .members-filters { flex: 1 1 180px; margin: 0; padding: 0; background: transparent; }
+.members-controls .members-advanced-search { border: 0; }
+.members-controls .members-advanced-search > summary { width: fit-content; padding: 10px 14px; box-sizing: border-box; border: 1px solid #cfc4d9; border-radius: 24px; }
+.members-controls .members-filters-advanced { padding: .8rem; border-radius: 12px; background: #f5f1f8; }
+.members-diagnostics > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: .85rem; color: #625269; }
+.members-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.members-summary:has(> button:only-child) { grid-template-columns: minmax(0, 300px); }
+.members-summary > button:only-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
 #members-search-panel > .members-heading h2 { margin: .4rem 0; }
 #members-search-panel > .members-heading p { margin: .3rem 0; font-size: .85rem; }
 .members-summary { margin: .7rem 0; gap: .6rem; }
@@ -310,8 +320,7 @@
   .members-summary strong { display: inline; font-size: 1.2rem; }
   #members-search-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: start; }
   #members-search-panel > * { grid-column: 1 / -1; min-width: 0; }
-  #members-search-panel > .members-summary { grid-column: 1; }
-  #members-search-panel > .members-primary-actions { grid-column: 2; flex-wrap: nowrap; }
+  #members-search-panel > .members-summary { grid-column: 1 / -1; }
   .members-primary-actions { margin: 4px 0; }
   .members-filters { margin: 4px 0; padding: 8px 10px; }
   #member-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding: 8px 16px; }
