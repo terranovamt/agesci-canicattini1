@@ -47,7 +47,7 @@ test("NAS panel displays measured values and clears live values when monitoring 
     },
   };
   const context = {
-    window: { LIVE: { nas: true }, addEventListener() {}, removeEventListener() {} },
+    window: { LIVE: { nas: true }, NAS: { user: { admin: false } }, addEventListener() {}, removeEventListener() {} },
     document: {
       visibilityState: "visible",
       getElementById: get,
@@ -74,6 +74,7 @@ test("NAS panel displays measured values and clears live values when monitoring 
   assert.equal(requested, "/api/metrics?view=live");
   assert.equal(elements.has("nas-visits"), false);
   assert.equal(elements.has("nas-refresh"), false);
+  assert.equal(get("nas-statistics-link").hidden, true);
   assert.equal(get("nas-online").textContent, "3");
   assert.equal(get("nas-devices").textContent, "2");
   assert.equal(get("nas-host-cpu").textContent, "-");
@@ -150,6 +151,10 @@ test("metrics polling never overlaps and resumes automatically after returning t
 
 test("statistics page is guarded and renders tracking separately from the live regia", async () => {
   const statistics = fs.readFileSync(path.join(__dirname, "../assets/js/statistiche.js"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/statistiche.html"), "utf8");
+  assert.equal((html.match(/id="statistics-content"/g) || []).length, 1);
+  assert.match(html, /<main id="statistics-content"/);
+  assert.match(html, /<div id="statistics-data" hidden>/);
   let redirected;
   vm.runInNewContext(statistics, {
     window: { ACCESSO: { verificata: () => false } },
@@ -183,6 +188,7 @@ test("statistics page is guarded and renders tracking separately from the live r
       });
     return elements.get(id);
   };
+  get("statistics-data").hidden = true;
   const rangeButtons = [7, 30, 90, 365].map((days) => ({
     attributes: { "data-history-days": String(days) },
     setAttribute(name, value) {
@@ -207,6 +213,7 @@ test("statistics page is guarded and renders tracking separately from the live r
     window: {
       ACCESSO: { verificata: () => true },
       LIVE: { nas: true },
+      NAS: { user: { admin: true } },
       NAS_METRICS: {
         watch(options) {
           subscriber = options;
@@ -221,6 +228,7 @@ test("statistics page is guarded and renders tracking separately from the live r
     },
     fetch: async () => ({ ok: true, json: async () => ({ sha: "a".repeat(40) }) }),
   });
+  assert.equal(get("statistics-data").hidden, false);
   subscriber.render({
     enabled: true,
     sampledAt: Date.now(),
@@ -261,6 +269,8 @@ test("statistics page is guarded and renders tracking separately from the live r
   assert.equal(get("stats-release-status").textContent, "Il NAS è all’ultimo commit del branch NAS.");
   assert.equal(get("stats-hour-online-current").textContent, "4");
   assert.equal(get("stats-hour-online-peak").textContent, "Picco 4");
+  const point = get("stats-hour-online").children.find((child) => child.attributes.class?.includes("chart-point"));
+  assert.doesNotMatch(point.attributes["aria-label"], /Invalid Date/);
   assert.match(get("stats-hour-note").textContent, /uno al minuto/);
   assert.equal(
     get("stats-history-chart").children.filter((child) => child.attributes.class?.includes("chart-series")).length,

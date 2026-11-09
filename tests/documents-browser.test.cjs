@@ -50,7 +50,7 @@ function fixture(file, css, scripts) {
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<iframe\b[\s\S]*?<\/iframe>/g, (original) => (file === "index.html" ? "" : original))
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
-      const source = path.normalize(path.join(path.dirname(file), src));
+      const source = path.normalize(path.join(path.dirname(file), src.split("?")[0]));
       return scripts.includes(source) ? "<script>" + read(source) + "</script>" : "";
     })
     .replace(
@@ -384,7 +384,7 @@ test("public documents and management work in a browser at all required widths",
           results.push({ dashboard: doc.querySelector('#riservata').hidden === false,
             assembly: doc.querySelector('#dashboard-assembly-title').textContent,
             documents: doc.querySelectorAll('#dashboard-document-links li').length,
-            tools: doc.querySelectorAll('.dashboard-tool').length });
+            tools: doc.querySelectorAll('.dashboard-tools .dashboard-tool').length });
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#dashboard-documents-retry').onclick();
           results.push({ dashboardError: !doc.querySelector('#dashboard-documents-retry').hidden });

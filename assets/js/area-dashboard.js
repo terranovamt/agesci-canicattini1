@@ -2,7 +2,7 @@
   const $ = (id) => document.getElementById(id);
   let started = false;
   function metrics() {
-    if (!window.LIVE?.nas || !window.NAS_METRICS) return;
+    if (!window.LIVE?.nas || !window.NAS?.user?.admin || !window.NAS_METRICS) return;
     const ids = [
       "dashboard-visits",
       "dashboard-connections",

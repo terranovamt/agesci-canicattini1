@@ -434,7 +434,8 @@ Il pannello aggiorna i dati ogni cinque secondi quando la regia e' visibile.
 Non contiene pulsanti di aggiornamento manuale: riprende subito anche tornando
 alla scheda. **Apri monitor** amplia soltanto le risorse e le connessioni live.
 Non mostra visite, conteggi giornalieri, tabelle storiche o segnalazioni passate.
-La regia usa `/agesci-canicattini1/api/metrics?view=live`, che non restituisce questi dati storici.
+La regia usa `/agesci-canicattini1/api/metrics?view=live`, accessibile
+all'amministratore e ai capi autenticati, che non restituisce questi dati storici.
 
 ### Statistiche e riepilogo
 

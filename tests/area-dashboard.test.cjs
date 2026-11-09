@@ -42,6 +42,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
   let subscriber;
   const window = {
     LIVE: { nas: true },
+    NAS: { user: { admin: true } },
     ACCESSO: { verificata: () => true },
     DATI: { anno_esercizio: 2026, assemblea: { titolo: "Assemblea" }, slide: [] },
     NAS_METRICS: {
@@ -74,9 +75,38 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
     traffic: { today: { visits: 4, connections: 8, errors: 0 }, liveStreams: 2 },
     resources: { host: null },
   });
+
   assert.equal(get("dashboard-visits").textContent, "4");
   assert.equal(get("dashboard-streams").textContent, "2");
   assert.equal(get("dashboard-cpu").textContent, "-");
   subscriber.error("Offline");
   assert.equal(get("dashboard-streams").textContent, "-");
+});
+
+test("non-admin dashboard does not request or show server statistics", () => {
+  const source = fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8");
+  const element = () => ({ hidden: true, replaceChildren() {}, append() {} });
+  const elements = new Map();
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, element());
+    return elements.get(id);
+  };
+  const window = {
+    LIVE: { nas: true }, NAS: { user: { admin: false } },
+    ACCESSO: { verificata: () => true },
+    NAS_METRICS: { watch() { throw new Error("Non-admin must not request summary"); } },
+  };
+  vm.runInNewContext(source, {
+    window, document: { getElementById: get, createElement: element, head: { append() {} } },
+    fetch: async () => ({ ok: true, json: async () => [] }), Date,
+  });
+  window.AREA_DASHBOARD.load();
+  assert.equal(get("dashboard-metrics").hidden, true);
+});
+
+test("dashboard introduces the workflow before the three tools", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
+  assert.ok(html.indexOf('class="dashboard-workflow"') < html.indexOf('class="dashboard-tools"'));
+  assert.match(html, /<strong>Pubblica<\/strong><span>Pubblica le modifiche/);
+  assert.doesNotMatch(html, /Salva sul NAS/);
 });

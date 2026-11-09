@@ -248,6 +248,7 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 .dashboard-tool h3 { font-size: 21px; line-height: 1.3; margin: 20px 0 0 }
 .dashboard-tool p { flex: 1; color: var(--v2); font-size: 14px; margin: 12px 0 24px }
 #riservata .dashboard-tool .button { margin: 0; border-radius: var(--radius-md) }
+.dashboard-workflow { margin-top: 24px }
 .dashboard-workflow ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding-left: 24px; margin: 24px 0 }
 .dashboard-workflow li { padding-left: 4px }
 .dashboard-workflow li strong { display: block; color: var(--v); margin-bottom: 8px }

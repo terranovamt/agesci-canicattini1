@@ -223,10 +223,12 @@ async function createNasServer({
         return send(response, 200, { ok: true });
       }
       if (url.pathname === "/api/metrics" && method === "GET") {
-        if (!authorized(request)) fail(401, "Sessione scaduta: accedi di nuovo");
-        const devices = [...presence.values()].filter((value) => value.t > Date.now() - 60000).length;
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
         const view = url.searchParams.get("view") || "full";
         if (!["full", "live", "summary"].includes(view)) fail(400, "Vista metriche non valida");
+        if (view !== "live" && !current.admin) fail(403, "Statistiche riservate all'amministratore");
+        const devices = [...presence.values()].filter((value) => value.t > Date.now() - 60000).length;
         return send(response, 200, monitor.snapshot(streams.size, devices, view));
       }
       if (url.pathname === "/config/site.js" && ["GET", "HEAD"].includes(method)) {

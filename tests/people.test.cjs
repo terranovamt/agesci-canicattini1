@@ -42,6 +42,10 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
   try {
     assert.equal((await app.login()).status, 200);
     const admin = app.cookie();
+    assert.equal((await app.request("metrics", "GET", undefined, "")).status, 401);
+    for (const suffix of ["", "?view=summary", "?view=live"]) {
+      assert.equal((await app.request("metrics" + suffix, "GET", undefined, admin)).status, 200);
+    }
     const list = await (await app.request("people")).json();
     assert.equal(list.people.length, 3);
     assert.equal(list.people.filter(p => p.admin).length, 1);
@@ -52,6 +56,9 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
     assert.equal((await app.login("7654321", password, password)).status, 200);
     const capo = app.cookie();
     assert.equal((await app.request("people")).status, 403);
+    assert.equal((await app.request("metrics")).status, 403);
+    assert.equal((await app.request("metrics?view=summary")).status, 403);
+    assert.equal((await app.request("metrics?view=live")).status, 200);
     assert.equal((await app.request("auth/me")).status, 200);
     assert.deepEqual(await (await app.request("auth/status", "POST", { code: "7654321" })).json(), { firstAccess: false });
     const db = new DatabaseSync(path.join(directory, "site.sqlite"));

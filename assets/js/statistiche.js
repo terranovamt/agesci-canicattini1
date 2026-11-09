@@ -8,6 +8,10 @@
     $("statistics-status").textContent = "Statistiche disponibili sul NAS";
     return;
   }
+  if (!window.NAS?.user?.admin) {
+    $("statistics-status").textContent = "Statistiche riservate all’amministratore.";
+    return;
+  }
   const labels = {
     home: "Home",
     assemblea: "Presentazione",
@@ -60,9 +64,9 @@
   let historyDays = 30;
   let checkedRelease = "";
   let checkingRelease = false;
-  let dailySignature = "";
+  let dailySignature = null;
   let dailyHistory = [];
-  let performanceSignature = "";
+  let performanceSignature = null;
   const chart = $("stats-history-chart");
   const chartElement = (name, attributes = {}) => {
     const element = document.createElementNS(chartNamespace, name);
@@ -115,7 +119,7 @@
         segment = [];
         continue;
       }
-      segment.push({ index, value });
+      segment.push({ index, value, sampledAt: rows[index].sampledAt, day: rows[index].day });
     }
     if (segment.length) segments.push(segment);
     const last = available.at(-1);
@@ -462,7 +466,7 @@
       renderHistory(dailyHistory);
     });
   });
-  $("statistics-content").hidden = false;
+  $("statistics-data").hidden = false;
   window.NAS_METRICS.watch({
     render(data) {
       const { traffic, api } = data;
@@ -543,7 +547,7 @@
       $("statistics-status").className = "metrics-status err";
       for (const id of counters) $(id).textContent = "-";
       $("stats-totals").textContent = "Dati non aggiornati";
-      dailySignature = "";
+      dailySignature = null;
       dailyHistory = [];
       renderHistory([]);
       renderDistribution([], 0);

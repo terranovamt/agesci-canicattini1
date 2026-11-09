@@ -46,6 +46,7 @@
       started = true;
       $("legacy-service-metrics").hidden = true;
       $("nas-monitor").hidden = false;
+      $("nas-statistics-link").hidden = !window.NAS?.user?.admin;
       const panel = $("nas-monitor"),
         home = panel.parentElement,
         dialog = $("nas-monitor-dialog");

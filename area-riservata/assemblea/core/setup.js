@@ -607,11 +607,13 @@
     const d = dirty();
     $("#dirty").textContent = d
       ? nas
-        ? "Modifiche non salvate sul NAS"
+        ? "Modifiche non pubblicate"
         : "● Modifiche non salvate su GitHub"
       : "✓ Nessuna modifica locale";
     $("#dirty").style.color = d ? "var(--r-strong)" : "var(--g-strong)";
-    $("#salva-gh").textContent = saving ? "Salvataggio in corso…" : nas ? "Salva sul NAS" : "Salva su GitHub (dati.js)";
+    $("#salva-gh").textContent = saving
+      ? nas ? "Pubblicazione in corso…" : "Salvataggio in corso…"
+      : nas ? "Pubblica" : "Salva su GitHub (dati.js)";
     $("#salva-gh").disabled = !d || saving;
     $("#annulla").disabled = !d || saving;
     $("#nuovo-anno").disabled = !edit || saving;
@@ -686,17 +688,17 @@
     try {
       const tk = nas ? null : await token();
       if (!nas && !tk) return;
-      status(nas ? "Salvo sul NAS..." : "Salvo su GitHub…");
+      status(nas ? "Pubblicazione in corso…" : "Salvo su GitHub…");
       for (let tentativo = 0; tentativo < 3; tentativo++) {
         const fd = await gh("dati.js", tk);
-        if (!fd) throw new Error(nas ? "Contenuti non trovati sul NAS" : "dati.js non trovato su GitHub");
+        if (!fd) throw new Error(nas ? "Contenuti pubblicati non trovati" : "dati.js non trovato su GitHub");
         const testo = b64dec(fd.content);
         /* Applica solo le modifiche locali sopra l'ultima versione su GitHub. */
         const voluto = M.applyPatch(window.SALVA_DATI.valuta(testo), M.diffPatch(base, snapshot));
         const nuovo = window.SALVA_DATI.genera(testo, voluto);
         if (nuovo === testo) {
           sync(voluto, snapshot);
-          toast(nas ? "Contenuti NAS gia aggiornati" : "dati.js su GitHub è già aggiornato");
+          toast(nas ? "Contenuti già aggiornati" : "dati.js su GitHub è già aggiornato");
           return;
         }
         try {
@@ -711,8 +713,8 @@
           throw e;
         }
         sync(voluto, snapshot);
-        status(nas ? "Salvato sul NAS" : "Salvato su GitHub; pubblicazione Pages in attesa", "ok");
-        toast(nas ? "Contenuti pubblicati sul NAS" : "Salvato su GitHub: tra circa 1 minuto è online");
+        status(nas ? "Pubblicato" : "Salvato su GitHub; pubblicazione Pages in attesa", "ok");
+        toast(nas ? "Contenuti pubblicati" : "Salvato su GitHub: tra circa 1 minuto è online");
         return;
       }
     } catch (e) {
@@ -754,7 +756,7 @@
     if (
       edit &&
       dirty() &&
-      !confirm(nas ? "Uscire senza salvare sul NAS?" : "Uscire senza salvare le modifiche su GitHub?")
+      !confirm(nas ? "Uscire senza pubblicare le modifiche?" : "Uscire senza salvare le modifiche su GitHub?")
     )
       return;
     localStorage.removeItem(TK);
@@ -791,7 +793,7 @@
         go("generale");
         status(
           nas
-            ? "Nuovo anno applicato: salva sul NAS"
+            ? "Nuovo anno applicato: pubblica le modifiche"
             : "Nuovo anno applicato alla bozza: salva su GitHub per pubblicare",
           "live",
         );
@@ -814,7 +816,7 @@
       edit = v;
       $("#json-err").textContent = "";
       render();
-      toast(nas ? "Applicato: ora premi Salva sul NAS" : "Applicato: ora premi Salva su GitHub");
+      toast(nas ? "Applicato: ora premi Pubblica" : "Applicato: ora premi Salva su GitHub");
     } catch (e) {
       $("#json-err").textContent = "JSON non valido: " + e.message;
     }

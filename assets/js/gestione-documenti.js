@@ -18,7 +18,7 @@
   if (nas) {
     $("reload-documents").textContent = "Ricarica documenti";
     $("publish-destination").textContent = "Documenti pubblici del gruppo.";
-    $("publish-timing").textContent = "Salvataggio sul NAS.";
+    $("publish-timing").textContent = "Le modifiche vengono pubblicate sul sito.";
     $("upload-hint").textContent = "PDF pubblico, inferiore a 20 MiB.";
   }
   $("document-token").value = localStorage.getItem(D.tokenKey) || "";
@@ -162,7 +162,7 @@
     const previousItems = items;
     lock(true);
     message(
-      preview ? "Salvataggio nella simulazione locale…" : nas ? "Salvataggio sul NAS..." : "Pubblicazione su GitHub…",
+      preview ? "Salvataggio nella simulazione locale…" : nas ? "Pubblicazione in corso…" : "Pubblicazione su GitHub…",
     );
     try {
       items = D.apply(items, change);
@@ -176,7 +176,7 @@
         preview
           ? "Salvato nella simulazione locale. Ricarica la home per vedere il risultato."
           : nas
-            ? "Salvato e pubblicato sul NAS."
+            ? "Pubblicato sul sito."
             : "Salvato su GitHub. Attendi GitHub Pages per vedere la modifica sul sito.",
       );
     } catch (error) {

@@ -210,7 +210,7 @@ test("NAS setup saves through the local content API without a GitHub token", asy
   assert.equal(t.requests.length, 2);
   assert.ok(t.requests.every((request) => request.url === "/api/content/dati.js"));
   assert.equal(t.store.size, 0);
-  assert.equal(t.$("#salva-gh").textContent, "Salva sul NAS");
+  assert.equal(t.$("#salva-gh").textContent, "Pubblica");
 });
 
 test("setup section navigation keeps its title and accessible selected state in sync", async () => {
