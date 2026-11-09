@@ -143,7 +143,7 @@
       };
       $("dashboard-group-counts").append(
         makeCount("Totale censiti", data.total, "group-census-total"),
-        ...data.branches.map(item => makeCount(item.branch, item.count, "group-census-branch")),
+        ...data.branches.map(item => makeCount(window.SOCI_MODEL.branchLabel(item.branch), item.count, "group-census-branch")),
       );
       $("dashboard-group-status").textContent = data.year
         ? `Censimenti AGESCI · anno ${data.year} · tutti gli status importati.`

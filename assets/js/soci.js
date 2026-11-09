@@ -5,7 +5,8 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const memberSections = ['profile', 'contacts', 'guardians', 'education', 'censuses'];
+  const allMemberSections = ['profile', 'contacts', 'guardians', 'education', 'censuses'];
+  let memberSections = allMemberSections;
   let guardianNextIndex = 0;
   const selected = new Set();
   const unitBoard = window.SOCI_UNITS({ perform: run, reload: load, openMember });
@@ -23,7 +24,7 @@
   }
   function branchOptions(select, first) {
     const branches = window.NAS?.user?.admin ? M.branches : [window.NAS?.user?.serviceBranch].filter(Boolean);
-    options(select, branches.map(branch => [branch, branch]), first);
+    options(select, branches.map(branch => [branch, M.branchLabel(branch)]), first);
   }
   function input(labelText, name, value, definition = {}) {
     if (definition.type === 'multiselect') {
@@ -141,12 +142,14 @@
       const card = node('button'); card.type = 'button';
       card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
       card.setAttribute('aria-pressed', String(filters.elements.branch.value === branch));
-      card.append(node('span', branch), node('strong', String(countable.filter(m => m.branch === branch).length)));
-      card.setAttribute('aria-label', `Filtra ${branch} · ${countable.filter(m => m.branch === branch).length} ragazzi`);
+      card.dataset.branch = branch;
+      card.title = M.branchLabel(branch, true);
+      card.append(node('span', M.branchLabel(branch)), node('strong', String(countable.filter(m => m.branch === branch).length)));
+      card.setAttribute('aria-label', `Filtra ${M.branchLabel(branch)} · ${countable.filter(m => m.branch === branch).length} soci`);
       card.onclick = () => {
         filters.elements.branch.value = filters.elements.branch.value === branch ? '' : branch;
         render();
-        [...$('members-summary').children].find(button => button.firstChild.textContent === branch)?.focus();
+        [...$('members-summary').children].find(button => button.dataset.branch === branch)?.focus();
       };
       return card;
     }));
@@ -175,10 +178,10 @@
       const nameCell = node('td'), name = node('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
       nameCell.append(name, node('span', member.code, 'member-code'));
-      const branchCell = node('td'); branchCell.append(node('span', member.branch || 'Da assegnare', 'member-badge'));
+      const branchCell = node('td'); branchCell.append(node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge'));
       const current = census(member);
       const censusCell = node('td', current ? `${current.year} · ${current.status || 'Status non indicato'}` : 'Nessun censimento');
-      if (current) censusCell.append(node('span', current.branch, 'member-code'));
+      if (current) censusCell.append(node('span', M.branchLabel(current.branch), 'member-code'));
       row.append(checkCell, nameCell, branchCell, node('td', `${age(member) ?? '—'}${birthYear ? ' · ' + birthYear : ''}`), censusCell,
         node('td', [member.profile.email, member.profile.phone].filter(Boolean).join(' · ') || 'Non indicati'));
       rows.push(row);
@@ -220,7 +223,7 @@
   function renderTransfers() {
     $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
       const card = node('article', undefined, 'members-census');
-      card.append(node('p', `${transfer.name} · ${transfer.code} · ${transfer.birthYear || 'Nascita non indicata'} · ${transfer.source} → ${transfer.target}`));
+      card.append(node('p', `${transfer.name} · ${transfer.code} · ${transfer.birthYear || 'Nascita non indicata'} · ${M.branchLabel(transfer.source)} → ${M.branchLabel(transfer.target)}`));
       for (const [action, label, allowed] of [['confirm', 'Conferma ingresso', transfer.canConfirm],
         ['reject', 'Rifiuta passaggio', transfer.canConfirm], ['cancel', 'Annulla proposta', transfer.canCancel]]) {
         if (!allowed) continue;
@@ -245,7 +248,7 @@
     if ([...filters.elements.birthYear.options].some(o => o.value === oldBirthYear)) filters.elements.birthYear.value = oldBirthYear;
     options(filters.elements.year, [...new Set(data.members.flatMap(m => m.censuses.map(c => c.year)))].sort().reverse().map(v => [v, v]), ['', 'Ultimo disponibile per socio']);
     options(filters.elements.status, [...new Set(data.members.flatMap(m => m.censuses.map(c => c.status)).filter(Boolean))].sort().map(v => [v, v]), ['', 'Tutti gli status']);
-    options(filters.elements.field, data.fields.map(field => [field.branch + ':' + field.key, field.branch + ' · ' + field.label]), ['', 'Tutti i campi']);
+    options(filters.elements.field, data.fields.map(field => [field.branch + ':' + field.key, M.branchLabel(field.branch) + ' · ' + field.label]), ['', 'Tutti i campi']);
     for (const [key, value] of [['year', oldYear], ['status', oldStatus], ['field', oldField]])
       if ([...filters.elements[key].options].some(o => o.value === value)) filters.elements[key].value = value;
     options($('document-template'), data.templates.map(template => [String(template.id), template.title]));
@@ -278,6 +281,7 @@
     finally {
       busy = false; $('members-app').inert = false;
       document.querySelectorAll('dialog button').forEach(button => { button.disabled = false; });
+      if ($('member-dialog').open) configureMemberSections();
       $('confirm-import').disabled = !preview;
       $('member-section-back').disabled = memberSection === 0;
       if (data) updateSelection();
@@ -290,7 +294,7 @@
     ['Pista / sentiero', 'Pista', 'Sentiero'].includes(field.label);
   const editableEducation = field => !assignmentField(field) && !legacyPista(field);
   function educationDraft() {
-    if (educationBranch) {
+    if (educationBranch && memberSections.includes('education')) {
       const formData = new FormData(profileForm);
       drafts[educationBranch] = { ...drafts[educationBranch], ...Object.fromEntries(data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
         .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || ''])) };
@@ -360,6 +364,24 @@
     }
     return field;
   }
+  function configureMemberSections() {
+    const current = memberSections[memberSection];
+    const adult = M.isAdult({ ...editing, branch: profileForm.elements.branch.value });
+    memberSections = allMemberSections.filter(section => !adult || !['guardians', 'education'].includes(section));
+    for (const section of allMemberSections) {
+      const omitted = !memberSections.includes(section);
+      const tab = $('member-tab-' + section), panel = $('member-panel-' + section);
+      tab.hidden = omitted;
+      if (omitted) {
+        tab.tabIndex = -1;
+        tab.setAttribute('aria-selected', 'false');
+        panel.hidden = true;
+      }
+      if (['guardians', 'education'].includes(section))
+        panel.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = omitted; });
+    }
+    showMemberSection(Math.max(0, memberSections.indexOf(current)));
+  }
   function showMemberSection(index, focus = false) {
     memberSection = Math.max(0, Math.min(memberSections.length - 1, index));
     memberSections.forEach((section, i) => {
@@ -419,11 +441,13 @@
     $('member-censuses').replaceChildren(...(member?.censuses || []).map(current => {
       const section = node('section', undefined, 'members-census'), dl = node('dl');
       section.append(node('h3', 'Anno scout ' + current.year));
-      for (const [key, label] of Object.entries(M.censusFields)) dl.append(node('dt', label), node('dd', current[key] || 'Non indicato'));
+      for (const [key, label] of Object.entries(M.censusFields))
+        dl.append(node('dt', label), node('dd', (key === 'branch' ? M.branchLabel(current[key]) : current[key]) || 'Non indicato'));
       section.append(dl); return section;
     }));
     if (!member?.censuses.length) $('member-censuses').append(node('p', 'Nessun censimento importato.'));
     renderEducation();
+    configureMemberSections();
     showMemberSection(0);
     formSnapshot = JSON.stringify([...new FormData(profileForm)]);
     $('member-dialog').showModal();
@@ -440,10 +464,15 @@
     }
     drafts[oldBranch] = { ...editing?.values[oldBranch] };
     renderEducation();
+    configureMemberSections();
   };
-  memberSections.forEach((section, index) => {
-    $('member-tab-' + section).onclick = () => showMemberSection(index);
+  allMemberSections.forEach(section => {
+    $('member-tab-' + section).onclick = () => {
+      if (memberSections.includes(section)) showMemberSection(memberSections.indexOf(section));
+    };
     $('member-tab-' + section).onkeydown = event => {
+      const index = memberSections.indexOf(section);
+      if (index < 0) return;
       const next = event.key === 'ArrowRight' ? (index + 1) % memberSections.length
         : event.key === 'ArrowLeft' ? (index - 1 + memberSections.length) % memberSections.length
           : event.key === 'Home' ? 0 : event.key === 'End' ? memberSections.length - 1 : -1;
@@ -466,9 +495,11 @@
     event.preventDefault();
     educationDraft();
     const branch = profileForm.elements.branch.value;
-    const profile = { ...editing?.profile, ...Object.fromEntries(['member-profile', 'member-contacts', 'member-guardian-type', 'member-guardian-source']
+    const profileTargets = ['member-profile', 'member-contacts'];
+    if (memberSections.includes('guardians')) profileTargets.push('member-guardian-type', 'member-guardian-source');
+    const profile = { ...editing?.profile, ...Object.fromEntries(profileTargets
       .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value])) };
-    profile.guardianContacts = guardianPayload();
+    if (memberSections.includes('guardians')) profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
       await A.request(editing ? 'members/' + editing.id : 'members', editing ? 'PATCH' : 'POST', payload);
@@ -586,7 +617,7 @@
     const template = data.templates.find(template => String(template.id) === $('document-template').value);
     return chosen().map(member => {
       const values = { nome: member.profile.givenName || member.name, cognome: member.profile.surname || '',
-        codice: member.code, branca: member.branch, anno: census(member)?.year || 'Non indicato',
+        codice: member.code, branca: M.branchLabel(member.branch), anno: census(member)?.year || 'Non indicato',
         email: member.profile.email || '', cellulare: member.profile.phone || '',
         data: new Date().toLocaleDateString('it-IT'),
         percorso: data.fields.filter(field => field.branch === member.branch && !legacyPista(field)).map(field => {
@@ -609,10 +640,10 @@
     if (!confirm('Esportare i risultati con anagrafica, contatti e campi educativi? Il CSV contiene dati personali: conservarlo in modo sicuro.')) return;
     const profileKeys = Object.keys(M.profileFields).filter(key => !M.ignoredProfileFields.includes(key)), censusKeys = Object.keys(M.censusFields);
     const rows = [['Codice socio', 'Branca locale', ...profileKeys.map(key => M.profileFields[key]), 'Responsabili genitoriali strutturati', 'Anno scout',
-      ...censusKeys.map(key => M.censusFields[key]), ...data.fields.map(field => field.branch + ' - ' + field.label)],
-    ...results().map(member => [member.code, member.branch, ...profileKeys.map(key => member.profile[key]),
+      ...censusKeys.map(key => M.censusFields[key]), ...data.fields.map(field => M.branchLabel(field.branch) + ' - ' + field.label)],
+    ...results().map(member => [member.code, M.branchLabel(member.branch), ...profileKeys.map(key => member.profile[key]),
       JSON.stringify(member.profile.guardianContacts || M.parseGuardians(member.profile.guardians).contacts), census(member)?.year,
-      ...censusKeys.map(key => census(member)?.[key]), ...data.fields.map(field => {
+      ...censusKeys.map(key => key === 'branch' ? M.branchLabel(census(member)?.[key]) : census(member)?.[key]), ...data.fields.map(field => {
         const value = member.values[field.branch]?.[field.key];
         return Array.isArray(value) ? value.join('; ') : value;
       })])];

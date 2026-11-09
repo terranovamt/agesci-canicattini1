@@ -1,6 +1,10 @@
 (function (root) {
   'use strict';
   const branches = ['L/C', 'E/G', 'R/S', 'Adulti'];
+  function branchLabel(branch, full = false) {
+    return ['Adulti', 'Branca Adulti'].includes(branch) ? (full ? 'Co.Ca. · Comunità Capi' : 'Co.Ca.') : branch;
+  }
+  function isAdult(member) { return member?.kind === 'capo' || member?.branch === 'Adulti'; }
   const profileFields = {
     givenName: 'Nome', surname: 'Cognome', sex: 'Sesso', birthDate: 'Data nascita',
     birthTown: 'Comune nascita', taxCode: 'Codice fiscale', nationality: 'Nazionalita',
@@ -299,7 +303,7 @@
     return '"' + (/^[\s]*[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
-  const model = { branches, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
+  const model = { branches, branchLabel, isAdult, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
     lcMoments, sestigliaColors, unitKey, unitField, unitRoles, patrolColors, patrolCatalog, patrolIdentity, ignoredProfileFields, pendingCoca,
     selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;

@@ -16,7 +16,9 @@ conteggi, ricerca, selezioni ed estrazioni, senza cancellarne dati o accesso.
 Nessuna assegnazione significa nessun accesso
 al libro soci, anche con login abilitato. Import, nuovi account e modelli
 documentali restano amministrativi. L'assegnazione non cambia la branca
-anagrafica Adulti e non concede il login.
+anagrafica Co.Ca. (Comunità Capi) e non concede il login. L'interfaccia usa
+**Co.Ca.**; il valore interno `Adulti` e il CSV AGESCI `Branca Adulti`
+restano compatibili, senza migrazioni dei dati.
 
 **Visualizza come** (in alto, accanto ad Area riservata) e' riservato
 all'amministratore: elenca i capi configurati con branca di servizio e apre la
@@ -90,6 +92,14 @@ percorso educativo e storico annuale AGESCI. Le modifiche manuali non
 riscrivono lo storico ufficiale. Gli account preesistenti senza scheda devono
 essere completati prima di applicare macro.
 
+Le schede Co.Ca. e quelle con tipologia account **capo**, anche se registrate
+in L/C, E/G o R/S, mostrano soltanto **Anagrafica**, **Contatti** e
+**Censimenti**. **Genitori** e **Percorso** non compaiono nella navigazione;
+i dati già salvati restano conservati anche dopo una modifica anagrafica.
+Le schede dei ragazzi mantengono tutte e cinque le sezioni. La branca di
+servizio e i ruoli di capo/vice sestiglia o squadriglia non cambiano la
+tipologia della scheda.
+
 L'amministratore vede tutte le schede, anche quelle con livello FoCa
 valorizzato e ingresso CoCa assente (o No). Il filtro FoCa/CoCa si applica
 solo alle viste dei capi, sempre limitate alla propria branca. I dati e gli
@@ -144,7 +154,7 @@ Campi iniziali:
 | L/C | sestiglia e ruolo in sola lettura, primo/secondo/terzo anno, momento della progressione, specialita, data promessa |
 | E/G | squadriglia, ruolo (capo, vice, squadrigliere, piede tenero), anno in branca, tappa (scoperta, competenza, responsabilita), specialita, brevetti di competenza, data promessa |
 | R/S | comunita (Noviziato per i novizi del primo anno, oppure Clan), passi (scoperta, competenza, responsabilita), punto della strada, servizio, data partenza |
-| Adulti | servizio in gruppo, formazione |
+| Co.Ca. (Comunità Capi) | servizio in gruppo, formazione (conservati; non mostrati nella scheda) |
 
 In **Campi personalizzati e modelli di gruppo** si aggiungono campi testo,
 data o scelta. La chiave e univoca nella branca, composta da lettere minuscole,
@@ -264,7 +274,7 @@ cancella il campo. In R/S non ci sono sestiglie, squadriglie, ruoli,
 specialita o brevetti; restano i campi del percorso R/S.
 
 La successione e **L/C → E/G → R/S**, senza salti e senza passaggio automatico
-da R/S ad Adulti. Il capo della provenienza propone il passaggio; fino alla
+da R/S a Co.Ca. Il capo della provenienza propone il passaggio; fino alla
 conferma la branca locale non cambia. Un altro capo assegnato alla
 destinazione puo confermare o rifiutare in **Passaggi in attesa**; la provenienza
 puo annullare. L'amministratore gestisce tutte le branche, ma non puo confermare

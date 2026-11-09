@@ -45,6 +45,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
   };
   let subscriber;
   const window = {
+    SOCI_MODEL: require("../assets/js/soci-model.js"),
     LIVE: { nas: true },
     NAS: { user: { admin: true } },
     ACCESSO: { verificata: () => true, request: async route => {
@@ -83,6 +84,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
   assert.equal(get("dashboard-group-counts").children.length, 5);
   assert.equal(get("dashboard-group-counts").children[0].children[1].textContent, "3");
   assert.equal(get("dashboard-group-counts").children[2].children[1].textContent, "2");
+  assert.equal(get("dashboard-group-counts").children[4].children[0].textContent, "Co.Ca.");
   assert.equal(subscriber.view, "summary");
   subscriber.render({
     enabled: true,
@@ -306,7 +308,7 @@ test("dashboard login and all panels adapt across six device layouts", { skip: !
       for (const [label, count, className] of [
         ["Totale censiti", 145, "group-census-total"], ["L/C", 42, "group-census-branch"],
         ["E/G", 58, "group-census-branch"], ["R/S", 35, "group-census-branch"],
-        ["Adulti", 10, "group-census-branch"],
+        ["Co.Ca.", 10, "group-census-branch"],
       ]) {
         const item = document.createElement("div"), term = document.createElement("dt"), value = document.createElement("dd");
         item.className = className; term.textContent = label; value.textContent = String(count);

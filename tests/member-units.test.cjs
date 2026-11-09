@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { test } = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 const { createMemberUnits } = require("../server/member-units.cjs");
@@ -52,4 +54,19 @@ test("Blu is lighter, shared by both palettes and applied to existing sestiglie"
   assert.equal(restored.status, 201);
   assert.equal(restored.payload.unit.color, blu);
   assert.equal(restored.payload.unit.hidden, false);
+});
+
+test("user-provided animal drawings are composed inside the guidone assets", () => {
+  for (const [name, file] of [
+    ["Panda", "panda.svg"], ["Antilope", "antilopi.svg"], ["Aquila", "aquile.svg"],
+    ["Leone", "leoni.svg"], ["Scoiattolo", "scoiattoli.svg"],
+  ]) {
+    const identity = M.patrolIdentity(name);
+    assert.equal(identity.image, file);
+    const svg = fs.readFileSync(path.join(__dirname, "../assets/img/guidoni", file), "utf8");
+    assert.match(svg, /viewBox="0 0 220 160"/);
+    assert.match(svg, /clipPath id="flag-inner"/);
+    assert.match(svg, /<g clip-path="url\(#flag-inner\)">/);
+    assert.match(svg, /<path[^>]+fill="#(?:E60000|D50025)"/);
+  }
 });
