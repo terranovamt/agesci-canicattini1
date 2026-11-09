@@ -10,7 +10,9 @@ DSM aggiorna e riavvia il progetto esistente, senza ZIP o reinstallazione.
 Per le credenziali puoi aggiungere `.env` nella cartella `NAS_ROOT`: integra
 la configurazione esistente `nas.env`, senza sostituire origine o percorso dati.
 Gli account personali (ragazzi/capi) e gli hash scrypt sono nel database SQLite
-esistente. Solo i capi abilitati possono accedere; solo `1238005` gestisce persone
+esistente, tranne la password admin: viene verificata da `NAS_ADMIN_PASSWORD`
+in `nas.env` (o `.env`), senza conservarne l'hash nel database.
+Solo i capi abilitati possono accedere; solo `1238005` gestisce persone
 e reset delle password. La navbar pubblica resta bianca e quella riservata viola.
 
 Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
@@ -90,7 +92,9 @@ Il QR fornito e ottimizzato in `assets/img/qr-live.png` punta alla home AGESCI:
 48.461 byte, circa il 92% in meno del sorgente SVG, decodificato a quattro dimensioni.
 
 La home propone **Area riservata**: il backend NAS verifica codice censimento
-e hash della password personale e crea una sessione HttpOnly/Secure di otto ore. Il browser non
+(sette cifre senza spazi) e password e crea una sessione HttpOnly/Secure di otto ore.
+Le nuove password richiedono 8-128 caratteri, maiuscola, minuscola, numero e
+carattere speciale (es. `@`). Il browser non
 conserva la password; **Esci** revoca la sessione. Il server protegge le scritture
 anche se qualcuno aggira l'interfaccia. Il reset della password revoca tutte le
 sessioni della persona; il pubblico riconnette la diretta dopo un riavvio.

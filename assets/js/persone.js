@@ -37,9 +37,9 @@
     kind.disabled = person.admin;
     fields.append(field('Nome e cognome', name), field('Tipologia', kind));
     const hint = document.createElement('p');
-    hint.textContent = person.admin ? 'Unico amministratore del sito.' : person.kind === 'ragazzo'
+    hint.textContent = person.admin ? 'Unico amministratore del sito. Password gestita da NAS_ADMIN_PASSWORD in nas.env (o .env), non salvata nel database.' : person.kind === 'ragazzo'
       ? 'Nessun accesso all’area riservata.' : !person.loginEnabled
-        ? 'Login non abilitato: aggiungi il codice a NAS_CAPO_CODES in .env e ricrea il container.'
+        ? 'Login non abilitato: aggiungi il codice a NAS_CAPO_CODES in nas.env (o .env); l’aggiornamento NAS lo applica automaticamente.'
         : person.hasPassword ? 'Password impostata.' : 'Password da impostare al prossimo accesso.';
     const actions = document.createElement('div');
     actions.className = 'person-actions';
@@ -54,19 +54,16 @@
           !confirm('Il passaggio a ragazzo cancella la password e revoca gli accessi. Continuare?')) return;
       run(() => A.request('people/' + person.id, 'PATCH', { name: name.value, kind: kind.value }));
     };
-    if (person.kind === 'capo' && person.hasPassword) {
+    if (!person.admin && person.kind === 'capo' && person.hasPassword) {
       const reset = document.createElement('button');
       reset.type = 'button';
       reset.className = 'button button-secondary';
       reset.textContent = 'Cancella password';
       reset.onclick = () => {
-        const message = person.admin
-          ? 'Cancelli la tua password e perdi l’accesso. Al prossimo login dovrai impostare una nuova password e ripeterla. Continuare?'
-          : 'Cancellare la password di ' + person.name + '? Tutte le sue sessioni saranno revocate.';
+        const message = 'Cancellare la password di ' + person.name + '? Tutte le sue sessioni saranno revocate.';
         if (!confirm(message)) return;
         run(async () => {
           await A.request('people/' + person.id + '/password', 'DELETE');
-          if (person.admin) location.replace('index.html');
         });
       };
       actions.append(reset);

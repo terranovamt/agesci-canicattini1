@@ -8,7 +8,7 @@ const { once } = require("node:events");
 const { createNasServer } = require("../server/nas.cjs");
 
 const root = path.resolve(__dirname, "..");
-const password = "Nas-local-test-password1-only";
+const password = "Nas-local-test-password1-only!";
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript",

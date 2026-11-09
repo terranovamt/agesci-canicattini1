@@ -42,7 +42,9 @@
           repeat.hidden = !result.firstAccess;
           confirmation.disabled = !result.firstAccess;
           confirmation.required = result.firstAccess;
-          password.minLength = result.firstAccess ? 12 : 1;
+          password.minLength = result.firstAccess ? 8 : 1;
+          password.pattern = result.firstAccess ? '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,128}' : '';
+          password.title = result.firstAccess ? 'Almeno 8 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale, come @' : '';
           password.autocomplete = result.firstAccess ? 'new-password' : 'current-password';
           button.textContent = result.firstAccess ? 'Imposta password e accedi' : 'Accedi';
           status.textContent = '';

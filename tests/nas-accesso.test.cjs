@@ -18,13 +18,13 @@ test('NAS authentication uses the server cookie, never persists passwords or a s
   };
   vm.runInNewContext(source('shared/accesso.js'), c);
   assert.equal(c.window.ACCESSO.verificata(), false);
-  await c.window.ACCESSO.entra('A-long-password!', '123 8005', 'A-long-password!');
+  await c.window.ACCESSO.entra('A-long-password1!', '1238005', 'A-long-password1!');
   assert.equal(c.window.ACCESSO.verificata(), true);
   assert.equal(c.window.ACCESSO.chiave(), 'nas-session');
   assert.equal(requests[0][0], '/api/auth/login');
   assert.equal(requests[0][1].credentials, 'same-origin');
   assert.deepEqual(JSON.parse(requests[0][1].body), {
-    password: 'A-long-password!', code: '123 8005', confirmation: 'A-long-password!'
+    password: 'A-long-password1!', code: '1238005', confirmation: 'A-long-password1!'
   });
   await c.window.ACCESSO.esci();
   assert.equal(c.window.ACCESSO.verificata(), false);
@@ -79,7 +79,11 @@ test('NAS first access shows password and required confirmation only after code 
   assert.equal(t.get('password-fields').hidden, false);
   assert.equal(t.get('confirmation-field').hidden, false);
   assert.equal(t.get('nas-confirmation').required, true);
-  assert.equal(t.get('nas-password').minLength, 12);
+  assert.equal(t.get('nas-password').minLength, 8);
+  const policy = new RegExp('^(?:' + t.get('nas-password').pattern + ')$', 'v');
+  assert.equal(policy.test('Abcdef1@'), true);
+  for (const invalid of ['Abcde1@', 'abcdef1@', 'ABCDEF1@', 'Abcdefg@', 'Abcdefg1', 'Abcdef1 '])
+    assert.equal(policy.test(invalid), false, invalid);
   assert.equal(t.get('nas-password').autocomplete, 'new-password');
   t.get('nas-password').value = t.get('nas-confirmation').value = 'A-long-password!';
   await t.get('nas-login-form').onsubmit({ preventDefault() {} });
@@ -96,10 +100,22 @@ test('NAS returning access shows only password; changing code clears both creden
   assert.equal(t.get('confirmation-field').hidden, true);
   assert.equal(t.get('nas-confirmation').disabled, true);
   assert.equal(t.get('nas-password').autocomplete, 'current-password');
+  assert.equal(t.get('nas-password').pattern, '');
   t.get('nas-password').value = 'A-long-password!';
   t.get('census-code').oninput();
   assert.equal(t.get('password-fields').hidden, true);
   assert.equal(t.get('nas-password').value, '');
   await t.get('nas-login-form').onsubmit({ preventDefault() {} });
   assert.equal(t.calls[1][0], 'auth/status');
+});
+
+test('NAS census inputs require seven digits without disclosing the admin code', () => {
+  for (const file of ['index.html', 'persone.html']) {
+    const html = fs.readFileSync(path.join(__dirname, '../area-riservata/', file), 'utf8');
+    const input = html.match(/<input[^>]+(?:id="census-code"|name="code")[^>]*>/)[0];
+    assert.match(input, /maxlength="7"/);
+    assert.match(input, /pattern="\[0-9\]\{7\}"/);
+    assert.match(input, /placeholder="7654321"/);
+    assert.doesNotMatch(input, /1238005|123 8005/);
+  }
 });

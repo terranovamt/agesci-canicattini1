@@ -6,14 +6,12 @@ services:
     restart: unless-stopped
     environment:
       NAS_PUBLIC_ORIGIN: ${NAS_PUBLIC_ORIGIN:?Configure NAS_PUBLIC_ORIGIN in nas.env}
-      NAS_ADMIN_PASSWORD: ${NAS_ADMIN_PASSWORD:-}
+      NAS_ADMIN_PASSWORD: ${NAS_ADMIN_PASSWORD:?Configure NAS_ADMIN_PASSWORD in nas.env}
       NAS_CAPO_CODES: ${NAS_CAPO_CODES:-}
       NAS_TELEMETRY_ENABLED: ${NAS_TELEMETRY_ENABLED:-true}
       NAS_HOST_PROC: ${NAS_HOST_PROC-/host/proc}
       NAS_RELEASE_REVISION: ${NAS_RELEASE_REVISION:-manual}
       NODE_OPTIONS: --max-old-space-size=384
-    secrets:
-      - admin_password
     volumes:
       - ${NAS_DATA_DIR:-./data}:/data
       - /proc/stat:/host/proc/stat:ro
@@ -113,7 +111,5 @@ services:
     mem_limit: 256m
 
 secrets:
-  admin_password:
-    file: ${NAS_ADMIN_PASSWORD_FILE:-./admin-password.txt}
   tunnel_token:
     file: ${NAS_TUNNEL_TOKEN_FILE:-./tunnel-token.txt}

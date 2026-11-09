@@ -6,7 +6,7 @@ const http = require("node:http");
 const crypto = require("node:crypto");
 const { DatabaseSync } = require("node:sqlite");
 const { createMonitor } = require("./monitor.cjs");
-const { createPeople } = require("./people.cjs");
+const { createPeople, validatePassword } = require("./people.cjs");
 const documents = require("../assets/js/documents-model.js");
 
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -52,14 +52,7 @@ async function createNasServer({
   hostProc = "",
   release = "manual",
 } = {}) {
-  if (
-    typeof password !== "string" ||
-    password.length < 8 ||
-    !/[A-Z]/.test(password) ||
-    !/[a-z]/.test(password) ||
-    !/[0-9]/.test(password)
-  )
-    throw new Error("La password NAS deve contenere almeno 8 caratteri, una maiuscola, una minuscola e un numero");
+  validatePassword(password);
   if (!publicOrigin || new URL(publicOrigin).origin !== publicOrigin)
     throw new Error("NAS_PUBLIC_ORIGIN deve essere una origine senza percorso");
   if (secureCookie && !publicOrigin.startsWith("https://")) throw new Error("In produzione serve una origine HTTPS");
@@ -416,11 +409,9 @@ async function createNasServer({
 module.exports = { createNasServer };
 
 if (require.main === module) {
-  const passwordFile = process.env.NAS_ADMIN_PASSWORD_FILE || "/run/secrets/admin_password";
   createNasServer({
     dataDir: process.env.NAS_DATA_DIR || "/data",
-    password: process.env.NAS_ADMIN_PASSWORD ||
-      (fs.existsSync(passwordFile) ? fs.readFileSync(passwordFile, "utf8").replace(/[\r\n]+$/, "") : ""),
+    password: process.env.NAS_ADMIN_PASSWORD,
     censusCodes: process.env.NAS_CAPO_CODES || "",
     publicOrigin: process.env.NAS_PUBLIC_ORIGIN,
     basePath: "/agesci-canicattini1",

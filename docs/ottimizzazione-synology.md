@@ -64,11 +64,11 @@ l'installazione:** basta un commit/push su `NAS`. L'updater conserva progetto,
 volume, proxy e calendari. I passaggi di preparazione seguenti servono solo
 alla prima installazione.
 
-Per gli account personali, puoi compilare `/volume1/docker/agesci-nas/.env`
-(o `NAS_ROOT/.env`, se usi una cartella diversa):
+Per gli account personali, compila `NAS_ROOT/nas.env` oppure il file facoltativo
+`/volume1/docker/agesci-nas/.env` (o `NAS_ROOT/.env`, se usi una cartella diversa):
 
 ```dotenv
-NAS_ADMIN_PASSWORD='password-iniziale-di-almeno-12-caratteri'
+NAS_ADMIN_PASSWORD='SostituisciConUnaPassword1@'
 NAS_CAPO_CODES=codice1,codice2
 ```
 
@@ -77,10 +77,16 @@ Sostituisci i segnaposto con i codici capo reali, separati da virgole.
 i valori, senza richiedere un nuovo progetto. Le modifiche ai due file vengono
 rilevate dall'updater anche quando il commit non cambia e applicate con un
 riavvio del progetto esistente. Non committare questi file o le credenziali.
-La password amministratore e' importata nel database come hash una sola volta;
-nelle installazioni precedenti, il file secret esistente puo' inizializzarla
-senza azioni aggiuntive. Dopo l'inizializzazione usa il reset nell'elenco
-persone: cambiare `NAS_ADMIN_PASSWORD` non sovrascrive le password personali.
+La password amministratore e' sempre verificata da `NAS_ADMIN_PASSWORD`,
+senza salvarla o conservarne l'hash nel database. Un vecchio hash admin viene
+rimosso al prossimo avvio; il vecchio `admin-password.txt` non viene piu' letto.
+Compila quindi `NAS_ADMIN_PASSWORD` prima dell'aggiornamento. Per cambiarla,
+modifica lo stesso valore: l'updater riavvia il progetto e applica la nuova
+password. Ogni riavvio revoca le sessioni admin; quelle degli altri capi
+restano valide. Il reset nell'elenco persone riguarda soltanto gli altri capi.
+I codici censimento sono sette cifre senza spazi. Le nuove password (compresa
+quella admin) richiedono 8-128 caratteri, maiuscola, minuscola, numero e
+carattere speciale, come `@`; le password personali gia' impostate restano valide.
 
 1. In VS Code verificare che il branch selezionato sia **NAS**, non `main`.
 2. Aprire **Controllo codice sorgente**, rivedere i file modificati e preparare
@@ -202,42 +208,39 @@ mkdir -p /volume1/docker/agesci-nas
 git clone --single-branch --branch NAS https://github.com/terranovamt/agesci-canicattini1.git /volume1/docker/agesci-nas/bootstrap
 cp /volume1/docker/agesci-nas/bootstrap/deploy/synology/update.sh /volume1/docker/agesci-nas/update.sh
 cp /volume1/docker/agesci-nas/bootstrap/deploy/synology/nas.env.example /volume1/docker/agesci-nas/nas.env
-mkdir -p /volume1/docker/agesci-nas/secrets
 ```
 
 4. Modificare `nas.env` con l'origine pubblica reale, per esempio
    `NAS_PUBLIC_ORIGIN=https://nomegruppo.synology.me`, senza slash finale o percorso.
-   Mantenere dati in `agesci-nas/data` e secret in `agesci-nas/secrets`.
+   Mantenere dati in `agesci-nas/data`.
    Lasciare `COMPOSE_PROFILES=` vuoto: Cloudflare non viene avviato.
    Su un'installazione gia' presente rimuovere il vecchio valore `tunnel`.
-5. Creare `secrets/admin-password.txt` con una password unica di almeno 8
-   caratteri, con almeno una maiuscola, una minuscola e un numero. Una password
+5. Compilare `NAS_ADMIN_PASSWORD` in `nas.env` con una password unica di almeno 8
+   caratteri, con almeno una maiuscola, una minuscola, un numero e un carattere
+   speciale, come `@` (massimo 128 caratteri). Una password
    piu' lunga resta consigliata per il sito pubblico. Non serve alcun token
-   Cloudflare per DDNS. Il file deve contenere
-   solo la password, senza nome di variabile. Inserirla sul NAS, mai in chat o Git.
+   Cloudflare per DDNS. Inserirla sul NAS, mai in chat o Git.
    Usare una sola riga, testo UTF-8 senza BOM. Non mettere i valori in comandi
    `echo` condivisi o nella cronologia del terminale. Modificare i file con un
    editor locale protetto o caricarli personalmente tramite File Station.
    Se si lavora da terminale, usare un editor disponibile sul NAS, per esempio
-   `vi /volume1/docker/agesci-nas/nas.env` per la configurazione e gli equivalenti
-   percorsi dei due file secret. In `vi`: `i` per inserire, poi Esc e `:wq` per
+   `vi /volume1/docker/agesci-nas/nas.env` per la configurazione. In `vi`:
+   `i` per inserire, poi Esc e `:wq` per
    salvare e uscire. Non mostrare o copiare il contenuto dei secret in log/chat.
 6. Proteggere cartella, configurazione e script: l'updater gestisce Docker come
-   root e non deve essere modificabile da utenti non autorizzati. I file secret
-   devono essere leggibili dai processi non root nei container.
+   root e non deve essere modificabile da utenti non autorizzati.
 
 Esempio di permessi POSIX da applicare con un terminale NAS gia' autorizzato:
 
 ```sh
-chown root:root /volume1/docker/agesci-nas /volume1/docker/agesci-nas/secrets
-chmod 700 /volume1/docker/agesci-nas /volume1/docker/agesci-nas/secrets
+chown root:root /volume1/docker/agesci-nas
+chmod 700 /volume1/docker/agesci-nas
 chmod 600 /volume1/docker/agesci-nas/nas.env /volume1/docker/agesci-nas/update.sh
-chmod 444 /volume1/docker/agesci-nas/secrets/admin-password.txt
 ```
 
-I file sono leggibili nei container; la cartella host ne limita l'accesso.
-Verificare anche le ACL DSM. I secrets Compose sono file montati, non un vault
-cifrato; l'amministratore NAS/Docker puo' leggerli.
+Verificare anche le ACL DSM. La password nella configurazione e' in chiaro e
+viene passata nell'ambiente del container: l'amministratore NAS/Docker puo'
+leggerla. Non pubblicare l'output della configurazione Compose o di inspect.
 
 Non servono cartelle Redis o PostgreSQL. Un volume SSD puo' ridurre latenza I/O,
 non azzerarla; verificare compatibilita' SSD/M.2, versione DSM e backup prima
@@ -514,8 +517,7 @@ un backup e manutenzione del database, non cancellando l'intero sito.
 | `COMPOSE_PROFILES=`                | Predefinito DDNS Synology: reverse proxy DSM, certificato e IP pubblico |
 | `COMPOSE_PROFILES=tunnel`          | Profilo alternativo conservato, non usato dal percorso DDNS             |
 | `NAS_DATA_DIR`                     | Percorso assoluto dei dati persistenti sul volume scelto                |
-| `NAS_ADMIN_PASSWORD_FILE`          | File secret della password; non la password stessa                      |
-| `NAS_ADMIN_PASSWORD`               | Password iniziale admin da `.env`, importata come hash una sola volta; precede il file secret |
+| `NAS_ADMIN_PASSWORD`               | Password admin obbligatoria da `nas.env` o `.env`; sempre verificata dalla configurazione, nessun hash persistito |
 | `NAS_CAPO_CODES`                   | Codici censimento capo abilitati, separati da virgole; `1238005` e' sempre admin |
 | `NAS_TUNNEL_TOKEN_FILE`            | Solo per il profilo alternativo; non serve con DDNS                     |
 | `NAS_TELEMETRY_ENABLED=true/false` | Visite, schede e segnalazioni browser                                   |

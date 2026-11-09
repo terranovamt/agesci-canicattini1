@@ -11,14 +11,20 @@ function fail(status, message) {
 }
 
 function code(value) {
-  if (typeof value !== "string" || !/^\d{7}$/.test(value.replace(/ /g, "")))
-    fail(400, "Il codice censimento deve contenere sette cifre");
-  return value.replace(/ /g, "");
+  if (typeof value !== "string" || value.length !== 7 || !/^[0-9]{7}$/.test(value))
+    fail(400, "Il codice censimento deve contenere sette cifre, senza spazi");
+  return value;
 }
 
-async function encode(password, initial = false) {
-  if (typeof password !== "string" || password.length < (initial ? 8 : 12) || password.length > 128)
-    fail(400, `La password deve contenere da ${initial ? 8 : 12} a 128 caratteri`);
+function validatePassword(password) {
+  if (typeof password !== "string" || password.length < 8 || password.length > 128 ||
+      !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) ||
+      !/[^A-Za-z0-9\s]/.test(password))
+    fail(400, "La password deve contenere almeno 8 caratteri (massimo 128), una maiuscola, una minuscola, un numero e un carattere speciale, come @");
+}
+
+async function encode(password) {
+  validatePassword(password);
   const salt = crypto.randomBytes(32).toString("hex");
   const digest = await scrypt(password, Buffer.from(salt, "hex"), 64);
   return `scrypt$${salt}$${digest.toString("hex")}`;
@@ -31,7 +37,8 @@ async function matches(password, encoded) {
   return crypto.timingSafeEqual(digest, Buffer.from(expected, "hex"));
 }
 
-async function createPeople(database, initialPassword, configuredCodes = "") {
+async function createPeople(database, adminPassword, configuredCodes = "") {
+  validatePassword(adminPassword);
   const allowed = new Set([ADMIN_CODE]);
   for (const value of configuredCodes.split(",").filter((value) => value.trim()))
     allowed.add(code(value.trim()));
@@ -52,12 +59,10 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
   for (const censusCode of allowed)
     database.prepare("INSERT OR IGNORE INTO people(census_code,name,kind) VALUES(?,?,'capo')")
       .run(censusCode, "Capo " + censusCode);
-  if (!database.prepare("SELECT 1 FROM auth_settings WHERE name='admin_initialized'").get() && initialPassword) {
-    const encoded = await encode(initialPassword, true);
-    database.prepare("UPDATE people SET password_hash=? WHERE census_code=? AND password_hash IS NULL")
-      .run(encoded, ADMIN_CODE);
-    database.prepare("INSERT INTO auth_settings VALUES('admin_initialized','1')").run();
-  }
+  database.prepare("UPDATE people SET password_hash=NULL WHERE census_code=?").run(ADMIN_CODE);
+  database.prepare("DELETE FROM auth_settings WHERE name='admin_initialized'").run();
+  // Restart invalidates admin sessions so an env password change also revokes access.
+  database.prepare("DELETE FROM sessions WHERE person_id=(SELECT id FROM people WHERE census_code=?)").run(ADMIN_CODE);
   const placeholders = [...allowed].map(() => "?").join(",");
   database.prepare(`DELETE FROM sessions WHERE person_id IN (
     SELECT id FROM people WHERE census_code NOT IN (${placeholders})
@@ -65,21 +70,19 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
   const byCode = (censusCode) => database.prepare("SELECT * FROM people WHERE census_code=?").get(censusCode);
   const person = (row) => ({
     id: row.id, code: row.census_code, name: row.name, kind: row.kind,
-    admin: row.census_code === ADMIN_CODE, hasPassword: !!row.password_hash,
+    admin: row.census_code === ADMIN_CODE, hasPassword: row.census_code === ADMIN_CODE || !!row.password_hash,
     loginEnabled: row.kind === "capo" && allowed.has(row.census_code),
   });
   const user = (sessionId) => {
     const row = database.prepare(`SELECT people.* FROM people JOIN sessions ON people.id=sessions.person_id
-      WHERE sessions.id=? AND expires>? AND kind='capo' AND password_hash IS NOT NULL`).get(sessionId, Date.now());
+      WHERE sessions.id=? AND expires>? AND kind='capo'
+      AND (census_code=? OR password_hash IS NOT NULL)`).get(sessionId, Date.now(), ADMIN_CODE);
     return row && allowed.has(row.census_code) ? person(row) : null;
   };
   const enabled = (censusCode) => {
     const row = byCode(censusCode);
     if (!allowed.has(censusCode) || row?.kind !== "capo")
       fail(403, "Codice non abilitato. Contatta l'amministratore del sito");
-    if (censusCode === ADMIN_CODE && !row.password_hash &&
-        !database.prepare("SELECT 1 FROM auth_settings WHERE name='admin_initialized'").get())
-      fail(403, "Configura la password iniziale amministratore in .env");
     return row;
   };
   const requireAdmin = (sessionId) => {
@@ -104,7 +107,7 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
       if (route === "/api/auth/status" && method === "POST") {
         rateLimit("status:" + ip, 30, 60000);
         const current = enabled(code((await body(request, 4096))?.code));
-        send(response, 200, { firstAccess: !current.password_hash });
+        send(response, 200, { firstAccess: current.census_code !== ADMIN_CODE && !current.password_hash });
         return true;
       }
       if (route === "/api/auth/login" && method === "POST") {
@@ -113,14 +116,18 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
         const censusCode = code(value?.code);
         rateLimit("login-code:" + censusCode, 5, 900000);
         let current = enabled(censusCode);
-        if (!current.password_hash) {
+        if (censusCode !== ADMIN_CODE && !current.password_hash) {
           if (value.password !== value.confirmation) fail(400, "Le password non coincidono");
           const encoded = await encode(value.password);
           database.prepare("UPDATE people SET password_hash=? WHERE id=? AND kind='capo' AND password_hash IS NULL")
             .run(encoded, current.id);
           current = enabled(censusCode);
         }
-        if (!await matches(value.password, current.password_hash)) fail(401, "Codice censimento o password non validi");
+        const valid = censusCode === ADMIN_CODE
+          ? typeof value.password === "string" && value.password.length <= 128 &&
+            crypto.timingSafeEqual(Buffer.from(hash(value.password), "hex"), Buffer.from(hash(adminPassword), "hex"))
+          : await matches(value.password, current.password_hash);
+        if (!valid) fail(401, "Codice censimento o password non validi");
         const latest = enabled(censusCode);
         if (latest.password_hash !== current.password_hash) fail(409, "Credenziali cambiate: riprova l'accesso");
         clearLimit("login-code:" + censusCode);
@@ -151,6 +158,8 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
       const current = database.prepare("SELECT * FROM people WHERE id=?").get(Number(match[1]));
       if (!current) fail(404, "Persona non trovata");
       if (match[2] && method === "DELETE") {
+        if (current.census_code === ADMIN_CODE)
+          fail(400, "Modifica NAS_ADMIN_PASSWORD in nas.env (o .env): la password amministratore non e' nel database");
         if (current.kind !== "capo") fail(400, "I ragazzi non hanno password");
         database.prepare("UPDATE people SET password_hash=NULL WHERE id=?").run(current.id);
         database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
@@ -170,4 +179,4 @@ async function createPeople(database, initialPassword, configuredCodes = "") {
   };
 }
 
-module.exports = { createPeople };
+module.exports = { createPeople, validatePassword };

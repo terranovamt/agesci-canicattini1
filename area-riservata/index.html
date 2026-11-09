@@ -33,14 +33,14 @@
         </form>
         <form id="nas-login-form" class="accesso" hidden>
           <label for="census-code">Codice censimento</label>
-          <input id="census-code" type="text" inputmode="numeric" autocomplete="username" maxlength="8" placeholder="123 8005" required>
+          <input id="census-code" type="text" inputmode="numeric" autocomplete="username" maxlength="7" pattern="[0-9]{7}" title="Sette cifre, senza spazi" placeholder="7654321" required>
           <div id="password-fields" hidden>
             <label for="nas-password">Password</label>
             <input id="nas-password" type="password" autocomplete="current-password" maxlength="128" required disabled>
             <div id="confirmation-field" hidden>
               <label for="nas-confirmation">Ripeti password</label>
-              <input id="nas-confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="128" disabled>
-              <p>Al primo accesso scegli una password di almeno 12 caratteri.</p>
+              <input id="nas-confirmation" type="password" autocomplete="new-password" minlength="8" maxlength="128" disabled>
+              <p>Al primo accesso scegli una password di almeno 8 caratteri, con una maiuscola, una minuscola, un numero e un carattere speciale, come @.</p>
             </div>
           </div>
           <button class="button" type="submit">Continua</button>

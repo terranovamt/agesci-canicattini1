@@ -44,15 +44,15 @@ async function start(dataDir, options = {}) {
   };
 }
 
-test("NAS password requires at least eight characters with uppercase, lowercase and a digit", async () => {
-  for (const invalid of [undefined, null, "Abc1234", "abcdefgh1", "ABCDEFGH1", "Abcdefgh", "12345678"]) {
+test("NAS admin password requires eight characters, uppercase, lowercase, digit and special character", async () => {
+  for (const invalid of [undefined, null, "Abc123@", "abcdefgh1@", "ABCDEFGH1@", "Abcdefgh@", "Abcdefg1", "12345678@", "Abcdef1 ", "Aa1@" + "a".repeat(125)]) {
     await assert.rejects(
       createNasServer({ password: invalid, publicOrigin, secureCookie: false }),
       /almeno 8 caratteri/,
     );
   }
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-password-"));
-  const app = await start(directory, { password: "Abcdefg1" });
+  const app = await start(directory, { password: "Abcdef1@" });
   try {
     await app.login();
     assert.equal((await (await app.request("/api/session")).json()).authenticated, true);

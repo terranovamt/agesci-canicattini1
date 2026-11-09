@@ -111,7 +111,8 @@ test("NAS stores runtime data outside images and proxies dynamic content without
   const compose = read("deploy/synology/compose.yaml");
   const nginx = read("deploy/synology/nginx.conf");
   assert.match(compose, /\$\{NAS_DATA_DIR:-\.\/data\}:\/data/);
-  assert.match(compose, /file: \$\{NAS_ADMIN_PASSWORD_FILE/);
+  assert.match(compose, /NAS_ADMIN_PASSWORD: \$\{NAS_ADMIN_PASSWORD:\?Configure NAS_ADMIN_PASSWORD in nas.env\}/);
+  assert.doesNotMatch(compose, /admin_password|NAS_ADMIN_PASSWORD_FILE/);
   assert.match(compose, /profiles: \["maintenance"\]/);
   assert.match(
     nginx,
