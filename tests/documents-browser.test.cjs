@@ -180,7 +180,11 @@ test("public documents and management work in a browser at all required widths",
           }
           if (page === 2) {
             doc.querySelector('[data-tab="bilancio"]').click();
-            doc.querySelector('[data-id="censimenti"]').open = true;
+            const balanceNav = doc.querySelector('#balance-nav');
+            doc.querySelector('[data-balance="censimenti"]').click();
+            const censusBox = doc.querySelector('[data-id="censimenti"]');
+            if (!balanceNav || balanceNav.hidden || !censusBox) throw new Error('Navigazione bilancio non disponibile');
+            censusBox.open = true;
             const currentCensus = doc.getElementById('fcensimenti_censiti_attuali');
             const currentPresent = doc.getElementById('fcensimenti_presenti_attuali');
             const historyCensus = doc.getElementById('fcensimenti_storico_per_anno_2022_censiti');
@@ -201,6 +205,7 @@ test("public documents and management work in a browser at all required widths",
               pairedHistory: width > 520 || pairFits(historyCensus, historyPresent),
               noInputZoom: width > 520 || parseFloat(frame.contentWindow.getComputedStyle(historyCensus).fontSize) >= 16,
               compactHistory: width > 520 || historyCensus.closest('fieldset').getBoundingClientRect().height <= 150,
+              balanceNavWorks: balanceNav.querySelector('[aria-pressed="true"]').dataset.balance === 'censimenti',
               barActionsFit: [...doc.querySelectorAll('#bar > button, #bar .more > summary')].every(button => {
                 const rect = button.getBoundingClientRect();
                 return rect.height >= 44 && rect.width >= 44 && rect.left >= 0 && rect.right <= width;

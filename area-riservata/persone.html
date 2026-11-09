@@ -17,13 +17,18 @@
   </header>
   <main id="reserved-content">
     <h1>Accessi dei capi</h1>
-    <p>Qui compaiono solo i capi abilitati in <code>NAS_CAPO_CODES</code> nel file .env. Per ciascuno puoi assegnare la branca di servizio o reimpostare la password; non è possibile aggiungere account o modificare nomi e tipologie.</p>
+    <p>Gestisci la branca di servizio e il reset della password dei capi abilitati.</p>
     <p id="people-status" role="status" aria-live="polite"></p>
     <section id="people-app" hidden>
-      <h2>Capi abilitati dall’ambiente</h2>
-      <p>Il cambio di branca limita la consultazione delle schede ai dati educativi della branca assegnata. Il reset revoca tutte le sessioni del capo: al prossimo accesso dovrà impostare una nuova password. Supervisiona il primo accesso e quello successivo al reset: chi conosce il codice censimento può inizializzare la password. La password amministratore si modifica solo con <code>NAS_ADMIN_PASSWORD</code> nel file .env.</p>
-      <button id="reload-people" class="button button-secondary" type="button">Ricarica elenco</button>
+      <div class="people-list-heading">
+        <div><h2>Capi abilitati</h2><p id="people-count" class="muted"></p></div>
+        <button id="reload-people" class="button button-secondary" type="button">Ricarica</button>
+      </div>
+      <nav id="people-branches" class="people-branches" aria-label="Filtra capi per branca"></nav>
       <div id="people-list" class="people-list"></div>
+      <details class="people-help"><summary>Informazioni sulla gestione</summary>
+        <p>Compaiono solo i capi presenti in <code>NAS_CAPO_CODES</code> nel file .env. La branca limita le schede consultabili. Il reset revoca tutte le sessioni e richiede una nuova password al prossimo accesso; supervisiona il primo accesso perché chi conosce il codice censimento può inizializzarla. La password amministratore si modifica solo con <code>NAS_ADMIN_PASSWORD</code>.</p>
+      </details>
     </section>
   </main>
   <!-- include:footer {"top":"reserved-content"} -->

@@ -115,6 +115,22 @@ questa guida, nei test o nella memoria dell'assistente.
 | `server/Dockerfile` | copia sia `members.cjs` sia il modello condiviso nell'immagine Node |
 | `deploy/synology/nginx.conf` | pagina `soci.html` tra quelle protette; API inoltrate al backend |
 
+### Navigazione per sezioni delle interfacce
+
+- Il setup del bilancio in `area-riservata/assemblea/setup.html` separa entrate,
+  uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
+  selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
+  intatti.
+- La scheda socio mantiene i pannelli Anagrafica, Consensi, Percorso e
+  Censimenti nel DOM mentre si naviga. Non ricreare i campi al cambio pannello:
+  valori e bozze devono sopravvivere; il salvataggio resta esplicito.
+- Gli accessi amministrativi sono presentati per branca e filtrabili senza
+  ampliare l'allowlist: il server continua a esporre solo i capi di
+  `NAS_CAPO_CODES` e consente solo cambio branca e reset password.
+- Verificare le interazioni browser in
+  `tests/documents-browser.test.cjs`, `tests/members-browser.test.cjs` e
+  `tests/people-ui.test.cjs`, oltre a `tests/setup.test.cjs`.
+
 ### Persistenza
 
 Tutto risiede nel `site.sqlite` esistente, non in un nuovo file o in JSON

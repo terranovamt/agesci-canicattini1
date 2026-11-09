@@ -64,6 +64,7 @@
     published,
     edit,
     view = "generale",
+    balanceSection = "entrate",
     saving = false;
   const open = new Set(["assemblea"]);
   const collapsed = new WeakSet();
@@ -616,11 +617,17 @@
       c = $("#campi");
     c.innerHTML = "";
     if (view === "generale") renderSezioni(c, GENERALE);
-    else if (view === "bilancio")
-      renderSezioni(
-        c,
-        Object.keys(edit).filter((k) => k !== "slide" && !GENERALE.includes(k)),
-      );
+    else if (view === "bilancio") {
+      const groups = {
+        entrate: ["entrate"],
+        uscite: ["uscite"],
+        soglie_percentuali_esito: ["soglie_percentuali_esito"],
+        storico_avanzo_per_anno: ["storico_avanzo_per_anno"],
+        censimenti: ["censimenti"],
+        patrimonio: ["patrimonio", "nota_beni_durevoli"],
+      };
+      renderSezioni(c, groups[balanceSection] || groups.entrate);
+    }
     else if (view === "ordine" && Array.isArray(edit.slide)) renderOrdine(c);
     if (view === "json") $("#json-text").value = JSON.stringify(edit, null, 2);
     scrollTo(0, y);
@@ -642,6 +649,7 @@
     $("#campi").hidden = doc || tab === "json";
     $("#json").hidden = tab !== "json";
     $("#doc").hidden = !doc;
+    $("#balance-nav").hidden = tab !== "bilancio";
     $("#intro").hidden = doc;
     $("#intro").textContent = INTRO[tab] || "";
     if (doc) {
@@ -652,6 +660,16 @@
       render();
     }
   }
+  document.querySelectorAll("[data-balance]").forEach((button) => {
+    button.onclick = () => {
+      balanceSection = button.dataset.balance;
+      document.querySelectorAll("[data-balance]").forEach((item) =>
+        item.setAttribute("aria-pressed", String(item === button)),
+      );
+      render();
+      scrollTo(0, 0);
+    };
+  });
 
   function updateDirty() {
     const d = dirty();

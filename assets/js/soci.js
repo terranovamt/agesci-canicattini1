@@ -4,6 +4,8 @@
   const M = window.SOCI_MODEL, A = window.ACCESSO, filters = $('members-filters');
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
+  let memberSection = 0;
+  const memberSections = ['profile', 'consents', 'education', 'censuses'];
   const selected = new Set();
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -197,8 +199,25 @@
     $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch)
       .map(field => input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...field, max: 2000 })));
   }
+  function showMemberSection(index, focus = false) {
+    memberSection = Math.max(0, Math.min(memberSections.length - 1, index));
+    memberSections.forEach((section, i) => {
+      const tab = $('member-tab-' + section);
+      tab.setAttribute('aria-selected', String(i === memberSection));
+      tab.tabIndex = i === memberSection ? 0 : -1;
+      $('member-panel-' + section).hidden = i !== memberSection;
+    });
+    $('member-section-progress').textContent =
+      `Sezione ${memberSection + 1} di ${memberSections.length} · ${$('member-tab-' + memberSections[memberSection]).textContent}`;
+    $('member-section-back').disabled = memberSection === 0;
+    $('member-section-next').hidden = memberSection === memberSections.length - 1;
+    $('member-save').hidden = false;
+    if (focus) $('member-tab-' + memberSections[memberSection]).focus();
+    $('member-dialog').scrollTop = 0;
+  }
   function openMember(member) {
     editing = member;
+    memberSection = 0;
     drafts = structuredClone(member?.values || {});
     educationBranch = '';
     profileForm.reset();
@@ -227,6 +246,7 @@
     }));
     if (!member?.censuses.length) $('member-censuses').append(node('p', 'Nessun censimento importato.'));
     renderEducation();
+    showMemberSection(0);
     formSnapshot = JSON.stringify([...new FormData(profileForm)]);
     $('member-dialog').showModal();
   }
@@ -242,6 +262,19 @@
     drafts[oldBranch] = { ...editing?.values[oldBranch] };
     renderEducation();
   };
+  memberSections.forEach((section, index) => {
+    $('member-tab-' + section).onclick = () => showMemberSection(index);
+    $('member-tab-' + section).onkeydown = event => {
+      const next = event.key === 'ArrowRight' ? (index + 1) % memberSections.length
+        : event.key === 'ArrowLeft' ? (index - 1 + memberSections.length) % memberSections.length
+          : event.key === 'Home' ? 0 : event.key === 'End' ? memberSections.length - 1 : -1;
+      if (next < 0) return;
+      event.preventDefault();
+      showMemberSection(next, true);
+    };
+  });
+  $('member-section-back').onclick = () => showMemberSection(memberSection - 1, true);
+  $('member-section-next').onclick = () => showMemberSection(memberSection + 1, true);
   profileForm.onsubmit = event => {
     event.preventDefault();
     educationDraft();

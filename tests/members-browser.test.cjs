@@ -120,6 +120,18 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           document.querySelector('.member-name').click();
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
+          const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
+          results.sectionNavigation = memberTabs.length === 4 &&
+            memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1;
+          results.saveAvailable = !$('member-save').hidden;
+          const givenName = form.elements['profile:givenName'];
+          givenName.value = 'Bozza conservata';
+          memberTabs[1].click();
+          results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
+            $('member-panel-profile').hidden && !$('member-panel-consents').hidden;
+          $('member-section-next').click();
+          results.sectionProgress = $('member-section-progress').textContent.includes('3 di 4');
+          memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
             $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
@@ -203,7 +215,8 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.equal(results.buttonLayout, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
-        "printed", "preview", "clearedCsv", "newEditableCode"]) assert.equal(results[key], true, key + ": " + JSON.stringify(results));
+        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress"])
+        assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.rows, 2);
       assert.equal(results.visibleCount, 2); assert.equal(results.withSuspended, 4); assert.equal(results.hiddenSelectionRemoved, true);
       assert.equal(results.branchLocked, true);

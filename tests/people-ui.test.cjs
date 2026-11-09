@@ -13,10 +13,12 @@ test("access management shows only configured chiefs and allows only branch chan
   const elements = new Map();
   function element() {
     return {
-      children: [], value: "", hidden: false, textContent: "",
+      children: [], value: "", hidden: false, disabled: false, textContent: "", className: "",
+      attributes: {}, classList: { toggle() {} },
       append(...children) { this.children.push(...children); },
       replaceChildren(...children) { this.children = children; },
       click() { return this.onclick?.(); },
+      setAttribute(name, value) { this.attributes[name] = value; },
     };
   }
   const get = id => {
@@ -33,6 +35,7 @@ test("access management shows only configured chiefs and allows only branch chan
         { id: 2, name: "Configured chief", code: "012346", kind: "capo", loginEnabled: true, hasPassword: true, serviceBranch: "E/G" },
         { id: 3, name: "Unconfigured chief", code: "012348", kind: "capo", loginEnabled: false },
         { id: 4, name: "Youth example", code: "012347", kind: "ragazzo", loginEnabled: false },
+        { id: 5, name: "Configured L/C chief", code: "012349", kind: "capo", loginEnabled: true, hasPassword: true, serviceBranch: "L/C" },
       ] }; } },
     },
     document: { getElementById: get, createElement: element, createTextNode: text => ({ textContent: text }) },
@@ -40,13 +43,28 @@ test("access management shows only configured chiefs and allows only branch chan
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, "assets/js/persone.js"), "utf8"), context);
   await new Promise(resolve => setImmediate(resolve));
-  const cards = get("people-list").children;
+  let branchGroups = get("people-list").children;
+  assert.equal(branchGroups.length, 2);
+  assert.deepEqual(branchGroups.map(group => group.children[0].textContent), ["L/C", "E/G"]);
+  const lcFilter = get("people-branches").children.find(button => button.textContent.startsWith("L/C"));
+  lcFilter.click();
+  branchGroups = get("people-list").children;
+  assert.equal(branchGroups.length, 1);
+  assert.equal(branchGroups[0].children[0].textContent, "L/C");
+  assert.equal(branchGroups[0].children[1].children[0].children[0].textContent, "Configured L/C chief · 012349");
+  get("people-branches").children[0].click();
+  branchGroups = get("people-list").children;
+  const egGroup = branchGroups.find(group => group.children[0].textContent === "E/G");
+  const cards = egGroup.children[1].children;
   assert.equal(cards.length, 1);
   assert.deepEqual(cards.map(card => card.children[0].textContent), ["Configured chief · 012346"]);
   assert.equal(get("people-app").hidden, false);
+  assert.equal(get("people-branches").children[0].attributes["aria-pressed"], "true");
+  assert.equal(get("people-count").textContent, "2 capi abilitati");
   const edit = cards[0].children[2];
   assert.equal(edit.children[0].children.length, 1);
-  assert.equal(edit.children[1].children.length, 2);
+  assert.equal(edit.children[1].children.length, 3);
+  assert.equal(edit.children[1].children[1].disabled, true);
   const serviceLabel = edit.children[0].children[0];
   serviceLabel.children[1].value = "R/S";
   edit.onsubmit({ preventDefault() {} });
@@ -55,7 +73,7 @@ test("access management shows only configured chiefs and allows only branch chan
   assert.equal(branchUpdate[0], "people/2");
   assert.equal(branchUpdate[2].serviceBranch, "R/S");
   assert.equal(Object.keys(branchUpdate[2]).length, 1);
-  await edit.children[1].children[1].click();
+  await edit.children[1].children[2].click();
   await new Promise(resolve => setImmediate(resolve));
   const passwordReset = calls.find(call => call[1] === "DELETE");
   assert.equal(passwordReset[0], "people/2/password");

@@ -2,12 +2,15 @@
   const status = document.getElementById('people-status');
   const app = document.getElementById('people-app');
   const list = document.getElementById('people-list');
+  const branchNav = document.getElementById('people-branches');
   const A = window.ACCESSO;
   if (!window.NAS || !window.NAS.user?.admin) {
     status.textContent = 'Pagina riservata all’amministratore sul NAS.';
     return;
   }
   let busy = false;
+  let branchFilter = 'ALL';
+  let peopleData = [];
   function field(labelText, input) {
     const label = document.createElement('label');
     label.append(document.createTextNode(labelText), input);
@@ -27,7 +30,16 @@
       option.value = value; option.textContent = text; service.append(option);
     }
     service.value = person.serviceBranch || '';
+    const originalBranch = service.value;
+    const branchStatus = document.createElement('span');
+    branchStatus.className = 'person-save-status';
+    branchStatus.textContent = 'Nessuna modifica';
     fields.append(field('Branca di servizio', service));
+    service.onchange = () => {
+      save.disabled = service.value === originalBranch;
+      branchStatus.textContent = save.disabled ? 'Nessuna modifica' : 'Da salvare';
+      article.classList.toggle('person-card-dirty', !save.disabled);
+    };
     const hint = document.createElement('p');
     hint.textContent = person.hasPassword
       ? 'Password impostata.'
@@ -38,6 +50,8 @@
     save.className = 'button button-secondary';
     save.type = 'submit';
     save.textContent = 'Salva branca';
+    save.disabled = true;
+    actions.append(branchStatus);
     actions.append(save);
     edit.onsubmit = e => {
       e.preventDefault();
@@ -63,11 +77,48 @@
   }
   async function load() {
     const result = await A.request('people');
-    const people = result.people.filter(person => person.kind === 'capo' && !person.admin && person.loginEnabled);
-    list.replaceChildren(...(people.length ? people.map(card) : [Object.assign(document.createElement('p'), {
+    peopleData = result.people.filter(person => person.kind === 'capo' && !person.admin && person.loginEnabled);
+    app.hidden = false;
+    render();
+  }
+  function render() {
+    const people = peopleData;
+    const branches = ['L/C', 'E/G', 'R/S', ''];
+    const counts = Object.fromEntries(branches.map(branch => [branch, people.filter(person => (person.serviceBranch || '') === branch).length]));
+    if (branchFilter !== 'ALL' && !counts[branchFilter === 'UNASSIGNED' ? '' : branchFilter])
+      branchFilter = 'ALL';
+    const filters = [['ALL', 'Tutte', people.length], ...branches.filter(branch => counts[branch]).map(branch =>
+      [branch || 'UNASSIGNED', branch || 'Da assegnare', counts[branch]])];
+    branchNav.replaceChildren(...filters.map(([value, label, count]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'people-branch-filter';
+      button.setAttribute('aria-pressed', String(branchFilter === value));
+      button.textContent = `${label} · ${count}`;
+      button.onclick = () => {
+        branchFilter = value;
+        render();
+        branchNav.querySelector?.('[aria-pressed="true"]')?.focus?.();
+      };
+      return button;
+    }));
+    document.getElementById('people-count').textContent =
+      `${people.length} ${people.length === 1 ? 'capo abilitato' : 'capi abilitati'}`;
+    const visibleBranches = branchFilter === 'ALL' ? branches.filter(branch => counts[branch])
+      : [branchFilter === 'UNASSIGNED' ? '' : branchFilter];
+    list.replaceChildren(...(people.length ? visibleBranches.map(branch => {
+      const group = document.createElement('section');
+      group.className = 'people-branch-group';
+      const heading = document.createElement('h3');
+      heading.textContent = branch || 'Da assegnare';
+      const cards = document.createElement('div');
+      cards.className = 'people-branch-cards';
+      cards.append(...people.filter(person => (person.serviceBranch || '') === branch).map(card));
+      group.append(heading, cards);
+      return group;
+    }) : [Object.assign(document.createElement('p'), {
       textContent: 'Nessun capo configurato in NAS_CAPO_CODES.'
     })]));
-    app.hidden = false;
   }
   async function run(action) {
     if (busy) return;

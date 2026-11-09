@@ -36,12 +36,27 @@ body.reserved-page .reserved-header .brand,
 .password-visibility[aria-pressed="true"] .password-visibility-slash { display: block }
 .password-visibility:disabled { display: none }
 .people-list select { width: 100%; padding: 10px; border: 1px solid var(--vl); border-radius: 8px; background: #fff; color: var(--vd) }
-.people-list { display: grid; gap: 16px }
-.person-card { padding: 20px; background: #fff; border: 1px solid var(--vl); border-radius: 16px }
-.person-card h3 { margin: 0 0 12px }
-.person-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 12px }
-.person-fields label { display: grid; gap: 8px }
-.person-actions { display: flex; flex-wrap: wrap; gap: 12px }
+.people-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 8px }
+.people-list-heading h2, .people-branch-group h3 { margin: 0 }
+.people-list-heading .muted { margin: 4px 0 0; color: var(--v2); font-size: 13px }
+.people-branches { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px }
+.people-branch-filter { min-height: 44px; padding: 8px 14px; border: 1px solid var(--vl); border-radius: 999px; background: #fff; color: var(--v); font: inherit; font-weight: 700 }
+.people-branch-filter[aria-pressed="true"] { background: var(--v); color: #fff; border-color: var(--v) }
+.people-list { display: grid; gap: 20px }
+.people-branch-group { min-width: 0 }
+.people-branch-group > h3 { padding-bottom: 8px; border-bottom: 1px solid var(--vl); color: var(--v); font-size: 16px }
+.people-branch-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; padding-top: 10px }
+.person-card { min-width: 0; padding: 16px; background: #fff; border: 1px solid var(--vl); border-radius: 16px }
+.person-card-dirty { border-color: var(--v); box-shadow: 0 0 0 2px color-mix(in srgb, var(--v) 12%, transparent) }
+.person-card h3 { margin: 0 0 8px }
+.person-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px }
+.person-fields label { display: grid; gap: 6px; font-size: 14px; font-weight: 700 }
+.person-save-status { align-self: center; margin-right: auto; color: var(--v2); font-size: 12px }
+.person-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px }
+.person-actions .button { margin: 0; min-height: 44px }
+.people-help { margin-top: 20px; padding: 12px 14px; border: 1px solid var(--vl); border-radius: 12px; background: #fff }
+.people-help summary { min-height: 44px; display: flex; align-items: center; color: var(--v); font-weight: 700; cursor: pointer }
+.people-help p { margin: 8px 0 0; color: var(--v2); font-size: 13px; line-height: 1.6 }
 @media (max-width: 600px) {
   body.reserved-page > .reserved-header { gap: 8px; padding: 10px 16px; }
   body.reserved-page > .reserved-header .brand { min-width: 0; padding: 6px 8px; }
@@ -49,9 +64,18 @@ body.reserved-page .reserved-header .brand,
   body.reserved-page > #reserved-content { width: calc(100% - 28px); margin: 20px auto; }
   #reserved-content > h1 { font-size: clamp(1.7rem, 8vw, 2.4rem); line-height: 1.1; }
   #reserved-content .button { max-width: 100%; white-space: normal; text-align: center; overflow-wrap: anywhere; }
-  .person-fields { gap: 12px; }
+  .people-list-heading { align-items: center; }
+  .people-list-heading .button { min-height: 44px; padding: 8px 12px; }
+  .people-branches { flex-wrap: nowrap; overflow-x: auto; padding: 2px 2px 8px; margin: 8px -2px 14px; }
+  .people-branch-filter { flex: 0 0 auto; font-size: 13px; }
+  .people-list { gap: 16px; }
+  .people-branch-cards { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .person-fields { gap: 10px; }
   .person-card { min-width: 0; padding: 14px; }
   .person-card h3 { overflow-wrap: anywhere; font-size: 1rem; }
-  .person-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .person-actions .button { width: 100%; margin: 0; }
+  .person-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .person-actions .button { width: 100%; margin: 0; padding: 8px; font-size: 13px; }
+  .person-save-status { grid-column: 1 / -1; grid-row: 1; }
+  .person-actions .button[type="submit"] { grid-column: 1 / -1; grid-row: 2; }
+  .person-actions .button:not([type="submit"]) { grid-column: 1 / -1; grid-row: 3; }
 }

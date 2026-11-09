@@ -91,16 +91,36 @@
     <form id="member-form">
       <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
       <p id="member-error" role="alert"></p>
-      <div class="members-form-grid">
-        <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
-        <label>Branca locale<select name="branch" required></select></label>
+      <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
+        <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
+        <button type="button" role="tab" id="member-tab-consents" aria-controls="member-panel-consents" aria-selected="false">Consensi</button>
+        <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
+        <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
+      </nav>
+      <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
+      <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile">
+        <div class="members-form-grid">
+          <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
+          <label>Branca locale<select name="branch" required></select></label>
+        </div>
+        <h3>Anagrafica e contatti</h3><div id="member-profile" class="members-form-grid"></div>
+      </section>
+      <section id="member-panel-consents" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-consents" hidden>
+        <h3>Consensi e responsabili genitoriali</h3><div id="member-consents" class="members-form-grid"></div>
+        <p>I dati genitoriali sono riportati senza unioni automatiche: verificare duplicati e incongruenze nella fonte.</p>
+      </section>
+      <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
+        <h3>Percorso educativo di branca</h3><div id="member-education" class="members-form-grid"></div>
+      </section>
+      <section id="member-panel-censuses" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-censuses" hidden>
+        <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>
+      </section>
+      <div class="members-dialog-actions">
+        <button id="member-section-back" class="button button-secondary" type="button">Indietro</button>
+        <button id="member-section-next" class="button button-secondary" type="button">Continua</button>
+        <button id="member-save" class="button button-primary" type="submit" hidden>Salva scheda</button>
+        <span>Bozza mantenuta passando tra le sezioni.</span>
       </div>
-      <details open><summary>Anagrafica e contatti</summary><div id="member-profile" class="members-form-grid"></div></details>
-      <details><summary>Consensi e responsabili genitoriali</summary><div id="member-consents" class="members-form-grid"></div>
-        <p>I dati genitoriali sono riportati senza unioni automatiche: verificare duplicati e incongruenze nella fonte.</p></details>
-      <details open><summary>Percorso educativo di branca</summary><div id="member-education" class="members-form-grid"></div></details>
-      <details><summary>Storico censimenti AGESCI</summary><div id="member-censuses"></div></details>
-      <div class="members-dialog-actions"><button class="button button-primary" type="submit">Salva scheda</button><span>Le modifiche restano sul NAS.</span></div>
     </form>
   </dialog>
   <dialog id="import-dialog" class="members-dialog">

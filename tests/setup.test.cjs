@@ -18,6 +18,7 @@ function setup(options = {}) {
     scripts = [],
     redirects = [];
   const tabs = [];
+  const balanceButtons = [];
   const store = new Map(options.noToken ? [] : [["assemblea-gh-token", "test-token"]]);
   let context,
     remote = serialize(options.remote || initial),
@@ -79,6 +80,11 @@ function setup(options = {}) {
     tab.dataset.tab = name;
     tabs.push(tab);
   }
+  for (const name of ["entrate", "uscite", "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti", "patrimonio"]) {
+    const button = element("button");
+    button.dataset.balance = name;
+    balanceButtons.push(button);
+  }
   context = {
     window: {
       ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
@@ -90,7 +96,7 @@ function setup(options = {}) {
     },
     document: {
       querySelector: $,
-      querySelectorAll: (s) => (s === ".tabs button" ? tabs : []),
+      querySelectorAll: (s) => s === ".tabs button" ? tabs : s === "[data-balance]" ? balanceButtons : [],
       createElement: element,
       createElementNS: (_namespace, tag) => element(tag),
       body: element("body"),
@@ -175,7 +181,9 @@ function setup(options = {}) {
     listeners,
     redirects,
     tabs,
+    balanceButtons,
     tab: (name) => tabs.find((t) => t.dataset.tab === name).onclick(),
+    balance: (name) => balanceButtons.find((button) => button.dataset.balance === name).onclick(),
     setSlides(slide) {
       $("#json-text").value = JSON.stringify({ ...initial, slide });
       $("#json-apply").onclick();
@@ -287,6 +295,7 @@ test("array controls stay available after deleting the last item and restore its
   t.$("#json-text").value = JSON.stringify(data);
   t.$("#json-apply").onclick();
   t.tab("bilancio");
+  t.balance("soglie_percentuali_esito");
 
   let list = fieldsetAt(t, "soglie percentuali esito");
   assert.ok(list, "percentage list is rendered as an editable fieldset");
@@ -310,6 +319,7 @@ test("array controls stay available after deleting the last item and restore its
   add.onclick();
   assert.deepEqual(t.data().soglie_percentuali_esito, [0]);
   t.tab("bilancio");
+  t.balance("soglie_percentuali_esito");
   list = fieldsetAt(t, "soglie percentuali esito");
   const input = list.children.find((child) => child.className === "field").children[1];
   assert.equal(input.tagName, "INPUT");
