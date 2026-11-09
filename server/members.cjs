@@ -49,6 +49,13 @@ function createMembers(db, people) {
   const rsCommunity = M.defaultFields.find(field => field.branch === "R/S" && field.key === "comunita");
   const oldRsCommunity = { branch: "R/S", key: "comunita", label: "Noviziato / clan", type: "text", options: [] };
   const storedRsCommunity = db.prepare("SELECT definition FROM member_fields WHERE branch='R/S' AND key='comunita'").get();
+  if (storedRsCommunity) {
+    const definition = JSON.parse(storedRsCommunity.definition);
+    if (definition.label === "Comunità R/S · Noviziato per i novizi") {
+      definition.label = rsCommunity.label;
+      db.prepare("UPDATE member_fields SET definition=? WHERE branch='R/S' AND key='comunita'").run(JSON.stringify(definition));
+    }
+  }
   if (storedRsCommunity?.definition === JSON.stringify(oldRsCommunity)) {
     const definition = structuredClone(rsCommunity);
     for (const row of db.prepare("SELECT data FROM member_values WHERE branch='R/S'").all()) {
@@ -440,7 +447,11 @@ function createMembers(db, people) {
             const member = get(transfer.person_id);
             requireRevision(member, transfer.member_revision);
             if (member.branch !== transfer.source) fail(409, "Branca del socio cambiata: riproporre il passaggio");
-            units.validateAssignment(member, transfer.target, { ...(member.values[transfer.target] || {}) });
+            const values = { ...(member.values[transfer.target] || {}) };
+            const key = transfer.target === "E/G" ? "ruolo" : "comunita";
+            if (!values[key]) values[key] = transfer.target === "E/G" ? "Piede tenero" : "Noviziato";
+            units.validateAssignment(member, transfer.target, values);
+            writeValues(member, transfer.target, values);
             writeProfile(member, transfer.target, member.profile);
           }
           db.prepare("UPDATE member_transfers SET status=?,revision=revision+1,reviewer_id=? WHERE id=?")

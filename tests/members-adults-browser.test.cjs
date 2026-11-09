@@ -130,12 +130,12 @@ test("adult sheets skip youth sections, navigate accessibly and preserve saved d
             document.querySelector('[data-close=member-dialog]').click();
           }
           open(7);
-          assert(JSON.stringify(sections()) === JSON.stringify(['profile','contacts','guardians','education','censuses']), 'youth sections restored');
+          assert(JSON.stringify(sections()) === JSON.stringify(['profile','education','contacts','guardians','censuses']), 'youth sections restored');
           assert($('member-section-progress').textContent.startsWith('Sezione 1 di 5'), 'youth progress');
           key($('member-tab-contacts'), 'ArrowRight');
           assert(document.activeElement.id === 'member-tab-guardians' && !$('member-panel-guardians').hidden, 'youth guardian focus');
           assert(!$('member-form').elements['guardian:0:fullName'].disabled, 'youth guardians editable');
-          key(document.activeElement, 'ArrowRight');
+          key($('member-tab-profile'), 'ArrowRight');
           assert(document.activeElement.id === 'member-tab-education' && !$('member-panel-education').hidden, 'youth education focus');
           assert(!$('member-form').elements['extra:tappa'].disabled, 'youth education editable');
           $('member-form').requestSubmit(); await wait();

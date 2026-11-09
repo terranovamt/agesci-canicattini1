@@ -241,10 +241,10 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
-          memberTabs[3].click();
+          memberTabs[1].click();
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
             $('member-panel-profile').hidden && !$('member-panel-education').hidden;
-          $('member-section-next').click();
+          memberTabs[4].click();
           results.sectionProgress = $('member-section-progress').textContent.includes('5 di 5');
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();

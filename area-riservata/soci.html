@@ -175,9 +175,9 @@
       <p id="member-error" role="alert"></p>
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
+        <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
         <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false">Contatti</button>
         <button type="button" role="tab" id="member-tab-guardians" aria-controls="member-panel-guardians" aria-selected="false">Genitori</button>
-        <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
         <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
       </nav>
       <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
@@ -200,7 +200,7 @@
         <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
       </section>
       <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
-        <h3>Percorso educativo di branca</h3><div id="member-assignment"></div><div id="member-education" class="members-form-grid"></div>
+        <h3>Percorso educativo di branca</h3><div id="member-education" class="members-form-grid"><div id="member-assignment" class="members-wide"></div></div>
       </section>
       <section id="member-panel-censuses" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-censuses" hidden>
         <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>

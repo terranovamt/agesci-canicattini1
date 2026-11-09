@@ -106,7 +106,10 @@ Le schede Co.Ca. e quelle con tipologia account **capo**, anche se registrate
 in L/C, E/G o R/S, mostrano soltanto **Anagrafica**, **Contatti** e
 **Censimenti**. **Genitori** e **Percorso** non compaiono nella navigazione;
 i dati già salvati restano conservati anche dopo una modifica anagrafica.
-Le schede dei ragazzi mantengono tutte e cinque le sezioni. La branca di
+Le schede dei ragazzi seguono l'ordine **Anagrafica**, **Percorso**,
+**Contatti**, **Genitori**, **Censimenti**. Nel percorso, promessa e anno in
+branca sono affiancati; seguono tappa (o progressione L/C), assegnazione al
+gruppo con ruolo, specialita e brevetti. La branca di
 servizio e i ruoli di capo/vice sestiglia o squadriglia non cambiano la
 tipologia della scheda.
 
@@ -176,6 +179,10 @@ rinominate o eliminate dall'interfaccia.
 Nel Branco i momenti L/C sono **Lupo della legge**, **Lupo della rupe**,
 **Lupo anziano**; nel Cerchio **Coccinella del prato**, **Coccinella del bosco**,
 **Coccinella della montagna**.
+Alla conferma di un passaggio, se il campo di destinazione e vuoto, viene
+assegnato **Piede tenero** in E/G oppure **Noviziato** in R/S.
+Eventuali assegnazioni di destinazione gia presenti sono conservate.
+
 La comunita R/S e una scelta tra **Noviziato** e **Clan**: chi e nel primo anno
 R/S appartiene al Noviziato ed e un novizio. Le tappe E/G e i passi R/S sono
 selezioni singole. Specialita L/C (39 voci),

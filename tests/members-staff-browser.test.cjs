@@ -120,6 +120,11 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           });
           result.assignmentReadOnly = !$('member-form').elements['extra:ruolo'] &&
             !$('member-form').elements['extra:squadriglia'] && $('member-assignment').textContent.includes('Squadriglie');
+          $('member-tab-education').click();
+          result.educationOrder = [...$('member-education').children].map(element => element.dataset.educationKey || element.id);
+          const promise = $('member-form').elements['extra:promessa'].getBoundingClientRect();
+          const year = $('member-form').elements['extra:anno'].getBoundingClientRect();
+          result.educationPaired = Math.abs(promise.top - year.top) < 2 && promise.right <= year.left;
           document.querySelector('[data-close=member-dialog]').click();
           [...$('members-list').querySelectorAll('input[type=checkbox]')]
             .find(input => input.getAttribute('aria-label') === 'Seleziona Example member').click();
@@ -235,6 +240,8 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
         assert.equal(measured[key], true, detail(key));
       assert.deepEqual(measured.scope, ["E/G"]);
       assert.equal(measured.assignmentReadOnly, true);
+      assert.deepEqual(measured.educationOrder, ['promessa', 'anno', 'tappa', 'member-assignment', 'specialita', 'brevetti']);
+      assert.equal(measured.educationPaired, true, detail('educationPaired'));
       assert.deepEqual(measured.approval, { action: "confirm", revision: 1 });
       assert.equal(measured.route, "E/G → R/S");
       assert.deepEqual(measured.proposal, { action: "passage", members: [{ id: 1, revision: 1 }] });

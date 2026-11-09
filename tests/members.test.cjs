@@ -439,7 +439,7 @@ test("old suspended census records are excluded using the latest status, not bir
   assert.equal(M.nextBranch("L/C"), "E/G"); assert.equal(M.nextBranch("E/G"), "R/S"); assert.equal(M.nextBranch("R/S"), "");
   assert.equal(M.defaultFields.filter(f => f.branch === "R/S").some(f => ["ruolo", "specialita", "brevetti", "sestiglia", "squadriglia"].includes(f.key)), false);
   assert.deepEqual(M.defaultFields.find(f => f.branch === "R/S" && f.key === "comunita"),
-    { branch: "R/S", key: "comunita", label: "Comunità R/S · Noviziato per i novizi", type: "select", options: ["Noviziato", "Clan"] });
+    { branch: "R/S", key: "comunita", label: "Comunità R/S", type: "select", options: ["Noviziato", "Clan"] });
 });
 
 test("educational schema upgrade preserves existing role values and custom definitions", () => {
@@ -463,6 +463,11 @@ test("educational schema upgrade preserves existing role values and custom defin
     assert.equal(upgradedCommunity.type, "select");
     assert.deepEqual(upgradedCommunity.options.slice(0, 2), ["Noviziato", "Clan"]);
     assert.equal(upgradedCommunity.options.includes("Comunità locale"), true);
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='R/S' AND key='comunita'")
+      .run(JSON.stringify({ ...upgradedCommunity, label: "Comunità R/S · Noviziato per i novizi" }));
+    createMembers(db, {});
+    assert.deepEqual(JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='R/S' AND key='comunita'").get().definition),
+      { ...upgradedCommunity, label: "Comunità R/S" });
     assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1 AND branch='R/S'").get().data).comunita, "Comunità locale");
     assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).ruolo, "Legacy role");
     const custom = { ...old, label: "Custom role" };
@@ -883,12 +888,16 @@ test("passage derives its destination, rejects mixed or invalid selections atomi
   state = await app.snapshot();
   assert.equal(state.transfers[0].target, "R/S");
   assert.equal(state.members.find(member => member.id === lc.id).branch, "E/G");
+  assert.equal(state.members.find(member => member.id === lc.id).values["E/G"].ruolo, "Piede tenero");
   assert.equal(state.members.find(member => member.id === lcSecond.id).branch, "L/C");
+  assert.equal((await app.request("members/transfers/" + state.transfers[0].id, "PATCH",
+    { action: "confirm", revision: state.transfers[0].revision })).status, 200);
+  assert.equal((await app.snapshot()).members.find(member => member.id === eg.id).values["R/S"].comunita, "Noviziato");
   const db = new DatabaseSync(path.join(directory, "site.sqlite"));
   try {
     const adminId = db.prepare("SELECT id FROM people WHERE census_code='23816938'").get().id;
     assert.equal(db.prepare("SELECT count(*) AS n FROM member_transfers WHERE reviewer_id=? AND proposer_id=?")
-      .get(adminId, adminId).n, 2);
+      .get(adminId, adminId).n, 3);
   } finally { db.close(); }
 });
 

@@ -5,7 +5,7 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const allMemberSections = ['profile', 'contacts', 'guardians', 'education', 'censuses'];
+  const allMemberSections = ['profile', 'education', 'contacts', 'guardians', 'censuses'];
   let memberSections = allMemberSections;
   let guardianNextIndex = 0;
   const selected = new Set();
@@ -400,9 +400,20 @@
   };
   function renderEducation() {
     educationBranch = profileForm.elements.branch.value;
-    $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
-      .map(field => input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...educationDefinition(field), max: 2000 })));
     const assignment = $('member-assignment');
+    const order = ['promessa', 'anno', 'tappa', 'progressione', 'specialita', 'brevetti'];
+    const fields = data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
+      .sort((a, b) => (order.includes(a.key) ? order.indexOf(a.key) : order.length) -
+        (order.includes(b.key) ? order.indexOf(b.key) : order.length));
+    const controls = fields.map(field => {
+      const control = input(field.label, 'extra:' + field.key, drafts[educationBranch]?.[field.key], { ...educationDefinition(field), max: 2000 });
+      control.dataset.educationKey = field.key;
+      if (!['promessa', 'anno'].includes(field.key)) control.classList.add('members-wide');
+      return control;
+    });
+    const assignmentIndex = fields.findIndex(field => !['promessa', 'anno', 'tappa', 'progressione'].includes(field.key));
+    controls.splice(assignmentIndex < 0 ? controls.length : assignmentIndex, 0, assignment);
+    $('member-education').replaceChildren(...controls);
     assignment.replaceChildren();
     if (['L/C', 'E/G'].includes(educationBranch)) {
       const lc = educationBranch === 'L/C', values = drafts[educationBranch] || {};

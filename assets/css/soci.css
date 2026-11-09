@@ -260,6 +260,9 @@
 .member-assignment-summary { padding: 12px; margin: 8px 0; border: 1px solid #ddd3e7; border-radius: 12px; background: #f7f4fa; }
 .member-assignment-summary h4, .member-assignment-summary p { margin: 0 0 6px; }
 .member-assignment-summary small { color: #625269; }
+#member-education { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#member-education .members-wide { grid-column: 1 / -1; }
+#member-assignment:empty { display: none; }
 .members-choice-list label[hidden] { display: none !important; }
 @media (max-width: 420px) {
   .members-choice-list { grid-template-columns: minmax(0, 1fr); }

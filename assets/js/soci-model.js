@@ -180,7 +180,7 @@
     ['E/G', 'squadriglia', 'Squadriglia'], ['E/G', 'ruolo', 'Ruolo in squadriglia'],
     ['E/G', 'tappa', 'Tappa'], ['E/G', 'specialita', 'Specialita'],
     ['E/G', 'brevetti', 'Brevetti di competenza'], ['E/G', 'promessa', 'Data promessa', 'date'],
-    ['R/S', 'comunita', 'Comunità R/S · Noviziato per i novizi'], ['R/S', 'punto-strada', 'Punto della strada'],
+    ['R/S', 'comunita', 'Comunità R/S'], ['R/S', 'punto-strada', 'Punto della strada'],
     ['R/S', 'servizio', 'Servizio'], ['R/S', 'partenza', 'Data partenza', 'date'],
     ['Adulti', 'servizio', 'Servizio in gruppo'], ['Adulti', 'formazione', 'Percorso formativo'],
   ].map(([branch, key, label, type = 'text']) => ({ branch, key, label, type, options: [] }));
