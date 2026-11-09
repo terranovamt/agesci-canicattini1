@@ -21,32 +21,37 @@
     });
   let files = [];
   const order = (file) => {
-    const index = preparatory.findIndex((item) => item.file === file.file);
+    const index = preparatory.findIndex((item) => item.type === window.DOCUMENTS_MODEL.assemblyType(file));
     return index === -1 ? preparatory.length : index;
   };
   const preparatory = [
     {
-      file: "PEG26-28.pdf",
-      label: "Il nostro percorso",
-      theme: "project",
-      link: "peg/",
-      icon: ["M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-3-1H4z", "M13 8a3 3 0 0 1 3-3h4v14h-4a4 4 0 0 0-3 1"],
-    },
-    {
-      file: "Rendiconto_per_cassa_-_ModelloD.pdf",
-      label: "Trasparenza",
-      theme: "finance",
-      icon: ["M4 20h16", "M6 16v-4", "M12 16V4", "M18 16V8"],
-    },
-    {
-      file: "ConvocaAssemblea26.pdf",
+      type: "convocazione",
       label: "L’invito a partecipare",
       theme: "invitation",
       icon: ["M4 6h16v13H4z", "m4 7 8 6 8-6"],
     },
     {
-      file: "RegolamentoAssembleaCanicattini1.pdf",
+      type: "regolamento",
       label: "Le regole condivise",
+      theme: "rules",
+      icon: ["M6 3h9l4 4v14H6z", "M14 3v5h5", "M9 12h7", "M9 16h7"],
+    },
+    {
+      type: "peg",
+      label: "Il nostro percorso",
+      theme: "project",
+      icon: ["M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-3-1H4z", "M13 8a3 3 0 0 1 3-3h4v14h-4a4 4 0 0 0-3 1"],
+    },
+    {
+      type: "bilancio",
+      label: "Trasparenza",
+      theme: "finance",
+      icon: ["M4 20h16", "M6 16v-4", "M12 16V4", "M18 16V8"],
+    },
+    {
+      type: "verbale",
+      label: "Le decisioni dell’assemblea",
       theme: "rules",
       icon: ["M6 3h9l4 4v14H6z", "M14 3v5h5", "M9 12h7", "M9 16h7"],
     },
@@ -133,19 +138,18 @@
       panel.lastRender = renderKey;
       list.replaceChildren();
       const available = panel.onlyPreparatory ? window.DOCUMENTS_MODEL.preparatory(files, currentYear) : files;
-      let shown = available.filter(
+      let shown = panel.onlyPreparatory ? window.DOCUMENTS_MODEL.preparatorySlots(files, currentYear) : available.filter(
         (file) =>
           (!year || (year === "undated" ? !file.year : String(file.year) === year)) &&
           (!query || [file.title, file.description, file.file].join(" ").toLocaleLowerCase("it").includes(query)),
       );
       const total = shown.length;
-      if (list.dataset.limit) shown = shown.slice(0, Number(list.dataset.limit));
+      if (list.dataset.limit && !panel.onlyPreparatory) shown = shown.slice(0, Number(list.dataset.limit));
       else if (more && panel === panels[0]) shown = shown.slice(0, visibleCount);
       if (more && panel === panels[0]) more.hidden = shown.length >= total;
       status.textContent = panel.onlyPreparatory
-        ? shown.length
-          ? shown.length + " documenti preparatori per l’assemblea " + currentYear + "."
-          : "Non sono ancora stati pubblicati documenti preparatori per l’assemblea " + currentYear + "."
+        ? shown.filter(slot => slot.document).length + " di 5 documenti preparatori pubblicati per l’assemblea " + currentYear + "." +
+          (available.length > shown.filter(slot => slot.document).length ? " Altri file o versioni sono disponibili nell’archivio." : "")
         : !files.length
           ? "Non ci sono ancora documenti PDF pubblicati."
           : !total
@@ -153,8 +157,9 @@
             : shown.length < total
               ? shown.length + " documenti su " + total + " disponibili nell’archivio."
               : shown.length + " documenti PDF disponibili.";
-      shown.forEach((file) => {
-        const detail = preparatory.find((item) => item.file === file.file);
+      shown.forEach((entry) => {
+        const file = panel.onlyPreparatory ? entry.document : entry;
+        const detail = preparatory.find((item) => item.type === (panel.onlyPreparatory ? entry.type : window.DOCUMENTS_MODEL.assemblyType(file)));
         const card = document.createElement("article");
         card.className = "document-card document-" + (detail?.theme || "rules");
         const top = document.createElement("div");
@@ -168,25 +173,31 @@
         top.append(emblem, type);
         const label = document.createElement("span");
         label.className = "document-label";
-        label.textContent = (detail?.label || "Documenti del gruppo") + (file.year ? " · " + file.year : "");
+        label.textContent = (detail?.label || "Documenti del gruppo") + (file?.year ? " · " + file.year : "");
         const heading = document.createElement("h3");
-        heading.textContent = file.title || file.file.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ");
+        heading.textContent = file ? file.title || file.file.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ") : entry.label;
         const description = document.createElement("p");
-        description.textContent = file.description || "";
+        description.textContent = file?.description || "Documento non ancora pubblicato.";
         const actions = document.createElement("div");
         actions.className = "document-actions";
+        if (!file) {
+          card.append(top, label, heading, description, actions);
+          panel.list.append(card);
+          return;
+        }
         const url = siteRoot + "documents/pdf/" + encodeURIComponent(file.file);
         const open = document.createElement("a");
-        open.href = detail?.link ? siteRoot + detail.link : url;
-        if (!detail?.link) {
+        const pegLink = file.file === "PEG26-28.pdf" ? "peg/" : "";
+        open.href = pegLink ? siteRoot + pegLink : url;
+        if (!pegLink) {
           open.target = "_blank";
           open.rel = "noopener";
         }
         open.className = "document-primary";
-        open.textContent = detail?.link ? "Leggi il PEG →" : "Consulta PDF ↗";
+        open.textContent = pegLink ? "Leggi il PEG →" : "Consulta PDF ↗";
         open.setAttribute(
           "aria-label",
-          detail?.link ? "Leggi " + heading.textContent : "Apri " + heading.textContent + " in una nuova scheda",
+          pegLink ? "Leggi " + heading.textContent : "Apri " + heading.textContent + " in una nuova scheda",
         );
         const download = document.createElement("a");
         download.href = url;

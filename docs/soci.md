@@ -3,14 +3,16 @@
 Il libro soci funziona sul backend NAS, con accesso amministrativo o di un
 capo con branca di servizio assegnata. La
 simulazione statica non contiene anagrafiche. Dalla dashboard scegliere
-**Apri il libro soci**; **Persone e accessi** resta dedicato a tipologia
-account e reset delle password.
+**Apri il libro soci**; **Gestisci accessi capi** permette solo assegnazione
+della branca di servizio e reset delle password.
 
 L'amministratore assegna la branca di servizio L/C, E/G o R/S in **Persone e
 accessi**. I capi vedono e modificano solo i soci della propria branca locale;
 possono gestirne campi e macro.
-La gestione accessi elenca esclusivamente i capi (amministratore incluso);
-i ragazzi restano nel Libro soci. Il modulo di aggiunta accessi crea solo capi.
+La gestione accessi elenca esclusivamente i capi configurati in
+`NAS_CAPO_CODES`, escluso l'amministratore; non permette di creare account
+o cambiare tipologia. Anche il Libro soci esclude l'amministratore da elenco,
+conteggi, ricerca, selezioni ed estrazioni, senza cancellarne dati o accesso.
 Nessuna assegnazione significa nessun accesso
 al libro soci, anche con login abilitato. Import, nuovi account e modelli
 documentali restano amministrativi. L'assegnazione non cambia la branca
@@ -47,9 +49,27 @@ restano invariati. Password, tipologia di account gia esistente e abilitazione
 al login non cambiano: l'import non e un'autorizzazione all'accesso.
 
 Uno status sospeso resta sospeso. Non correggere branca, genitori o contatti
-automaticamente in base a eta o nome. I dati dei responsabili genitoriali
-rimangono testo da verificare: il sistema elimina soltanto numeri di telefono
-esattamente duplicati dopo la rimozione degli spazi.
+automaticamente in base a eta o nome.
+
+### Responsabili genitoriali
+
+Nella scheda, **Genitori** separa i responsabili del campo AGESCI
+`RESP.GENITORIALE DATI`: nome completo originale, CF, comune e data di
+nascita, email e cellulare. Il nome completo non permette di distinguere con
+certezza nomi e cognomi composti: i campi **Nome** e **Cognome** sono da
+verificare e completare manualmente, non vengono indovinati.
+
+Si possono aggiungere o rimuovere responsabili (massimo 20) e modificare i
+campi prima di **Salva scheda**. Il testo originale resta consultabile,
+senza unioni automatiche dei duplicati; CF ripetuti e formati non separabili
+sono segnalati. Le date non valide non vengono convertite silenziosamente.
+I responsabili strutturati sono conservati nel profilo SQLite ed esportati
+in una colonna JSON del CSV risultati.
+
+Un nuovo import della colonna aggiorna i contatti dalla fonte; conserva nome
+e cognome completati per i responsabili con lo stesso CF, abbinando ciascuna
+occorrenza una sola volta. Una colonna assente non cancella i responsabili;
+una presente ma vuota li azzera. L'import non elimina record duplicati.
 
 ## Schede, ricerche ed estrazioni
 
@@ -89,14 +109,27 @@ Campi iniziali:
 | Branca | Percorso |
 | --- | --- |
 | L/C | sestiglia, ruolo (capo, vice, sestigliere, novizio), primo/secondo/terzo anno, progressione (lupo della legge, della rupe, anziano), pista/sentiero, specialita, data promessa |
-| E/G | squadriglia, ruolo (capo, vice, squadrigliere), anno in branca, piede tenero, tappa, specialita, brevetti di competenza, data promessa |
-| R/S | noviziato/clan, punto della strada, servizio, data partenza |
+| E/G | squadriglia, ruolo (capo, vice, squadrigliere), anno in branca, piede tenero Si/No indipendente dal ruolo, tappa (scoperta, competenza, responsabilita), specialita, brevetti di competenza, data promessa |
+| R/S | noviziato/clan, passi (scoperta, competenza, responsabilita), punto della strada, servizio, data partenza |
 | Adulti | servizio in gruppo, formazione |
 
 In **Campi personalizzati e modelli di gruppo** si aggiungono campi testo,
 data o scelta. La chiave e univoca nella branca, composta da lettere minuscole,
 cifre e trattini; inizia con una lettera. Le definizioni sono aggiunte, non
 rinominate o eliminate dall'interfaccia.
+
+I momenti L/C sono **Lupo della legge**, **Lupo della rupe**, **Lupo anziano**.
+Le tappe E/G e i passi R/S sono selezioni singole. Specialita L/C (39 voci),
+E/G (65 voci) e brevetti E/G (15 voci) sono elenchi ricercabili a selezione
+multipla, anche nelle macro; nessun brevetto o specialita viene proposto in
+R/S. Le scelte gia salvate non presenti nel catalogo restano visibili come
+valori precedenti e non vengono cancellate durante l'aggiornamento.
+
+Il catalogo L/C e quello fornito dal gruppo. Gli elenchi E/G e brevetti sono
+stati riscontrati nell'applicazione pubblica di
+[AGESCI Campania, plancia](https://github.com/AGESCI-Campania/plancia/blob/ef1e5b39ff74bbec7133680a8ec25db0b5641041/apps/diaries/models.py),
+che li riferisce agli allegati del regolamento metodologico. Non vengono
+inventate relazioni tra brevetti e specialita.
 
 Selezionare soci e aprire **Azioni rapide** per assegnare un valore educativo
 o proporre un passaggio alla branca successiva. La selezione comprende anche soci

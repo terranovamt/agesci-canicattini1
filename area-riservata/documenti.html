@@ -83,6 +83,16 @@
               Lascia vuoto per i documenti generali. Indicando l’anno, il PDF resta nell’archivio e compare anche tra i
               preparatori quando coincide con l’anno corrente.
             </p>
+            <label for="document-assembly-type">Tipo di documento preparatorio</label>
+            <select id="document-assembly-type">
+              <option value="">Documento generale</option>
+              <option value="convocazione">Convocazione</option>
+              <option value="regolamento">Regolamento</option>
+              <option value="peg">PEG</option>
+              <option value="bilancio">Bilancio</option>
+              <option value="verbale">Verbale</option>
+            </select>
+            <p class="hint">Con un anno assemblea, scegli uno dei cinque tipi. L’ordine dei preparatori è fisso.</p>
             <fieldset id="github-credentials">
               <legend>Accesso GitHub</legend>
               <label for="document-token">Token con permesso Contents: Read and write</label>

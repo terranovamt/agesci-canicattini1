@@ -77,7 +77,7 @@ test("home renders only current assembly preparatory PDFs in addition to the com
   const year = Number(new Intl.DateTimeFormat("en", { timeZone: "Europe/Rome", year: "numeric" }).format(new Date()));
   const items = [
     { file: "generale.pdf", title: "Generale", description: "Archivio" },
-    { file: "corrente.pdf", title: "Corrente", description: "Preparatorio", assemblyYear: year },
+    { file: "corrente.pdf", title: "Corrente", description: "Preparatorio", assemblyYear: year, assemblyType: "convocazione" },
     { file: "vecchio.pdf", title: "Precedente", description: "Storico", assemblyYear: year - 1 },
   ];
   const ids = [
@@ -105,15 +105,18 @@ test("home renders only current assembly preparatory PDFs in addition to the com
   });
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(elements["documents-list"].children.length, 3);
-  assert.equal(elements["preparatory-list"].children.length, 1);
+  assert.equal(elements["preparatory-list"].children.length, 5);
   const prep = elements["preparatory-list"].children[0];
   assert.equal(prep.children[2].textContent, "Corrente");
   assert.equal(prep.children[4].children[0].href, "documents/pdf/corrente.pdf");
   assert.match(elements["preparatory-status"].textContent, new RegExp(String(year)));
+  assert.deepEqual(elements["preparatory-list"].children.slice(1).map(card => card.children[2].textContent),
+    ["Regolamento", "PEG", "Bilancio", "Verbale"]);
+  assert.equal(elements["preparatory-list"].children[4].children[4].children.length, 0);
   items[1].assemblyYear = year - 1;
   await elements["preparatory-retry"].onclick();
-  assert.equal(elements["preparatory-list"].children.length, 0);
-  assert.match(elements["preparatory-status"].textContent, /Non sono ancora/);
+  assert.equal(elements["preparatory-list"].children.length, 5);
+  assert.match(elements["preparatory-status"].textContent, /0 di 5/);
   fails = true;
   await elements["documents-retry"].onclick();
   assert.equal(elements["documents-retry"].hidden, false);

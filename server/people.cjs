@@ -195,4 +195,4 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
   };
 }
 
-module.exports = { createPeople, validatePassword };
+module.exports = { createPeople, validatePassword, ADMIN_CODE };

@@ -2,6 +2,7 @@
 
 const crypto = require("node:crypto");
 const M = require("../assets/js/soci-model.js");
+const { ADMIN_CODE } = require("./people.cjs");
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const object = value => value && typeof value === "object" && !Array.isArray(value);
 const text = (value, max = 500) => {
@@ -56,6 +57,29 @@ function createMembers(db, people) {
     }
     db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(definition));
   }
+  for (const field of M.defaultFields.filter(field =>
+    ["specialita", "brevetti", "tappa", "progressione"].includes(field.key))) {
+    const row = db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key=?").get(field.branch, field.key);
+    const old = JSON.parse(row.definition);
+    const expected = field.key === "progressione"
+      ? field.branch === "E/G"
+        ? { ...field, label: "Ingresso in reparto", options: ["Piede tenero"] }
+        : { ...field, label: "Progressione" }
+      : { ...field, type: "text", options: [] };
+    if (JSON.stringify(old) === JSON.stringify(expected)) {
+      db.prepare("UPDATE member_fields SET definition=? WHERE branch=? AND key=?")
+        .run(JSON.stringify(field), field.branch, field.key);
+      if (field.branch === "E/G" && field.key === "progressione") {
+        for (const row of db.prepare("SELECT person_id,data FROM member_values WHERE branch='E/G'").all()) {
+          const values = JSON.parse(row.data);
+          if (values.progressione !== "Piede tenero") continue;
+          values.progressione = "Si";
+          db.prepare("UPDATE member_values SET data=? WHERE person_id=? AND branch='E/G'")
+            .run(JSON.stringify(values), row.person_id);
+        }
+      }
+    }
+  }
   if (!db.prepare("SELECT id FROM member_templates LIMIT 1").get())
     db.prepare("INSERT INTO member_templates(title,body) VALUES(?,?)").run("Scheda interna socio",
       "Scheda interna - non sostituisce documenti ufficiali AGESCI\n\n{{nome}} {{cognome}}\nCodice socio: {{codice}}\nBranca: {{branca}}\nAnno scout: {{anno}}\nEmail: {{email}}\nTelefono: {{cellulare}}\n\nPercorso educativo:\n{{percorso}}\n\nData: {{data}}");
@@ -66,14 +90,16 @@ function createMembers(db, people) {
   };
   const fields = () => db.prepare("SELECT definition FROM member_fields ORDER BY branch,key").all().map(row => JSON.parse(row.definition));
   const templates = () => db.prepare("SELECT * FROM member_templates ORDER BY title").all();
-  const get = id => {
+  const withGuardians = profile => Object.hasOwn(profile, "guardianContacts") ? profile
+    : { ...profile, guardianContacts: M.parseGuardians(profile.guardians).contacts };
+  const get = (id, includeAdmin = false) => {
     const row = db.prepare("SELECT id,census_code,name,kind FROM people WHERE id=?").get(id);
-    if (!row) fail(404, "Socio non trovato");
+    if (!row || (!includeAdmin && row.census_code === ADMIN_CODE)) fail(404, "Socio non trovato");
     const profile = db.prepare("SELECT * FROM member_profiles WHERE person_id=?").get(id);
     return {
       id: row.id, code: row.census_code, name: row.name, kind: row.kind,
       branch: profile?.branch || (row.kind === "capo" ? "Adulti" : ""),
-      revision: profile?.revision || 0, profile: profile ? JSON.parse(profile.data) : {},
+      revision: profile?.revision || 0, profile: profile ? withGuardians(JSON.parse(profile.data)) : {},
       censuses: db.prepare("SELECT year,data FROM member_censuses WHERE person_id=? ORDER BY year DESC").all(id)
         .map(row => ({ year: row.year, ...JSON.parse(row.data) })),
       values: Object.fromEntries(db.prepare("SELECT branch,data FROM member_values WHERE person_id=?").all(id)
@@ -89,8 +115,25 @@ function createMembers(db, people) {
       .run(member.id, branch, JSON.stringify(profile));
   };
   const validateProfile = value => {
-    if (!object(value) || Object.keys(value).some(key => !Object.hasOwn(M.profileFields, key))) fail(400, "Campi anagrafici non validi");
-    const profile = Object.fromEntries(Object.entries(value).map(([key, value]) => [key, text(value, key === "guardians" ? 12000 : 500)]));
+    if (!object(value) || Object.keys(value).some(key => key !== "guardianContacts" && !Object.hasOwn(M.profileFields, key))) fail(400, "Campi anagrafici non validi");
+    const profile = Object.fromEntries(Object.entries(value).filter(([key]) => key !== "guardianContacts")
+      .map(([key, value]) => [key, text(value, key === "guardians" ? 12000 : 500)]));
+    if (Object.hasOwn(value, "guardianContacts")) {
+      if (!Array.isArray(value.guardianContacts) || value.guardianContacts.length > 20)
+        fail(400, "Responsabili genitoriali non validi (massimo 20)");
+      profile.guardianContacts = value.guardianContacts.map(contact => {
+        if (!object(contact) || Object.keys(contact).some(key => !Object.hasOwn(M.guardianFields, key)))
+          fail(400, "Campi del responsabile genitoriale non validi");
+        const result = Object.fromEntries(Object.entries(contact).map(([key, value]) => [key, text(value)]));
+        if (!(result.fullName || result.givenName || result.surname)) fail(400, "Inserire il nome del responsabile genitoriale");
+        if (result.taxCode) {
+          result.taxCode = result.taxCode.toUpperCase();
+          if (!/^[A-Z0-9]{16}$/.test(result.taxCode)) fail(400, "Codice fiscale del responsabile non valido");
+        }
+        if (Object.hasOwn(result, "birthDate")) result.birthDate = dateValue(result.birthDate);
+        return result;
+      });
+    }
     if (Object.hasOwn(profile, "birthDate")) profile.birthDate = dateValue(profile.birthDate);
     if (!(profile.givenName || profile.surname)) fail(400, "Inserire nome o cognome");
     if ([profile.givenName, profile.surname].filter(Boolean).join(" ").length > 120) fail(400, "Nome e cognome troppo lunghi");
@@ -106,15 +149,25 @@ function createMembers(db, people) {
     const validated = {};
     for (const [key, valueText] of Object.entries(value)) {
       const definition = definitions.find(field => field.key === key);
+      const previous = member.values[branch]?.[key];
+      if (definition.type === "multiselect") {
+        if (!Array.isArray(valueText) || valueText.length > 100) fail(400, "Selezione di branca non valida");
+        validated[key] = valueText.map(value => text(value, 2000));
+        const legacy = M.selectedChoices(previous);
+        if (new Set(validated[key]).size !== validated[key].length ||
+            validated[key].some(value => !definition.options.includes(value) && !legacy.includes(value)))
+          fail(400, "Opzione di branca non valida");
+        continue;
+      }
       validated[key] = text(valueText, 2000);
       if (definition.type === "date") validated[key] = dateValue(validated[key]);
-      if (definition.type === "select" && validated[key] && !definition.options.includes(validated[key])) fail(400, "Opzione di branca non valida");
+      if (definition.type === "select" && validated[key] && !definition.options.includes(validated[key]) && validated[key] !== previous) fail(400, "Opzione di branca non valida");
     }
     db.prepare("INSERT INTO member_values VALUES(?,?,?) ON CONFLICT(person_id,branch) DO UPDATE SET data=excluded.data")
       .run(member.id, branch, JSON.stringify(validated));
   };
   const snapshot = () => ({
-    members: db.prepare("SELECT id FROM people ORDER BY name,census_code").all().map(row => get(row.id)),
+    members: db.prepare("SELECT id FROM people WHERE census_code!=? ORDER BY name,census_code").all(ADMIN_CODE).map(row => get(row.id)),
     fields: fields(), templates: templates(),
     group: JSON.parse(db.prepare("SELECT data FROM member_group WHERE id=1").get()?.data || "{}"),
   });
@@ -148,13 +201,15 @@ function createMembers(db, people) {
       const method = request.method;
       if (route === "/api/members" && method === "GET") {
         const current = user(), result = snapshot();
-        result.currentYear = db.prepare("SELECT max(year) AS year FROM member_censuses").get().year || String(new Date().getFullYear());
+        result.currentYear = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
+          JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
         if (!current.admin) {
           result.members = result.members.filter(member => member.branch === current.serviceBranch)
             .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} } }));
           result.fields = result.fields.filter(field => field.branch === current.serviceBranch);
         }
-        result.transfers = db.prepare("SELECT * FROM member_transfers WHERE status='pending' ORDER BY id").all()
+        result.transfers = db.prepare(`SELECT t.* FROM member_transfers t JOIN people p ON p.id=t.person_id
+          WHERE t.status='pending' AND p.census_code!=? ORDER BY t.id`).all(ADMIN_CODE)
           .filter(transfer => current.admin || transfer.source === current.serviceBranch || transfer.target === current.serviceBranch)
           .map(transfer => {
             const member = get(transfer.person_id);
@@ -206,14 +261,25 @@ function createMembers(db, people) {
                   imported.branch === "Adulti" ? "capo" : "ragazzo");
               row = { id: Number(inserted.lastInsertRowid) };
             }
-            const member = get(row.id);
+            const member = get(row.id, true);
             const previousCensus = member.censuses.find(census => census.year === imported.year);
             const previousData = { ...previousCensus };
             delete previousData.year;
             db.prepare(`INSERT INTO member_censuses VALUES(?,?,?) ON CONFLICT(person_id,year) DO UPDATE SET data=excluded.data`)
               .run(row.id, imported.year, JSON.stringify({ ...previousData, ...imported.census }));
             if (!member.censuses.length || imported.year >= member.censuses[0].year) {
-              writeProfile(member, member.revision ? member.branch : imported.branch, { ...member.profile, ...imported.profile });
+              const profile = { ...member.profile, ...imported.profile };
+              if (imported.profile.guardianContacts) {
+                const matched = new Set();
+                profile.guardianContacts = imported.profile.guardianContacts.map(contact => {
+                  const index = member.profile.guardianContacts?.findIndex((item, index) =>
+                    !matched.has(index) && item.taxCode && item.taxCode === contact.taxCode) ?? -1;
+                  const previous = member.profile.guardianContacts?.[index];
+                  if (previous) matched.add(index);
+                  return previous ? { ...contact, givenName: previous.givenName || "", surname: previous.surname || "" } : contact;
+                });
+              }
+              writeProfile(member, member.revision ? member.branch : imported.branch, profile);
               db.prepare("UPDATE people SET name=? WHERE id=?")
                 .run([imported.profile.givenName, imported.profile.surname].filter(Boolean).join(" "), row.id);
             }

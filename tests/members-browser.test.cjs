@@ -17,7 +17,8 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
     const snapshot = {
       members: [
         { id: 1, code: "012345", name: '<img src=x onerror=alert(1)> Esempio', kind: "ragazzo", branch: "E/G", revision: 1,
-          profile: { givenName: '<img src=x onerror=alert(1)>', surname: "Esempio", birthDate: "2012-03-02", email: "test@example.invalid", guardians: "Responsabili da verificare" },
+          profile: { givenName: '<img src=x onerror=alert(1)>', surname: "Esempio", birthDate: "2012-03-02", email: "test@example.invalid",
+            guardians: "Esempio Responsabile [C.F.ABCDEF80A01H501U] - Nato/a a: Comune Esempio il: 1/1/1980 e-mail: guardian@example.invalid Cellulare: 000123" },
           censuses: [{ year: "2026", branch: "E/G", status: "Attivo" }], values: { "E/G": { squadriglia: "Aquile" } } },
         { id: 2, code: "012346", name: "Persona Locale", kind: "ragazzo", branch: "L/C", revision: 1,
           profile: { givenName: "Persona", surname: "Locale" }, censuses: [], values: {} },
@@ -121,16 +122,16 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.length === 5 &&
+          results.sectionNavigation = memberTabs.length === 6 &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1;
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
-          memberTabs[2].click();
+          memberTabs[3].click();
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
             $('member-panel-profile').hidden && !$('member-panel-consents').hidden;
           $('member-section-next').click();
-          results.sectionProgress = $('member-section-progress').textContent.includes('4 di 5');
+          results.sectionProgress = $('member-section-progress').textContent.includes('5 di 6');
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
@@ -140,6 +141,37 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.branchLocked = form.elements.branch.disabled;
           results.prefilled = form.elements['extra:squadriglia'].value;
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
+          memberTabs[2].click();
+          results.guardianParsed = $('member-guardians').children.length === 1 &&
+            form.elements['guardian:0:taxCode'].value === 'ABCDEF80A01H501U' &&
+            form.elements['guardian:0:email'].value === 'guardian@example.invalid' &&
+            form.elements['guardian:0:givenName'].value === '';
+          form.elements['guardian:0:givenName'].value = 'Responsabile';
+          form.elements['guardian:0:surname'].value = 'Esempio';
+          $('add-guardian').click();
+          results.guardianAdd = $('member-guardians').children.length === 2;
+          $('member-guardians').lastElementChild.querySelector('button').click();
+          results.guardianRemove = $('member-guardians').children.length === 1;
+          memberTabs[4].click();
+          const specialtyGroup = [...$('member-education').querySelectorAll('.members-choice-field')]
+            .find(group => group.querySelector('input[type=checkbox]').name === 'extra:specialita');
+          specialtyGroup.querySelector('details').open = true;
+          const checkAward = value => {
+            const checkbox = [...specialtyGroup.querySelectorAll('input[type=checkbox]')].find(input => input.value === value);
+            checkbox.click();
+          };
+          checkAward('Cuoco'); checkAward('Fotografo');
+          const awardSearch = specialtyGroup.querySelector('input[type=search]');
+          awardSearch.value = 'cuoco'; awardSearch.dispatchEvent(new Event('input'));
+          results.awardSearch = [...specialtyGroup.querySelector('.members-choice-list').children].filter(label => !label.hidden).length === 1;
+          results.awardFits = $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
+          const badge = [...$('member-education').querySelectorAll('input[name="extra:brevetti"]')].find(input => input.value === 'Pioniere');
+          badge.click();
+          form.elements['extra:progressione'].value = 'No';
+          form.elements['extra:ruolo'].value = 'Squadrigliere';
+          form.elements['extra:tappa'].value = 'Tappa della scoperta';
+          memberTabs[2].click();
+          results.guardianDraft = form.elements['guardian:0:givenName'].value === 'Responsabile';
           form.elements['profile:phone'].value = '000123';
           memberTabs[1].click();
           form.elements['profile:email'].value = 'not-an-email';
@@ -198,7 +230,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
           src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
       .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
-    for (const width of [320, 360, 375, 768, 1440]) {
+    for (const width of [320, 360, 375, 768, 1024, 1440]) {
       const file = path.join(directory, "fixture.html");
       const page = source.replace("</body>", `<script>${exercise}</script></body>`);
       fs.writeFileSync(file, `<!doctype html><body><script>
@@ -237,6 +269,14 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.equal(results.prefilled, "Aquile");
       assert.equal(results.saved.profile.phone, "000123");
       assert.equal(results.saved.values.squadriglia, "Falchi");
+      for (const key of ["guardianParsed", "guardianAdd", "guardianRemove", "guardianDraft", "awardSearch", "awardFits"])
+        assert.equal(results[key], true, key + ": " + JSON.stringify(results));
+      assert.deepEqual(results.saved.values.specialita, ["Cuoco", "Fotografo"]);
+      assert.deepEqual(results.saved.values.brevetti, ["Pioniere"]);
+      assert.equal(results.saved.values.progressione, "No");
+      assert.equal(results.saved.values.ruolo, "Squadrigliere");
+      assert.equal(results.saved.values.tappa, "Tappa della scoperta");
+      assert.equal(results.saved.profile.guardianContacts[0].givenName, "Responsabile");
       assert.equal(results.invalidContactsVisible, true);
       assert.equal(results.saveReachable, true);
       assert.equal(results.saved.revision, 1);

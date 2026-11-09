@@ -31,6 +31,55 @@
     ['unit', 'TIPO UNITA'], ['unitCode', 'CUN'], ['unitNumber', 'PROG'],
     ['unitStatus', 'STATUS UNITA'], ['environment', 'AMBIENTE UNITA'], ['appointment', 'INCARICO'],
   ];
+  const guardianFields = {
+    fullName: 'Nome completo importato', givenName: 'Nome', surname: 'Cognome',
+    taxCode: 'Codice fiscale', birthTown: 'Comune nascita', birthDate: 'Data nascita',
+    email: 'Email', phone: 'Cellulare',
+  };
+  function parseGuardians(source) {
+    const contacts = [], unparsed = [];
+    for (const record of String(source || '').split(';').map(value => value.trim()).filter(Boolean)) {
+      const match = /^(.*?)\s*\[[^\]]*?([A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z])\]\s*(?:-\s*)?Nato\/a a:\s*(.*?)\s+il:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s+E-mail:\s*(.*?)\s+Cellulare:\s*(.*?)$/i.exec(record);
+      if (!match) { unparsed.push(record); continue; }
+      let birthDate;
+      try { birthDate = date(match[4]); } catch { unparsed.push(record); continue; }
+      contacts.push({ fullName: match[1].trim(), givenName: '', surname: '', taxCode: match[2].toUpperCase(),
+        birthTown: match[3].trim(), birthDate, email: match[5].trim(), phone: match[6].replace(/\s/g, '') });
+    }
+    return { contacts, unparsed };
+  }
+  const specialtyCatalogs = {
+    'L/C': [
+      'Amico degli Animali', 'Amico del Mare', 'Amico della Natura', 'Amico di Aronne',
+      'Amico di Samuele', 'Amico di San Francesco', 'Artigiano', 'Astronomo', 'Atleta', 'Attore',
+      'Botanico', 'Canterino', 'Cercatore di Tracce', 'Cittadino del Mondo', 'Collezionista',
+      'Cuoco', 'Disegnatore', 'Folclorista', 'Fotografo', 'Giardiniere', 'Giocatore di Squadra',
+      'Giocattolaio', 'Giornalista', 'Guida', 'Infermiere', 'Kim', 'Maestro dei Giochi',
+      'Maestro del Bosco', 'Maestro della Salute', 'Maestro di Danze', 'Mani Abili', 'Massaio',
+      'Meteorologo', 'Montanaro', 'Musicista', 'Ripara-Ricicla', 'Sarto', 'Scaccia Pericoli', 'Scrittore',
+    ],
+    'E/G': [
+      'Allevatore', 'Alpinista', 'Amico degli animali', 'Amico del quartiere', 'Archeologo',
+      'Artigiano', 'Artista di strada', 'Astronomo', 'Atleta', 'Attore', 'Battelliere',
+      'Boscaiolo', 'Botanico', 'Campeggiatore', 'Canoista', 'Cantante', 'Carpentiere navale',
+      'Ciclista', 'Collezionista', 'Coltivatore', 'Corrispondente', 'Corrispondente radio',
+      'Cuoco', 'Danzatore', 'Disegnatore', 'Elettricista', 'Elettronico', 'Esperto del computer',
+      'Europeista', 'Falegname', 'Fa tutto', 'Folclorista', 'Fotografo', 'Geologo', 'Giardiniere',
+      'Giocattolaio', 'Grafico', 'Guida', 'Guida marina', 'Hebertista', 'Idraulico', 'Infermiere',
+      'Interprete', 'Lavoratore/ce in cuoio', 'Maestro dei giochi', 'Maestro dei nodi',
+      'Meccanico', 'Modellista', 'Muratore', 'Musicista', 'Nuotatore', 'Osservatore',
+      'Osservatore meteo', 'Pescatore', 'Pompiere', 'Redattore', 'Regista', 'Sarto', 'Scenografo',
+      'Segnalatore', 'Servizio della Parola', 'Servizio liturgico', 'Servizio missionario', 'Topografo', 'Velista',
+    ],
+  };
+  const competencyBadges = [
+    'Animatore sportivo', 'Artista', 'Cittadino del mondo', 'Esploratore delle acque',
+    'Giornalista', 'Grafico multimediale', 'Guida alpina', 'Liturgista', 'Maestro delle tecnologie',
+    'Mani Abili', 'Naturalista', 'Pioniere', 'Sherpa', 'Soccorritore', 'Trappeur',
+  ];
+  function selectedChoices(value) {
+    return Array.isArray(value) ? value : String(value || '').split(';').map(item => item.trim()).filter(Boolean);
+  }
   const defaultFields = [
     ['L/C', 'sestiglia', 'Sestiglia'], ['L/C', 'pista', 'Pista / sentiero'],
     ['L/C', 'specialita', 'Specialita'], ['L/C', 'promessa', 'Data promessa', 'date'],
@@ -46,11 +95,22 @@
     ['L/C', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno']],
     ['L/C', 'progressione', 'Progressione', ['Lupo della legge', 'Lupo della rupe', 'Lupo anziano']],
     ['E/G', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno', 'Quarto anno']],
-    ['E/G', 'progressione', 'Ingresso in reparto', ['Piede tenero']],
+    ['E/G', 'progressione', 'Piede tenero', ['Si', 'No']],
+    ['R/S', 'passi', 'Passi', ['Passi della scoperta', 'Passi della competenza', 'Passi della responsabilita']],
   ];
   defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').type = 'select';
   defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').options = ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere'];
   for (const [branch, key, label, options] of choices) defaultFields.push({ branch, key, label, type: 'select', options });
+  const egStage = defaultFields.find(field => field.branch === 'E/G' && field.key === 'tappa');
+  egStage.type = 'select';
+  egStage.options = ['Tappa della scoperta', 'Tappa della competenza', 'Tappa della responsabilita'];
+  defaultFields.find(field => field.branch === 'L/C' && field.key === 'progressione').label = 'Momento della progressione';
+  for (const field of defaultFields) {
+    if (field.key === 'specialita' || field.key === 'brevetti') {
+      field.type = 'multiselect';
+      field.options = field.key === 'brevetti' ? competencyBadges : specialtyCatalogs[field.branch];
+    }
+  }
   function nextBranch(branch) { return { 'L/C': 'E/G', 'E/G': 'R/S' }[branch] || ''; }
   function longSuspended(member, currentYear) {
     const latest = member.censuses[0];
@@ -130,6 +190,11 @@
       if (!profile.givenName || !profile.surname) warnings.push(`Riga ${line}: nome o cognome incompleto`);
       if (profile.phone) profile.phone = [...new Set(profile.phone.split(';').map(v => v.replace(/\s/g, '')).filter(Boolean))].join(';');
       if (profile.guardians) warnings.push(`Riga ${line}: verificare i dati dei responsabili genitoriali; eventuali duplicati non sono uniti automaticamente`);
+      if (Object.hasOwn(profile, 'guardians')) {
+        const parsed = parseGuardians(profile.guardians);
+        profile.guardianContacts = parsed.contacts;
+        if (parsed.unparsed.length) warnings.push(`Riga ${line}: alcuni responsabili non sono separabili automaticamente; il testo originale viene conservato`);
+      }
       const census = { ...Object.fromEntries(censusHeaders.filter(([, header]) => columns.includes(header)).map(([key, header]) => [key, source[header]])), branch };
       if (census.statusCode === 'S' || census.statusCode === 'D') warnings.push(`Riga ${line}: censimento sospeso, non equivale a socio attivo`);
       return { code, year, branch, profile, census };
@@ -142,7 +207,8 @@
     return '"' + (/^[\s]*[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
-  const model = { branches, profileFields, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
+  const model = { branches, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
+    selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;
   else root.SOCI_MODEL = model;
 })(typeof window === 'object' ? window : globalThis);

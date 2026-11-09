@@ -424,7 +424,7 @@ test("public documents and management work in a browser at all required widths",
           ];
           frame.contentWindow.fetch = async () => ({ ok: true, json: async () => recent.map(item => ({ description: 'Documenti di prova', ...item })) });
           await doc.querySelector('#documents-retry').onclick();
-          results.push({ latestTitles: [...doc.querySelectorAll('.document-card h3')].map(node => node.textContent) });
+          results.push({ latestTitles: [...doc.querySelectorAll('#documents-list .document-card h3')].map(node => node.textContent) });
         } else if (page === 1) {
           const win = frame.contentWindow;
           const input = doc.querySelector('#document-file');
@@ -436,6 +436,7 @@ test("public documents and management work in a browser at all required widths",
           doc.querySelector('#document-year').value = '2027';
           doc.querySelector('#document-published-at').value = '2027-02-03';
           doc.querySelector('#document-assembly-year').value = '2026';
+          doc.querySelector('#document-assembly-type').value = 'verbale';
           const saved = () => new Promise(resolve => {
             const observer = new win.MutationObserver(() => {
               if (!doc.querySelector('#save-document').disabled) { observer.disconnect(); resolve() }
@@ -486,7 +487,9 @@ test("public documents and management work in a browser at all required widths",
           results.push({ archiveDescription: titles() });
         } else if (page === 4) {
           results.push({ publicAssembly: doc.querySelectorAll('.document-card').length,
-            publicPeg: doc.querySelector('.document-primary').getAttribute('href'),
+            publicPeg: [...doc.querySelectorAll('.document-primary')].find(link => link.textContent.includes('PEG')).getAttribute('href'),
+            prepOrder: [...doc.querySelectorAll('.document-card h3')].map(heading => heading.textContent),
+            missingVerbale: doc.querySelectorAll('.document-card')[4].querySelectorAll('a').length === 0,
             publicPdfs: [...doc.querySelectorAll('a[download]')].every(link =>
               link.getAttribute('href').startsWith('../documents/pdf/')) });
         } else if (page === 3) {
@@ -560,14 +563,17 @@ test("public documents and management work in a browser at all required widths",
     assert.deepEqual(results.find((item) => "archiveUndated" in item).archiveUndated, ["Storico"]);
     assert.deepEqual(results.find((item) => "archiveDescription" in item).archiveDescription, ["Nuovo bilancio"]);
     const publicAssembly = results.find((item) => "publicAssembly" in item);
-    assert.equal(publicAssembly.publicAssembly, 4);
+    assert.equal(publicAssembly.publicAssembly, 5);
+    assert.equal(publicAssembly.missingVerbale, true);
+    assert.deepEqual(publicAssembly.prepOrder, ["Convocazione assemblea 2026", "Regolamento assembleare",
+      "PEG 2026-2028", "Bilancio 2026 · Modello D", "Verbale"]);
     assert.equal(publicAssembly.publicPeg, "../peg/");
     assert.equal(publicAssembly.publicPdfs, true);
     for (const item of results.filter((item) => "overflow" in item)) {
       assert.equal(item.overflow, false, "page " + item.page + " must fit width " + item.width);
     }
     assert.equal(results.find((item) => "cards" in item).cards, 4);
-    assert.equal(results.find((item) => "cards" in item).preparatoryCards, 4);
+    assert.equal(results.find((item) => "cards" in item).preparatoryCards, 5);
     assert.equal(results.find((item) => "assemblyYear" in item).assemblyYear, "2026");
     assert.equal(results.find((item) => "cards" in item).links, true);
     assert.equal(results.find((item) => "cards" in item).pdfLinks, true);

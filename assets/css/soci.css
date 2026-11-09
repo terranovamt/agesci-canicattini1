@@ -144,6 +144,19 @@
 #member-form .member-section-nav button { flex: 1 0 85px; }
 #member-form .members-dialog-heading .eyebrow { margin: 0; font-size: 11px; }
 #member-form .members-dialog-heading h2 { font-size: 22px; overflow-wrap: anywhere; }
+.guardian-card { margin: 12px 0; padding: 12px; border: 1px solid #ddd3e7; border-radius: 12px; }
+.guardian-card h4 { margin: 0 0 12px; overflow-wrap: anywhere; }
+.guardian-card > button { margin-top: 12px; min-height: 44px; }
+.guardian-source { margin-top: 16px; }
+.guardian-source summary, .members-choice-field summary { min-height: 44px; cursor: pointer; padding: 10px 0; }
+.members-choice-field { margin: 0; padding: 8px 12px; min-width: 0; border: 1px solid #ddd3e7; border-radius: 12px; }
+.members-choice-field legend { font-weight: 700; }
+.members-choice-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; max-height: 280px; overflow-y: auto; margin-top: 8px; }
+.members-choice-list label { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px; overflow-wrap: anywhere; }
+.members-choice-list input[type="checkbox"] { width: 20px; height: 20px; min-height: 20px; flex: none; }
+@media (max-width: 420px) {
+  .members-choice-list { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 760px) {
   #member-dialog { height: 100dvh; max-height: 100dvh; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
   #member-form .members-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

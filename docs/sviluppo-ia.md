@@ -121,7 +121,7 @@ questa guida, nei test o nella memoria dell'assistente.
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
-- La scheda socio mantiene i pannelli Anagrafica, Contatti, Consensi, Percorso e
+- La scheda socio mantiene i pannelli Anagrafica, Contatti, Genitori, Consensi, Percorso e
   Censimenti nel DOM mentre si naviga. Non ricreare i campi al cambio pannello:
   valori e bozze devono sopravvivere; il salvataggio resta esplicito.
 - Gli accessi amministrativi sono presentati per branca e filtrabili senza
@@ -141,7 +141,8 @@ questa guida, nei test o nella memoria dell'assistente.
   aggiunta e rimozione restano esplicite. Le sei voci del patrimonio mantengono
   posizione e identita senza comandi di aggiunta/rimozione. Altri dati
   rende accessibili anche eventuali chiavi di bilancio non standard.
-- Audit schermate: dashboard (Strumenti/Riepilogo/Come iniziare), gestione
+- Audit schermate: dashboard (Strumenti/Riepilogo/Assemblea di gruppo; il
+  terzo pannello contiene il percorso e le tre card 01/02/03), gestione
   PDF (Biblioteca/Carica), statistiche (Visite/Server/Segnalazioni/Versione),
   Libro soci (Ricerca/Passaggi/Campi e modelli), import (CSV/Controllo).
   Macro e stampa restano flussi brevi a singola attivita; setup conserva
@@ -215,6 +216,35 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
 
 ### Invarianti dell'import e della UI
 
+- L'amministratore, identificato dal medesimo `ADMIN_CODE` esportato da
+  `server/people.cjs`, e escluso server-side dallo snapshot soci e dai
+  passaggi visibili. Non cancellarne account, censimenti o profilo: l'import
+  puo continuare ad aggiornarli, ma UI, conteggi ed export non li ricevono.
+- `profile.guardianContacts` e un array (massimo 20) di oggetti con
+  `fullName`, `givenName`, `surname`, `taxCode`, `birthTown`, `birthDate`,
+  `email`, `phone`. `M.parseGuardians` separa la sintassi AGESCI con CF tra
+  parentesi quadre e marcatori nascita/email/cellulare; ritorna anche
+  `unparsed`, mai scartare silenziosamente questi record. Il testo
+  `profile.guardians` resta intatto e consultabile. Per profili precedenti
+  il GET deriva i contatti senza modificare il DB; Salva scheda li persiste.
+- Non dividere automaticamente nomi completi e non unire responsabili
+  con stesso CF. Reimportando, abbinare ciascuna occorrenza una sola volta
+  per conservare i nomi/cognomi verificati senza propagare il primo duplicato.
+- `M.defaultFields` contiene cataloghi `multiselect` L/C ed E/G e brevetti
+  E/G. I valori sono array di stringhe; `M.selectedChoices` legge i vecchi
+  testi separati da punto e virgola. Ricerca, export, stampa, macro,
+  raccolta delle bozze e validazione devono gestire entrambe le forme.
+  Valori precedenti fuori catalogo restano visibili e possono essere
+  conservati, non assegnati ex novo ad altri soci.
+- Migrare solo definizioni standard esattamente riconosciute, mai quelle
+  personalizzate. Il vecchio E/G `progressione="Piede tenero"` diventa `Si`;
+  la scelta Si/No resta indipendente da `ruolo`. Momenti L/C e tappe E/G
+  sono selezioni singole; R/S ha `passi` e nessun catalogo di specialita.
+  Fonti e conteggi dei cataloghi sono documentati in `docs/soci.md`.
+- `DOCUMENTS_MODEL.preparatorySlots` produce le cinque posizioni
+  Convocazione/Regolamento/PEG/Bilancio/Verbale per anno, indipendentemente
+  dall'ordine latest della home. `assemblyType` esplicito prevale sul
+  riconoscimento storico titolo/file; una posizione assente non ha link.
 - Identificare per codice e anno, non per nome o eta. Gruppo atteso R2053.
   Rifiutare duplicati dello stesso socio/anno e dati di gruppo discordanti:
   non eliminare incarichi senza verificare la fonte.

@@ -23,6 +23,18 @@ Nella gestione, «Anno di riferimento» (`year`) serve al filtro dell’archivio
 l’ordine cronologico. Sono metadati distinti da `assemblyYear`, che decide
 soltanto l’inclusione nei preparatori dell’anno corrente.
 
+I preparatori hanno sempre cinque posizioni, nell'ordine **Convocazione,
+Regolamento, PEG, Bilancio, Verbale**, sia in home sia nella pagina assemblea.
+Una posizione senza PDF mostra **Documento non ancora pubblicato**, senza
+link fittizi. Il modulo richiede il tipo quando viene indicato un anno
+assemblea e salva `assemblyType` (`convocazione`, `regolamento`, `peg`,
+`bilancio`, `verbale`). Per i vecchi metadati il tipo viene riconosciuto
+dal titolo o dal nome del file, senza legarlo all'anno o a un filename fisso.
+Con piu versioni dello stesso tipo viene mostrata la piu recente per
+`publishedAt`; gli altri file restano nell'archivio e un avviso lo segnala.
+La selezione dei preparatori non usa l'ordine cronologico degli ultimi
+quattro documenti della home.
+
 In home, sotto i pulsanti principali, il riquadro «Assemblea di Gruppo · data ·
 Tra N giorni» compare quando l’evento è nel calendario del gruppo ed è un link
 alla pagina `assemblea/index.html`.

@@ -5,7 +5,8 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const memberSections = ['profile', 'contacts', 'consents', 'education', 'censuses'];
+  const memberSections = ['profile', 'contacts', 'guardians', 'consents', 'education', 'censuses'];
+  let guardianNextIndex = 0;
   const selected = new Set();
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -24,10 +25,40 @@
     options(select, branches.map(branch => [branch, branch]), first);
   }
   function input(labelText, name, value, definition = {}) {
+    if (definition.type === 'multiselect') {
+      const group = node('fieldset', undefined, 'members-choice-field members-wide');
+      const selected = M.selectedChoices(value);
+      const details = node('details');
+      const summary = node('summary');
+      const updateCount = () => { summary.textContent = labelText + ' · ' + group.querySelectorAll('input[type="checkbox"]:checked').length + ' selezionate'; };
+      group.append(node('legend', labelText));
+      details.append(summary);
+      const searchLabel = node('label', 'Cerca nell’elenco');
+      const search = node('input'); search.type = 'search';
+      searchLabel.append(search); details.append(searchLabel);
+      const choices = node('div', undefined, 'members-choice-list');
+      for (const item of [...definition.options, ...selected.filter(item => !definition.options.includes(item))]) {
+        const label = node('label', item + (definition.options.includes(item) ? '' : ' (valore precedente)'));
+        const checkbox = node('input'); checkbox.type = 'checkbox'; checkbox.name = name;
+        checkbox.value = item; checkbox.checked = selected.includes(item);
+        checkbox.onchange = updateCount;
+        label.prepend(checkbox); choices.append(label);
+      }
+      search.oninput = () => {
+        const query = search.value.trim().toLocaleLowerCase('it');
+        for (const label of choices.children) label.hidden = !label.textContent.toLocaleLowerCase('it').includes(query);
+      };
+      details.append(choices); group.append(details); updateCount();
+      return group;
+    }
     const label = node('label', labelText);
     const el = node(definition.type === 'select' ? 'select' : definition.long ? 'textarea' : 'input');
     el.name = name;
-    if (definition.type === 'select') options(el, definition.options.map(v => [v, v]), ['', 'Non indicato']);
+    if (definition.type === 'select') {
+      const items = definition.options.map(v => [v, v]);
+      if (value && !definition.options.includes(value)) items.push([value, value + ' (valore precedente)']);
+      options(el, items, ['', 'Non indicato']);
+    }
     else {
       if (!definition.long) el.type = definition.type || 'text';
       el.maxLength = definition.max || 500;
@@ -53,7 +84,9 @@
       const current = census(member), years = age(member);
       if (!f.showSuspended.checked && M.longSuspended(member, data.currentYear)) return false;
       if (f.birthYear.value && member.profile.birthDate?.slice(0, 4) !== f.birthYear.value) return false;
-      if (query && ![member.name, member.code, ...Object.values(member.profile)].join(' ').toLocaleLowerCase('it').includes(query)) return false;
+      if (query && ![member.name, member.code, ...Object.values(member.profile).filter(v => typeof v === 'string'),
+        ...(member.profile.guardianContacts || []).flatMap(contact => Object.values(contact))]
+        .join(' ').toLocaleLowerCase('it').includes(query)) return false;
       if (f.branch.value && member.branch !== f.branch.value) return false;
       if (f.year.value && !current) return false;
       if (f.status.value && current?.status !== f.status.value) return false;
@@ -65,7 +98,8 @@
       if (f.field.value) {
         const [branch, key] = f.field.value.split(':');
         if (member.branch !== branch) return false;
-        const value = member.values[branch]?.[key] || '';
+        const stored = member.values[branch]?.[key];
+        const value = Array.isArray(stored) ? stored.join('; ') : stored || '';
         if (f.missing.checked ? !!value : !value.toLocaleLowerCase('it').includes(f.value.value.toLocaleLowerCase('it'))) return false;
       }
       return true;
@@ -194,8 +228,46 @@
   const consentKeys = ['guardianType', 'guardians', 'digital', 'consent2a', 'consent2b', 'consent2c', 'magazines'];
   const contactKeys = ['address', 'streetNumber', 'town', 'province', 'postalCode', 'email', 'phone'];
   function educationDraft() {
-    if (educationBranch) drafts[educationBranch] = Object.fromEntries([...$('member-education').querySelectorAll('input,select,textarea')].map(el => [el.name.slice(6), el.value]));
+    if (educationBranch) {
+      const formData = new FormData(profileForm);
+      drafts[educationBranch] = Object.fromEntries(data.fields.filter(field => field.branch === educationBranch)
+        .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || '']));
+    }
   }
+  function appendGuardian(contact = {}) {
+    const index = guardianNextIndex++;
+    const card = node('section', undefined, 'guardian-card');
+    card.dataset.guardianIndex = index;
+    card.append(node('h4', contact.fullName || [contact.givenName, contact.surname].filter(Boolean).join(' ') || 'Nuovo responsabile'));
+    const grid = node('div', undefined, 'members-form-grid');
+    for (const [key, label] of Object.entries(M.guardianFields)) {
+      const field = input(label, 'guardian:' + index + ':' + key, contact[key], key === 'birthDate' ? { type: 'date' } : {});
+      const control = field.querySelector('input');
+      if (key === 'fullName') { control.readOnly = true; field.hidden = !contact.fullName; }
+      if (key === 'givenName' && !contact.fullName) control.required = true;
+      if (key === 'taxCode') { control.maxLength = 16; control.pattern = '[A-Za-z0-9]{16}'; }
+      if (key === 'phone') control.type = 'tel';
+      if (key === 'email') control.inputMode = 'email';
+      grid.append(field);
+    }
+    const remove = node('button', 'Rimuovi responsabile', 'button button-secondary');
+    remove.type = 'button';
+    remove.onclick = () => { if (confirm('Rimuovere questo responsabile dalla scheda? Il testo originale AGESCI resta conservato.')) card.remove(); };
+    card.append(grid, remove); $('member-guardians').append(card);
+  }
+  function guardianPayload() {
+    const formData = new FormData(profileForm);
+    return [...$('member-guardians').children].map(card => Object.fromEntries(Object.keys(M.guardianFields)
+      .map(key => [key, formData.get('guardian:' + card.dataset.guardianIndex + ':' + key) || ''])));
+  }
+  $('add-guardian').onclick = () => {
+    if ($('member-guardians').children.length >= 20) {
+      $('member-guardian-warning').textContent = 'Massimo 20 responsabili per scheda.';
+      return;
+    }
+    appendGuardian();
+    $('member-guardians').lastElementChild.querySelector('input:not([readonly])').focus();
+  };
   function renderEducation() {
     educationBranch = profileForm.elements.branch.value;
     $('member-education').replaceChildren(...data.fields.filter(field => field.branch === educationBranch)
@@ -233,7 +305,8 @@
     if (member && !Object.keys(profile).length) profile.givenName = member.name;
     for (const [target, keys] of [
       [$('member-profile'), Object.keys(M.profileFields).filter(key => !consentKeys.includes(key) && !contactKeys.includes(key))],
-      [$('member-contacts'), contactKeys], [$('member-consents'), consentKeys],
+      [$('member-contacts'), contactKeys], [$('member-consents'), consentKeys.filter(key => !['guardians', 'guardianType'].includes(key))],
+      [$('member-guardian-type'), ['guardianType']], [$('member-guardian-source'), ['guardians']],
     ]) {
       target.replaceChildren(...keys.map(key => {
         const definition = key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
@@ -243,6 +316,17 @@
         return input(M.profileFields[key], 'profile:' + key, profile[key], definition);
       }));
     }
+    $('member-guardian-source').querySelector('input,textarea').readOnly = true;
+    guardianNextIndex = 0;
+    $('member-guardians').replaceChildren();
+    const parsedGuardians = M.parseGuardians(profile.guardians);
+    (profile.guardianContacts || parsedGuardians.contacts).forEach(appendGuardian);
+    const contacts = profile.guardianContacts || parsedGuardians.contacts;
+    const codes = contacts.map(contact => contact.taxCode).filter(Boolean);
+    $('member-guardian-warning').textContent = [
+      parsedGuardians.unparsed.length ? 'Alcuni dati non sono separabili: consulta il testo originale e completa i campi.' : '',
+      new Set(codes).size !== codes.length ? 'Ci sono responsabili con lo stesso CF: verifica i duplicati prima di rimuoverli.' : '',
+    ].filter(Boolean).join(' ');
     $('member-censuses').replaceChildren(...(member?.censuses || []).map(current => {
       const section = node('section', undefined, 'members-census'), dl = node('dl');
       section.append(node('h3', 'Anno scout ' + current.year));
@@ -259,7 +343,8 @@
     const oldBranch = educationBranch;
     educationDraft();
     const definitions = data.fields.filter(field => field.branch === oldBranch);
-    const changed = definitions.some(field => (drafts[oldBranch]?.[field.key] || '') !== (editing?.values[oldBranch]?.[field.key] || ''));
+    const changed = definitions.some(field => JSON.stringify(drafts[oldBranch]?.[field.key] || '') !==
+      JSON.stringify(field.type === 'multiselect' ? M.selectedChoices(editing?.values[oldBranch]?.[field.key]) : editing?.values[oldBranch]?.[field.key] || ''));
     if (changed && !confirm('Il percorso non salvato della branca precedente non verra salvato. Continuare il passaggio?')) {
       profileForm.elements.branch.value = oldBranch;
       return;
@@ -292,8 +377,9 @@
     event.preventDefault();
     educationDraft();
     const branch = profileForm.elements.branch.value;
-    const profile = Object.fromEntries(['member-profile', 'member-contacts', 'member-consents']
+    const profile = Object.fromEntries(['member-profile', 'member-contacts', 'member-consents', 'member-guardian-type', 'member-guardian-source']
       .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value]));
+    profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
       await A.request(editing ? 'members/' + editing.id : 'members', editing ? 'PATCH' : 'POST', payload);
@@ -365,6 +451,8 @@
     event.preventDefault();
     if (!confirm(`Applicare la macro a ${selected.size} soci?`)) return;
     const value = Object.fromEntries(new FormData(macroForm));
+    const definition = data.fields.find(field => field.branch === macroForm.elements.branch.value && field.key === value.key);
+    if (value.action === 'field' && definition?.type === 'multiselect') value.value = new FormData(macroForm).getAll('value');
     value.branch = macroForm.elements.branch.value;
     value.members = chosen().map(member => ({ id: member.id, revision: member.revision }));
     run(async () => { await A.request('members/macro', 'POST', value); $('macro-dialog').close(); await load(); }, $('macro-error'));
@@ -387,7 +475,10 @@
         codice: member.code, branca: member.branch, anno: census(member)?.year || 'Non indicato',
         email: member.profile.email || '', cellulare: member.profile.phone || '',
         data: new Date().toLocaleDateString('it-IT'),
-        percorso: data.fields.filter(field => field.branch === member.branch).map(field => `${field.label}: ${member.values[member.branch]?.[field.key] || 'Non indicato'}`).join('\n') };
+        percorso: data.fields.filter(field => field.branch === member.branch).map(field => {
+          const value = member.values[member.branch]?.[field.key];
+          return `${field.label}: ${(Array.isArray(value) ? value.join('; ') : value) || 'Non indicato'}`;
+        }).join('\n') };
       return template.body.replace(/\{\{([^{}]+)\}\}/g, (_, key) => values[key]);
     });
   }
@@ -403,10 +494,14 @@
   $('export-members').onclick = () => {
     if (!confirm('Esportare i risultati con anagrafica, contatti, consensi e campi educativi? Il CSV contiene dati personali: conservarlo in modo sicuro.')) return;
     const profileKeys = Object.keys(M.profileFields), censusKeys = Object.keys(M.censusFields);
-    const rows = [['Codice socio', 'Branca locale', ...profileKeys.map(key => M.profileFields[key]), 'Anno scout',
+    const rows = [['Codice socio', 'Branca locale', ...profileKeys.map(key => M.profileFields[key]), 'Responsabili genitoriali strutturati', 'Anno scout',
       ...censusKeys.map(key => M.censusFields[key]), ...data.fields.map(field => field.branch + ' - ' + field.label)],
-    ...results().map(member => [member.code, member.branch, ...profileKeys.map(key => member.profile[key]), census(member)?.year,
-      ...censusKeys.map(key => census(member)?.[key]), ...data.fields.map(field => member.values[field.branch]?.[field.key])])];
+    ...results().map(member => [member.code, member.branch, ...profileKeys.map(key => member.profile[key]),
+      JSON.stringify(member.profile.guardianContacts || M.parseGuardians(member.profile.guardians).contacts), census(member)?.year,
+      ...censusKeys.map(key => census(member)?.[key]), ...data.fields.map(field => {
+        const value = member.values[field.branch]?.[field.key];
+        return Array.isArray(value) ? value.join('; ') : value;
+      })])];
     const url = URL.createObjectURL(new Blob([M.exportCsv(rows)], { type: 'text/csv;charset=utf-8' }));
     const link = node('a'); link.href = url; link.download = 'soci-gruppo.csv'; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);

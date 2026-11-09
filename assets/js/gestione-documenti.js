@@ -53,6 +53,7 @@
     $("document-year").value = new Date().getFullYear();
     $("document-published-at").value = new Date().toLocaleDateString("sv-SE");
     $("document-assembly-year").value = "";
+    $("document-assembly-type").value = "";
     $("edit-heading").textContent = "Nuovo documento";
     $("file-hint").textContent = "(obbligatorio)";
     $("save-document").textContent = "Pubblica documento";
@@ -68,6 +69,7 @@
     $("document-year").value = item.year ?? "";
     $("document-published-at").value = item.publishedAt || "";
     $("document-assembly-year").value = item.assemblyYear || "";
+    $("document-assembly-type").value = item.assemblyYear ? window.DOCUMENTS_MODEL.assemblyType(item) : "";
     $("file-hint").textContent = "(facoltativo: sostituisce " + item.file + ")";
     $("edit-heading").textContent = "Modifica documento";
     $("save-document").textContent = "Salva modifiche";
@@ -217,6 +219,8 @@
         content = btoa(binary);
       } else if (!editing) throw new Error("Seleziona un PDF da caricare");
       const assemblyYear = $("document-assembly-year").value.trim();
+      const assemblyType = $("document-assembly-type").value;
+      if (assemblyYear && !assemblyType) throw new Error("Scegli il tipo di documento preparatorio.");
       const metadata = {
         ...editing,
         file: editing?.file || file.name,
@@ -226,7 +230,11 @@
         publishedAt: $("document-published-at").value,
       };
       delete metadata.assemblyYear;
-      if (assemblyYear) metadata.assemblyYear = Number(assemblyYear);
+      delete metadata.assemblyType;
+      if (assemblyYear) {
+        metadata.assemblyYear = Number(assemblyYear);
+        metadata.assemblyType = assemblyType;
+      }
       change = {
         operation: "save",
         previous: editing || undefined,

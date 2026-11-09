@@ -4,6 +4,30 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 const model = require("../assets/js/documents-model.js");
+
+test("preparatory slots always follow the five categories across filenames, years and publication dates", () => {
+  const document = (file, title, assemblyType, publishedAt = "2026-01-01") => ({
+    file, title, description: "Test", assemblyYear: 2026, publishedAt, ...(assemblyType ? { assemblyType } : {}),
+  });
+  const items = [
+    document("minutes.pdf", "Documento finale", "verbale"),
+    document("PEG27.pdf", "PEG 2027", undefined),
+    document("account.pdf", "Rendiconto per cassa", undefined),
+    document("rules.pdf", "Regolamento assembleare", undefined),
+    document("invite.pdf", "Convocazione", undefined),
+    document("new-invite.pdf", "Nuova convocazione", "convocazione", "2026-11-01"),
+    { ...document("old-minutes.pdf", "Verbale precedente", "verbale"), assemblyYear: 2025 },
+  ];
+  const original = JSON.stringify(items);
+  const slots = model.preparatorySlots(items, 2026);
+  assert.deepEqual(slots.map(slot => slot.label), ["Convocazione", "Regolamento", "PEG", "Bilancio", "Verbale"]);
+  assert.deepEqual(slots.map(slot => slot.document.file), ["new-invite.pdf", "rules.pdf", "PEG27.pdf", "account.pdf", "minutes.pdf"]);
+  assert.equal(model.preparatory(items, 2026).length, 6);
+  assert.equal(JSON.stringify(items), original);
+  assert.equal(model.preparatorySlots([], 2027).length, 5);
+  assert.equal(model.preparatorySlots([], 2027).every(slot => slot.document === null), true);
+  assert.throws(() => model.validate([document("bad.pdf", "Bad", "unknown")]), /non valido/);
+});
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/documents-store.js"), "utf8");
 const document = { file: "Progetto.pdf", title: "Progetto educativo", description: "Il progetto del gruppo." };
 const base64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64");

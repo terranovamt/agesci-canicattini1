@@ -23,6 +23,7 @@ function csv(rows = [{}], headers = columns) {
     rows.map(row => headers.map(key => cell({ ...base, ...row }[key])).join(",") + ",").join("\r\n");
 }
 const password = "Test-only-password1!";
+const guardianSource = "Esempio Responsabile [C.F.ABCDEF80A01H501U] - Nato/a a: Comune Esempio (XX) il: 1/1/1980 e-mail: guardian@example.invalid Cellulare: 000 123";
 async function start(directory, censusCodes = "7654321") {
   const server = await createNasServer({ dataDir: directory, password, censusCodes,
     basePath: "/agesci-canicattini1", publicOrigin: "http://localhost", secureCookie: false });
@@ -68,7 +69,7 @@ test("AGESCI CSV preserves codes, quotes, multiline guardians and converts dates
   assert.equal(imported.members[0].census.branch, "E/G");
   assert.equal(imported.group.ORDINALE, "R2053");
   assert.deepEqual(imported.ignoredColumns, ["CODICE AREA"]);
-  assert.equal(imported.warnings.length, 1);
+  assert.equal(imported.warnings.length, 2);
   assert.equal(M.parseImport(csv([{}], columns.filter(key => key !== "EMAIL"))).members[0].profile.email, undefined);
   const ordinary = columns.join(",") + "\n" + columns.map(key => '"' + String(base[key] ?? "").replace(/"/g, '""') + '"').join(",");
   assert.equal(M.parseImport(ordinary).members[0].profile.guardians, base["RESP.GENITORIALE DATI"]);
@@ -87,6 +88,93 @@ test("AGESCI CSV rejects ambiguous or invalid records before producing a plan", 
   assert.throws(() => M.parseImport("x".repeat(4 * 1024 * 1024 + 1)), /troppo grande/);
   assert.throws(() => M.parseImport("\u00e9".repeat(2 * 1024 * 1024 + 1)), /troppo grande/);
   assert.equal(M.parseImport(csv([{ "CODICE STATUS SOCIO": "S" }])).warnings.some(w => w.includes("sospeso")), true);
+});
+
+test("guardian parsing separates AGESCI contacts without guessing names or merging duplicates", () => {
+  const parsed = M.parseGuardians(guardianSource + "; " + guardianSource);
+  assert.equal(parsed.contacts.length, 2);
+  assert.deepEqual(parsed.unparsed, []);
+  assert.deepEqual(parsed.contacts[0], { fullName: "Esempio Responsabile", givenName: "", surname: "",
+    taxCode: "ABCDEF80A01H501U", birthTown: "Comune Esempio (XX)", birthDate: "1980-01-01",
+    email: "guardian@example.invalid", phone: "000123" });
+  const bad = guardianSource.replace("1/1/1980", "31/2/1980");
+  assert.deepEqual(M.parseGuardians(bad), { contacts: [], unparsed: [bad] });
+  const imported = M.parseImport(csv([{ "RESP.GENITORIALE DATI": guardianSource }]));
+  assert.equal(imported.members[0].profile.guardians, guardianSource);
+  assert.deepEqual(imported.members[0].profile.guardianContacts, [parsed.contacts[0]]);
+  assert.deepEqual(M.parseGuardians(""), { contacts: [], unparsed: [] });
+});
+
+test("catalog schema upgrades standard fields while retaining custom definitions and legacy values", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec("CREATE TABLE people(id INTEGER PRIMARY KEY,census_code TEXT,name TEXT,kind TEXT)");
+    createMembers(db, {});
+    const oldFields = [
+      { branch: "L/C", key: "specialita", label: "Specialita", type: "text", options: [] },
+      { branch: "E/G", key: "specialita", label: "Specialita", type: "text", options: [] },
+      { branch: "E/G", key: "brevetti", label: "Brevetti di competenza", type: "text", options: [] },
+      { branch: "E/G", key: "tappa", label: "Tappa", type: "text", options: [] },
+      { branch: "E/G", key: "progressione", label: "Ingresso in reparto", type: "select", options: ["Piede tenero"] },
+    ];
+    for (const field of oldFields) db.prepare("UPDATE member_fields SET definition=? WHERE branch=? AND key=?")
+      .run(JSON.stringify(field), field.branch, field.key);
+    db.exec("INSERT INTO people VALUES(1,'012345','Example','ragazzo')");
+    db.prepare("INSERT INTO member_values VALUES(1,'E/G',?)").run(JSON.stringify({ specialita: "Old custom award", progressione: "Piede tenero" }));
+    createMembers(db, {});
+    for (const old of oldFields) {
+      const field = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch=? AND key=?").get(old.branch, old.key).definition);
+      assert.deepEqual(field, M.defaultFields.find(field => field.branch === old.branch && field.key === old.key));
+    }
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).specialita, "Old custom award");
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).progressione, "Si");
+    const custom = { ...oldFields[0], label: "Local custom specialty" };
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='L/C' AND key='specialita'").run(JSON.stringify(custom));
+    createMembers(db, {});
+    assert.deepEqual(JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='L/C' AND key='specialita'").get().definition), custom);
+    assert.equal(M.specialtyCatalogs["L/C"].length, 39);
+    assert.equal(M.specialtyCatalogs["E/G"].length, 65);
+    assert.equal(M.competencyBadges.length, 15);
+  } finally { db.close(); }
+});
+
+test("parents, multiple specialties, badges and independent tenderfoot status persist without exposing admin", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-member-catalogs-"));
+  let app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{ "RESP.GENITORIALE DATI": guardianSource },
+    { "CODICE SOCIO": "012346", BRANCA: "Branca L/C", "RESP.GENITORIALE DATI": "" },
+    { "CODICE SOCIO": "23816938", "ANNO SCOUT": "2099", BRANCA: "Branca Adulti", "RESP.GENITORIALE DATI": "" }]));
+  let state = await app.snapshot();
+  assert.equal(state.members.some(member => member.code === "23816938"), false);
+  assert.equal(state.members.length, 3);
+  assert.equal(state.currentYear, "2026");
+  let member = state.members.find(member => member.code === "012345");
+  member.profile.guardianContacts[0].givenName = "Responsabile";
+  member.profile.guardianContacts[0].surname = "Esempio";
+  const values = { ruolo: "Squadrigliere", progressione: "No", tappa: "Tappa della scoperta",
+    specialita: ["Cuoco", "Fotografo"], brevetti: ["Pioniere", "Soccorritore"] };
+  assert.equal((await app.request("members/" + member.id, "PATCH",
+    { revision: member.revision, branch: member.branch, profile: member.profile, values })).status, 200);
+  await app.import(csv([{ "RESP.GENITORIALE DATI": guardianSource }]));
+  member = (await app.snapshot()).members.find(row => row.id === member.id);
+  assert.equal(member.profile.guardianContacts[0].givenName, "Responsabile");
+  assert.equal(member.profile.guardians, guardianSource);
+  assert.deepEqual(member.values["E/G"], values);
+  const before = await app.snapshot();
+  assert.equal((await app.request("members/" + member.id, "PATCH", { revision: member.revision, branch: member.branch,
+    profile: member.profile, values: { specialita: ["Not a catalog choice"] } })).status, 400);
+  assert.deepEqual(await app.snapshot(), before);
+  assert.equal((await app.request("members/" + member.id, "PATCH", { revision: member.revision, branch: member.branch,
+    profile: { ...member.profile, guardianContacts: [{ givenName: "Example", taxCode: "invalid" }] }, values })).status, 400);
+  const lc = before.members.find(row => row.code === "012346");
+  assert.equal((await app.request("members/macro", "POST", { action: "field", branch: "L/C", key: "specialita",
+    value: ["Astronomo", "Kim"], members: [{ id: lc.id, revision: lc.revision }] })).status, 200);
+  const persisted = await app.snapshot();
+  assert.deepEqual(persisted.members.find(row => row.id === lc.id).values["L/C"].specialita, ["Astronomo", "Kim"]);
+  await app.close(); app = await start(directory); await app.login();
+  assert.deepEqual(await app.snapshot(), persisted);
 });
 
 test("CSV export is formula-safe with valid quoting and leading-zero codes", () => {

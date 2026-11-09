@@ -102,6 +102,7 @@
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
         <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false">Contatti</button>
+        <button type="button" role="tab" id="member-tab-guardians" aria-controls="member-panel-guardians" aria-selected="false">Genitori</button>
         <button type="button" role="tab" id="member-tab-consents" aria-controls="member-panel-consents" aria-selected="false">Consensi</button>
         <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
         <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
@@ -118,8 +119,16 @@
         <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
       </section>
       <section id="member-panel-consents" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-consents" hidden>
-        <h3>Consensi e responsabili genitoriali</h3><div id="member-consents" class="members-form-grid"></div>
-        <p>I dati genitoriali sono riportati senza unioni automatiche: verificare duplicati e incongruenze nella fonte.</p>
+        <h3>Consensi</h3><div id="member-consents" class="members-form-grid"></div>
+      </section>
+      <section id="member-panel-guardians" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-guardians" hidden>
+        <h3>Responsabili genitoriali</h3>
+        <div id="member-guardian-type"></div>
+        <p>CF, nascita e contatti sono separati dalla fonte AGESCI. Il nome completo importato resta visibile: verifica nome e cognome, senza divisioni o unioni automatiche.</p>
+        <p id="member-guardian-warning" role="status"></p>
+        <div id="member-guardians"></div>
+        <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
+        <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
       </section>
       <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
         <h3>Percorso educativo di branca</h3><div id="member-education" class="members-form-grid"></div>

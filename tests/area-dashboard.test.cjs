@@ -112,10 +112,12 @@ test("non-admin dashboard does not request or show server statistics", () => {
 test("dashboard separates tools, summary and workflow into named sections", () => {
   const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
   assert.match(html, /data-section-target="dashboard-work-panel"/);
-  assert.match(html, /data-section-target="dashboard-help-panel"/);
+  assert.match(html, /data-section-target="dashboard-assembly-panel">Assemblea di gruppo/);
   assert.match(html, /data-section-target="dashboard-summary-panel"/);
   assert.match(html, /<strong>Pubblica<\/strong><span>Pubblica le modifiche/);
   assert.doesNotMatch(html, /Salva sul NAS/);
+  const assembly = html.slice(html.indexOf('<section class="dashboard-workflow"'), html.indexOf('</main>'));
+  assert.equal((assembly.match(/class="tool-number"/g) || []).length, 3);
 });
 
 test("member and access actions fit and stay separated on the dashboard", { skip: !chrome }, () => {
