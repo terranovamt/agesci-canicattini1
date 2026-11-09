@@ -56,6 +56,7 @@ dei report richiedono una sessione amministrativa.
 | [docs/struttura-repository.md](docs/struttura-repository.md)       | gerarchia completa del repository e criteri di organizzazione                |
 | [docs/audit-ui-ux.md](docs/audit-ui-ux.md)                         | audit UI/UX e priorità di manutenzione                                       |
 | [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | backend NAS, DDNS Sky WiFi, auto-deployment, calendari DSM e backup          |
+| [docs/sviluppo-ia.md](docs/sviluppo-ia.md)                         | architettura NAS, comandi verificati, invarianti e checklist per lo sviluppo con IA |
 
 ## Indirizzi
 
