@@ -40,6 +40,9 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           result.width = innerWidth;
           result.height = innerHeight;
           result.loaded = !$('members-app').hidden;
+          result.branchCardColor = getComputedStyle($('members-summary').querySelector('button')).getPropertyValue('--branch-color').trim();
+          result.branchCardCount = $('members-summary').querySelector('strong').textContent;
+          result.visibleMemberRows = $('members-list').rows.length;
           result.hidden = ['members-access-link','new-member','open-import','template-form'].every(id => getComputedStyle($(id)).display === 'none');
           result.scope = [...$('field-form').elements.branch.options].map(option => option.value);
           result.selectionInitiallyHidden = $('members-selection').hidden;
@@ -99,6 +102,9 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       assert.equal(measured.error, undefined, JSON.stringify(measured));
       assert.equal(measured.width, width);
       assert.equal(measured.height, height);
+      assert.equal(measured.branchCardColor, M.branchColors["E/G"]);
+      assert.equal(measured.branchCardCount, "1");
+      assert.equal(measured.visibleMemberRows, 1);
       for (const key of ["loaded", "hidden", "confirmVisible", "branchLocked", "noEducationalInput", "fits", "selectionInitiallyHidden", "selectionVisible", "tabsFit"])
         assert.equal(measured[key], true, key + " at " + width + ": " + JSON.stringify(measured));
       assert.deepEqual(measured.scope, ["E/G"]);

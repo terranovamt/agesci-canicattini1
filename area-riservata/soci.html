@@ -55,7 +55,7 @@
             <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
             <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
             <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
-            <label>Branca locale<select name="branch"><option value="">Tutte le branche</option></select></label>
+            <label>Branca<select name="branch"><option value="">Tutte le branche</option></select></label>
             <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
             <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
             <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
@@ -83,7 +83,7 @@
         </div>
       </div>
       <div class="members-table-wrap"><table class="members-table">
-        <thead><tr><th scope="col">Seleziona</th><th scope="col">Socio</th><th scope="col">Branca locale</th><th scope="col">Eta</th><th scope="col">Censimento AGESCI</th><th scope="col">Contatti</th></tr></thead>
+        <thead><tr><th scope="col">Seleziona</th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="name">Socio</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="branch">Branca</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="age">Età</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="census">Censimento AGESCI</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="contacts">Contatti</button></th></tr></thead>
         <tbody id="members-list"></tbody>
       </table></div>
       <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
@@ -108,18 +108,15 @@
           <p>La scelta vale per tutti i capi L/C. I momenti corrispondenti e i ruoli Cucciolo/Cocci vengono aggiornati senza spostare i soci.</p>
         </form>
         </details>
-        <details id="unit-assignment" class="units-assignment">
-          <summary>Inserisci o sposta un socio</summary>
-          <form id="unit-assignment-form" class="members-form-grid">
-            <label>Socio<select name="memberId" required></select></label>
-            <label>Destinazione<select name="unitId"></select></label>
-            <label>Ruolo<select name="role" required></select></label>
-            <button type="submit" class="button button-primary">Assegna / sposta</button>
-          </form>
-          <p>Trascina un socio nella riga desiderata oppure premi la freccia accanto al nome. C indica il capo, VC il vice; le righe in fondo evidenziano i nuovi ingressi. Capo e vice hanno un solo posto.</p>
-        </details>
-        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome o la maniglia ⋮⋮ per spostarlo (su touch tieni premuto il nome).</p>
-        <div id="unit-unassigned"></div>
+        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome o la maniglia ⋮⋮ per spostarlo (su touch tieni premuto il nome). Da tastiera: premi Invio sulla maniglia, raggiungi una riga con Tab e premi Invio; Esc annulla.</p>
+        <section id="unit-unassigned" class="unit-unassigned" aria-labelledby="unit-available-title" hidden>
+          <div class="unit-available-heading">
+            <h3 id="unit-available-title">Soci disponibili <span id="unit-available-count"></span></h3>
+            <label class="unit-available-search">Cerca nei nomi<input id="unit-available-search" type="search" autocomplete="off" placeholder="Evidenzia un nome…"></label>
+          </div>
+          <p id="unit-available-status" class="members-note" role="status" aria-live="polite"></p>
+          <div id="unit-available-list" class="unit-unassigned-list"></div>
+        </section>
         <div id="units-board" class="units-board"></div>
         <details id="units-hidden"><summary>Sestiglie nascoste</summary><div id="units-hidden-list"></div></details>
       </section>
@@ -185,7 +182,7 @@
       <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile">
         <div class="members-form-grid">
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
-          <label>Branca locale<select name="branch" required></select></label>
+          <label>Branca<select name="branch" required></select></label>
         </div>
         <div id="member-profile" class="members-form-grid"></div>
       </section>

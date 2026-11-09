@@ -151,8 +151,16 @@ questa guida, nei test o nella memoria dell'assistente.
   aggiunta e rimozione restano esplicite. Le sei voci del patrimonio mantengono
   posizione e identita senza comandi di aggiunta/rimozione. Altri dati
   rende accessibili anche eventuali chiavi di bilancio non standard.
-- Audit schermate: dashboard (Strumenti/Riepilogo/Assemblea di gruppo; il
-  terzo pannello contiene il percorso e le tre card 01/02/03), gestione
+- Audit schermate: dashboard a pagina unica, senza tab: censimenti admin
+  in cima con colori `SOCI_MODEL.branchColors`; desktop a due colonne
+  (1.65:1), tablet/mobile in pila. A sinistra Libro soci e Documenti,
+  unica card Assemblea (dati pubblicati, avviso pubblicazione, Setup/Regia/Guida)
+  e placeholder Attività e campi; a destra Biblioteca PDF e Sito e server.
+  Titolo e dettagli assemblea non rappresentano lo stato della diretta.
+  Biblioteca, gestione PDF e assemblea restano disponibili a tutti i capi,
+  anche senza branca; Libro soci solo admin/capi con branca, accessi,
+  censimenti e statistiche solo admin. Restano retry per dati/PDF/censimenti
+  e aggiornamento automatico delle metriche. Gestione
   PDF (Biblioteca/Carica), statistiche (sezioni simultanee, non tab),
   Libro soci (Ricerca/Passaggi/Campi e modelli), import (CSV/Controllo).
   Macro e stampa restano flussi brevi a singola attivita; setup conserva
@@ -329,10 +337,18 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   controlli meno usati. Specialita/brevetti restano multiselect con search in
   `details` collassato (checkbox, non radio/pulsanti per voce); test UX coprono
   preview scelte, ricerca e viewport mobile.
-- La dashboard Strumenti mostra `Attività e campi` solo come placeholder
+- La dashboard mostra `Attività e campi` solo come placeholder
   inerte, senza route o salvataggio: idee future calendario, uscite/campi,
   partecipanti e promemoria. Nessuna route "Nuova riunione" e presente al
   momento. La pagina account reale e `area-riservata/persone.html`.
+- Il collegamento `Carica e gestisci documenti` resta visibile nella dashboard
+  per tutti i capi, anche senza branca di servizio. L'API PDF richiede la
+  sessione ma non i privilegi admin; non confonderla con i modelli interni soci.
+- Libro soci: intestazioni con ciclo crescente/decrescente/nessun ordinamento,
+  eta numerica e mancanti in fondo; i badge Branca usano `branchColors`.
+  La board gruppi non ha frecce o form di spostamento: `Soci disponibili`
+  e aperto, sticky e nascosto se vuoto, con evidenziazione letterale dei nomi.
+  La maniglia e le righe supportano anche lo spostamento da tastiera.
 - `DOCUMENTS_MODEL.preparatorySlots` produce le cinque posizioni
   Convocazione/Regolamento/PEG/Bilancio/Verbale per anno, indipendentemente
   dall'ordine latest della home. `assemblyType` esplicito prevale sul

@@ -211,12 +211,17 @@ test("statistics page is guarded and renders tracking separately from the live r
     cpuPercent: index === 59 ? 33 : 15,
     memoryPercent: index === 59 ? 70 : 60,
   }));
-  let subscriber;
+  let subscriber, resize;
+  let historyWidth = 720;
+  get("stats-history-chart").getBoundingClientRect = () => ({ width: historyWidth });
   vm.runInNewContext(statistics, {
     window: {
       ACCESSO: { verificata: () => true },
       LIVE: { nas: true },
       NAS: { user: { admin: true } },
+      addEventListener(name, listener) {
+        if (name === "resize") resize = listener;
+      },
       NAS_METRICS: {
         watch(options) {
           subscriber = options;
@@ -226,7 +231,7 @@ test("statistics page is guarded and renders tracking separately from the live r
     document: {
       getElementById: get,
       createElement: () => get(Symbol()),
-      createElementNS: () => get(Symbol()),
+      createElementNS: (_namespace, tagName) => Object.assign(get(Symbol()), { tagName }),
       querySelectorAll: () => rangeButtons,
     },
     fetch: async () => ({ ok: true, json: async () => ({ sha: "a".repeat(40) }) }),
@@ -297,9 +302,61 @@ test("statistics page is guarded and renders tracking separately from the live r
   const timeLabels = axisLabels("stats-hour-online").filter((label) => /^\d{2}:\d{2}$/.test(label));
   assert.equal(timeLabels.length, 3);
   assert.equal(new Set(timeLabels).size, timeLabels.length);
-  for (const id of ["stats-history-chart", "stats-hour-online", "stats-hour-latency", "stats-hour-cpu", "stats-hour-ram"])
+  for (const id of ["stats-hour-online", "stats-hour-latency", "stats-hour-cpu", "stats-hour-ram"])
     assert.equal(new Set(yLabels(id)).size, yLabels(id).length, id + " has duplicate ticks");
-  assert.deepEqual(axisLabels("stats-history-chart"), ["6", "4", "2", "0", "06/11"]);
+  const historyTicks = (side) => get("stats-history-chart").children
+    .filter((child) => child.attributes["data-axis"] === side).map((child) => child.textContent);
+  assert.deepEqual(historyTicks("left"), ["6", "4", "2", "0"]);
+  assert.deepEqual(historyTicks("right"), ["3", "2", "1", "0"]);
+  const seriesPoints = (id, color) => get(id).children
+    .filter((child) => child.attributes.class === "chart-point chart-" + color);
+  const seriesPaths = (color) => get("stats-history-chart").children
+    .filter((child) => child.attributes.class === "chart-series chart-" + color);
+  const originalDaily = statisticsData.traffic.daily;
+  statisticsData.traffic.daily = [
+    { day: "2026-11-06", visits: 6, views: 6000, people: 3 },
+    { day: "2026-11-05", visits: 3, views: 3000, people: null },
+    { day: "2026-11-04", visits: 0, views: 0, people: 0 },
+  ];
+  subscriber.render(statisticsData);
+  assert.deepEqual(historyTicks("left"), ["6", "4", "2", "0"]);
+  assert.deepEqual(historyTicks("right"), [6000, 4000, 2000, 0].map((value) => value.toLocaleString("it-IT")));
+  assert.deepEqual(get("stats-history-chart").children.filter((child) => child.attributes.class === "chart-axis-title")
+    .map((child) => child.textContent), ["Visite / persone uniche", "Pagine viste"]);
+  const desc = get("stats-history-chart").children.find((child) => child.tagName === "desc").textContent;
+  assert.match(desc, /Asse sinistro: visite e persone uniche\. Asse destro: pagine viste\. Scale indipendenti/);
+  assert.match(desc, /non sono confrontabili direttamente/);
+  assert.ok(desc.includes("Pagine viste: 3 valori su 3, ultimo " + (6000).toLocaleString("it-IT")));
+  assert.match(desc, /Persone uniche: 2 valori su 3/);
+  assert.match(get("stats-history-description").textContent, /Asse sinistro: visite e persone uniche; asse destro: pagine viste/);
+  const verifyHistoryGeometry = (width, height) => {
+    const svg = get("stats-history-chart");
+    assert.equal(svg.attributes.viewBox, `0 0 ${width} ${height}`);
+    const left = 21, right = width - 14 - (6000).toLocaleString("it-IT").length * 7, top = 40, bottom = height - 32;
+    const midX = (left + right) / 2, midY = (top + bottom) / 2;
+    for (const color of ["visits", "views"]) {
+      const points = seriesPoints("stats-history-chart", color);
+      assert.deepEqual(points.map((point) => Number(point.attributes.cx)), [left, midX, right]);
+      assert.deepEqual(points.map((point) => Number(point.attributes.cy)), [bottom, midY, top]);
+      assert.equal(seriesPaths(color)[0].attributes.d,
+        `M${left.toFixed(1)},${bottom.toFixed(1)} L${midX.toFixed(1)},${midY.toFixed(1)} L${right.toFixed(1)},${top.toFixed(1)}`);
+    }
+    assert.deepEqual(seriesPoints("stats-history-chart", "connections").map((point) => Number(point.attributes.cy)), [bottom, midY]);
+    assert.equal(seriesPaths("connections").length, 2, "missing people data must break the line");
+    assert.equal(svg.children.find((child) => child.attributes.class === "chart-area chart-visits-area").attributes.d,
+      seriesPaths("visits")[0].attributes.d + ` L${right.toFixed(1)},${bottom} L${left.toFixed(1)},${bottom} Z`);
+  };
+  verifyHistoryGeometry(720, 280);
+  historyWidth = 320;
+  resize();
+  verifyHistoryGeometry(320, 230);
+  for (const [id, color, expectedY] of [["online", "online", 14], ["latency", "latency", 24.72], ["cpu", "cpu", 37.45], ["ram", "ram", 22.933333333333337]]) {
+    const svgId = "stats-hour-" + id;
+    assert.equal(get(svgId).children.some((child) => child.attributes["data-axis"] === "right"), false);
+    assert.ok(Math.abs(Number(seriesPoints(svgId, color).at(-1).attributes.cy) - expectedY) < 1e-8, svgId);
+  }
+  statisticsData.traffic.daily = originalDaily;
+  subscriber.render(statisticsData);
   statisticsData.performance.hourly = hourly.map((sample, index) => ({
     ...sample,
     online: index % 2 ? 0 : null,

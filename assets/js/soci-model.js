@@ -1,6 +1,7 @@
 (function (root) {
   'use strict';
   const branches = ['L/C', 'E/G', 'R/S', 'Adulti'];
+  const branchColors = { 'L/C': '#b49526', 'E/G': '#398258', 'R/S': '#bc4e50', Adulti: '#795699' };
   function branchLabel(branch, full = false) {
     return ['Adulti', 'Branca Adulti'].includes(branch) ? (full ? 'Co.Ca. · Comunità Capi' : 'Co.Ca.') : branch;
   }
@@ -303,7 +304,7 @@
     return '"' + (/^[\s]*[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
-  const model = { branches, branchLabel, isAdult, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
+  const model = { branches, branchColors, branchLabel, isAdult, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
     lcMoments, sestigliaColors, unitKey, unitField, unitRoles, patrolColors, patrolCatalog, patrolIdentity, ignoredProfileFields, pendingCoca,
     selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;

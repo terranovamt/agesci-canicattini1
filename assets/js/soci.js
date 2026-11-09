@@ -9,6 +9,17 @@
   let memberSections = allMemberSections;
   let guardianNextIndex = 0;
   const selected = new Set();
+  let sortKey = '', sortDirection = 0;
+  const sortButtons = [...document.querySelectorAll('[data-sort]')];
+  for (const button of sortButtons) {
+    const label = button.textContent;
+    button.dataset.label = label;
+    button.onclick = () => {
+      sortDirection = sortKey === button.dataset.sort ? (sortDirection + 1) % 3 : 1;
+      sortKey = sortDirection ? button.dataset.sort : '';
+      render();
+    };
+  }
   const unitBoard = window.SOCI_UNITS({ perform: run, reload: load, openMember });
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -138,9 +149,9 @@
     if (!filters.elements.showSuspended.checked)
       data.members.filter(member => M.longSuspended(member, data.currentYear)).forEach(member => selected.delete(member.id));
     const countable = data.members.filter(member => filters.elements.showSuspended.checked || !M.longSuspended(member, data.currentYear));
-    $('members-summary').replaceChildren(...M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch).map((branch, i) => {
+    $('members-summary').replaceChildren(...M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch).map(branch => {
       const card = node('button'); card.type = 'button';
-      card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
+      card.style.setProperty('--branch-color', M.branchColors[branch]);
       card.setAttribute('aria-pressed', String(filters.elements.branch.value === branch));
       card.dataset.branch = branch;
       card.title = M.branchLabel(branch, true);
@@ -155,8 +166,31 @@
     }));
     renderQuickFilters();
     $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
+    const sortValue = member => {
+      switch (sortKey) {
+        case 'age': return age(member);
+        case 'branch': return M.branchLabel(member.branch) || '';
+        case 'census': return census(member) ? `${census(member).year} ${census(member).status || ''}` : '';
+        case 'contacts': return [member.profile.email, member.profile.phone].filter(Boolean).join(' ');
+        default: return member.name;
+      }
+    };
+    if (sortKey) visible.sort((a, b) => {
+      const left = sortValue(a), right = sortValue(b);
+      if (left === null || left === '') return right === null || right === '' ? 0 : 1;
+      if (right === null || right === '') return -1;
+      return (typeof left === 'number' ? left - right : left.localeCompare(right, 'it', { numeric: true })) * (sortDirection === 1 ? 1 : -1);
+    });
     if (filters.elements.groupBirthYear.checked) visible.sort((a, b) =>
-      (a.profile.birthDate?.slice(0, 4) || '9999').localeCompare(b.profile.birthDate?.slice(0, 4) || '9999') || a.name.localeCompare(b.name));
+      (a.profile.birthDate?.slice(0, 4) || '9999').localeCompare(b.profile.birthDate?.slice(0, 4) || '9999') ||
+      (sortKey ? 0 : a.name.localeCompare(b.name)));
+    for (const button of sortButtons) {
+      const active = sortKey === button.dataset.sort;
+      button.parentElement.setAttribute('aria-sort', active ? (sortDirection === 1 ? 'ascending' : 'descending') : 'none');
+      button.textContent = button.dataset.label + (active ? (sortDirection === 1 ? ' ↑' : ' ↓') : '');
+      button.setAttribute('aria-label', button.dataset.label + ': ' +
+        (active ? sortDirection === 1 ? 'crescente; clicca per decrescente' : 'decrescente; clicca per eliminare l’ordinamento' : 'clicca per ordinare crescente'));
+    }
     let group = null;
     for (const member of visible) {
       const birthYear = member.profile.birthDate?.slice(0, 4) || '';
@@ -178,7 +212,9 @@
       const nameCell = node('td'), name = node('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
       nameCell.append(name, node('span', member.code, 'member-code'));
-      const branchCell = node('td'); branchCell.append(node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge'));
+      const branchCell = node('td'), branchBadge = node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge');
+      if (M.branchColors[member.branch]) branchBadge.style.setProperty('--branch-color', M.branchColors[member.branch]);
+      branchCell.append(branchBadge);
       const current = census(member);
       const censusCell = node('td', current ? `${current.year} · ${current.status || 'Status non indicato'}` : 'Nessun censimento');
       if (current) censusCell.append(node('span', M.branchLabel(current.branch), 'member-code'));
@@ -639,7 +675,7 @@
   $('export-members').onclick = () => {
     if (!confirm('Esportare i risultati con anagrafica, contatti e campi educativi? Il CSV contiene dati personali: conservarlo in modo sicuro.')) return;
     const profileKeys = Object.keys(M.profileFields).filter(key => !M.ignoredProfileFields.includes(key)), censusKeys = Object.keys(M.censusFields);
-    const rows = [['Codice socio', 'Branca locale', ...profileKeys.map(key => M.profileFields[key]), 'Responsabili genitoriali strutturati', 'Anno scout',
+    const rows = [['Codice socio', 'Branca', ...profileKeys.map(key => M.profileFields[key]), 'Responsabili genitoriali strutturati', 'Anno scout',
       ...censusKeys.map(key => M.censusFields[key]), ...data.fields.map(field => M.branchLabel(field.branch) + ' - ' + field.label)],
     ...results().map(member => [member.code, M.branchLabel(member.branch), ...profileKeys.map(key => member.profile[key]),
       JSON.stringify(member.profile.guardianContacts || M.parseGuardians(member.profile.guardians).contacts), census(member)?.year,

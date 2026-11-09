@@ -6,7 +6,7 @@
 .members-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
 .members-summary button { min-width: 0; border: 1px solid #e6dfed; border-top: 4px solid var(--branch-color, #745098); border-radius: 16px; padding: 1.2rem; background: #fff; color: #39234c; font: inherit; text-align: left; cursor: pointer; }
 .members-summary button:hover { box-shadow: 0 2px 8px #39234c18; }
-.members-summary button[aria-pressed="true"] { background: #f1eafa; border-color: var(--branch-color, #745098); }
+.members-summary button[aria-pressed="true"] { background: color-mix(in srgb, var(--branch-color, #745098) 12%, white); border-color: var(--branch-color, #745098); }
 .members-summary strong { display: block; font-size: 2rem; color: #39234c; }
 .members-toolbar { display: flex; gap: .65rem; flex-wrap: wrap; align-items: stretch; margin: .8rem 0; min-width: 0; }
 .members-toolbar > .button { flex: 1 1 10rem; min-width: 0; max-width: 100%; text-align: center; white-space: normal; overflow-wrap: anywhere; }
@@ -41,7 +41,9 @@
 .member-name { max-width: 100%; min-height: 44px; padding: .25rem 0; border: 0; background: none; text-align: left; color: #62397e; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .members-row-select { width: 44px; min-height: 44px; align-items: center; justify-content: center; }
 .member-code { display: block; color: #746779; font-size: .8rem; margin-top: .25rem; }
-.member-badge { display: inline-block; padding: .3rem .65rem; border-radius: 20px; background: #f1eafa; color: #463055; white-space: nowrap; }
+.member-badge { display: inline-block; padding: .3rem .65rem; border: 1px solid var(--branch-color, #795699); border-left-width: 5px; border-radius: 20px; background: color-mix(in srgb, var(--branch-color, #795699) 12%, white); color: #30263a; white-space: nowrap; }
+.members-sort { min-height: 44px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.members-table th:has(.members-sort) { padding-top: .25rem; padding-bottom: .25rem; }
 .members-note { font-size: .85rem; color: #625269; margin: 1rem 0; }
 .members-settings { border: 1px solid #e6dfed; border-radius: 16px; padding: 1.2rem; margin: 1.5rem 0; }
 .members-settings summary, .members-dialog summary { cursor: pointer; font-weight: 700; padding: .7rem 0; }
@@ -96,7 +98,10 @@
 @media (max-width: 900px) {
   .members-table-wrap { overflow: visible; border: 0; background: transparent; }
   .members-table, .members-table tbody { display: block; width: 100%; }
-  .members-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+  .members-table thead { display: block; margin-bottom: .7rem; }
+  .members-table thead tr { display: flex; flex-wrap: wrap; gap: .25rem .8rem; padding: .3rem .8rem; background: #f7f4fa; }
+  .members-table thead th { padding: 0; background: transparent; font-size: .8rem; }
+  .members-table thead th:first-child { display: none; }
   .members-table tr { display: grid; grid-template-columns: minmax(28px, auto) minmax(0, 1fr) minmax(0, 1fr); gap: .25rem .6rem; padding: .8rem; margin: 0 0 .7rem; border: 1px solid #e6dfed; border-radius: 13px; background: #fff; box-shadow: 0 4px 14px #39234c0d; }
   .members-table td { display: block; padding: .2rem 0; border: 0; font-size: .88rem; }
   .members-table td:nth-child(1) { grid-column: 1; grid-row: 1; align-self: start; padding-top: .35rem; }
@@ -108,7 +113,7 @@
   .members-table td:nth-child(5)::before, .members-table td:nth-child(6)::before {
     display: block; margin-bottom: .15rem; color: #746779; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
   }
-  .members-table td:nth-child(3)::before { content: "Branca locale"; }
+  .members-table td:nth-child(3)::before { content: "Branca"; }
   .members-table td:nth-child(4)::before { content: "Età"; }
   .members-table td:nth-child(5)::before { content: "Censimento AGESCI"; }
   .members-table td:nth-child(6)::before { content: "Contatti"; }
@@ -175,7 +180,7 @@
 .guardian-card > button { margin-top: 12px; min-height: 44px; }
 .guardian-source { margin-top: 16px; }
 .units-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 12px; margin: 12px 0; align-items: start; }
-.scout-unit, .unit-unassigned, .units-assignment, .units-environment { min-width: 0; background: #fff; padding: 14px; border: 1px solid #ddd3e7; border-radius: 14px; }
+.scout-unit, .unit-unassigned, .units-environment { min-width: 0; background: #fff; padding: 14px; border: 1px solid #ddd3e7; border-radius: 14px; }
 .scout-unit { width: 100%; max-width: 360px; box-sizing: border-box; border-top: 5px solid #398258; }
 #members-units-panel[data-environment="Branco"] .scout-unit { border-top-color: #dfb822; }
 #members-units-panel[data-environment="Cerchio"] .scout-unit { border-top-color: #cb555b; }
@@ -186,17 +191,16 @@
 .unit-member-count { display: block; margin-top: 4px; color: #625269; font-size: .8rem; font-weight: 700; }
 .unit-colors { display: flex; width: 92px; height: 12px; border: 1px solid #625269; margin-top: 6px; overflow: hidden; }
 .unit-colors > span { flex: 1; }
-.unit-hide, .unit-move { flex: none; width: 44px; height: 44px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 20px; cursor: pointer; }
+.unit-hide { flex: none; width: 44px; height: 44px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 20px; cursor: pointer; }
 .unit-hide { color: #746779; align-self: flex-start; }
-.unit-move:hover, .unit-hide:hover { background: #39234c12; }
+.unit-hide:hover { background: #39234c12; }
 .unit-role-lane { border: 0; border-radius: 8px; padding: 0; margin-top: 4px; min-height: 44px; }
 .unit-role-lane h4 { margin: 0 0 8px; font-size: 13px; color: #67487d; }
 .unit-member { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; border-radius: 8px; background: transparent; padding: 0 4px 0 8px; margin: 0; min-width: 0; }
 .unit-member.unit-draggable { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.unit-grip { flex: 0 0 24px; display: flex; align-items: center; justify-content: center; align-self: stretch; min-height: 44px; color: inherit; opacity: .6; font-size: 14px; letter-spacing: -3px; touch-action: none; cursor: grab; }
+.unit-grip { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; align-self: stretch; min-height: 44px; padding: 0; border: 0; background: transparent; color: inherit; opacity: .6; font: inherit; font-size: 14px; letter-spacing: -3px; touch-action: none; cursor: grab; }
 .unit-member.unit-dragging { opacity: .35; }
 .unit-drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; box-sizing: border-box; background: #fff; color: #39234c; box-shadow: 0 8px 24px #39234c40; outline: 2px solid #67487d; cursor: grabbing; }
-.unit-drag-ghost .unit-move { visibility: hidden; }
 .unit-drag-in-progress, .unit-drag-in-progress * { cursor: grabbing !important; }
 .unit-member .member-name { flex: 1 1 80px; min-width: 0; text-align: left; min-height: 44px; overflow-wrap: anywhere; text-decoration: none; color: inherit; font-weight: 500; font-size: 14px; }
 .unit-role-badge { flex: 0 0 24px; font-size: 12px; font-weight: 800; text-decoration: none; text-align: center; }
@@ -211,16 +215,21 @@
 .unit-empty { color: inherit; font-size: 12px; margin: 0; padding: 12px 8px; opacity: .8; }
 .unit-warning { color: #9c393b; font-size: 13px; }
 .unit-drop-active { outline: 3px solid #67487d; outline-offset: 2px; background: #eee8f4; }
-.units-assignment, .units-environment { margin: 14px 0; }
+.units-environment { margin: 14px 0; }
 .units-environment-settings > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: .85rem; color: #625269; }
 #members-units-panel > .members-toolbar { margin: .4rem 0; }
 #members-units-panel > .members-toolbar > .button { flex: 0 1 auto; width: auto; font-size: .85rem; min-height: 44px; }
 #members-units-panel .members-note { margin: .5rem 0; }
-.units-assignment { padding: 0 12px; margin: 6px 0; }
-.unit-unassigned { padding: 0 12px; }
-.units-assignment summary, .unit-unassigned summary, #units-hidden > summary { cursor: pointer; min-height: 44px; font-weight: 700; padding: 10px 0; }
-.units-assignment p, .units-environment p { font-size: 13px; color: #756882; }
-.units-assignment form { margin-top: 12px; align-items: end; }
+.unit-unassigned { position: sticky; top: 8px; z-index: 3; margin: 12px 0; box-shadow: 0 6px 20px #39234c12; }
+.unit-available-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; }
+.unit-available-heading h3 { margin: 0; font-size: 1rem; }
+.unit-available-heading h3 span { color: #746779; }
+.unit-available-search { flex: 0 1 320px; min-width: 0; }
+.unit-unassigned-list { max-height: 160px; overflow-y: auto; overscroll-behavior: contain; }
+.unit-unassigned-list .unit-member { background: #f7f5f9; }
+.unit-unassigned mark { background: #ffe083; color: #30263a; border-radius: 3px; }
+#units-hidden > summary { cursor: pointer; min-height: 44px; font-weight: 700; padding: 10px 0; }
+.units-environment p { font-size: 13px; color: #756882; }
 .units-environment label { max-width: 350px; margin-bottom: 8px; }
 .unit-symbol-preview { max-width: 240px; margin: 12px auto; }
 .unit-symbol-preview svg { width: 100%; }
@@ -228,9 +237,13 @@
 .unit-hidden-row svg { width: 80px; flex: none; }
 #unit-form > button[type="submit"] { margin-top: 16px; }
 @media (max-width: 760px) {
-  .units-assignment form { grid-template-columns: minmax(0, 1fr); }
+  .unit-available-search { flex-basis: 100%; }
+  .unit-unassigned-list { max-height: 132px; }
   #members-units-panel .members-heading { align-items: stretch; }
   .scout-unit { padding: 12px; }
+}
+@media (max-height: 500px) {
+  .unit-unassigned { position: static; }
 }
 .guardian-source summary, .members-choice-field summary { min-height: 44px; cursor: pointer; padding: 10px 0; }
 .members-choice-field { margin: 0; padding: 8px 12px; min-width: 0; border: 1px solid #ddd3e7; border-radius: 12px; }

@@ -192,7 +192,7 @@ test("names move between squadriglie and sestiglie with real mouse and touch inp
     await waitFor("document.getElementById('member-dialog').open", "click sul nome apre la scheda");
     await evaluate("document.querySelector('[data-close=\"member-dialog\"]').click()");
 
-    await evaluate("document.getElementById('unit-unassigned').querySelector('details').open = true");
+    assert.equal(await evaluate("document.getElementById('unit-unassigned').hidden"), false);
     await mouseDrag(name(4), lane(2, "Squadrigliere"));
     await waitFor(`!!document.querySelector('${lane(2, "Squadrigliere")} [data-member-id="4"]')`, "mouse: da senza squadriglia a Falchi");
     assert.deepEqual(JSON.parse(await evaluate(lastAssign)), { memberId: 4, revision: 1, unitId: 2, role: "Squadrigliere" });
@@ -213,7 +213,7 @@ test("names move between squadriglie and sestiglie with real mouse and touch inp
     assert.equal(await evaluate("requests.length"), count, "nessuna richiesta fuori bersaglio");
     assert.equal(await evaluate("!!document.querySelector('.unit-drag-ghost')"), false);
 
-    await mouseDrag(name(5), '#unit-unassigned details');
+    await mouseDrag(name(5), '#unit-available-title');
     await waitFor("!!document.querySelector('#unit-unassigned [data-member-id=\"5\"]')", "mouse: rimozione dal gruppo");
     assert.deepEqual(JSON.parse(await evaluate(lastAssign)), { memberId: 5, revision: 1, unitId: null, role: "" });
     assert.ok(await evaluate("document.getElementById('unit-unassigned').textContent.includes('Assegnazione conservata: Lupi')"), "assegnazione storica conservata");
@@ -227,7 +227,6 @@ test("names move between squadriglie and sestiglie with real mouse and touch inp
     await browser.load(390, 844, true);
     await evaluate("document.getElementById('units-branch').value = 'E/G'; document.getElementById('units-branch').onchange()");
     await waitFor(`!!document.querySelector('${lane(3, "Piede tenero")}')`, "E/G touch");
-    await evaluate("document.getElementById('unit-unassigned').querySelector('details').open = true");
     const before = await evaluate("requests.length");
     await touchDrag(name(5), lane(3, "Piede tenero"), 0);
     await sleep(1200); // let the swipe fling finish before measuring the next gesture
@@ -245,9 +244,9 @@ test("names move between squadriglie and sestiglie with real mouse and touch inp
     await evaluate("document.getElementById('units-branch').value = 'L/C'; document.getElementById('units-branch').onchange()");
     await waitFor(`!!document.querySelector('${lane(4, "Sestigliere")}')`, "L/C");
     assert.equal(await evaluate("document.querySelector('[data-unit-id=\"4\"] svg path').getAttribute('fill')"), M.sestigliaColors.Blu);
-    await evaluate("document.getElementById('unit-unassigned').querySelector('details').open = true");
     await touchDrag(name(2), lane(4, "Cucciolo"), 500);
     await waitFor(`!!document.querySelector('${lane(4, "Cucciolo")} [data-member-id="2"]')`, "touch L/C");
+    assert.equal(await evaluate("document.getElementById('unit-unassigned').hidden"), true, "blocco nascosto senza soci disponibili");
     await touchDrag(name(1), lane(4, "Capo sestiglia"), 500);
     await waitFor(`!!document.querySelector('${lane(4, "Capo sestiglia")} [data-member-id="1"]')`, "touch L/C ruolo");
     assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true);

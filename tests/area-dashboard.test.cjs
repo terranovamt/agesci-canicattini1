@@ -30,6 +30,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
     hidden: true,
     textContent: "",
     children: [],
+    style: { setProperty(name, value) { this[name] = value; } },
     append(...children) {
       this.children.push(...children);
     },
@@ -85,6 +86,8 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
   assert.equal(get("dashboard-group-counts").children[0].children[1].textContent, "3");
   assert.equal(get("dashboard-group-counts").children[2].children[1].textContent, "2");
   assert.equal(get("dashboard-group-counts").children[4].children[0].textContent, "Co.Ca.");
+  assert.deepEqual(get("dashboard-group-counts").children.slice(1).map(item => item.style["--census-color"]),
+    ["#b49526", "#398258", "#bc4e50", "#795699"]);
   assert.equal(subscriber.view, "summary");
   subscriber.render({
     enabled: true,
@@ -122,29 +125,73 @@ test("non-admin dashboard does not request or show server statistics", () => {
   assert.equal(get("dashboard-group-overview").hidden, true);
 });
 
-test("dashboard separates tools, summary and workflow into named sections", () => {
+test("admin census errors expose retry and recover without losing tools", async () => {
+  const elements = new Map();
+  const element = () => ({
+    hidden: true, children: [], style: { setProperty() {} },
+    replaceChildren() { this.children = []; },
+    append(...children) { this.children.push(...children); },
+  });
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, element());
+    return elements.get(id);
+  };
+  let failed = true, requests = 0;
+  const window = {
+    NAS: { user: { admin: true } }, SOCI_MODEL: require("../assets/js/soci-model.js"),
+    ACCESSO: {
+      verificata: () => true,
+      request: async route => {
+        assert.equal(route, "members/overview");
+        requests++;
+        if (failed) throw new Error("Server non disponibile");
+        return { year: 2026, total: 0, branches: [] };
+      },
+    },
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8"), {
+    window, document: { getElementById: get, createElement: element, head: { append() {} } },
+    fetch: async () => ({ ok: true, json: async () => [] }), Date,
+  });
+  window.AREA_DASHBOARD.load();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get("dashboard-group-retry").hidden, false);
+  assert.equal(get("dashboard-group-counts").children.length, 0);
+  assert.match(get("dashboard-group-status").textContent, /Server non disponibile/);
+  failed = false;
+  await get("dashboard-group-retry").onclick();
+  assert.equal(get("dashboard-group-retry").hidden, true);
+  assert.equal(get("dashboard-group-counts").children[0].children[1].textContent, "0");
+  assert.match(get("dashboard-group-status").textContent, /anno 2026/);
+  window.AREA_DASHBOARD.load();
+  assert.equal(requests, 2, "repeated load must not duplicate subscriptions or requests");
+});
+
+test("dashboard presents one operational layout without tabs or duplicate document tools", () => {
   const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
-  assert.match(html, /data-section-target="dashboard-work-panel"/);
-  assert.match(html, /data-section-target="dashboard-assembly-panel">Assemblea di gruppo/);
-  assert.match(html, /data-section-target="dashboard-summary-panel"/);
+  assert.doesNotMatch(html, /data-section-(?:nav|target|panel)|section-nav\.(?:css|js)/);
+  assert.match(html, /class="dashboard-layout"/);
+  const documentsTool = html.slice(html.indexOf('<article id="documents-tool"'), html.indexOf("</article>", html.indexOf('<article id="documents-tool"')));
+  assert.match(documentsTool, /href="documenti.html">Carica e gestisci documenti/);
+  assert.doesNotMatch(documentsTool, /\bhidden\b/);
   assert.match(html, /id="activities-coming-title">Attività e campi/);
   assert.match(html, /Non operativo · da progettare/);
   assert.doesNotMatch(html.slice(html.indexOf('id="activities-coming-title"'), html.indexOf("</article>", html.indexOf('id="activities-coming-title"'))), /<a\b|<button\b/);
   assert.match(html, /class="dashboard-publication-notice"/);
   assert.doesNotMatch(html, /Benvenuto|Il gruppo, a colpo|Dal lavoro alla presentazione/);
-  assert.match(html, /<details id="dashboard-metrics"[^>]*hidden>/);
+  assert.match(html, /<article id="dashboard-metrics"[^>]*hidden>/);
   assert.match(html, /non indica lo stato della diretta/);
   assert.match(html, /<form id="nas-login-form"[\s\S]*id="accesso-stato"[\s\S]*?<\/form>/);
   assert.match(html, /<form id="login-form"[\s\S]*id="legacy-accesso-stato"[\s\S]*?<\/form>/);
-  assert.ok(html.indexOf('data-section-target="dashboard-work-panel"') <
-    html.indexOf('data-section-target="dashboard-summary-panel"'));
-  assert.ok(html.indexOf('data-section-target="dashboard-summary-panel"') <
-    html.indexOf('data-section-target="dashboard-assembly-panel"'));
+  assert.ok(html.indexOf('id="dashboard-group-overview"') < html.indexOf('class="dashboard-layout"'));
   assert.doesNotMatch(html, /Salva sul NAS/);
-  const assembly = html.slice(html.indexOf('<section class="dashboard-workflow"'), html.indexOf('</main>'));
-  assert.equal((assembly.match(/class="tool-number"/g) || []).length, 3);
-  assert.equal((assembly.match(/<ol\b/g) || []).length, 1);
-  assert.match(assembly, /<h3>Setup<\/h3>[\s\S]*<h3>Documenti<\/h3>[\s\S]*<h3>Regia<\/h3>/);
+  const assembly = html.slice(html.indexOf('<section class="dashboard-workflow"'), html.indexOf('</section>', html.indexOf('<section class="dashboard-workflow"')));
+  assert.match(assembly, /id="dashboard-assembly-title"/);
+  assert.match(assembly, /href="assemblea\/setup.html"/);
+  assert.match(assembly, /href="assemblea\/regia.html"/);
+  assert.match(assembly, /href="assemblea\/guida.html"/);
+  assert.doesNotMatch(assembly, /href="documenti.html"|<ol\b/);
+  assert.equal((html.match(/href="documenti.html"/g) || []).length, 1);
 });
 
 function loginHarness({ nas = true, firstAccess = false, admin = false, serviceBranch = "LC" } = {}) {
@@ -261,6 +308,28 @@ test("changing census code clears password flow and feedback", async () => {
   assert.equal(get("nas-password").value, "");
 });
 
+for (const role of [
+  { admin: true, serviceBranch: "", book: true, access: true },
+  { admin: false, serviceBranch: "EG", book: true, access: false },
+  { admin: false, serviceBranch: "", book: false, access: false },
+]) {
+  test(`verified NAS role admin=${role.admin}, branch=${role.serviceBranch || "none"} keeps its permitted tools`, async () => {
+    const app = loginHarness(role);
+    app.get("census-code").value = "1234567";
+    const check = app.get("nas-login-form").onsubmit({ preventDefault() {} });
+    app.status();
+    await check;
+    const login = app.get("nas-login-form").onsubmit({ preventDefault() {} });
+    app.login();
+    await login;
+    assert.equal(app.get("people-tool").hidden, !role.book);
+    assert.equal(app.get("people-access-tool").hidden, !role.access);
+    assert.equal(app.get("documents-tool").hidden, false);
+    assert.equal(app.get("dashboard-assembly-panel").hidden, false);
+    assert.equal(app.loads(), 1);
+  });
+}
+
 test("legacy login distinguishes pending and error within its own form", async () => {
   const app = loginHarness({ nas: false });
   const get = app.get, form = get("login-form"), status = get("legacy-accesso-stato");
@@ -280,11 +349,11 @@ test("legacy login distinguishes pending and error within its own form", async (
   assert.equal(app.loads(), 1);
 });
 
-test("dashboard login and all panels adapt across six device layouts", { skip: !chrome }, t => {
+test("unified dashboard and login adapt across six device layouts", { skip: !chrome }, t => {
   const root = path.join(__dirname, "..");
   const read = file => fs.readFileSync(path.join(root, file), "utf8");
   const css = ["assets/css/theme.css", "assets/css/home.css", "assets/css/nas-metrics.css",
-    "assets/css/nas.css", "assets/css/section-nav.css"].map(read).join("\n");
+    "assets/css/nas.css"].map(read).join("\n");
   const page = renderHtml(read("area-riservata/index.html"), "area-riservata/index.html")
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, "")
@@ -293,9 +362,7 @@ test("dashboard login and all panels adapt across six device layouts", { skip: !
       document.getElementById("riservata").hidden = false;
       document.getElementById("people-tool").hidden = false;
       document.getElementById("esci").hidden = false;
-      document.querySelector("[data-section-nav]").hidden = false;
       document.getElementById("dashboard-metrics").hidden = false;
-      document.getElementById("dashboard-metrics").open = true;
       document.getElementById("accesso-stato").textContent = "Accesso non riuscito: verifica le credenziali e riprova.";
       const feedback = document.getElementById("accesso-stato");
       feedback.dataset.state = "pending";
@@ -323,12 +390,11 @@ test("dashboard login and all panels adapt across six device layouts", { skip: !
         link.href = "../documents/pdf/documento-" + i + ".pdf";
         li.append(link); document.getElementById("dashboard-document-links").append(li);
       }
-      ${read("assets/js/shared/section-nav.js")}
       const visible = control => control.getClientRects().length && !control.disabled;
       const measure = name => {
         const controls = [...document.querySelectorAll("a[href], button, summary, input")].filter(visible);
-        const navButton = document.querySelector("[data-section-target]");
-        navButton.focus();
+        const focusLink = document.querySelector('#documents-tool a');
+        if (visible(focusLink)) focusLink.focus();
         return {
           name,
           availableWidth: document.documentElement.clientWidth,
@@ -338,42 +404,38 @@ test("dashboard login and all panels adapt across six device layouts", { skip: !
             return box.height >= 44 && box.width >= 44 && box.left >= 0 && box.right <= innerWidth;
           }),
           noClipping: controls.every(control => control.scrollWidth <= control.clientWidth + 1),
-          keyboardFocus: navButton.matches(":focus-visible") &&
-            parseFloat(getComputedStyle(navButton).outlineWidth) >= 3,
+          keyboardFocus: focusLink.matches(":focus-visible") &&
+            parseFloat(getComputedStyle(focusLink).outlineWidth) >= 3,
           contentWidth: Math.round(document.getElementById("reserved-content").getBoundingClientRect().width),
         };
       };
       const panels = [];
       document.getElementById("login").hidden = true;
-      for (const [name, id] of [
-        ["tools", "dashboard-work-panel"], ["summary", "dashboard-summary-panel"], ["assembly", "dashboard-assembly-panel"],
-      ]) {
-        document.querySelector('[data-section-target="' + id + '"]').click();
-        const measured = measure(name);
-        measured.onlySelected = [...document.querySelectorAll("[data-section-panel]")].every(panel =>
-          panel.hidden === (panel.id !== id));
-        if (name === "tools") {
-          const actions = [...document.querySelectorAll(".people-tool-actions .button")];
-          const boxes = actions.map(action => action.getBoundingClientRect());
-          const activity = document.querySelector(".dashboard-tool-coming");
-          const activityRect = activity.getBoundingClientRect();
-          measured.separated = boxes[0].right + 10 <= boxes[1].left || boxes[0].bottom + 10 <= boxes[1].top;
-          measured.activityCompact = activityRect.height < 210 && activity.textContent.includes("Non operativo") &&
-            activity.querySelectorAll("a,button").length === 0;
-          measured.links = actions.map(action => action.getAttribute("href"));
-          measured.toolColumns = getComputedStyle(document.querySelector(".dashboard-work-tools")).gridTemplateColumns.split(" ").length;
-        }
-        if (name === "summary") {
-          const rects = [...counts.children].map(item => item.getBoundingClientRect());
-          measured.censusFits = rects.length === 5 && rects.every(box => box.width >= 44 && box.right <= innerWidth);
-          measured.branchesOneRow = rects.slice(1).every(box => box.top === rects[1].top);
-          measured.overviewColumns = getComputedStyle(document.querySelector(".dashboard-overview")).gridTemplateColumns.split(" ").length;
-        }
-        if (name === "assembly") {
-          measured.stepColumns = getComputedStyle(document.querySelector(".dashboard-assembly-steps")).gridTemplateColumns.split(" ").length;
-          measured.stepHeights = [...document.querySelectorAll(".dashboard-assembly-steps > li")].map(li =>
-            Math.round(li.getBoundingClientRect().height));
-        }
+      {
+        const measured = measure("unified");
+        measured.allToolsVisible = ["people-tool", "documents-tool", "dashboard-assembly-panel",
+          "dashboard-documents-title", "dashboard-metrics", "activities-coming-title", "dashboard-group-overview"]
+          .every(id => visible(document.getElementById(id)));
+        measured.noTabs = !document.querySelector("[data-section-nav], [role=tab], [role=tablist]");
+        measured.mainColumns = getComputedStyle(document.querySelector(".dashboard-layout")).gridTemplateColumns.split(" ").length;
+        const left = document.getElementById("dashboard-work-panel").getBoundingClientRect();
+        const right = document.getElementById("dashboard-summary-panel").getBoundingClientRect();
+        measured.columnsPositioned = innerWidth > 1000 ? Math.abs(left.top - right.top) < 1 && left.right <= right.left :
+          left.bottom <= right.top;
+        measured.columnRatio = left.width / right.width;
+        const actions = [...document.querySelectorAll(".people-tool-actions .button")];
+        const boxes = actions.map(action => action.getBoundingClientRect());
+        const activity = document.querySelector(".dashboard-tool-coming");
+        const activityRect = activity.getBoundingClientRect();
+        measured.separated = boxes[0].right + 10 <= boxes[1].left || boxes[0].bottom + 10 <= boxes[1].top;
+        measured.activityCompact = activityRect.height < 210 && activity.textContent.includes("Non operativo") &&
+          activity.querySelectorAll("a,button").length === 0;
+        measured.links = actions.map(action => action.getAttribute("href"));
+        measured.toolColumns = getComputedStyle(document.querySelector(".dashboard-work-tools")).gridTemplateColumns.split(" ").length;
+        const rects = [...counts.children].map(item => item.getBoundingClientRect());
+        measured.censusFits = rects.length === 5 && rects.every(box => box.width >= 44 && box.right <= innerWidth);
+        measured.branchesOneRow = rects.slice(1).every(box => box.top === rects[1].top);
+        measured.assemblyLinks = [...document.querySelectorAll(".dashboard-assembly-actions a")].map(link => link.getAttribute("href"));
         panels.push(measured);
       }
       document.getElementById("riservata").hidden = true;
@@ -436,23 +498,25 @@ test("dashboard login and all panels adapt across six device layouts", { skip: !
         assert.equal(state.noClipping, true, "no clipped controls: " + label);
       }
       for (const panel of measured.panels) {
-        assert.equal(panel.onlySelected, true);
+        assert.equal(panel.allToolsVisible, true);
+        assert.equal(panel.noTabs, true);
+        assert.equal(panel.columnsPositioned, true);
         assert.equal(panel.keyboardFocus, true);
         assert.equal(panel.contentWidth, Math.min(panel.availableWidth - 32, 1120));
       }
-      const [tools, summary, assembly] = measured.panels;
+      const [tools] = measured.panels;
       assert.equal(tools.separated, true);
       assert.equal(tools.activityCompact, true);
       assert.deepEqual(tools.links, ["soci.html", "persone.html"]);
       assert.equal(tools.toolColumns, width > 600 ? 2 : 1);
-      assert.equal(summary.censusFits, true);
-      assert.equal(summary.branchesOneRow, true);
-      assert.equal(summary.overviewColumns, width > 600 ? 2 : 1);
-      assert.equal(assembly.stepColumns, width > 1000 ? 3 : 1);
+      assert.equal(tools.censusFits, true);
+      assert.equal(tools.branchesOneRow, true);
+      assert.equal(tools.mainColumns, width > 1000 ? 2 : 1);
+      if (width > 1000) assert.ok(Math.abs(tools.columnRatio - 1.65) < .02);
+      assert.deepEqual(tools.assemblyLinks, ["assemblea/setup.html", "assemblea/regia.html", "assemblea/guida.html"]);
       for (const login of measured.login) assert.equal(login.cardWidth, Math.min(login.availableWidth - 32, 580));
       t.diagnostic(`${width}x${height}: dashboard ${tools.contentWidth}px; login ${measured.login[0].cardWidth}px; ` +
-        `columns tools/summary/assembly ${tools.toolColumns}/${summary.overviewColumns}/${assembly.stepColumns}; ` +
-        `step heights ${assembly.stepHeights.join("/")}px`);
+        `columns main/tools ${tools.mainColumns}/${tools.toolColumns}; all tools visible`);
     }
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });

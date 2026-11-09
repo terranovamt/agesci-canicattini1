@@ -97,16 +97,16 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
             Math.hypot(points[4] - points[2], points[5] - points[3]),
             Math.hypot(points[0] - points[4], points[1] - points[5])];
           check(points[1] < points[3] && Math.max(...sides) - Math.min(...sides) < .001, 'equilateral');
-          const assignment = $('unit-assignment-form');
-          assignment.elements.memberId.value = '1'; assignment.elements.unitId.value = '10'; assignment.elements.unitId.onchange();
-          assignment.elements.role.value = 'Cucciolo'; submit(assignment); await settle();
+          const assign = (id, unitId, role) => {
+            document.querySelector('.unit-member[data-member-id="' + id + '"] .unit-grip').click();
+            document.querySelector('[data-unit-id="' + unitId + '"] [data-drop-role="' + role + '"]')
+              .dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+          };
+          assign(1, 10, 'Cucciolo'); await settle();
           check(!!document.querySelector('[data-unit-id="10"] [data-role="Cucciolo"] [data-member-id="1"]'), 'accessibleMove');
           check(document.querySelector('[data-unit-id="10"] .unit-member-count').textContent === '1 ragazzo' &&
             document.querySelector('[data-unit-id="10"] .unit-member-count').getAttribute('aria-label') === 'Bianchi: 1 ragazzo assegnato', 'lcCount');
-          document.querySelector('[data-unit-id="10"] [data-member-id="1"] .unit-move').click();
-          check($('unit-assignment').open && assignment.elements.memberId.value === '1' &&
-            assignment.elements.role.value === 'Cucciolo', 'moveShortcut');
-          $('unit-assignment').open = false;
+          check(!document.querySelector('.unit-move') && !$('unit-assignment'), 'noMoveShortcut');
           check(fits(), 'lcFits');
           $('lc-environment-form').elements.environment.value = 'Cerchio';
           submit($('lc-environment-form')); await settle();
@@ -123,8 +123,16 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           submit(form); await settle();
           check(!!document.querySelector('[data-unit-id="10"] [data-member-id="1"]'), 'restorePreserves');
           $('units-branch').value = 'E/G'; $('units-branch').onchange(); await settle();
-          check(!$('unit-unassigned').querySelector('details').open, 'unassignedCompact');
-          $('unit-unassigned').querySelector('details').open = true;
+          check(!$('unit-unassigned').hidden && !$('unit-unassigned').querySelector('details') &&
+            $('unit-available-count').textContent === '· 2', 'unassignedAlwaysOpen');
+          const search = $('unit-available-search');
+          search.value = 'SONA'; search.oninput();
+          check($('unit-available-list').querySelectorAll('mark').length === 2 &&
+            [...$('unit-available-list').querySelectorAll('mark')].every(mark => mark.textContent === 'sona'), 'highlightSubstring');
+          search.value = '<img>'; search.oninput();
+          check(!$('unit-available-list').querySelector('mark, img') &&
+            $('unit-available-status').textContent.includes('Nessun nome'), 'safeSearch');
+          search.value = ''; search.oninput();
           check($('lc-environment-form').hidden && !$('units-board').textContent.includes('Persona 7'), 'egScope');
           $('new-unit').click(); form.elements.name.value = 'Nome senza colori'; form.elements.name.oninput();
           check($('unit-appearance').hidden && $('unit-name-hint').textContent.includes('non sono definiti'), 'fixedEditor');
@@ -141,12 +149,11 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
             $('unit-unassigned').textContent.includes('Assegnazione conservata: Nascosti'), 'legacyVisible');
           check(document.querySelector('[data-unit-id="1"] .unit-member-count').textContent === '2 ragazzi' &&
             document.querySelector('[data-unit-id="2"] .unit-member-count').textContent === '0 ragazzi', 'countsIncludeLegacy');
-          // Real mouse/touch dragging is covered by member-units-drag-browser.test.cjs; here the same moves use the accessible form.
+          // Real mouse/touch dragging is covered separately; these moves exercise the keyboard alternative.
           const drag = (id, unitId, role) => {
             check(document.querySelector('.unit-member[data-member-id="' + id + '"]').classList.contains('unit-draggable') &&
               !!document.querySelector('[data-unit-id="' + unitId + '"] [data-drop-role="' + role + '"]'), 'dropTargets');
-            assignment.elements.memberId.value = String(id); assignment.elements.unitId.value = String(unitId);
-            assignment.elements.unitId.onchange(); assignment.elements.role.value = role; submit(assignment);
+            assign(id, unitId, role);
           };
           drag(4, 1, 'Capo squadriglia'); await settle();
           check($('units-status').textContent.includes('occupato') && !!$('unit-unassigned').querySelector('[data-member-id="4"]'), 'occupiedError');
@@ -169,7 +176,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           check(!!flag.querySelector('path[fill="#ffffff"]') && !flag.querySelector('image'), 'emptyFlag');
           check(fits(), 'egFits');
           for (const card of document.querySelectorAll('.unit-member')) {
-            const button = card.querySelector('.unit-move');
+            const button = card.querySelector('.unit-grip');
             if (!button) continue;
             const rect = button.getBoundingClientRect();
             if (rect.height) check(rect.height >= 44 && rect.width >= 44, 'touchTargets');
@@ -190,11 +197,11 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           check([...$('units-board').querySelectorAll('.unit-chief')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(70, 38, 120)') &&
             [...$('units-board').querySelectorAll('.unit-deputy')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(230, 218, 241)') &&
             [...$('units-board').querySelectorAll('.unit-newcomer')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(255, 240, 196)'), 'roleContrast');
-          $('unit-assignment').open = true;
-          check([...$('unit-assignment-form').querySelectorAll('select, button')].every(control => {
-            const rect = control.getBoundingClientRect();
-            return rect.height >= 44 && rect.left >= 0 && rect.right <= innerWidth + 1;
-          }), 'assignmentFits');
+          assign(6, 2, 'Piede tenero'); await settle();
+          check($('unit-unassigned').hidden, 'emptyAvailableHidden');
+          document.querySelector('[data-member-id="3"] .unit-grip').click();
+          $('members-units-panel').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+          check($('units-status').textContent.includes('annullato'), 'keyboardCancel');
           check(!errors.length, 'noErrors');
         } catch (error) { results.failure = error.message; results.errors = errors; }
         const output = document.createElement('pre'); output.id = 'unit-result';
@@ -228,11 +235,11 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
       assert.ok(encoded, browser.stdout.slice(-3000));
       const results = JSON.parse(Buffer.from(encoded, "base64").toString());
       assert.equal(results.failure, undefined, width + ": " + JSON.stringify(results));
-      for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "moveShortcut", "fixedEditor", "unknownNameError", "lcFits", "cerchio", "cerchioSheet",
+      for (const key of ["branco", "namedColor", "triangle", "accessibleMove", "noMoveShortcut", "fixedEditor", "unknownNameError", "lcFits", "cerchio", "cerchioSheet",
         "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove", "dropTargets",
         "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
-        "egFits", "touchTargets", "noErrors", "unassignedCompact", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
-        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "assignmentFits"])
+        "egFits", "touchTargets", "noErrors", "unassignedAlwaysOpen", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
+        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "emptyAvailableHidden", "keyboardCancel", "highlightSubstring", "safeSearch"])
         assert.equal(results[key], true, width + " " + key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
     }

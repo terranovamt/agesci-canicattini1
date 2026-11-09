@@ -1,6 +1,5 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
@@ -11,12 +10,13 @@ const chrome = ["google-chrome", "chromium", "chromium-browser"].find(
 );
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-function fixture(file, css, scripts) {
+function fixture(file, css, scripts, user) {
   const index = read("documents/index.json");
   const calendars = read("calendars/events.json");
   const mock = `
     window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
-    window.LIVE = { nas: ${file === "area-riservata/assemblea/setup.html"}, github: { repo: 'test/repo', ramo: 'test' } };
+    ${user ? `window.NAS = { user: ${JSON.stringify(user)} };` : ""}
+    window.LIVE = { nas: ${!!user || file === "area-riservata/assemblea/setup.html"}, github: { repo: 'test/repo', ramo: 'test' } };
     window.DOCUMENTS_PREVIEW = true;
     history.replaceState = () => {};
     let items = ${index};
@@ -60,7 +60,7 @@ function fixture(file, css, scripts) {
 }
 
 test("public documents and management work in a browser at all required widths", { skip: !chrome }, () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "group-documents-"));
+  const dir = fs.mkdtempSync(path.join(__dirname, ".group-documents-"));
   const pages = [
     fixture("index.html", "assets/css/home.css", [
       "assets/js/documents-model.js",
@@ -84,7 +84,7 @@ test("public documents and management work in a browser at all required widths",
     fixture("area-riservata/index.html", "assets/css/home.css", [
       "assets/js/area-dashboard.js",
       "assets/js/area-riservata.js",
-    ]),
+    ], { admin: false, serviceBranch: "" }),
     fixture("assemblea/index.html", "assets/css/home.css", [
       "assets/js/documents-model.js",
       "assets/js/home-documents.js",
@@ -554,8 +554,17 @@ test("public documents and management work in a browser at all required widths",
           results.push({ dashboard: doc.querySelector('#riservata').hidden === false,
             assembly: doc.querySelector('#dashboard-assembly-title').textContent,
             documents: doc.querySelectorAll('#dashboard-document-links li').length,
-            tools: doc.querySelectorAll('#dashboard-assembly-panel .dashboard-assembly-steps > .dashboard-tool').length,
-            toolLinks: [...doc.querySelectorAll('#dashboard-assembly-panel .dashboard-assembly-steps > .dashboard-tool > a')]
+            unified: !doc.querySelector('[data-section-nav], [data-section-panel]') &&
+              ['documents-tool', 'dashboard-assembly-panel', 'dashboard-documents-title'].every(id =>
+                doc.getElementById(id).getClientRects().length > 0),
+            documentManagerLinks: doc.querySelectorAll('#riservata a[href="documenti.html"]').length,
+            unassignedCapo: !frame.contentWindow.NAS.user.admin && !frame.contentWindow.NAS.user.serviceBranch &&
+              ['people-tool', 'people-access-tool', 'dashboard-group-overview', 'dashboard-metrics']
+                .every(id => doc.getElementById(id).getClientRects().length === 0),
+            pdfLinks: [...doc.querySelectorAll('#dashboard-document-links a')].every(link =>
+              link.getClientRects().length > 0 && link.getAttribute('href').startsWith('../documents/pdf/') &&
+              link.target === '_blank' && link.rel === 'noopener'),
+            toolLinks: [...doc.querySelectorAll('.dashboard-assembly-actions > a')]
               .map(link => link.getAttribute('href')) });
           frame.contentWindow.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#dashboard-documents-retry').onclick();
@@ -568,6 +577,14 @@ test("public documents and management work in a browser at all required widths",
           await doc.querySelector('#dashboard-assembly-retry').onclick();
           results.push({ assemblyError: !doc.querySelector('#dashboard-assembly-retry').hidden,
             assemblyErrorText: doc.querySelector('#dashboard-assembly-details').textContent });
+          doc.head.append = append;
+          frame.contentWindow.fetch = async () => ({ ok: true, json: async () => ${read("documents/index.json")} });
+          await doc.querySelector('#dashboard-documents-retry').onclick();
+          await doc.querySelector('#dashboard-assembly-retry').onclick();
+          results.push({ dashboardRecovered: doc.querySelector('#dashboard-documents-retry').hidden &&
+            doc.querySelector('#dashboard-assembly-retry').hidden &&
+            doc.querySelectorAll('#dashboard-document-links a').length === 3 &&
+            !doc.querySelector('#dashboard-assembly-title').textContent.includes('non disponibile') });
         }
         frame.remove();
       }
@@ -594,7 +611,8 @@ test("public documents and management work in a browser at all required widths",
         "--dump-dom",
         "file://" + file,
       ],
-      { encoding: "utf8", timeout: 30000, maxBuffer: 5 * 1024 * 1024 },
+      { encoding: "utf8", timeout: 30000, maxBuffer: 5 * 1024 * 1024,
+        cwd: dir, env: { ...process.env, TMPDIR: "." } },
     );
     assert.equal(result.status, 0, result.stderr);
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
@@ -760,8 +778,12 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(dashboard.dashboard, true);
     assert.match(dashboard.assembly, /Assemblea/);
     assert.equal(dashboard.documents, 3);
-    assert.equal(dashboard.tools, 3);
-    assert.deepEqual(dashboard.toolLinks, ["assemblea/setup.html", "documenti.html", "assemblea/regia.html"]);
+    assert.equal(dashboard.unified, true);
+    assert.equal(dashboard.documentManagerLinks, 1);
+    assert.equal(dashboard.unassignedCapo, true);
+    assert.equal(dashboard.pdfLinks, true);
+    assert.equal(results.find(item => "dashboardRecovered" in item).dashboardRecovered, true);
+    assert.deepEqual(dashboard.toolLinks, ["assemblea/setup.html", "assemblea/regia.html", "assemblea/guida.html"]);
     assert.equal(results.find((item) => "dashboardError" in item).dashboardError, true);
     assert.equal(results.find((item) => "assemblyError" in item).assemblyError, true);
     assert.match(results.find((item) => "assemblyErrorText" in item).assemblyErrorText, /Impossibile/);

@@ -44,7 +44,8 @@
   }
   window.SOCI_UNITS = function ({ perform, reload, openMember }) {
     let data, editing = null, draftEmblem = '', imageBusy = false, editorSnapshot = '';
-    const branchSelect = $('units-branch'), assignment = $('unit-assignment-form'), form = $('unit-form');
+    const branchSelect = $('units-branch'), form = $('unit-form'), search = $('unit-available-search');
+    let keyboardMember = null;
     const branch = () => branchSelect.value;
     const environment = () => data.lc.environment;
     const visibleUnits = () => data.units.filter(unit => unit.branch === branch() && !unit.hidden);
@@ -164,16 +165,6 @@
         await reload();
       }, $('units-status'));
     }
-    assignment.elements.unitId.onchange = () => {
-      assignment.elements.role.disabled = !assignment.elements.unitId.value;
-      assignment.elements.role.required = !!assignment.elements.unitId.value;
-    };
-    assignment.onsubmit = event => {
-      event.preventDefault();
-      const member = members().find(member => String(member.id) === assignment.elements.memberId.value);
-      if (!member) { $('units-status').textContent = 'Seleziona un socio della branca.'; return; }
-      requestMove(member, assignment.elements.unitId.value ? Number(assignment.elements.unitId.value) : null, assignment.elements.role.value);
-    };
     $('lc-environment-form').onsubmit = event => {
       event.preventDefault();
       const next = event.currentTarget.elements.environment.value;
@@ -184,8 +175,35 @@
         await reload();
       }, $('units-status'));
     };
-    branchSelect.onchange = () => render();
+    branchSelect.onchange = () => { search.value = ''; render(); };
     $('reload-units').onclick = () => perform(reload, $('units-status'), '');
+    function highlightNames() {
+      const query = search.value.trim().toLocaleLowerCase('it');
+      let matches = 0;
+      for (const name of $('unit-available-list').querySelectorAll('.member-name')) {
+        const text = name.dataset.name, lower = text.toLocaleLowerCase('it');
+        name.replaceChildren();
+        let start = 0, index = query ? lower.indexOf(query) : -1;
+        if (index >= 0) matches++;
+        while (index >= 0) {
+          name.append(document.createTextNode(text.slice(start, index)), el('mark', text.slice(index, index + query.length)));
+          start = index + query.length;
+          index = lower.indexOf(query, start);
+        }
+        name.append(document.createTextNode(text.slice(start)));
+      }
+      $('unit-available-status').textContent = query
+        ? matches ? `${matches} nomi evidenziati. Trascina un socio sulla riga desiderata.` : 'Nessun nome corrisponde alla ricerca.'
+        : 'Trascina un socio sulla riga desiderata.';
+    }
+    search.oninput = highlightNames;
+    $('members-units-panel').addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !keyboardMember) return;
+      const id = keyboardMember.id;
+      keyboardMember = null;
+      $('units-status').textContent = 'Spostamento annullato.';
+      document.querySelector(`.unit-member[data-member-id="${id}"] .unit-grip`)?.focus();
+    });
     const sameAssignment = (member, unitId, role) => {
       const values = member.values[branch()] || {};
       const current = visibleUnits().find(unit => M.unitKey(unit.name) === M.unitKey(values[M.unitField(branch())]));
@@ -280,7 +298,8 @@
     function draggableCard(card, member) {
       card.classList.add('unit-draggable');
       card.addEventListener('pointerdown', event => {
-        if (dragging || !event.isPrimary || event.button !== 0 || event.target.closest('.unit-move')) return;
+        if (dragging || !event.isPrimary || event.button !== 0) return;
+        keyboardMember = null;
         const handle = !!event.target.closest('.unit-grip');
         dragging = { card, member, pointerId: event.pointerId, x: event.clientX, y: event.clientY,
           active: false, hold: event.pointerType === 'touch' && !handle };
@@ -298,39 +317,43 @@
       const card = el('article', undefined, 'unit-member');
       card.dataset.memberId = member.id;
       const name = el('button', member.name, 'member-name');
+      name.dataset.name = member.name;
       name.type = 'button'; name.onclick = () => openMember(member);
-      const move = el('button', '↔', 'unit-move');
-      move.type = 'button';
-      move.disabled = !member.revision;
-      move.setAttribute('aria-label', 'Sposta ' + member.name);
-      move.onclick = () => {
-        assignment.elements.memberId.value = member.id;
-        const current = visibleUnits().find(unit => M.unitKey(unit.name) === M.unitKey(member.values[branch()]?.[M.unitField(branch())]));
-        assignment.elements.unitId.value = current?.id || '';
-        assignment.elements.unitId.onchange();
-        const role = member.values[branch()]?.ruolo;
-        if (M.unitRoles(branch(), environment()).includes(role)) assignment.elements.role.value = role;
-        $('unit-assignment').open = true;
-        assignment.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        assignment.elements.unitId.focus();
-      };
       if (member.revision) {
-        const grip = el('span', '⋮⋮', 'unit-grip');
-        grip.title = 'Trascina ' + member.name;
-        grip.setAttribute('aria-hidden', 'true');
+        const grip = el('button', '⋮⋮', 'unit-grip');
+        grip.type = 'button';
+        grip.title = 'Trascina ' + member.name + ' oppure premi Invio e scegli la riga con Tab';
+        grip.setAttribute('aria-label', 'Trascina ' + member.name);
+        grip.onclick = () => {
+          keyboardMember = member;
+          $('units-status').textContent = member.name + ': scegli una riga con Tab e premi Invio per spostare. Esc annulla.';
+        };
         card.append(grip);
         draggableCard(card, member);
       }
-      card.append(name, move);
+      card.append(name);
       if (!member.revision) card.append(el('small', 'Completa prima la scheda socio.'));
       return card;
     }
     function dropTarget(node, unitId, role) {
       node.dataset.dropUnit = unitId === null ? '' : unitId;
       node.dataset.dropRole = role;
+      node.tabIndex = 0;
+      node.addEventListener('keydown', event => {
+        if (event.target !== node || !keyboardMember || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        const member = keyboardMember;
+        keyboardMember = null;
+        if (sameAssignment(member, unitId, role)) {
+          $('units-status').textContent = member.name + ' e gia in questa posizione.';
+          return;
+        }
+        requestMove(member, unitId, role);
+      });
     }
     function render() {
       if (!data || !branch()) return;
+      keyboardMember = null;
       const lc = branch() === 'L/C', roles = M.unitRoles(branch(), environment());
       $('units-tab').textContent = lc ? 'Sestiglie' : 'Squadriglie';
       $('members-units-panel').dataset.environment = lc ? environment() : 'Reparto';
@@ -341,27 +364,22 @@
       $('lc-environment-settings').hidden = !lc;
       $('lc-environment-form').elements.environment.value = environment();
       const available = members();
-      options(assignment.elements.memberId, [['', 'Scegli un socio'], ...available.map(member => [member.id, member.name])]);
-      options(assignment.elements.unitId, [['', lc ? 'Senza sestiglia' : 'Senza squadriglia'], ...visibleUnits().map(unit => [unit.id, unit.name])]);
-      options(assignment.elements.role, roles.map(role => [role, role]));
-      assignment.elements.unitId.onchange();
-      const previousUnassigned = $('unit-unassigned').querySelector('details');
-      const unassigned = el('details', undefined, 'unit-unassigned');
-      unassigned.dataset.branch = branch();
-      unassigned.open = previousUnassigned?.dataset.branch === branch() ? previousUnassigned.open : !visibleUnits().length;
       const groupedIds = new Set(visibleUnits().map(unit => M.unitKey(unit.name)));
       const outside = available.filter(member => !groupedIds.has(M.unitKey(member.values[branch()]?.[M.unitField(branch())])));
-      unassigned.append(el('summary', (lc ? 'Senza sestiglia' : 'Senza squadriglia') + ' / da verificare · ' + outside.length));
-      const unassignedList = el('div', undefined, 'unit-unassigned-list');
+      $('unit-unassigned').hidden = !outside.length;
+      $('unit-available-count').textContent = '· ' + outside.length;
+      const unassignedList = $('unit-available-list');
+      unassignedList.replaceChildren();
       outside.forEach(member => {
         const card = memberCard(member);
         const group = member.values[branch()]?.[M.unitField(branch())];
         if (group) card.append(el('small', 'Assegnazione conservata: ' + group + (lc ? ' (sestiglia nascosta o non disponibile)' : ' (squadriglia nascosta o non disponibile)')));
         unassignedList.append(card);
       });
-      if (!outside.length) unassignedList.append(el('p', lc ? 'Tutti i ragazzi visibili hanno una sestiglia.' : 'Tutti i ragazzi visibili hanno una squadriglia.'));
-      unassigned.append(unassignedList); dropTarget(unassigned, null, '');
-      $('unit-unassigned').replaceChildren(unassigned);
+      highlightNames();
+      $('unit-unassigned').dataset.dropUnit = '';
+      $('unit-unassigned').dataset.dropRole = '';
+      if (!$('unit-unassigned').hasAttribute('tabindex')) dropTarget($('unit-unassigned'), null, '');
       $('units-board').replaceChildren(...visibleUnits().map(unit => {
         const card = el('section', undefined, 'scout-unit');
         card.dataset.unitId = unit.id;

@@ -135,6 +135,36 @@ test("member UI edits, filters, imports, applies macros and prints safely across
           secondary.open = false;
           results.rows = $('members-list').rows.length;
           results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
+          const originalMembers = snapshot.members;
+          const today = new Date();
+          snapshot.members = [10, 9, 14, null].map((years, index) => ({
+            ...structuredClone(originalMembers[0]), id: 41 + index, code: '99994' + index,
+            name: ['Zeta', 'Beta', 'Alfa', 'Gamma'][index],
+            profile: { birthDate: years === null ? '' : (today.getFullYear() - years) + '-01-01' },
+          }));
+          $('reload-members').click(); await settle();
+          const codes = () => [...$('members-list').querySelectorAll('td:nth-child(2) .member-code')].map(code => code.textContent).join(',');
+          const ageSort = document.querySelector('[data-sort="age"]');
+          ageSort.click();
+          results.ageAscending = codes() === '999941,999940,999942,999943' &&
+            ageSort.parentElement.getAttribute('aria-sort') === 'ascending';
+          ageSort.click();
+          results.ageDescending = codes() === '999942,999940,999941,999943' &&
+            ageSort.parentElement.getAttribute('aria-sort') === 'descending';
+          ageSort.click();
+          results.sortCleared = codes() === '999940,999941,999942,999943' &&
+            ageSort.parentElement.getAttribute('aria-sort') === 'none';
+          const nameSort = document.querySelector('[data-sort="name"]');
+          nameSort.click();
+          results.nameAscending = codes() === '999942,999941,999943,999940';
+          ageSort.click();
+          results.switchSort = codes() === '999941,999940,999942,999943' &&
+            nameSort.parentElement.getAttribute('aria-sort') === 'none';
+          ageSort.click(); ageSort.click();
+          snapshot.members = originalMembers;
+          $('reload-members').click(); await settle();
+          results.branchBadgeColor = $('members-list').querySelector('.member-badge').style.getPropertyValue('--branch-color') === M.branchColors['E/G'] &&
+            document.querySelector('[data-sort="branch"]').textContent === 'Branca';
           const filters = $('members-filters').elements;
           results.noDuplicateFilters = $('members-quick-filters').hidden && $('members-selection').hidden;
           const resetFilters = $('members-reset-filters');
@@ -445,7 +475,8 @@ test("member UI edits, filters, imports, applies macros and prints safely across
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "multipleReplacementWarning", "dirtyCloseProtected",
         "noLegacyPistaDocument", "macroBranchChoice", "replacementConfirmed", "emptyMultiplePayload", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
         "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogCapped", "pickerFits", "macroFits", "documentsFit",
-        "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits"])
+        "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",
+        "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
       assert.equal(results.rows, 2);

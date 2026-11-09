@@ -104,6 +104,15 @@ test('all screens fit real responsive viewports and section navigation preserves
             const applicationRoot = ${JSON.stringify(applicationRoots)}[names[page]];
             if (applicationRoot) record({ applicationVisible: visible(doc.querySelector(applicationRoot)) });
             const navs = [...doc.querySelectorAll('[data-section-nav]')];
+            if (names[page] === 'area-riservata/index.html') {
+              // This fixture represents an admin; runtime permission tests cover other roles.
+              for (const id of ['people-tool', 'dashboard-group-overview', 'dashboard-metrics'])
+                doc.getElementById(id).hidden = false;
+              record({ unifiedDashboard: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&
+                ['people-tool', 'documents-tool', 'dashboard-assembly-panel', 'dashboard-documents-title',
+                  'dashboard-metrics', 'dashboard-group-overview', 'activities-coming-title']
+                  .every(id => visible(doc.getElementById(id))) });
+            }
             if (names[page] === 'area-riservata/statistiche.html') {
               record({ allStatisticsVisible: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&
                 ${JSON.stringify(statisticsSections)}.every(id => visible(doc.getElementById(id))) });
@@ -170,7 +179,7 @@ test('all screens fit real responsive viewports and section navigation preserves
     browser = spawn(chrome, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
       '--no-proxy-server', '--user-data-dir=' + profile, '--remote-debugging-port=0',
       '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
-      '--window-size=2100,1400', 'file://' + file], { stdio: 'ignore' });
+      '--window-size=2100,1400', 'file://' + file], { stdio: 'ignore', cwd: dir, env: { ...process.env, TMPDIR: "." } });
     const deadline = Date.now() + 20000;
     const portFile = path.join(profile, 'DevToolsActivePort');
     while (!fs.existsSync(portFile) && Date.now() < deadline)

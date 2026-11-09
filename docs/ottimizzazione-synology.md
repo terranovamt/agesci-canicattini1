@@ -439,6 +439,13 @@ all'amministratore e ai capi autenticati, che non restituisce questi dati storic
 
 ### Statistiche e riepilogo
 
+Nel grafico **Andamento del sito**, visite e persone uniche condividono la scala
+sinistra; le pagine viste usano una scala destra indipendente. Entrambe partono
+da zero: le altezze di serie associate ad assi diversi non sono direttamente
+confrontabili. Le etichette degli assi e la descrizione accessibile indicano
+questa distinzione anche su mobile. I grafici delle performance mantengono
+ciascuno una sola scala, con la propria unità di misura.
+
 In `area-riservata/statistiche.html` si trovano visite, pagine viste, connessioni
 live aperte nel giorno, ultimi sette giorni, pagine visitate e segnalazioni.
 La dashboard dell'area riservata mostra automaticamente un riepilogo di visite,

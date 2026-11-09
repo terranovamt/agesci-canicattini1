@@ -789,6 +789,16 @@ test("admin view-as sees only the chief's branch and passages stay attributed to
   assert.equal(state.members.every(m => m.branch === "L/C"), true);
   assert.equal(state.fields.every(f => f.branch === "L/C"), true);
   assert.equal((await app.request("members/" + eg.id, "PATCH", { revision: eg.revision, branch: "E/G", profile: eg.profile, values: {} })).status, 403);
+  assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
+  assert.equal((await app.request("auth/view-as", "POST", { personId: egChief.id })).status, 200);
+  state = await app.snapshot();
+  assert.equal(state.members.some(member => member.id === eg.id && member.branch === "E/G"), true);
+  assert.equal(state.members.every(member => member.branch === "E/G"), true);
+  assert.equal(state.fields.every(field => field.branch === "E/G"), true);
+  assert.equal((await app.request("members/" + lc.id, "PATCH", { revision: lc.revision, branch: "L/C", profile: lc.profile, values: {} })).status, 403);
+  assert.equal((await app.request("auth/view-as", "DELETE")).status, 200);
+  assert.equal((await app.request("auth/view-as", "POST", { personId: lcChief.id })).status, 200);
+  state = await app.snapshot();
   const current = state.members.find(m => m.id === lc.id);
   assert.equal((await app.request("members/macro", "POST", { action: "passage", branch: "E/G", members: [{ id: lc.id, revision: current.revision }] })).status, 200);
   const db = new DatabaseSync(path.join(directory, "site.sqlite"));

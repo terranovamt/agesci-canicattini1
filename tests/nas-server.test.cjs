@@ -189,6 +189,31 @@ test("NAS atomically persists document metadata, PDFs and optimistic content rev
   }
 });
 
+test("all chiefs can upload PDFs even without a service branch", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-chief-documents-"));
+  const app = await start(directory, { censusCodes: "7654321" });
+  try {
+    const login = await app.request("/api/auth/login", "POST", {
+      code: "7654321", password, confirmation: password,
+    });
+    assert.equal(login.status, 200);
+    const { user: me } = await (await app.request("/api/auth/me")).json();
+    assert.equal(me.admin, false);
+    assert.ok(!me.serviceBranch);
+    const document = { file: "chief-upload.pdf", title: "Documento del capo", description: "Materiale del gruppo" };
+    const response = await app.request("/api/documents", "POST", {
+      operation: "save", document, content: Buffer.from("%PDF-1.7\nChief upload").toString("base64"),
+    });
+    const result = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(result));
+    assert.ok(result.some(item => item.file === document.file));
+    assert.equal(await (await app.request("/documents/pdf/chief-upload.pdf")).text(), "%PDF-1.7\nChief upload");
+  } finally {
+    await app.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("NAS streams live state in the event format expected by the presentation", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-stream-"));
   let app = await start(directory);

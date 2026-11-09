@@ -132,9 +132,12 @@
           data.branches.some(item => !Number.isSafeInteger(item.count) || item.count < 0)) {
         throw new Error("Riepilogo censimenti non valido");
       }
-      const makeCount = (label, count, className) => {
+      const makeCount = (label, count, className, branch) => {
         const item = document.createElement("div");
         if (className) item.className = className;
+        if (branch && window.SOCI_MODEL.branchColors[branch]) {
+          item.style.setProperty("--census-color", window.SOCI_MODEL.branchColors[branch]);
+        }
         const term = document.createElement("dt"), value = document.createElement("dd");
         term.textContent = label;
         value.textContent = count.toLocaleString("it-IT");
@@ -143,7 +146,7 @@
       };
       $("dashboard-group-counts").append(
         makeCount("Totale censiti", data.total, "group-census-total"),
-        ...data.branches.map(item => makeCount(window.SOCI_MODEL.branchLabel(item.branch), item.count, "group-census-branch")),
+        ...data.branches.map(item => makeCount(window.SOCI_MODEL.branchLabel(item.branch), item.count, "group-census-branch", item.branch)),
       );
       $("dashboard-group-status").textContent = data.year
         ? `Censimenti AGESCI · anno ${data.year} · tutti gli status importati.`

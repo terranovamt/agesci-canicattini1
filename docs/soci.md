@@ -20,6 +20,14 @@ anagrafica Co.Ca. (Comunità Capi) e non concede il login. L'interfaccia usa
 **Co.Ca.**; il valore interno `Adulti` e il CSV AGESCI `Branca Adulti`
 restano compatibili, senza migrazioni dei dati.
 
+Nella lista l'intestazione **Branca** e i badge usano i colori della branca.
+Le intestazioni ordinabili (Socio, Branca, Eta, Censimento AGESCI, Contatti)
+ciclano tra crescente, decrescente e nessun ordinamento. Eta e ordinata
+numericamente, con i valori mancanti in fondo in entrambe le direzioni.
+L'eventuale raggruppamento per anno di nascita resta prioritario; l'ordinamento
+si applica all'interno di ciascun gruppo. I controlli sono disponibili anche
+nella visualizzazione a schede su telefono.
+
 **Visualizza come** (in alto, accanto ad Area riservata) e' riservato
 all'amministratore: elenca i capi configurati con branca di servizio e apre la
 stessa sessione con i permessi server del capo scelto, senza password del capo e
@@ -207,14 +215,12 @@ Le assegnazioni restano nella schermata gruppi: non introdurre un nuovo
 dialogo «Sposta» dalle card o dalla scheda personale. Presenze e assenze alle
 attività sono sviluppi futuri, non funzioni già implementate.
 Trascinare il nome di un socio (o la maniglia ⋮⋮) sulla riga desiderata di
-un'altra sestiglia/squadriglia o su **Senza gruppo**: il trascinamento usa
+un'altra sestiglia/squadriglia o su **Soci disponibili**: il trascinamento usa
 Pointer Events e funziona con mouse, penna e touch (sul nome serve una breve
 pressione prolungata, cosi lo scorrimento della pagina resta libero; la
 maniglia parte subito). Il rilascio trasferisce l'assegnazione esistente con il
 ruolo della riga, con revisione e storico gestiti dal server; non crea soci.
-Rilasciare fuori dalle righe o premere Esc annulla. In alternativa premere
-la freccia accanto al nome e usare **Inserisci o sposta un socio**, disponibile anche
-da telefono e tastiera. Lo spostamento non cambia branca e conserva gli altri
+Rilasciare fuori dalle righe o premere Esc annulla. Lo spostamento non cambia branca e conserva gli altri
 campi educativi. Capo e vice ammettono una sola persona: prima liberare il
 posto occupato. Le stesse regole valgono per schede e macro; duplicati
 precedenti e ruoli non riconosciuti sono segnalati, non cancellati.
@@ -223,8 +229,14 @@ precedenti e ruoli non riconosciuti sono segnalati, non cancellati.
 **Gruppi nascosti** consente il ripristino; anche **Crea** con lo stesso nome
 (ignorando maiuscole e spazi superflui) recupera il gruppo esistente senza
 sovrascriverne l'aspetto. I suoi soci restano raggiungibili nell'area
-**Senza gruppo / da verificare**, con l'assegnazione conservata indicata.
-Per rimuovere esplicitamente l'assegnazione scegliere **Senza gruppo**.
+**Soci disponibili**, con l'assegnazione conservata indicata.
+Il blocco resta aperto in alto ed e fisso durante lo scorrimento (tranne negli
+schermi molto bassi, per non coprire le destinazioni); sparisce quando e vuoto.
+La ricerca accanto al titolo evidenzia tutte le occorrenze nei nomi, senza
+nascondere gli altri soci. Trascinare un nome su questo blocco rimuove
+esplicitamente l'assegnazione. Non ci sono frecce o form separati per spostare.
+Da tastiera, premere Invio sulla maniglia, raggiungere una riga di destinazione
+con Tab e confermare con Invio o Spazio; Esc annulla.
 
 Le sestiglie hanno un triangolo equilatero con punta in alto, bordato di giallo, con il proprio colore al
 centro. I nomi colore proposti selezionano automaticamente il colore

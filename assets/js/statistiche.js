@@ -94,7 +94,7 @@
   ];
   const historySeries = [
     { key: "visits", name: "Visite sito", color: "visits", kind: "count", fill: true },
-    { key: "views", name: "Pagine viste", color: "views", kind: "count" },
+    { key: "views", name: "Pagine viste", color: "views", kind: "count", axis: "right" },
     { key: "people", name: "Persone uniche", color: "connections", kind: "count" },
   ];
   let historyDays = 30;
@@ -139,6 +139,11 @@
     const title = chartElement("title");
     title.textContent = options.title;
     target.append(title);
+    const description = chartElement("desc");
+    description.textContent = options.description + (options.axes
+      ? " Asse sinistro: visite e persone uniche. Asse destro: pagine viste. Scale indipendenti, entrambe da zero; le altezze delle serie su assi diversi non sono confrontabili direttamente."
+      : "");
+    target.append(description);
     const values = seriesList.flatMap((series) => rows.map((row) => row?.[series.key]).filter(Number.isFinite));
     if (!values.length) {
       const empty = chartElement("text", {
@@ -152,21 +157,44 @@
       return null;
     }
     const kind = seriesList[0].kind;
-    const scale = axis(Math.max(...values), kind, options.ticks);
+    const valuesFor = (side) => seriesList
+      .filter((series) => (series.axis || "left") === side)
+      .flatMap((series) => rows.map((row) => row?.[series.key]).filter(Number.isFinite));
+    const scale = axis(Math.max(0, ...valuesFor("left")), kind, options.ticks);
+    const rightScale = options.axes ? axis(Math.max(0, ...valuesFor("right")), kind, options.ticks) : null;
     const tickLabels = scale.ticks.map((value) => format(value, kind));
+    const rightLabels = rightScale?.ticks.map((value) => format(value, kind));
     const xStart = 14 + Math.max(...tickLabels.map((label) => label.length)) * 7;
-    const xEnd = width - 14;
-    const yStart = 14;
+    const xEnd = width - 14 - (rightLabels ? Math.max(...rightLabels.map((label) => label.length)) * 7 : 0);
+    const yStart = options.axes ? 40 : 14;
     const yEnd = height - 32;
     const x = (index) => (rows.length > 1 ? xStart + ((xEnd - xStart) * index) / (rows.length - 1) : (xStart + xEnd) / 2);
-    const y = (value) => yEnd - ((yEnd - yStart) * value) / scale.top;
+    const y = (value, selectedScale = scale) => yEnd - ((yEnd - yStart) * value) / selectedScale.top;
     scale.ticks.forEach((value, index) => {
       const position = y(value);
       target.append(chartElement("line", { x1: xStart, y1: position, x2: xEnd, y2: position, class: "chart-grid" }));
-      const label = chartElement("text", { x: xStart - 7, y: position + 4, "text-anchor": "end", class: "chart-axis-label" });
+      const label = chartElement("text", { x: xStart - 7, y: position + 4, "text-anchor": "end", class: "chart-axis-label", "data-axis": "left" });
       label.textContent = tickLabels[index];
       target.append(label);
     });
+    if (rightScale) {
+      rightScale.ticks.forEach((value, index) => {
+        const label = chartElement("text", {
+          x: xEnd + 7, y: y(value, rightScale) + 4, "text-anchor": "start",
+          class: "chart-axis-label", "data-axis": "right",
+        });
+        label.textContent = rightLabels[index];
+        target.append(label);
+      });
+      for (const [side, text] of Object.entries(options.axes)) {
+        const label = chartElement("text", {
+          x: side === "left" ? 7 : width - 7, y: 16,
+          "text-anchor": side === "left" ? "start" : "end", class: "chart-axis-title",
+        });
+        label.textContent = text;
+        target.append(label);
+      }
+    }
     const positions = [...new Set([0, Math.floor((rows.length - 1) / 2), rows.length - 1])];
     let previous = "";
     for (const position of positions) {
@@ -184,6 +212,7 @@
     }
     const summaries = [];
     for (const series of seriesList) {
+      const seriesY = (value) => y(value, series.axis === "right" && rightScale ? rightScale : scale);
       const segments = [];
       let segment = [];
       rows.forEach((row, index) => {
@@ -194,7 +223,7 @@
       if (segment.length) segments.push(segment);
       for (const points of segments) {
         const path = points
-          .map((point, index) => (index ? "L" : "M") + x(point.index).toFixed(1) + "," + y(point.value).toFixed(1))
+          .map((point, index) => (index ? "L" : "M") + x(point.index).toFixed(1) + "," + seriesY(point.value).toFixed(1))
           .join(" ");
         if (series.fill && points.length > 1) {
           const area =
@@ -207,7 +236,7 @@
           const text = options.pointLabel(point.row) + ": " + series.name + " " + format(point.value, series.kind);
           const circle = chartElement("circle", {
             cx: x(point.index),
-            cy: y(point.value),
+            cy: seriesY(point.value),
             r: rows.length < 32 ? 3.5 : 2,
             class: "chart-point chart-" + series.color,
             tabindex: 0,
@@ -223,11 +252,9 @@
       if (!available.length) continue;
       const last = available.at(-1);
       const peak = Math.max(...available.map((point) => point.value));
-      summaries.push({ series, last, peak, count: available.length, lastX: x(last.index), lastY: y(last.value) });
+      summaries.push({ series, last, peak, count: available.length, lastX: x(last.index), lastY: seriesY(last.value) });
     }
-    const description = chartElement("desc");
-    description.textContent =
-      options.description +
+    description.textContent +=
       " " +
       summaries
         .map(
@@ -246,7 +273,6 @@
             ".",
         )
         .join(" ");
-    target.append(description);
     const single = summaries.length === 1 ? summaries[0] : null;
     if (single) {
       target.dataset.latest = String(single.last.value);
@@ -262,11 +288,12 @@
     $("stats-history-description").textContent =
       "Persone uniche, visite e pagine viste sull’intero sito · " +
       (historyDays === 365 ? "ultimi 12 mesi" : "ultimi " + historyDays + " giorni") +
-      ", un valore al giorno (ora italiana).";
+      ", un valore al giorno (ora italiana). Asse sinistro: visite e persone uniche; asse destro: pagine viste (scala separata).";
     drawChart(chart, selected, historySeries, {
       width: 720,
       height: (width) => (width < 520 ? 230 : 280),
       ticks: 4,
+      axes: { left: "Visite / persone uniche", right: "Pagine viste" },
       maxPoints: 31,
       title: "Andamento giornaliero: visite, pagine viste e persone uniche sull’intero sito",
       empty: lastSuccess !== null ? "Nessun dato giornaliero" : unavailable(),
