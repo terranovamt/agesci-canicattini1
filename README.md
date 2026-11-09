@@ -122,21 +122,16 @@ resta invariato; gli errori di connessione sono nel pannello Informazioni.
 
 I feed e i nomi sono configurati in `calendars/sources.json`. Il browser legge
 soltanto `calendars/events.json`, evitando CORS, token e API key nel sito.
-Il workflow **Sync public calendars** legge i cinque feed ogni ora al minuto
-17 (GitHub può ritardare gli orari), al cambio della configurazione su `main`,
-oppure manualmente dalla scheda Actions. Parte **solo dopo il merge su main**.
-Pubblica un commit con il solo snapshot e richiede una build Pages; ha permessi
-Contents e Pages in scrittura, senza segreti esterni né crediti AI. Regole di
-protezione del branch che vietano il push del bot richiedono un adeguamento
-esplicito dell'amministratore: lo script non aggira tali regole.
+La sincronizzazione è gestita dall'attività DSM sul NAS; il repository non
+esegue più workflow GitHub per aggiornare i calendari.
 
 La sincronizzazione considera circa un anno passato e due futuri, espande
 ricorrenze, esclusioni, eccezioni e cancellazioni, gestisce eventi giornalieri,
 durate e fusi orari. Pubblica solo titolo, luogo, date e calendario, non
 organizzatori, invitati o descrizioni. Se un feed fallisce, conserva gli ultimi
-eventi noti, li segnala come non aggiornati e fa fallire il workflow dopo aver
-pubblicato lo stato d'errore. La home segnala anche snapshot vecchi oltre tre ore
-e il periodo coperto; un errore non viene presentato come assenza di eventi.
+eventi noti e li segnala come non aggiornati. La home segnala anche snapshot
+vecchi oltre tre ore e il periodo coperto; un errore non viene presentato come
+assenza di eventi.
 
 I due pacchetti Python in `tools/calendar-requirements.txt` sono usati
 **solo dalla sincronizzazione**, per non implementare un parser ICS incompleto.

@@ -57,8 +57,7 @@ Pages continua a pubblicare direttamente dalla radice di `main`.
 ├── tests/                         Test automatici Node e Python
 ├── tools/                         Preview locale e sincronizzatore dei calendari
 ├── .github/
-│   ├── workflows/                 Automazioni GitHub Actions
-│   └── prompts/                   Istruzioni, cataloghi e strumenti degli agenti
+│   └── prompts/                   Cataloghi e strumenti per lo sviluppo
 ├── README.md                      Ingresso per chi lavora al repository
 ├── .gitignore, .nojekyll           Configurazione Git e pubblicazione statica
 └── vecchi ingressi HTML            Solo reindirizzamenti di compatibilità
@@ -99,7 +98,7 @@ caricano e viene salvato dal setup nel percorso `LIVE.github.cartella`,
 ora impostato a `area-riservata/assemblea`.
 
 **Gli strumenti del repository non sono pagine del sito.** Test, guide
-tecniche, specifiche visive e automazioni hanno ciascuno la propria cartella.
+tecniche e specifiche visive hanno ciascuno la propria cartella.
 Con la pubblicazione dalla radice anche i file raggiungibili di queste
 cartelle possono essere pubblici: la separazione organizzativa non costituisce
 un controllo di accesso. Non inserire segreti o dati riservati in alcuna parte
