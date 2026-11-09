@@ -21,6 +21,12 @@ NAS, senza token GitHub. GitHub resta la sorgente del codice: un'attivita' DSM
 controlla `NAS` ogni minuto e distribuisce l'ultimo commit preservando i dati.
 Non pubblicare questo branch su GitHub Pages.
 
+`main` mantiene soltanto il reindirizzamento d'ingresso da GitHub Pages al
+Synology; per continuare lo sviluppo usare `NAS`. Non unire i due branch:
+la home di `NAS` deve restare il sito completo, non il reindirizzamento.
+Il deploy DSM scarica il branch `NAS` con un fetch forzato e funziona anche
+dopo la riscrittura della cronologia, senza sovrascrivere i dati persistenti.
+
 La pubblicazione predefinita usa **Synology DDNS (`nomegruppo.synology.me`)
 e reverse proxy HTTPS DSM**, senza acquistare un dominio o usare Cloudflare.
 Con Sky WiFi verificare prima che la propria linea consenta la porta TCP 443
