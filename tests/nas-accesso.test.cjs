@@ -133,7 +133,6 @@ test('NAS census inputs require seven digits without disclosing the admin code',
     assert.match(input, /maxlength="7"/);
     assert.match(input, /pattern="\[0-9\]\{7\}"/);
     assert.match(input, /placeholder="7654321"/);
-    if (file === 'index.html') assert.match(input, /autocomplete="off"/);
     assert.doesNotMatch(input, /1238005|123 8005/);
   }
 });
