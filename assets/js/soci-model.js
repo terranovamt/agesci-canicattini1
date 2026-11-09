@@ -36,11 +36,27 @@
     ['L/C', 'specialita', 'Specialita'], ['L/C', 'promessa', 'Data promessa', 'date'],
     ['E/G', 'squadriglia', 'Squadriglia'], ['E/G', 'ruolo', 'Ruolo in squadriglia'],
     ['E/G', 'tappa', 'Tappa'], ['E/G', 'specialita', 'Specialita'],
-    ['E/G', 'brevetti', 'Brevetti'], ['E/G', 'promessa', 'Data promessa', 'date'],
+    ['E/G', 'brevetti', 'Brevetti di competenza'], ['E/G', 'promessa', 'Data promessa', 'date'],
     ['R/S', 'comunita', 'Noviziato / clan'], ['R/S', 'punto-strada', 'Punto della strada'],
     ['R/S', 'servizio', 'Servizio'], ['R/S', 'partenza', 'Data partenza', 'date'],
     ['Adulti', 'servizio', 'Servizio in gruppo'], ['Adulti', 'formazione', 'Percorso formativo'],
   ].map(([branch, key, label, type = 'text']) => ({ branch, key, label, type, options: [] }));
+  const choices = [
+    ['L/C', 'ruolo', 'Ruolo in sestiglia', ['Capo sestiglia', 'Vice capo sestiglia', 'Sestigliere', 'Novizio']],
+    ['L/C', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno']],
+    ['L/C', 'progressione', 'Progressione', ['Lupo della legge', 'Lupo della rupe', 'Lupo anziano']],
+    ['E/G', 'anno', 'Anno in branca', ['Primo anno', 'Secondo anno', 'Terzo anno', 'Quarto anno']],
+    ['E/G', 'progressione', 'Ingresso in reparto', ['Piede tenero']],
+  ];
+  defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').type = 'select';
+  defaultFields.find(field => field.branch === 'E/G' && field.key === 'ruolo').options = ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere'];
+  for (const [branch, key, label, options] of choices) defaultFields.push({ branch, key, label, type: 'select', options });
+  function nextBranch(branch) { return { 'L/C': 'E/G', 'E/G': 'R/S' }[branch] || ''; }
+  function longSuspended(member, currentYear) {
+    const latest = member.censuses[0];
+    return !!latest && (latest.statusCode === 'D' ||
+      (latest.statusCode === 'S' && Number(latest.year) < Number(currentYear)));
+  }
   function date(value) {
     if (!value) return '';
     const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
@@ -126,7 +142,7 @@
     return '"' + (/^[\s]*[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
-  const model = { branches, profileFields, censusFields, defaultFields, date, parseImport, exportCsv };
+  const model = { branches, profileFields, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;
   else root.SOCI_MODEL = model;
 })(typeof window === 'object' ? window : globalThis);

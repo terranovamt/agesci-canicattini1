@@ -47,7 +47,8 @@
       password.value = confirmation.value = '';
       document.getElementById('login').hidden = true;
       document.getElementById('riservata').hidden = false;
-      document.getElementById('people-tool').hidden = !window.NAS.user.admin;
+      document.getElementById('people-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
+      document.getElementById('people-access-tool').hidden = !window.NAS.user.admin;
       status.textContent = '';
       window.AREA_DASHBOARD.load();
     }

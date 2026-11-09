@@ -20,7 +20,7 @@
     <div class="members-heading">
       <div><p class="eyebrow">Anagrafe di gruppo</p><h1>Libro soci</h1>
         <p>Anagrafiche, censimenti e percorsi. Tutto al posto giusto.</p></div>
-      <a class="button button-secondary" href="persone.html">Persone e accessi</a>
+      <a id="members-access-link" class="button button-secondary" href="persone.html">Persone e accessi</a>
     </div>
     <p id="members-status" role="status" aria-live="polite"></p>
     <section id="members-app" hidden>
@@ -38,6 +38,9 @@
         <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
         <label>Eta minima<input name="minAge" type="number" min="0" max="130"></label>
         <label>Eta massima<input name="maxAge" type="number" min="0" max="130"></label>
+        <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
+        <label class="members-check"><input name="groupBirthYear" type="checkbox">Raggruppa per anno di nascita</label>
+        <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
         <label>Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="consents">Consensi 2A/2B/2C da verificare</option><option value="incomplete">Anagrafica da completare</option></select></label>
         <label>Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
         <label>Valore contiene<input name="value" type="search" autocomplete="off"></label>
@@ -58,6 +61,12 @@
         <tbody id="members-list"></tbody>
       </table></div>
       <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
+      <p id="suspension-note" class="members-note"></p>
+      <section class="members-settings" aria-labelledby="transfers-title">
+        <h2 id="transfers-title">Passaggi in attesa</h2>
+        <p>La branca resta quella di provenienza finche un altro capo della destinazione conferma. Nessuna progressione viene assegnata automaticamente per eta.</p>
+        <div id="members-transfers"></div>
+      </section>
       <details class="members-settings"><summary>Campi personalizzati e modelli di gruppo</summary>
         <div class="members-settings-grid">
           <form id="field-form"><h2>Nuovo campo di branca</h2>
@@ -108,11 +117,11 @@
     <form id="macro-form">
       <div class="members-dialog-heading"><h2>Azioni rapide</h2><button class="button button-secondary" type="button" data-close="macro-dialog">Chiudi</button></div>
       <p id="macro-count"></p><p id="macro-error" role="alert"></p>
-      <label>Azione<select name="action"><option value="field">Aggiorna campo educativo</option><option value="branch">Passaggio di branca locale</option></select></label>
+      <label>Azione<select name="action"><option value="field">Aggiorna campo educativo</option><option value="passage">Proponi passaggio alla branca successiva</option></select></label>
       <label>Branca<select name="branch" required></select></label>
       <label id="macro-field-label">Campo<select name="key"></select></label>
       <div id="macro-value"></div>
-      <p>Il passaggio conserva i percorsi precedenti e non cambia il censimento ufficiale o i permessi di login.</p>
+      <p>Seleziona i soci per anno di nascita e decidi tu quando proporre L/C → E/G → R/S. Il passaggio viene applicato solo dopo la conferma della destinazione e conserva i percorsi precedenti.</p>
       <button class="button button-primary" type="submit">Applica ai soci selezionati</button>
     </form>
   </dialog>

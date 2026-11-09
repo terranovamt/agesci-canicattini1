@@ -17,7 +17,10 @@
       const option = node('option', label); option.value = value; select.append(option);
     }
   }
-  function branchOptions(select, first) { options(select, M.branches.map(branch => [branch, branch]), first); }
+  function branchOptions(select, first) {
+    const branches = window.NAS?.user?.admin ? M.branches : [window.NAS?.user?.serviceBranch].filter(Boolean);
+    options(select, branches.map(branch => [branch, branch]), first);
+  }
   function input(labelText, name, value, definition = {}) {
     const label = node('label', labelText);
     const el = node(definition.type === 'select' ? 'select' : definition.long ? 'textarea' : 'input');
@@ -46,6 +49,8 @@
     const f = filters.elements, query = f.search.value.trim().toLocaleLowerCase('it');
     return data.members.filter(member => {
       const current = census(member), years = age(member);
+      if (!f.showSuspended.checked && M.longSuspended(member, data.currentYear)) return false;
+      if (f.birthYear.value && member.profile.birthDate?.slice(0, 4) !== f.birthYear.value) return false;
       if (query && ![member.name, member.code, ...Object.values(member.profile)].join(' ').toLocaleLowerCase('it').includes(query)) return false;
       if (f.branch.value && member.branch !== f.branch.value) return false;
       if (f.year.value && !current) return false;
@@ -70,7 +75,30 @@
     $('open-macro').disabled = $('open-documents').disabled = !selected.size;
   }
   function render() {
-    const rows = results().map(member => {
+    const visible = results(), rows = [];
+    if (!filters.elements.showSuspended.checked)
+      data.members.filter(member => M.longSuspended(member, data.currentYear)).forEach(member => selected.delete(member.id));
+    const countable = data.members.filter(member => filters.elements.showSuspended.checked || !M.longSuspended(member, data.currentYear));
+    $('members-summary').replaceChildren(...M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch).map((branch, i) => {
+      const card = node('article'); card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
+      card.append(node('span', branch), node('strong', String(countable.filter(m => m.branch === branch).length)), node('span', 'schede visibili nella branca locale'));
+      return card;
+    }));
+    $('suspension-note').textContent = `Anno di riferimento: ${data.currentYear}. Esclusi di default i codici D (gia indicati da AGESCI come sospesi da oltre un anno) e i codici S dell'ultimo censimento precedente a questo anno.`;
+    if (filters.elements.groupBirthYear.checked) visible.sort((a, b) =>
+      (a.profile.birthDate?.slice(0, 4) || '9999').localeCompare(b.profile.birthDate?.slice(0, 4) || '9999') || a.name.localeCompare(b.name));
+    let group = null;
+    for (const member of visible) {
+      const birthYear = member.profile.birthDate?.slice(0, 4) || '';
+      if (filters.elements.groupBirthYear.checked && birthYear !== group) {
+        group = birthYear;
+        const row = node('tr'), cell = node('td');
+        cell.colSpan = 6;
+        const button = node('button', (birthYear ? 'Nati nel ' + birthYear : 'Nascita non indicata') + ' · Seleziona questo gruppo', 'member-name');
+        button.type = 'button';
+        button.onclick = () => { visible.filter(m => (m.profile.birthDate?.slice(0, 4) || '') === birthYear).forEach(m => selected.add(m.id)); render(); };
+        cell.append(button); row.append(cell); rows.push(row);
+      }
       const row = node('tr'), checkCell = node('td'), checkbox = node('input');
       checkbox.type = 'checkbox'; checkbox.checked = selected.has(member.id);
       checkbox.setAttribute('aria-label', 'Seleziona ' + member.name);
@@ -83,32 +111,50 @@
       const current = census(member);
       const censusCell = node('td', current ? `${current.year} · ${current.status || 'Status non indicato'}` : 'Nessun censimento');
       if (current) censusCell.append(node('span', current.branch, 'member-code'));
-      row.append(checkCell, nameCell, branchCell, node('td', age(member) ?? '—'), censusCell,
+      row.append(checkCell, nameCell, branchCell, node('td', `${age(member) ?? '—'}${birthYear ? ' · ' + birthYear : ''}`), censusCell,
         node('td', [member.profile.email, member.profile.phone].filter(Boolean).join(' · ') || 'Non indicati'));
-      return row;
-    });
+      rows.push(row);
+    }
     if (!rows.length) {
       const row = node('tr'), cell = node('td', 'Nessun socio corrisponde ai filtri.'); cell.colSpan = 6; row.append(cell); rows.push(row);
     }
     $('members-list').replaceChildren(...rows);
     updateSelection();
   }
+  function renderTransfers() {
+    $('members-transfers').replaceChildren(...data.transfers.map(transfer => {
+      const card = node('article', undefined, 'members-census');
+      card.append(node('p', `${transfer.name} · ${transfer.code} · ${transfer.birthYear || 'Nascita non indicata'} · ${transfer.source} → ${transfer.target}`));
+      for (const [action, label, allowed] of [['confirm', 'Conferma ingresso', transfer.canConfirm],
+        ['reject', 'Rifiuta passaggio', transfer.canConfirm], ['cancel', 'Annulla proposta', transfer.canCancel]]) {
+        if (!allowed) continue;
+        const button = node('button', label, 'button button-secondary');
+        button.type = 'button';
+        button.onclick = () => {
+          if (!confirm(`${label} per ${transfer.name}?`)) return;
+          run(async () => { await A.request('members/transfers/' + transfer.id, 'PATCH', { action, revision: transfer.revision }); await load(); });
+        };
+        card.append(button);
+      }
+      return card;
+    }));
+    if (!data.transfers.length) $('members-transfers').append(node('p', 'Nessun passaggio in attesa.'));
+  }
   async function load() {
     data = await A.request('members');
     selected.clear();
     const oldYear = filters.elements.year.value, oldStatus = filters.elements.status.value, oldField = filters.elements.field.value;
+    const oldBirthYear = filters.elements.birthYear.value;
+    options(filters.elements.birthYear, [...new Set(data.members.map(m => m.profile.birthDate?.slice(0, 4)).filter(Boolean))].sort().map(v => [v, v]), ['', 'Tutti gli anni']);
+    if ([...filters.elements.birthYear.options].some(o => o.value === oldBirthYear)) filters.elements.birthYear.value = oldBirthYear;
     options(filters.elements.year, [...new Set(data.members.flatMap(m => m.censuses.map(c => c.year)))].sort().reverse().map(v => [v, v]), ['', 'Ultimo disponibile per socio']);
     options(filters.elements.status, [...new Set(data.members.flatMap(m => m.censuses.map(c => c.status)).filter(Boolean))].sort().map(v => [v, v]), ['', 'Tutti gli status']);
     options(filters.elements.field, data.fields.map(field => [field.branch + ':' + field.key, field.branch + ' · ' + field.label]), ['', 'Tutti i campi']);
     for (const [key, value] of [['year', oldYear], ['status', oldStatus], ['field', oldField]])
       if ([...filters.elements[key].options].some(o => o.value === value)) filters.elements[key].value = value;
-    $('members-summary').replaceChildren(...M.branches.map((branch, i) => {
-      const card = node('article'); card.style.setProperty('--branch-color', ['#b49526', '#398258', '#bc4e50', '#795699'][i]);
-      card.append(node('span', branch), node('strong', String(data.members.filter(m => m.branch === branch).length)), node('span', 'schede nella branca locale'));
-      return card;
-    }));
     options($('document-template'), data.templates.map(template => [String(template.id), template.title]));
     $('members-app').hidden = false;
+    renderTransfers();
     render();
   }
   async function run(action, errorTarget = $('members-status')) {
@@ -154,6 +200,7 @@
     profileForm.elements.code.value = member?.code || '';
     profileForm.elements.code.readOnly = !!member;
     profileForm.elements.branch.value = member?.branch || 'L/C';
+    profileForm.elements.branch.disabled = !!member && (!window.NAS.user.admin || member.revision > 0);
     const profile = { ...member?.profile };
     if (member && !Object.keys(profile).length) profile.givenName = member.name;
     for (const [target, keys] of [[$('member-profile'), Object.keys(M.profileFields).filter(key => !consentKeys.includes(key))], [$('member-consents'), consentKeys]]) {
@@ -229,6 +276,13 @@
   };
   function macroInputs() {
     const f = macroForm.elements, fieldAction = f.action.value === 'field';
+    if (!fieldAction) options(f.branch, [[M.nextBranch(chosen()[0]?.branch), M.nextBranch(chosen()[0]?.branch) || 'Nessuna branca successiva']]);
+    else {
+      const branch = chosen()[0]?.branch;
+      branchOptions(f.branch);
+      if (branch) f.branch.value = branch;
+    }
+    f.branch.disabled = !fieldAction;
     const fields = data.fields.filter(field => field.branch === f.branch.value);
     const oldKey = f.key.value;
     options(f.key, fields.map(field => [field.key, field.label]));
@@ -247,12 +301,16 @@
     $('macro-error').textContent = '';
     $('macro-count').textContent = `${selected.size} soci selezionati (anche fuori dai filtri correnti).`;
     macroForm.elements.branch.value = chosen()[0]?.branch || 'L/C';
+    const passage = [...macroForm.elements.action.options].find(option => option.value === 'passage');
+    passage.disabled = !M.nextBranch(chosen()[0]?.branch) || chosen().some(member => member.branch !== chosen()[0].branch);
+    if (passage.disabled) macroForm.elements.action.value = 'field';
     macroInputs(); $('macro-dialog').showModal();
   };
   macroForm.onsubmit = event => {
     event.preventDefault();
     if (!confirm(`Applicare la macro a ${selected.size} soci?`)) return;
     const value = Object.fromEntries(new FormData(macroForm));
+    value.branch = macroForm.elements.branch.value;
     value.members = chosen().map(member => ({ id: member.id, revision: member.revision }));
     run(async () => { await A.request('members/macro', 'POST', value); $('macro-dialog').close(); await load(); }, $('macro-error'));
   };
@@ -315,8 +373,9 @@
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   branchOptions(filters.elements.branch, ['', 'Tutte le branche']);
   branchOptions(profileForm.elements.branch); branchOptions(macroForm.elements.branch); branchOptions($('field-form').elements.branch);
-  if (!window.NAS?.user?.admin) {
-    $('members-status').textContent = 'Pagina riservata all’amministratore sul NAS. Accedi dall’area riservata.';
+  $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !window.NAS?.user?.admin;
+  if (!window.NAS?.user || (!window.NAS.user.admin && !window.NAS.user.serviceBranch)) {
+    $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';
     return;
   }
   run(load);

@@ -35,7 +35,15 @@
     }
     kind.value = person.kind;
     kind.disabled = person.admin;
-    fields.append(field('Nome e cognome', name), field('Tipologia', kind));
+    const service = document.createElement('select');
+    for (const [value, text] of [['', 'Nessuna branca'], ['L/C', 'L/C'], ['E/G', 'E/G'], ['R/S', 'R/S']]) {
+      const option = document.createElement('option');
+      option.value = value; option.textContent = text; service.append(option);
+    }
+    service.value = person.serviceBranch || '';
+    service.disabled = kind.value !== 'capo' || person.admin;
+    kind.onchange = () => { service.disabled = kind.value !== 'capo'; if (service.disabled) service.value = ''; };
+    fields.append(field('Nome e cognome', name), field('Tipologia', kind), field('Branca di servizio', service));
     const hint = document.createElement('p');
     hint.textContent = person.admin ? 'Unico amministratore del sito. Password gestita da NAS_ADMIN_PASSWORD in nas.env (o .env), non salvata nel database.' : person.kind === 'ragazzo'
       ? 'Nessun accesso all’area riservata.' : !person.loginEnabled
@@ -52,7 +60,7 @@
       e.preventDefault();
       if (person.kind === 'capo' && kind.value === 'ragazzo' &&
           !confirm('Il passaggio a ragazzo cancella la password e revoca gli accessi. Continuare?')) return;
-      run(() => A.request('people/' + person.id, 'PATCH', { name: name.value, kind: kind.value }));
+      run(() => A.request('people/' + person.id, 'PATCH', { name: name.value, kind: kind.value, serviceBranch: service.value }));
     };
     if (!person.admin && person.kind === 'capo' && person.hasPassword) {
       const reset = document.createElement('button');
@@ -74,7 +82,7 @@
   }
   async function load() {
     const result = await A.request('people');
-    list.replaceChildren(...result.people.map(card));
+    list.replaceChildren(...result.people.filter(person => person.kind === 'capo').map(card));
     app.hidden = false;
   }
   async function run(action) {

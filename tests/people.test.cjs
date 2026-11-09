@@ -95,7 +95,7 @@ test("legacy admin becomes an ordinary capo and existing accounts survive schema
         CHECK(kind='capo' OR password_hash IS NULL),
         CHECK(census_code!='1238005' OR kind='capo')
       );
-      INSERT INTO people_legacy SELECT * FROM people;
+      INSERT INTO people_legacy SELECT id,census_code,name,kind,password_hash FROM people;
       DROP TABLE people;
       ALTER TABLE people_legacy RENAME TO people;
       UPDATE people SET kind='ragazzo',name='Existing person' WHERE census_code='23816938';

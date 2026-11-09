@@ -24,7 +24,7 @@ body.reserved-page .reserved-header .brand,
 .nas-navbar img { width: 48px; height: 48px; object-fit: contain }
 .nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
 .nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
-#nas-login-form [hidden], #people-tool[hidden] { display: none }
+#nas-login-form [hidden], #people-tool[hidden], #people-access-tool[hidden] { display: none }
 #password-fields, #confirmation-field { display: grid; gap: 10px }
 #nas-login-form p { font-size: 14px }
 .password-input { position: relative; min-width: 0 }

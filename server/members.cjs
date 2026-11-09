@@ -34,9 +34,28 @@ function createMembers(db, people) {
     );
     CREATE TABLE IF NOT EXISTS member_group (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL, year TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS member_templates (id INTEGER PRIMARY KEY, title TEXT NOT NULL, body TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS member_transfers (
+      id INTEGER PRIMARY KEY, person_id INTEGER NOT NULL REFERENCES people(id),
+      source TEXT NOT NULL, target TEXT NOT NULL, proposer_id INTEGER NOT NULL REFERENCES people(id),
+      member_revision INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+      revision INTEGER NOT NULL DEFAULT 1, reviewer_id INTEGER REFERENCES people(id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS member_transfer_pending ON member_transfers(person_id) WHERE status='pending';
   `);
   for (const field of M.defaultFields)
     db.prepare("INSERT OR IGNORE INTO member_fields VALUES(?,?,?)").run(field.branch, field.key, JSON.stringify(field));
+  db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='brevetti' AND definition=?")
+    .run(JSON.stringify(M.defaultFields.find(field => field.branch === "E/G" && field.key === "brevetti")),
+      JSON.stringify({ branch: "E/G", key: "brevetti", label: "Brevetti", type: "text", options: [] }));
+  const oldRole = db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='ruolo'").get();
+  if (oldRole && oldRole.definition === JSON.stringify({ branch: "E/G", key: "ruolo", label: "Ruolo in squadriglia", type: "text", options: [] })) {
+    const definition = structuredClone(M.defaultFields.find(field => field.branch === "E/G" && field.key === "ruolo"));
+    for (const row of db.prepare("SELECT data FROM member_values WHERE branch='E/G'").all()) {
+      const value = JSON.parse(row.data).ruolo;
+      if (value && !definition.options.includes(value)) definition.options.push(value);
+    }
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(definition));
+  }
   if (!db.prepare("SELECT id FROM member_templates LIMIT 1").get())
     db.prepare("INSERT INTO member_templates(title,body) VALUES(?,?)").run("Scheda interna socio",
       "Scheda interna - non sostituisce documenti ufficiali AGESCI\n\n{{nome}} {{cognome}}\nCodice socio: {{codice}}\nBranca: {{branca}}\nAnno scout: {{anno}}\nEmail: {{email}}\nTelefono: {{cellulare}}\n\nPercorso educativo:\n{{percorso}}\n\nData: {{data}}");
@@ -113,15 +132,44 @@ function createMembers(db, people) {
   return {
     async handle(route, request, response, { body, send, sessionId }) {
       if (!route.startsWith("/api/members")) return false;
-      const current = people.user(sessionId(request));
-      if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
-      if (!current.admin) fail(403, "Gestione soci riservata all'amministratore");
+      const user = () => {
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        if (!current.admin && !["L/C", "E/G", "R/S"].includes(current.serviceBranch))
+          fail(403, "Nessuna branca di servizio assegnata: contatta l'amministratore");
+        return current;
+      };
+      const admin = () => { if (!user().admin) fail(403, "Operazione riservata all'amministratore"); };
+      const access = branch => {
+        const current = user();
+        if (!current.admin && branch !== current.serviceBranch) fail(403, "Socio o campo fuori dalla tua branca di servizio");
+      };
+      user();
       const method = request.method;
       if (route === "/api/members" && method === "GET") {
-        send(response, 200, snapshot()); return true;
+        const current = user(), result = snapshot();
+        result.currentYear = db.prepare("SELECT max(year) AS year FROM member_censuses").get().year || String(new Date().getFullYear());
+        if (!current.admin) {
+          result.members = result.members.filter(member => member.branch === current.serviceBranch)
+            .map(member => ({ ...member, values: { [member.branch]: member.values[member.branch] || {} } }));
+          result.fields = result.fields.filter(field => field.branch === current.serviceBranch);
+        }
+        result.transfers = db.prepare("SELECT * FROM member_transfers WHERE status='pending' ORDER BY id").all()
+          .filter(transfer => current.admin || transfer.source === current.serviceBranch || transfer.target === current.serviceBranch)
+          .map(transfer => {
+            const member = get(transfer.person_id);
+            return { id: transfer.id, personId: member.id, name: member.name, code: member.code,
+              birthYear: member.profile.birthDate?.slice(0, 4) || "", source: transfer.source, target: transfer.target,
+              revision: transfer.revision, canConfirm: transfer.proposer_id !== current.id &&
+                (current.admin || transfer.target === current.serviceBranch),
+              canCancel: current.admin || transfer.source === current.serviceBranch };
+          });
+        send(response, 200, result); return true;
       }
       if (route === "/api/members" && method === "POST") {
+        admin();
         const value = await body(request, 64000);
+        admin();
         const branch = branchValue(value?.branch), profile = validateProfile(value.profile);
         if (typeof value.code !== "string" || !/^\d{5,9}$/.test(value.code)) fail(400, "Codice socio non valido");
         if (db.prepare("SELECT id FROM people WHERE census_code=?").get(value.code)) fail(409, "Codice socio gia' presente");
@@ -136,8 +184,10 @@ function createMembers(db, people) {
         send(response, 201, { member: get(id) }); return true;
       }
       if (route === "/api/members/import" && method === "POST") {
+        admin();
         // JSON escaping can expand the 4 MiB CSV by up to six times.
         const value = await body(request, 25 * 1024 * 1024);
+        admin();
         const result = importPlan(value?.csv);
         if (value.confirm !== true) {
           send(response, 200, { newCount: result.newCount, updatedCount: result.updatedCount,
@@ -179,6 +229,7 @@ function createMembers(db, people) {
       if (route === "/api/members/fields" && method === "POST") {
         const value = await body(request, 8192);
         const branch = branchValue(value?.branch), key = text(value.key, 40), label = text(value.label, 100);
+        access(branch);
         if (!/^[a-z][a-z0-9-]{0,39}$/.test(key) || !label || !["text", "date", "select"].includes(value.type)) fail(400, "Definizione campo non valida");
         const options = value.type === "select" && Array.isArray(value.options) ? value.options.map(v => text(v, 100)) : [];
         if (value.type === "select" && (!options.length || options.length > 30 || options.some(v => !v) || new Set(options).size !== options.length))
@@ -188,7 +239,9 @@ function createMembers(db, people) {
         send(response, 201, { ok: true }); return true;
       }
       if (route === "/api/members/templates" && method === "POST") {
+        admin();
         const value = await body(request, 20000);
+        admin();
         const title = text(value?.title, 120), templateBody = text(value.body, 12000);
         if (!title || !templateBody) fail(400, "Titolo e testo del modello obbligatori");
         const allowed = ["nome", "cognome", "codice", "branca", "anno", "email", "cellulare", "data", "percorso"];
@@ -202,27 +255,62 @@ function createMembers(db, people) {
         if (!Array.isArray(value?.members) || !value.members.length || value.members.length > 5000 ||
             new Set(value.members.map(row => row?.id)).size !== value.members.length) fail(400, "Selezione soci non valida");
         const targetBranch = branchValue(value.branch);
-        if (!["branch", "field"].includes(value.action)) fail(400, "Macro non valida");
+        if (!["branch", "passage", "field"].includes(value.action)) fail(400, "Macro non valida");
         transaction(() => {
           for (const selected of value.members) {
             if (!Number.isSafeInteger(selected?.id)) fail(400, "Socio non valido");
             const member = get(selected.id);
+            access(member.branch);
             requireRevision(member, selected.revision);
             if (!member.revision) fail(400, "Completare prima la scheda anagrafica del socio");
             if (value.action === "field") {
               if (member.branch !== targetBranch) fail(400, "Selezionare solo soci della stessa branca");
               writeValues(member, targetBranch, { ...(member.values[targetBranch] || {}), [text(value.key, 40)]: value.value });
+              writeProfile(member, member.branch, member.profile);
+            } else {
+              if (M.nextBranch(member.branch) !== targetBranch) fail(400, "Passaggi consentiti: L/C → E/G → R/S");
+              if (db.prepare("SELECT id FROM member_transfers WHERE person_id=? AND status='pending'").get(member.id))
+                fail(409, "Passaggio gia' in attesa di conferma");
+              db.prepare("INSERT INTO member_transfers(person_id,source,target,proposer_id,member_revision) VALUES(?,?,?,?,?)")
+                .run(member.id, member.branch, targetBranch, user().id, member.revision);
             }
-            writeProfile(member, value.action === "branch" ? targetBranch : member.branch, member.profile);
           }
+        });
+        send(response, 200, { ok: true }); return true;
+      }
+      const transferMatch = /^\/api\/members\/transfers\/(\d+)$/.exec(route);
+      if (transferMatch && method === "PATCH") {
+        const value = await body(request, 4096), current = user();
+        const transfer = db.prepare("SELECT * FROM member_transfers WHERE id=?").get(Number(transferMatch[1]));
+        if (!transfer) fail(404, "Passaggio non trovato");
+        if (transfer.status !== "pending" || transfer.revision !== value?.revision) fail(409, "Passaggio gia' modificato: ricarica");
+        if (!["confirm", "reject", "cancel"].includes(value.action)) fail(400, "Azione passaggio non valida");
+        if (value.action === "cancel") access(transfer.source);
+        else if (transfer.proposer_id === current.id || (!current.admin && current.serviceBranch !== transfer.target))
+          fail(403, "Serve la conferma di un altro capo della branca di destinazione");
+        transaction(() => {
+          if (value.action === "confirm") {
+            const member = get(transfer.person_id);
+            requireRevision(member, transfer.member_revision);
+            if (member.branch !== transfer.source) fail(409, "Branca del socio cambiata: riproporre il passaggio");
+            writeProfile(member, transfer.target, member.profile);
+          }
+          db.prepare("UPDATE member_transfers SET status=?,revision=revision+1,reviewer_id=? WHERE id=?")
+            .run({ confirm: "confirmed", reject: "rejected", cancel: "cancelled" }[value.action], current.id, transfer.id);
         });
         send(response, 200, { ok: true }); return true;
       }
       const match = /^\/api\/members\/(\d+)$/.exec(route);
       if (match && method === "PATCH") {
         const value = await body(request, 64 * 1024), member = get(Number(match[1]));
+        access(member.branch);
         requireRevision(member, value?.revision);
         const branch = branchValue(value.branch), profile = validateProfile(value.profile);
+        if (branch !== member.branch) {
+          if (!user().admin) fail(403, "Usa il passaggio con conferma della branca di destinazione");
+          if (member.revision)
+            fail(400, "Usa il passaggio con conferma della branca di destinazione");
+        }
         transaction(() => {
           writeValues(member, branch, value.values);
           writeProfile(member, branch, profile);

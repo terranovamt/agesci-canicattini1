@@ -21,10 +21,16 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           censuses: [{ year: "2026", branch: "E/G", status: "Attivo" }], values: { "E/G": { squadriglia: "Aquile" } } },
         { id: 2, code: "012346", name: "Persona Locale", kind: "ragazzo", branch: "L/C", revision: 1,
           profile: { givenName: "Persona", surname: "Locale" }, censuses: [], values: {} },
+        { id: 3, code: "012347", name: "Sospeso Lungo", kind: "ragazzo", branch: "E/G", revision: 1,
+          profile: { givenName: "Sospeso", surname: "Lungo" }, censuses: [{ year: "2026", statusCode: "D", status: "Sospeso da oltre un anno" }], values: {} },
+        { id: 4, code: "012348", name: "Sospeso Storico", kind: "ragazzo", branch: "L/C", revision: 1,
+          profile: { givenName: "Sospeso", surname: "Storico" }, censuses: [{ year: "2025", statusCode: "S", status: "Sospeso" }], values: {} },
       ],
       fields: M.defaultFields,
       templates: [{ id: 1, title: "Scheda", body: "{{nome}} {{cognome}}\n{{codice}}\n{{percorso}}" }],
       group: {},
+      currentYear: "2026",
+      transfers: [],
     };
     const mock = `
       window.errors = [];
@@ -36,7 +42,7 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       window.calls = [];
       window.ACCESSO = { request: async (route, method = 'GET', value) => {
         window.calls.push(structuredClone({route, method, value}));
-        if (method === 'PATCH') {
+        if (method === 'PATCH' && !route.includes('/transfers/')) {
           const member = snapshot.members.find(m => m.id === Number(route.split('/')[1]));
           member.profile = value.profile; member.branch = value.branch;
           member.values[value.branch] = value.values; member.revision++;
@@ -45,10 +51,15 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
         if (route === 'members/macro') {
           for (const selected of value.members) {
             const member = snapshot.members.find(m => m.id === selected.id);
-            member.values[value.branch] ||= {}; member.values[value.branch][value.key] = value.value;
-            member.revision++;
+            if(value.action === 'passage') {
+              snapshot.transfers.push({id:1,personId:member.id,name:member.name,code:member.code,birthYear:'2012',source:member.branch,target:value.branch,revision:1,canConfirm:false,canCancel:true});
+            } else {
+              member.values[value.branch] ||= {}; member.values[value.branch][value.key] = value.value;
+              member.revision++;
+            }
           }
         }
+        if (route.startsWith('members/transfers/')) snapshot.transfers = [];
         return structuredClone(snapshot);
       }};
       window.print = () => { window.printed = document.querySelector('#members-print').textContent; };
@@ -64,7 +75,14 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.fits = document.documentElement.scrollWidth <= window.innerWidth;
           results.safeName = !!document.querySelector('.member-name') && !document.querySelector('.member-name img');
           results.rows = $('members-list').rows.length;
+          results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
           const filters = $('members-filters').elements;
+          filters.showSuspended.checked = true; $('members-filters').oninput();
+          results.withSuspended = $('members-list').rows.length;
+          $('select-results').click();
+          filters.showSuspended.checked = false; $('members-filters').oninput();
+          results.hiddenSelectionRemoved = $('members-count').textContent.includes('2 selezionati');
+          $('clear-selection').click();
           filters.branch.value = 'E/G'; $('members-filters').oninput();
           results.branchRows = $('members-list').rows.length;
           filters.year.value = '2026'; $('members-filters').oninput();
@@ -77,9 +95,15 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           filters.quality.value = 'contacts'; $('members-filters').oninput();
           results.missingContact = $('members-list').textContent.includes('Persona Locale') && !$('members-list').textContent.includes('012345');
           $('members-filters').reset(); await settle();
+          filters.birthYear.value = '2012'; $('members-filters').oninput();
+          results.birthRows = $('members-list').rows.length;
+          filters.groupBirthYear.checked = true; $('members-filters').oninput();
+          results.birthGroup = $('members-list').textContent.includes('Nati nel 2012');
+          $('members-filters').reset(); await settle();
           document.querySelector('.member-name').click();
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
+          results.branchLocked = form.elements.branch.disabled;
           results.prefilled = form.elements['extra:squadriglia'].value;
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
           form.elements['profile:phone'].value = '000123';
@@ -100,6 +124,15 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           results.safeDocument = !document.querySelector('#document-preview img');
           $('print-documents').click();
           results.printed = window.printed.includes('Volpi') && window.printed.includes('012345');
+          $('open-macro').click();
+          macro.elements.action.value = 'passage'; macro.elements.action.onchange();
+          results.nextBranch = macro.elements.branch.value;
+          macro.requestSubmit(); await settle();
+          results.passage = window.calls.find(call => call.route === 'members/macro' && call.value.action === 'passage').value;
+          results.pending = $('members-transfers').textContent.includes('E/G → R/S');
+          results.notMoved = $('members-list').textContent.includes('E/G');
+          $('members-transfers').querySelector('button').click(); await settle();
+          results.cancelled = $('members-transfers').textContent.includes('Nessun passaggio');
           $('open-import').click();
           $('import-csv').value = 'synthetic csv';
           $('analyze-import').click(); await settle();
@@ -150,12 +183,17 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       for (const key of ["loaded", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "clearedCsv", "newEditableCode"]) assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.equal(results.rows, 2);
+      assert.equal(results.visibleCount, 2); assert.equal(results.withSuspended, 4); assert.equal(results.hiddenSelectionRemoved, true);
+      assert.equal(results.branchLocked, true);
       assert.equal(results.branchRows, 1); assert.equal(results.yearRows, 1); assert.equal(results.fieldMatch, 1);
+      assert.equal(results.birthRows, 1); assert.equal(results.birthGroup, true);
       assert.equal(results.prefilled, "Aquile");
       assert.equal(results.saved.profile.phone, "000123");
       assert.equal(results.saved.values.squadriglia, "Falchi");
       assert.equal(results.saved.revision, 1);
       assert.equal(results.macro.value, "Volpi"); assert.equal(results.macro.members[0].revision, 2);
+      assert.equal(results.nextBranch, "R/S"); assert.equal(results.passage.branch, "R/S");
+      assert.equal(results.pending, true, JSON.stringify(results)); assert.equal(results.notMoved, true, JSON.stringify(results)); assert.equal(results.cancelled, true, JSON.stringify(results));
       assert.equal(results.confirm.version, "preview-token"); assert.equal(results.confirm.csv, "synthetic csv");
     }
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }

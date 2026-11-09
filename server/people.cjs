@@ -76,6 +76,8 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
       if (foreignKeys) database.exec("PRAGMA foreign_keys=ON");
     }
   }
+  if (!database.prepare("PRAGMA table_info(people)").all().some(column => column.name === "service_branch"))
+    database.exec("ALTER TABLE people ADD COLUMN service_branch TEXT NOT NULL DEFAULT ''");
   if (!database.prepare("PRAGMA table_info(sessions)").all().some((column) => column.name === "person_id")) {
     database.exec("ALTER TABLE sessions ADD COLUMN person_id INTEGER REFERENCES people(id); DELETE FROM sessions;");
   }
@@ -97,6 +99,7 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
     id: row.id, code: row.census_code, name: row.name, kind: row.kind,
     admin: row.census_code === ADMIN_CODE, hasPassword: row.census_code === ADMIN_CODE || !!row.password_hash,
     loginEnabled: row.kind === "capo" && allowed.has(row.census_code),
+    serviceBranch: row.service_branch,
   });
   const user = (sessionId) => {
     const row = database.prepare(`SELECT people.* FROM people JOIN sessions ON people.id=sessions.person_id
@@ -118,6 +121,9 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
   const validatePerson = (value) => {
     if (typeof value?.name !== "string" || !value.name.trim() || value.name.trim().length > 120 ||
         !["capo", "ragazzo"].includes(value.kind)) fail(400, "Nome o tipologia non validi");
+    if (value.serviceBranch !== undefined && !["", "L/C", "E/G", "R/S"].includes(value.serviceBranch))
+      fail(400, "Branca di servizio non valida");
+    if (value.kind === "ragazzo" && value.serviceBranch) fail(400, "Solo i capi hanno una branca di servizio");
   };
   return {
     user,
@@ -173,8 +179,8 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
         validatePerson(value);
         const censusCode = code(value.code);
         if (byCode(censusCode)) fail(409, "Il codice censimento esiste gia'");
-        database.prepare("INSERT INTO people(census_code,name,kind) VALUES(?,?,?)")
-          .run(censusCode, value.name.trim(), value.kind);
+        database.prepare("INSERT INTO people(census_code,name,kind,service_branch) VALUES(?,?,?,?)")
+          .run(censusCode, value.name.trim(), value.kind, value.serviceBranch || "");
         send(response, 201, { ok: true });
         return true;
       }
@@ -193,9 +199,9 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
         validatePerson(value);
         if (current.census_code === ADMIN_CODE && value.kind !== "capo")
           fail(400, "L'amministratore deve restare capo");
-        database.prepare(`UPDATE people SET name=?,kind=?,
+        database.prepare(`UPDATE people SET name=?,kind=?,service_branch=?,
           password_hash=CASE WHEN ?='ragazzo' THEN NULL ELSE password_hash END WHERE id=?`)
-          .run(value.name.trim(), value.kind, value.kind, current.id);
+          .run(value.name.trim(), value.kind, value.kind === "ragazzo" ? "" : value.serviceBranch ?? current.service_branch, value.kind, current.id);
         if (current.kind !== value.kind) database.prepare("DELETE FROM sessions WHERE person_id=?").run(current.id);
       } else fail(405, "Metodo non consentito");
       send(response, 200, { ok: true });

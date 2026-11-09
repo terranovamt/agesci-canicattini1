@@ -1,4 +1,5 @@
 .members-page { max-width: 1440px; margin: auto; padding: 2rem clamp(1rem, 3vw, 3rem); }
+.members-page [hidden], .members-dialog [hidden] { display: none !important; }
 .members-heading, .members-dialog-heading, .members-result-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .members-heading h1 { margin: .2rem 0; }
 .members-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }

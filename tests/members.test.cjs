@@ -7,6 +7,7 @@ const { test } = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 const { createNasServer } = require("../server/nas.cjs");
 const { startNasDev } = require("../tools/nas-dev.cjs");
+const { createMembers } = require("../server/members.cjs");
 const M = require("../assets/js/soci-model.js");
 
 const columns = ["ANNO SCOUT", "CODICE SOCIO", "NOME", "COGNOME", "BRANCA", "ORDINALE",
@@ -22,13 +23,14 @@ function csv(rows = [{}], headers = columns) {
     rows.map(row => headers.map(key => cell({ ...base, ...row }[key])).join(",") + ",").join("\r\n");
 }
 const password = "Test-only-password1!";
-async function start(directory) {
-  const server = await createNasServer({ dataDir: directory, password, censusCodes: "7654321",
+async function start(directory, censusCodes = "7654321") {
+  const server = await createNasServer({ dataDir: directory, password, censusCodes,
     basePath: "/agesci-canicattini1", publicOrigin: "http://localhost", secureCookie: false });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   let cookie = "";
   return {
+    cookie: () => cookie,
     async request(route, method = "GET", data, origin = "http://localhost", suppliedCookie = cookie) {
       return fetch(`http://127.0.0.1:${server.address().port}/agesci-canicattini1/api/${route}`, {
         method, headers: { Cookie: suppliedCookie, Origin: origin, "Content-Type": "application/json" },
@@ -92,6 +94,140 @@ test("CSV export is formula-safe with valid quoting and leading-zero codes", () 
   assert.equal(output, '\uFEFF"012345","\'=1+1","\' +1","\'@x","\'-2","a,""b""\nnext",""');
 });
 
+test("old suspended census records are excluded using the latest status, not birth year or selected census", () => {
+  const member = (year, statusCode) => ({ censuses: [{ year, statusCode }] });
+  assert.equal(M.longSuspended(member("2027", "D"), "2027"), true);
+  assert.equal(M.longSuspended(member("2026", "S"), "2027"), true);
+  assert.equal(M.longSuspended(member("2027", "S"), "2027"), false);
+  assert.equal(M.longSuspended(member("2025", "A"), "2027"), false);
+  assert.equal(M.longSuspended({ censuses: [] }, "2027"), false);
+  assert.equal(M.longSuspended({ censuses: [{ year: "2027", statusCode: "A" }, { year: "2025", statusCode: "D" }] }, "2027"), false);
+  assert.equal(M.nextBranch("L/C"), "E/G"); assert.equal(M.nextBranch("E/G"), "R/S"); assert.equal(M.nextBranch("R/S"), "");
+  assert.equal(M.defaultFields.filter(f => f.branch === "R/S").some(f => ["ruolo", "specialita", "brevetti", "sestiglia", "squadriglia"].includes(f.key)), false);
+});
+
+test("educational schema upgrade preserves existing role values and custom definitions", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec("CREATE TABLE people(id INTEGER PRIMARY KEY,census_code TEXT,name TEXT,kind TEXT)");
+    createMembers(db, {});
+    db.exec("INSERT INTO people VALUES(1,'012345','Example','ragazzo')");
+    const old = { branch: "E/G", key: "ruolo", label: "Ruolo in squadriglia", type: "text", options: [] };
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(old));
+    db.prepare("INSERT INTO member_values VALUES(1,'E/G',?)").run('{"ruolo":"Legacy role"}');
+    createMembers(db, {});
+    const upgraded = JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='ruolo'").get().definition);
+    assert.equal(upgraded.type, "select");
+    assert.equal(upgraded.options.includes("Capo squadriglia"), true);
+    assert.equal(upgraded.options.includes("Legacy role"), true);
+    assert.equal(JSON.parse(db.prepare("SELECT data FROM member_values WHERE person_id=1").get().data).ruolo, "Legacy role");
+    const custom = { ...old, label: "Custom role" };
+    db.prepare("UPDATE member_fields SET definition=? WHERE branch='E/G' AND key='ruolo'").run(JSON.stringify(custom));
+    createMembers(db, {});
+    assert.deepEqual(JSON.parse(db.prepare("SELECT definition FROM member_fields WHERE branch='E/G' AND key='ruolo'").get().definition), custom);
+  } finally { db.close(); }
+});
+
+test("service branches constrain every staff operation and passages require a different destination chief", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-branch-access-"));
+  let app = await start(directory, "7654321,7654322,7654323");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([
+    { "CODICE SOCIO": "012341", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012342", BRANCA: "Branca L/C" },
+    { "CODICE SOCIO": "012343", BRANCA: "Branca E/G" },
+    { "CODICE SOCIO": "012344", BRANCA: "Branca R/S" },
+  ]));
+  let state = await app.snapshot();
+  const chiefs = ["7654321", "7654322", "7654323"].map(code => state.members.find(m => m.code === code));
+  for (const [i, chief] of chiefs.entries())
+    assert.equal((await app.request("people/" + chief.id, "PATCH", { name: chief.name, kind: "capo", serviceBranch: M.branches[i] })).status, 200);
+  const adminCookie = app.cookie();
+  let lc = state.members.find(m => m.code === "012341"), eg = state.members.find(m => m.code === "012343");
+  // A historical branch value must not be exposed to the chief of the current branch.
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  db.prepare("INSERT INTO member_values VALUES(?,'E/G',?)").run(lc.id, '{"squadriglia":"Historical"}');
+  db.close();
+  await app.login("7654321");
+  const lcCookie = app.cookie();
+  state = await app.snapshot();
+  assert.equal(state.members.length, 2);
+  assert.equal(state.members.every(m => m.branch === "L/C"), true);
+  assert.equal(state.members[0].values["E/G"], undefined);
+  assert.equal(state.fields.every(f => f.branch === "L/C"), true);
+  for (const route of ["members/import", "members/templates", "members"])
+    assert.equal((await app.request(route, "POST", {})).status, 403);
+  assert.equal((await app.request("members/" + eg.id, "PATCH", { revision: eg.revision, branch: eg.branch, profile: eg.profile, values: {} })).status, 403);
+  assert.equal((await app.request("members/fields", "POST", { branch: "E/G", key: "secret", label: "Secret", type: "text" })).status, 403);
+  assert.equal((await app.request("members/fields", "POST", { branch: "L/C", key: "obiettivo", label: "Obiettivo", type: "text" })).status, 201);
+  assert.equal((await app.request("members/" + lc.id, "PATCH", { revision: lc.revision, branch: "E/G", profile: lc.profile, values: {} })).status, 403);
+  assert.equal((await app.request("members/" + lc.id, "PATCH", { revision: lc.revision, branch: "L/C", profile: lc.profile, values: { ruolo: "Capo sestiglia", anno: "Terzo anno", progressione: "Lupo anziano" } })).status, 200);
+  lc = (await app.snapshot()).members.find(m => m.id === lc.id);
+  const proposal = { action: "passage", branch: "E/G", members: [{ id: lc.id, revision: lc.revision }] };
+  assert.equal((await app.request("members/macro", "POST", { ...proposal, branch: "R/S" })).status, 400);
+  assert.equal((await app.request("members/macro", "POST", { ...proposal, members: [...proposal.members, { id: eg.id, revision: eg.revision }] })).status, 403);
+  assert.equal((await app.snapshot()).transfers.length, 0);
+  assert.equal((await app.request("members/macro", "POST", proposal)).status, 200);
+  assert.equal((await app.request("members/macro", "POST", proposal)).status, 409);
+  state = await app.snapshot();
+  assert.equal(state.members.find(m => m.id === lc.id).branch, "L/C");
+  const transfer = state.transfers[0];
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
+  await app.login("7654323");
+  assert.equal((await app.snapshot()).transfers.length, 0);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
+  await app.login("7654322");
+  const egCookie = app.cookie();
+  state = await app.snapshot();
+  assert.equal(state.members.some(m => m.id === lc.id), false);
+  assert.equal(state.transfers[0].canConfirm, true);
+  assert.equal(Object.hasOwn(state.transfers[0], "profile"), false);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 99 })).status, 409);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "cancel", revision: 1 })).status, 403);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 200);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 409);
+  state = await app.snapshot();
+  assert.equal(state.members.find(m => m.id === lc.id).branch, "E/G");
+  assert.equal(state.members.find(m => m.id === lc.id).values["L/C"], undefined);
+  const lcResponse = await app.request("members", "GET", undefined, "http://localhost", lcCookie);
+  assert.equal((await lcResponse.json()).members.some(m => m.id === lc.id), false);
+  const all = await (await app.request("members", "GET", undefined, "http://localhost", adminCookie)).json();
+  assert.equal(all.members.find(m => m.id === lc.id).values["L/C"].ruolo, "Capo sestiglia");
+  // Assignment changes take effect on existing sessions and survive restart.
+  assert.equal((await app.request("people/" + chiefs[1].id, "PATCH", { name: chiefs[1].name, kind: "capo", serviceBranch: "" }, "http://localhost", adminCookie)).status, 200);
+  assert.equal((await app.request("members", "GET", undefined, "http://localhost", egCookie)).status, 403);
+  await app.close(); app = await start(directory, "7654321,7654322,7654323");
+  await app.login("7654321");
+  assert.equal((await app.snapshot()).members.every(m => m.branch === "L/C"), true);
+});
+
+test("pending passages survive restart, conflict with profile changes and can be rejected or cancelled", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-branch-transfers-"));
+  let app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login(); await app.import(csv([{ BRANCA: "Branca L/C" }]));
+  let state = await app.snapshot(), member = state.members.find(m => m.code === "012345");
+  const chief = state.members.find(m => m.code === "7654321");
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { name: chief.name, kind: "capo", serviceBranch: "E/G" })).status, 200);
+  const propose = () => app.request("members/macro", "POST", { action: "passage", branch: "E/G", members: [{ id: member.id, revision: member.revision }] });
+  assert.equal((await propose()).status, 200);
+  await app.close(); app = await start(directory); await app.login();
+  let transfer = (await app.snapshot()).transfers[0];
+  assert.equal(transfer.canConfirm, false);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 403);
+  assert.equal((await app.request("members/" + member.id, "PATCH", { branch: "L/C", revision: member.revision, profile: member.profile, values: { sestiglia: "Rossi" } })).status, 200);
+  member = (await app.snapshot()).members.find(m => m.id === member.id);
+  await app.login("7654321");
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "confirm", revision: 1 })).status, 409);
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "reject", revision: 1 })).status, 200);
+  await app.login();
+  assert.equal((await propose()).status, 200);
+  transfer = (await app.snapshot()).transfers[0];
+  assert.equal((await app.request("members/transfers/" + transfer.id, "PATCH", { action: "cancel", revision: 1 })).status, 200);
+  assert.equal((await app.snapshot()).members.find(m => m.id === member.id).branch, "L/C");
+});
+
 test("real NAS gateway connects the member page, session config, assets and API under the site prefix", async t => {
   const basePath = "/agesci-canicattini1";
   const app = await startNasDev({ basePath });
@@ -118,7 +254,7 @@ test("real NAS gateway connects the member page, session config, assets and API 
   assert.match(dashboard, /href="soci.html"/);
 });
 
-test("members API is admin-only and import preview does not write or grant access", async t => {
+test("unassigned chiefs cannot access members and import preview does not write or grant login", async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-members-auth-"));
   const app = await start(directory);
   t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
@@ -161,6 +297,13 @@ test("members retain annual history, educational fields, account permissions and
   member = (await app.snapshot()).members.find(m => m.id === member.id);
   assert.equal((await app.request("members/macro", "POST", { action: "branch", branch: "R/S",
     members: [{ id: member.id, revision: member.revision }] })).status, 200);
+  assert.equal((await app.snapshot()).members.find(m => m.id === member.id).branch, "E/G");
+  const proposal = (await app.snapshot()).transfers[0];
+  const capo = (await app.snapshot()).members.find(m => m.code === "7654321");
+  assert.equal((await app.request("people/" + capo.id, "PATCH", { name: capo.name, kind: "capo", serviceBranch: "R/S" })).status, 200);
+  await app.login("7654321");
+  assert.equal((await app.request("members/transfers/" + proposal.id, "PATCH", { action: "confirm", revision: proposal.revision })).status, 200);
+  await app.login();
   await app.import(csv([{ "ANNO SCOUT": "2027", NOME: "Nuovo", BRANCA: "Branca R/S" }]));
   await app.import(csv([{ "ANNO SCOUT": "2025", NOME: "Vecchio", GRUPPO: "Gruppo storico" }]));
   member = (await app.snapshot()).members.find(m => m.id === member.id);

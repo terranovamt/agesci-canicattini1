@@ -65,6 +65,11 @@ di gruppo e modelli interni stampabili anche in PDF. Tutti i dati restano nel
 database SQLite esistente; nessun elenco soci viene pubblicato nel repository.
 L'importazione non abilita nuovi account al login. Per il flusso operativo
 e i limiti della fonte vedere [gestione soci](docs/soci.md).
+I sospesi da oltre un anno sono esclusi di default da elenco, conteggi ed
+estrazioni del libro soci, con un filtro per includerli. I capi con branca
+di servizio assegnata gestiscono solo le schede di quella branca. I passaggi
+L/C → E/G → R/S sono proposte: richiedono conferma di un altro capo della
+destinazione. Raggruppamento per anno di nascita e progressioni sono manuali.
 
 > 📘 [Guida illustrata](area-riservata/assemblea/guida.html) (stesso stile della presentazione).
 
@@ -95,7 +100,7 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Home / pubblico              | `.../` sotto il prefisso `/agesci-canicattini1/`                |
 | Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
-| Libro soci                   | `.../area-riservata/soci.html` (solo amministratore)           |
+| Libro soci                   | `.../area-riservata/soci.html` (amministratore e capi assegnati) |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
 | PEG corrente                 | `.../peg/` (edizione attuale in `peg/edizioni/2026-2028.html`) |

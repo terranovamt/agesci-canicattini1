@@ -110,7 +110,7 @@ questa guida, nei test o nella memoria dell'assistente.
 | `assets/js/soci-model.js` | modello browser/CommonJS, intestazioni AGESCI, parser CSV, date, campi iniziali, export anti-formule |
 | `server/members.cjs` | schema SQLite idempotente, validazione, import, revisioni, macro e modelli |
 | `area-riservata/soci.html`, `assets/js/soci.js`, `assets/css/soci.css` | schede, filtri, import con anteprima, selezione, campi, stampa |
-| `server/people.cjs` | identita account, password e allowlist, non percorso educativo |
+| `server/people.cjs` | identita account, password, allowlist e branca di servizio, non percorso educativo |
 | `server/nas.cjs` | dispatch del modulo dopo `people.handle`; origine, sessione e risposte no-store condivise |
 | `server/Dockerfile` | copia sia `members.cjs` sia il modello condiviso nell'immagine Node |
 | `deploy/synology/nginx.conf` | pagina `soci.html` tra quelle protette; API inoltrate al backend |
@@ -129,28 +129,38 @@ univoco e testuale (preservare gli zeri iniziali).
 | `member_values` | persona + branca; valori educativi JSON, preservati nei passaggi |
 | `member_group` | singolo record; metadati di gruppo e anno piu recente |
 | `member_templates` | titolo e testo del modello interno |
+| `member_transfers` | proposta persona, source/target, proponente, revisione scheda, stato/revisione, revisore; indice univoco parziale per una sola proposta pending |
 
 Il modulo non sostituisce o ricrea `people`; le tabelle e i campi iniziali
 sono creati senza cancellare dati. Gli account preesistenti senza profilo
 vengono restituiti con `revision: 0`, profilo vuoto e branca Adulti per i capi,
 vuota per i ragazzi. Completare la scheda prima di applicare macro.
 
-### API riservate all'amministratore
+### API con autorizzazione per branca
 
 Prefisso pubblico: `${NAS.basePath}/api/members`. Il browser riusa
 `ACCESSO.request`, con credenziali same-origin e no-store. Tutte le operazioni,
-anche GET, verificano l'amministratore server-side; un capo abilitato al login
-non ottiene automaticamente accesso all'anagrafe.
+anche GET, verificano sessione e ambito server-side. `people.service_branch`
+e una colonna TEXT migrata con default vuoto, esposta come `serviceBranch`;
+solo l'amministratore puo assegnarla tramite `/api/people`. Un capo abilitato
+al login senza branca assegnata non ottiene accesso all'anagrafe.
+L'amministratore ha accesso completo; un capo assegnato legge/modifica solo
+schede della stessa branca locale e vede solo i valori educativi di quella
+branca. Anche macro e aggiunta campi rispettano questo ambito. Import, nuove
+persone e creazione modelli sono amministrativi. Le assegnazioni sono
+rilette server-side a ogni operazione: una sessione esistente non conserva
+permessi della precedente branca.
 
 | Metodo / suffisso | Contratto |
 | --- | --- |
-| GET `/` | `{members, fields, templates, group}`; mai hash o password |
+| GET `/` | `{members, fields, templates, group, currentYear, transfers}` filtrato per ambito; mai hash o password |
 | POST `/` | `{code, branch, profile, values}`; nuova persona e scheda nella stessa transazione |
 | PATCH `/:id` | `{revision, branch, profile, values}`; salva il profilo e i valori della sola branca scelta |
 | POST `/import` | `{csv}` per anteprima; `{csv, confirm:true, version}` per conferma |
 | POST `/fields` | `{branch, key, label, type, options}`; aggiunta, non modifica/eliminazione |
 | POST `/templates` | `{title, body}`; aggiunta modello testuale |
-| POST `/macro` | `{action, branch, members:[{id,revision}], key?, value?}`; `action` branch o field |
+| POST `/macro` | `{action, branch, members:[{id,revision}], key?, value?}`; `action` passage o field; branch e alias compatibile di passage, non un cambio immediato |
+| PATCH `/transfers/:id` | `{revision, action:'confirm'|'reject'|'cancel'}`; conferma/rifiuto di altro capo destinatario, annullamento della provenienza |
 
 Anteprima e conferma sono separate: SHA256 del CSV esatto e dello snapshot
 del DB impedisce di confermare dopo modifiche concorrenti. Import e macro
@@ -170,7 +180,11 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   L'import non abilita il login. La branca locale non determina l'account.
 - Conservare tutti i valori educativi delle altre branche. Una macro di
   campo deve selezionare solo persone nella branca indicata; un passaggio
-  modifica la branca locale, mai quella del censimento.
+  propone la branca successiva L/C → E/G → R/S, senza modificarla subito.
+  Conferma solo da altro capo della destinazione (o altro amministratore).
+  La revisione della scheda deve coincidere con quella della proposta:
+  altrimenti annullare/rifiutare e riproporre. PATCH del profilo non puo
+  cambiare una branca gia inizializzata per aggirare il flusso.
 - Non inferire consensi o correggere status sospesi. Genitori in testo grezzo
   da verificare, non deduplicati per somiglianza. Solo telefoni esattamente
   duplicati sono normalizzati.
@@ -181,23 +195,40 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   disponibile per ciascun socio. Branca locale distinta dalla branca AGESCI.
   L'export comprende tutti i risultati; le macro usano la selezione, anche
   fuori dai filtri correnti.
+- `currentYear` e il massimo anno censimento globale, non della sola branca.
+  `SOCI_MODEL.longSuspended` usa sempre l'ultimo censimento: D significa gia
+  sospeso da oltre un anno; S viene escluso se il suo anno e precedente a
+  currentYear. La UI li omette da elenco, conteggi, export e selezione di
+  default. Il filtro esplicito li include; non eliminare record dal DB.
+- Anno di nascita, anno in branca, ruolo e progressione sono distinti.
+  Filtrare/raggruppare per nascita senza assegnazioni automatiche.
+  L/C ha ruoli di sestiglia e progressione legge/rupe/anziano; E/G ha ruoli
+  di squadriglia, piede tenero, specialita e brevetti. R/S non ha questi campi.
+  La migrazione del ruolo E/G converte solo la definizione testo iniziale,
+  conservando le vecchie scelte gia compilate; non riscrive campi personalizzati.
+- Le proposte pending visibili alla destinazione espongono solo identita
+  minima e anno di nascita, non anagrafica o percorsi prima della conferma.
+  Dopo l'ingresso la provenienza perde accesso alla scheda.
 - I PDF generati restano una stampa locale del browser. Non usare
   `/api/documents` per pubblicare schede personali nell'archivio pubblico.
 
 ### Verifiche mirate
 
 ```sh
-node --test tests/members.test.cjs tests/members-browser.test.cjs tests/people.test.cjs tests/synology.test.cjs
+node --test tests/members.test.cjs tests/members-browser.test.cjs tests/members-staff-browser.test.cjs tests/people.test.cjs tests/synology.test.cjs
 node tools/build-site.cjs
 ```
 
 `members.test.cjs` usa dati sintetici e database temporanei: CSV ufficiale
 con wrapper Excel, validazione, autorizzazione, import senza scritture in
-anteprima, conflitti, rollback, storico, permessi e riavvio.
+anteprima, conflitti, rollback, storico, permessi per branca e riavvio,
+conferma a due capi, rifiuto/annullamento e sospesi.
 `members-browser.test.cjs` segue il pattern dei test browser esistenti:
 Chromium/Chrome headless se installato, fixture con API simulate, viewport
 375/1440, schede, filtri, payload, selezione, stampa e testo non eseguibile.
-Non sostituisce il collaudo del container sul NAS. Per verificare l'interfaccia
+`members-staff-browser.test.cjs` verifica strumenti amministrativi nascosti,
+campi per branca, proposta e conferma nel browser. Questi test non
+sostituiscono il collaudo del container sul NAS. Per verificare l'interfaccia
 con API reali usare `tools/nas-dev.cjs`, non `tools/preview.cjs`.
 
 ## Checklist pre-merge
