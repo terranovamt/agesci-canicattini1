@@ -229,7 +229,7 @@ test("statistics page is guarded and renders tracking separately from the live r
     fetch: async () => ({ ok: true, json: async () => ({ sha: "a".repeat(40) }) }),
   });
   assert.equal(get("statistics-data").hidden, false);
-  subscriber.render({
+  const statisticsData = {
     enabled: true,
     sampledAt: Date.now(),
     traffic: {
@@ -253,7 +253,8 @@ test("statistics page is guarded and renders tracking separately from the live r
     api: { p95Ms: 20, errors5xx: 0, limited: 0 },
     performance: { hourly },
     events: [],
-  });
+  };
+  subscriber.render(statisticsData);
   await new Promise(setImmediate);
   assert.equal(get("stats-visits").textContent, "2");
   assert.equal(get("stats-live-unique").textContent, "4");
@@ -269,9 +270,20 @@ test("statistics page is guarded and renders tracking separately from the live r
   assert.equal(get("stats-release-status").textContent, "Il NAS è all’ultimo commit del branch NAS.");
   assert.equal(get("stats-hour-online-current").textContent, "4");
   assert.equal(get("stats-hour-online-peak").textContent, "Picco 4");
+  const axisLabels = id => get(id).children.filter(child => child.attributes.class === "chart-axis-label").map(child => child.textContent);
+  assert.deepEqual(axisLabels("stats-hour-cpu").slice(0, 3), ["38%", "19%", "0%"]);
+  assert.deepEqual(axisLabels("stats-hour-ram").slice(0, 3), ["75%", "37,5%", "0%"]);
+  statisticsData.performance.hourly = [
+    { sampledAt: Date.now(), online: 2, cpuPercent: 0, memoryPercent: 97 },
+    { sampledAt: Date.now() + 1, online: 4, cpuPercent: 2.5, memoryPercent: 94 },
+  ];
+  subscriber.render(statisticsData);
+  assert.deepEqual(axisLabels("stats-hour-cpu").slice(0, 3), ["10%", "5%", "0%"]);
+  assert.deepEqual(axisLabels("stats-hour-ram").slice(0, 3), ["100%", "50%", "0%"]);
+  assert.equal(get("stats-hour-ram").dataset.peak, "97");
   const point = get("stats-hour-online").children.find((child) => child.attributes.class?.includes("chart-point"));
   assert.doesNotMatch(point.attributes["aria-label"], /Invalid Date/);
-  assert.match(get("stats-hour-note").textContent, /uno al minuto/);
+  assert.match(get("stats-hour-note").textContent, /2 su 60 minuti/);
   assert.equal(
     get("stats-history-chart").children.filter((child) => child.attributes.class?.includes("chart-series")).length,
     3,

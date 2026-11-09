@@ -85,7 +85,7 @@
     title.textContent = series.name;
     target.append(title);
     const available = rows
-      .map((row, index) => ({ index, value: row[series.key], sampledAt: row.sampledAt, day: row.day }))
+      .map((row, index) => ({ index, value: row?.[series.key], sampledAt: row?.sampledAt, day: row?.day }))
       .filter((point) => Number.isFinite(point.value));
     if (!available.length) {
       const empty = chartElement("text", {
@@ -107,13 +107,15 @@
       const position = y(value);
       target.append(chartElement("line", { x1: xStart, y1: position, x2: xEnd, y2: position, class: "chart-grid" }));
       const label = chartElement("text", { x: xStart - 7, y: position + 4, "text-anchor": "end", class: "chart-axis-label" });
-      label.textContent = count(Math.round(value)) + series.unit;
+      label.textContent = (series.unit === "%"
+        ? value.toLocaleString("it-IT", { maximumFractionDigits: 2 })
+        : count(Math.round(value))) + series.unit;
       target.append(label);
     }
     let segment = [];
     const segments = [];
     for (let index = 0; index < rows.length; index++) {
-      const value = rows[index][series.key];
+      const value = rows[index]?.[series.key];
       if (!Number.isFinite(value)) {
         if (segment.length) segments.push(segment);
         segment = [];
@@ -362,7 +364,9 @@
           xEnd: 330,
           yStart: 16,
           yEnd: 125,
-          maxValue: series.key.endsWith("Percent") ? 100 : undefined,
+          maxValue: series.key.endsWith("Percent")
+            ? Math.min(100, Math.max(10, Math.max(...values.filter(Number.isFinite)) + 5))
+            : undefined,
           ticks: 2,
         },
       );
