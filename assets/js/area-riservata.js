@@ -12,15 +12,21 @@
     const status = document.getElementById('accesso-stato');
     const button = form.querySelector('button[type="submit"]');
     let checkedCode = '';
+    function visibilityLabel(input, visible) {
+      return (visible ? 'Nascondi ' : 'Mostra ') +
+        (input === confirmation ? 'conferma password' : 'password');
+    }
     function conceal(input, toggle) {
       input.type = 'password';
-      toggle.textContent = 'Mostra password';
+      toggle.setAttribute('aria-label', visibilityLabel(input, false));
+      toggle.setAttribute('title', visibilityLabel(input, false));
       toggle.setAttribute('aria-pressed', 'false');
     }
     function toggleVisibility(input, toggle) {
       const visible = input.type === 'password';
       input.type = visible ? 'text' : 'password';
-      toggle.textContent = visible ? 'Nascondi password' : 'Mostra password';
+      toggle.setAttribute('aria-label', visibilityLabel(input, visible));
+      toggle.setAttribute('title', visibilityLabel(input, visible));
       toggle.setAttribute('aria-pressed', String(visible));
     }
     togglePassword.onclick = () => toggleVisibility(password, togglePassword);
@@ -61,7 +67,10 @@
           confirmation.disabled = toggleConfirmation.disabled = !result.firstAccess;
           confirmation.required = result.firstAccess;
           password.minLength = result.firstAccess ? 8 : 1;
-          password.pattern = result.firstAccess ? '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,128}' : '';
+          if (result.firstAccess)
+            password.pattern = '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,128}';
+          else
+            password.removeAttribute('pattern');
           password.title = result.firstAccess ? 'Almeno 8 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale, come @' : '';
           password.autocomplete = result.firstAccess ? 'new-password' : 'current-password';
           button.textContent = result.firstAccess ? 'Imposta password e accedi' : 'Accedi';

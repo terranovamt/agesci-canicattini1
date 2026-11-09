@@ -48,6 +48,7 @@ function loginPage(firstAccess) {
     if (!elements.has(id)) elements.set(id, {
       value: '', type: 'password', hidden: true, disabled: true, required: false, attributes: {},
       focus() {}, setAttribute(name, value) { this.attributes[name] = value },
+      removeAttribute(name) { delete this.attributes[name]; if (name === 'pattern') this.pattern = undefined },
       querySelector(selector) { return get(id + (selector === 'button[type="submit"]' ? '-submit' : '-button')) }
     });
     return elements.get(id);
@@ -84,17 +85,21 @@ test('NAS first access shows password and required confirmation only after code 
   assert.equal(t.get('toggle-nas-confirmation').disabled, false);
   t.get('toggle-nas-password').onclick();
   assert.equal(t.get('nas-password').type, 'text');
-  assert.equal(t.get('toggle-nas-password').textContent, 'Nascondi password');
+  assert.equal(t.get('toggle-nas-password').attributes['aria-label'], 'Nascondi password');
   assert.equal(t.get('toggle-nas-password').attributes['aria-pressed'], 'true');
   t.get('toggle-nas-confirmation').onclick();
   assert.equal(t.get('nas-confirmation').type, 'text');
+  assert.equal(t.get('toggle-nas-confirmation').attributes['aria-label'], 'Nascondi conferma password');
   t.get('toggle-nas-password').onclick();
   t.get('toggle-nas-confirmation').onclick();
   assert.equal(t.get('nas-password').type, 'password');
   assert.equal(t.get('nas-confirmation').type, 'password');
+  assert.equal(t.get('toggle-nas-password').attributes['aria-label'], 'Mostra password');
+  assert.equal(t.get('toggle-nas-confirmation').attributes['aria-label'], 'Mostra conferma password');
   assert.equal(t.get('nas-password').minLength, 8);
   const policy = new RegExp('^(?:' + t.get('nas-password').pattern + ')$', 'v');
   assert.equal(policy.test('Abcdef1@'), true);
+  assert.equal(policy.test('Canic@ttini1'), true);
   for (const invalid of ['Abcde1@', 'abcdef1@', 'ABCDEF1@', 'Abcdefg@', 'Abcdefg1', 'Abcdef1 '])
     assert.equal(policy.test(invalid), false, invalid);
   assert.equal(t.get('nas-password').autocomplete, 'new-password');
@@ -115,7 +120,7 @@ test('NAS returning access shows only password; changing code clears both creden
   assert.equal(t.get('nas-confirmation').disabled, true);
   assert.equal(t.get('toggle-nas-confirmation').disabled, true);
   assert.equal(t.get('nas-password').autocomplete, 'current-password');
-  assert.equal(t.get('nas-password').pattern, '');
+  assert.equal(t.get('nas-password').pattern, undefined);
   t.get('nas-password').value = 'A-long-password!';
   t.get('census-code').oninput();
   assert.equal(t.get('password-fields').hidden, true);

@@ -158,7 +158,8 @@ test("new capo passwords require eight characters and all four character classes
       assert.equal(response.status, 400);
       assert.match(await response.text(), /carattere speciale/);
     }
-    assert.equal((await app.login(codes[0], "Abcdef1@", "Abcdef1@")).status, 200);
+    assert.equal((await app.login(codes[0], "Canic@ttini1", "Canic@ttini1")).status, 200);
+    assert.equal((await app.login(codes[0], "Canic@ttini1")).status, 200);
     assert.equal((await app.login(codes[1], "Aa1@" + "a".repeat(124), "Aa1@" + "a".repeat(124))).status, 200);
     await app.login();
     assert.equal((await app.request("people", "POST", { code: "765 4329", name: "Test", kind: "capo" })).status, 400);
