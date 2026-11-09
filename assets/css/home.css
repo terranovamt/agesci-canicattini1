@@ -248,6 +248,8 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 .dashboard-tool h3 { font-size: 21px; line-height: 1.3; margin: 20px 0 0 }
 .dashboard-tool p { flex: 1; color: var(--v2); font-size: 14px; margin: 12px 0 24px }
 #riservata .dashboard-tool .button { margin: 0; border-radius: var(--radius-md) }
+.people-tool-actions { display: flex; flex-wrap: wrap; gap: 12px; width: 100% }
+.people-tool-actions .button { max-width: 100%; text-align: center; overflow-wrap: anywhere }
 .dashboard-workflow { margin-top: 24px }
 .dashboard-workflow ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding-left: 24px; margin: 24px 0 }
 .dashboard-workflow li { padding-left: 4px }
@@ -255,6 +257,9 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 .dashboard-workflow li span { font-size: 14px; color: var(--v2) }
 @media (max-width: 800px) {
   .dashboard-overview, .dashboard-tools, .dashboard-workflow ol { grid-template-columns: 1fr }
+}
+@media (max-width: 600px) {
+  .people-tool-actions { flex-direction: column; align-items: stretch }
 }
 :where(a[href], button, input):focus-visible { outline: 3px solid var(--v); outline-offset: 3px }
 

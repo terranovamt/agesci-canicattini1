@@ -2,7 +2,12 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
+const { renderHtml } = require("../tools/site-layout.cjs");
+const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
+  spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
 
 test("dashboard does not load data or make requests before verified access", () => {
   const context = {
@@ -109,4 +114,59 @@ test("dashboard introduces the workflow before the three tools", () => {
   assert.ok(html.indexOf('class="dashboard-workflow"') < html.indexOf('class="dashboard-tools"'));
   assert.match(html, /<strong>Pubblica<\/strong><span>Pubblica le modifiche/);
   assert.doesNotMatch(html, /Salva sul NAS/);
+});
+
+test("member and access actions fit and stay separated on the dashboard", { skip: !chrome }, () => {
+  const root = path.join(__dirname, "..");
+  const read = file => fs.readFileSync(path.join(root, file), "utf8");
+  const css = ["assets/css/theme.css", "assets/css/home.css", "assets/css/nas.css"].map(read).join("\n");
+  const page = renderHtml(read("area-riservata/index.html"), "area-riservata/index.html")
+    .replace(/<link\b[^>]*>/g, "")
+    .replace(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g, "")
+    .replace("</head>", `<style>${css}</style></head>`)
+    .replace("</body>", `<script>
+      document.getElementById("riservata").hidden = false;
+      document.getElementById("people-tool").hidden = false;
+      const actions = [...document.querySelectorAll(".people-tool-actions .button")];
+      const boxes = actions.map(action => action.getBoundingClientRect());
+      const result = document.createElement("pre");
+      result.id = "layout-result";
+      result.textContent = JSON.stringify({
+        width: innerWidth,
+        fits: document.documentElement.scrollWidth <= innerWidth,
+        controlsFit: boxes.every(box => box.width >= 44 && box.height >= 44 && box.left >= 0 && box.right <= innerWidth),
+        separated: boxes[0].right + 10 <= boxes[1].left || boxes[0].bottom + 10 <= boxes[1].top,
+        links: actions.map(action => action.getAttribute("href")),
+      });
+      document.body.append(result);
+    </script></body>`);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "dashboard-layout-"));
+  try {
+    const file = path.join(directory, "fixture.html");
+    for (const width of [375, 768, 1024, 1440]) {
+      fs.writeFileSync(file, `<!doctype html><body><iframe style="border:0;width:${width}px;height:1000px"></iframe><script>
+        const frame = document.querySelector("iframe");
+        frame.onload = () => {
+          const result = frame.contentDocument.getElementById("layout-result");
+          if (result) document.body.append(result.cloneNode(true));
+        };
+        frame.srcdoc = ${JSON.stringify(page).replace(/</g, "\\u003c")};
+      </script>`);
+      const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
+        "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, "profile-" + width),
+        "--window-size=" + width + ",1000", "--virtual-time-budget=3000", "--dump-dom", "file://" + file],
+      { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024 });
+      assert.equal(browser.status, 0, browser.stderr);
+      const result = browser.stdout.match(/<pre id="layout-result">([^<]+)<\/pre>/)?.[1];
+      assert.ok(result, browser.stdout.slice(-2000));
+      const measured = JSON.parse(result);
+      assert.equal(measured.width, width);
+      assert.equal(measured.fits, true, "dashboard fits at " + width);
+      assert.equal(measured.controlsFit, true, "buttons fit at " + width);
+      assert.equal(measured.separated, true, "buttons are separated at " + width);
+      assert.deepEqual(measured.links, ["soci.html", "persone.html"]);
+    }
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });
