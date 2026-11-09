@@ -9,9 +9,10 @@
     <link rel="icon" href="../assets/img/logo-grande.png" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
     <link rel="stylesheet" href="../assets/css/gestione-documenti.css" />
+    <link rel="stylesheet" href="../assets/css/section-nav.css" />
   </head>
   <body>
-    <header>
+    <header class="reserved-header">
       <a href="./">← Area riservata</a>
       <h1>Documenti del gruppo</h1>
       <a href="../documenti/" target="_blank" rel="noopener">Vedi l’archivio pubblico ↗</a>
@@ -27,7 +28,11 @@
         <button id="reload-documents" type="button" class="secondary">Ricarica da GitHub</button>
       </section>
       <div class="documents-workspace">
-        <section class="panel" aria-labelledby="edit-heading">
+        <nav id="documents-section-nav" class="section-nav" data-section-nav aria-label="Gestione documenti" hidden>
+          <button type="button" data-section-target="documents-library-panel">Documenti pubblicati</button>
+          <button type="button" data-section-target="documents-edit-panel">Carica / modifica</button>
+        </nav>
+        <section id="documents-edit-panel" class="panel" data-section-panel aria-labelledby="edit-heading">
           <p class="eyebrow">Pubblicazione</p>
           <h2 id="edit-heading">Nuovo documento</h2>
           <form id="document-form">
@@ -97,7 +102,7 @@
             </p>
           </form>
         </section>
-        <section class="panel" aria-labelledby="library-heading">
+        <section id="documents-library-panel" class="panel" data-section-panel aria-labelledby="library-heading">
           <p class="eyebrow">Biblioteca</p>
           <h2 id="library-heading">Documenti pubblicati</h2>
           <div id="managed-documents"></div>
@@ -111,5 +116,6 @@
     <script src="../assets/js/documents-model.js" defer></script>
     <script src="../assets/js/documents-store.js" defer></script>
     <script src="../assets/js/gestione-documenti.js" defer></script>
+    <script src="../assets/js/shared/section-nav.js" defer></script>
   </body>
 </html>

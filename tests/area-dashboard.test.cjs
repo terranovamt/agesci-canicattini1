@@ -109,9 +109,11 @@ test("non-admin dashboard does not request or show server statistics", () => {
   assert.equal(get("dashboard-metrics").hidden, true);
 });
 
-test("dashboard introduces the workflow before the three tools", () => {
+test("dashboard separates tools, summary and workflow into named sections", () => {
   const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
-  assert.ok(html.indexOf('class="dashboard-workflow"') < html.indexOf('class="dashboard-tools"'));
+  assert.match(html, /data-section-target="dashboard-work-panel"/);
+  assert.match(html, /data-section-target="dashboard-help-panel"/);
+  assert.match(html, /data-section-target="dashboard-summary-panel"/);
   assert.match(html, /<strong>Pubblica<\/strong><span>Pubblica le modifiche/);
   assert.doesNotMatch(html, /Salva sul NAS/);
 });

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../assets/css/home.css" />
     <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
     <link rel="stylesheet" href="../assets/css/nas.css" />
+    <link rel="stylesheet" href="../assets/css/section-nav.css" />
   </head>
   <body class="reserved-page">
     <header class="reserved-header">
@@ -64,6 +65,12 @@
           </div>
           <button id="esci" class="text-button">Esci dall’area riservata</button>
         </div>
+        <nav class="section-nav" data-section-nav aria-label="Attività della dashboard" hidden>
+          <button type="button" data-section-target="dashboard-work-panel">Strumenti</button>
+          <button type="button" data-section-target="dashboard-summary-panel">Riepilogo</button>
+          <button type="button" data-section-target="dashboard-help-panel">Come iniziare</button>
+        </nav>
+        <div id="dashboard-summary-panel" data-section-panel>
         <section id="dashboard-metrics" class="dashboard-metrics" aria-labelledby="dashboard-metrics-title" hidden>
           <div class="metrics-heading">
             <h2 id="dashboard-metrics-title">Sito e server</h2>
@@ -98,14 +105,6 @@
           </dl>
         </section>
         <div class="dashboard-overview">
-          <article id="people-tool" class="dashboard-tool" hidden>
-            <h3>Libro soci e accessi</h3>
-            <p>Importa da AGESCI, consulta le schede e gestisci percorsi educativi, estrazioni e documenti.</p>
-            <div class="people-tool-actions">
-              <a class="button button-primary" href="soci.html">Apri il libro soci →</a>
-              <a id="people-access-tool" class="button button-secondary" href="persone.html">Gestisci accessi capi →</a>
-            </div>
-          </article>
           <article class="assembly-overview">
             <p class="eyebrow">Assemblea configurata</p>
             <h3 id="dashboard-assembly-title">Caricamento…</h3>
@@ -128,21 +127,16 @@
             <a class="text-link" href="../documenti/">Consulta tutti i PDF →</a>
           </article>
         </div>
-        <section class="dashboard-workflow" aria-labelledby="workflow-title">
-          <h2 id="workflow-title">Dal lavoro alla presentazione</h2>
-          <ol>
-            <li>
-              <strong>Prepara</strong
-              ><span>Compila il setup o avvia la procedura per il nuovo anno. Le modifiche restano locali.</span>
-            </li>
-            <li><strong>Pubblica</strong><span>Pubblica le modifiche e verifica il sito prima della diretta.</span></li>
-            <li>
-              <strong>Vai in regia</strong
-              ><span>Controlla la vista pubblico, poi avvia l’assemblea e accompagna le slide.</span>
-            </li>
-          </ol>
-          <a class="text-link" href="assemblea/guida.html">Leggi la guida completa →</a>
-        </section>
+        </div>
+        <div id="dashboard-work-panel" data-section-panel>
+          <article id="people-tool" class="dashboard-tool" hidden>
+            <h3>Libro soci e accessi</h3>
+            <p>Importa da AGESCI, consulta le schede e gestisci percorsi educativi, estrazioni e documenti.</p>
+            <div class="people-tool-actions">
+              <a class="button button-primary" href="soci.html">Apri il libro soci →</a>
+              <a id="people-access-tool" class="button button-secondary" href="persone.html">Gestisci accessi capi →</a>
+            </div>
+          </article>
         <div class="dashboard-tools">
           <article class="dashboard-tool">
             <span class="tool-number" aria-hidden="true">01</span>
@@ -169,6 +163,16 @@
             <a class="button button-secondary" href="assemblea/regia.html">Apri la regia →</a>
           </article>
         </div>
+        </div>
+        <section class="dashboard-workflow" id="dashboard-help-panel" data-section-panel aria-labelledby="workflow-title">
+          <h2 id="workflow-title">Dal lavoro alla presentazione</h2>
+          <ol>
+            <li><strong>Prepara</strong><span>Compila il setup o avvia la procedura per il nuovo anno. Le modifiche restano locali.</span></li>
+            <li><strong>Pubblica</strong><span>Pubblica le modifiche e verifica il sito prima della diretta.</span></li>
+            <li><strong>Vai in regia</strong><span>Controlla la vista pubblico, poi avvia l’assemblea e accompagna le slide.</span></li>
+          </ol>
+          <a class="text-link" href="assemblea/guida.html">Leggi la guida completa →</a>
+        </section>
       </section>
     </main>
     <!-- include:footer {"top":"reserved-content"} -->
@@ -178,5 +182,6 @@
     <script src="../assets/js/shared/nas-metrics.js" defer></script>
     <script src="../assets/js/area-dashboard.js?v=metrics-2" defer></script>
     <script src="../assets/js/area-riservata.js" defer></script>
+    <script src="../assets/js/shared/section-nav.js" defer></script>
   </body>
 </html>

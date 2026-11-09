@@ -121,24 +121,34 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.length === 4 &&
+          results.sectionNavigation = memberTabs.length === 5 &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1;
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
-          memberTabs[1].click();
+          memberTabs[2].click();
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
             $('member-panel-profile').hidden && !$('member-panel-consents').hidden;
           $('member-section-next').click();
-          results.sectionProgress = $('member-section-progress').textContent.includes('3 di 4');
+          results.sectionProgress = $('member-section-progress').textContent.includes('4 di 5');
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
             $('member-dialog').scrollWidth <= $('member-dialog').clientWidth;
+          const saveRect = $('member-save').getBoundingClientRect();
+          results.saveReachable = saveRect.bottom <= innerHeight && saveRect.height >= 44;
           results.branchLocked = form.elements.branch.disabled;
           results.prefilled = form.elements['extra:squadriglia'].value;
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
           form.elements['profile:phone'].value = '000123';
+          memberTabs[1].click();
+          form.elements['profile:email'].value = 'not-an-email';
+          form.elements['profile:email'].setCustomValidity('Email non valida');
+          form.requestSubmit();
+          results.invalidContactsVisible = !$('member-panel-contacts').hidden && $('member-dialog').open;
+          form.elements['profile:email'].value = 'test@example.invalid';
+          form.elements['profile:email'].setCustomValidity('');
+          memberTabs[0].click();
           form.elements['extra:squadriglia'].value = 'Falchi';
           form.requestSubmit(); await settle();
           results.saved = window.calls.find(call => call.method === 'PATCH').value;
@@ -185,8 +195,9 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
-          src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` : "")
-      .replace("</head>", `<style>${["theme", "home", "nas", "soci"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
+          src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
+          src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
+      .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
     for (const width of [320, 360, 375, 768, 1440]) {
       const file = path.join(directory, "fixture.html");
       const page = source.replace("</body>", `<script>${exercise}</script></body>`);
@@ -226,6 +237,8 @@ test("member UI edits, filters, imports, applies macros and prints safely on des
       assert.equal(results.prefilled, "Aquile");
       assert.equal(results.saved.profile.phone, "000123");
       assert.equal(results.saved.values.squadriglia, "Falchi");
+      assert.equal(results.invalidContactsVisible, true);
+      assert.equal(results.saveReachable, true);
       assert.equal(results.saved.revision, 1);
       assert.equal(results.macro.value, "Volpi"); assert.equal(results.macro.members[0].revision, 2);
       assert.equal(results.nextBranch, "R/S"); assert.equal(results.passage.branch, "R/S");

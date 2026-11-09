@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../assets/css/home.css">
   <link rel="stylesheet" href="../assets/css/nas.css">
   <link rel="stylesheet" href="../assets/css/soci.css">
+  <link rel="stylesheet" href="../assets/css/section-nav.css">
 </head>
 <body class="reserved-page">
   <header class="reserved-header">
@@ -24,6 +25,12 @@
     </div>
     <p id="members-status" role="status" aria-live="polite"></p>
     <section id="members-app" hidden>
+      <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
+        <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
+        <button type="button" data-section-target="members-transfer-panel">Passaggi</button>
+        <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
+      </nav>
+      <div id="members-search-panel" data-section-panel>
       <div id="members-summary" class="members-summary"></div>
       <div class="members-toolbar">
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
@@ -62,12 +69,13 @@
       </table></div>
       <p class="members-note">Lo status AGESCI e la branca del censimento sono dati importati, distinti dalla branca locale e dall'accesso al sito. Un socio sospeso non viene reso attivo automaticamente.</p>
       <p id="suspension-note" class="members-note"></p>
-      <section class="members-settings" aria-labelledby="transfers-title">
+      </div>
+      <section id="members-transfer-panel" class="members-settings" data-section-panel aria-labelledby="transfers-title">
         <h2 id="transfers-title">Passaggi in attesa</h2>
         <p>La branca resta quella di provenienza finche un altro capo della destinazione conferma. Nessuna progressione viene assegnata automaticamente per eta.</p>
         <div id="members-transfers"></div>
       </section>
-      <details class="members-settings"><summary>Campi personalizzati e modelli di gruppo</summary>
+      <section id="members-settings-panel" class="members-settings" data-section-panel><h2>Campi personalizzati e modelli</h2>
         <div class="members-settings-grid">
           <form id="field-form"><h2>Nuovo campo di branca</h2>
             <label>Branca<select name="branch" required></select></label>
@@ -84,7 +92,7 @@
             <button class="button button-primary" type="submit">Salva modello</button>
           </form>
         </div>
-      </details>
+      </section>
     </section>
   </main>
   <dialog id="member-dialog" class="members-dialog">
@@ -93,6 +101,7 @@
       <p id="member-error" role="alert"></p>
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
+        <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false">Contatti</button>
         <button type="button" role="tab" id="member-tab-consents" aria-controls="member-panel-consents" aria-selected="false">Consensi</button>
         <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
         <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
@@ -103,7 +112,10 @@
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
           <label>Branca locale<select name="branch" required></select></label>
         </div>
-        <h3>Anagrafica e contatti</h3><div id="member-profile" class="members-form-grid"></div>
+        <h3>Anagrafica</h3><div id="member-profile" class="members-form-grid"></div>
+      </section>
+      <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" hidden>
+        <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
       </section>
       <section id="member-panel-consents" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-consents" hidden>
         <h3>Consensi e responsabili genitoriali</h3><div id="member-consents" class="members-form-grid"></div>
@@ -119,19 +131,29 @@
         <button id="member-section-back" class="button button-secondary" type="button">Indietro</button>
         <button id="member-section-next" class="button button-secondary" type="button">Continua</button>
         <button id="member-save" class="button button-primary" type="submit" hidden>Salva scheda</button>
-        <span>Bozza mantenuta passando tra le sezioni.</span>
+        <span id="member-draft-status">Bozza mantenuta passando tra le sezioni.</span>
       </div>
     </form>
   </dialog>
   <dialog id="import-dialog" class="members-dialog">
     <div class="members-dialog-heading"><h2>Importa da AGESCI</h2><button class="button button-secondary" type="button" data-close="import-dialog">Chiudi</button></div>
+    <nav id="import-section-nav" class="section-nav" data-section-nav aria-label="Passi importazione" hidden>
+      <button type="button" data-section-target="import-source-panel">1 · Scegli CSV</button>
+      <button type="button" data-section-target="import-review-panel">2 · Controlla</button>
+    </nav>
+    <section id="import-source-panel" data-section-panel>
     <p>Carica RicercaSoci.csv oppure incolla il contenuto. Il file non viene pubblicato. Prima del salvataggio controlla il riepilogo.</p>
     <label>File CSV<input id="import-file" type="file" accept=".csv,text/csv"></label>
     <label>Contenuto CSV<textarea id="import-csv" rows="5" placeholder="sep=, ..." spellcheck="false"></textarea></label>
-    <p>Il codice socio identifica la persona; socio + anno identificano il censimento. Un nuovo import aggiorna l'anagrafica ma conserva campi educativi, branca locale, password e permessi. Le colonne assenti sono conservate; i campi vuoti nelle colonne presenti sostituiscono quelli precedenti.</p>
+    <details><summary>Come vengono aggiornati i dati</summary><p>Il codice socio identifica la persona; socio + anno identificano il censimento. Un nuovo import aggiorna l'anagrafica ma conserva campi educativi, branca locale, password e permessi. Le colonne assenti sono conservate; i campi vuoti nelle colonne presenti sostituiscono quelli precedenti.</p></details>
+    <button id="analyze-import" class="button button-secondary" type="button">Analizza CSV</button>
+    </section>
     <p id="import-error" role="alert"></p>
+    <section id="import-review-panel" data-section-panel>
+    <p>Verifica il riepilogo dopo aver analizzato il CSV. Il salvataggio richiede una conferma.</p>
     <div id="import-preview"></div>
-    <div class="members-toolbar"><button id="analyze-import" class="button button-secondary" type="button">Analizza CSV</button><button id="confirm-import" class="button button-primary" type="button" disabled>Conferma importazione</button></div>
+    <button id="confirm-import" class="button button-primary" type="button" disabled>Conferma importazione</button>
+    </section>
   </dialog>
   <dialog id="macro-dialog" class="members-dialog">
     <form id="macro-form">
@@ -158,5 +180,6 @@
   <script src="../assets/js/shared/accesso.js"></script>
   <script src="../assets/js/soci-model.js"></script>
   <script src="../assets/js/soci.js"></script>
+  <script src="../assets/js/shared/section-nav.js"></script>
 </body>
 </html>

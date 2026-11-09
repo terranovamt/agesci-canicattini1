@@ -73,6 +73,7 @@
     $("save-document").textContent = "Salva modifiche";
     $("cancel-document").hidden = false;
     formDirty = false;
+    $("documents-section-nav")?.dispatchEvent(new CustomEvent("section-select", { detail: "documents-edit-panel" }));
     $("document-title").focus();
     $("document-form").scrollIntoView({ block: "start", behavior: "instant" });
   }

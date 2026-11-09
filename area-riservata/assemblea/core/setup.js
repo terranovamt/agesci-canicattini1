@@ -205,7 +205,11 @@
 
   function node(path, value, label) {
     if (Array.isArray(value)) {
+      if ((path.length === 1 && ["entrate", "uscite"].includes(path[0])) ||
+          (path[0] === "patrimonio" && path[1] === "voci"))
+        return financialList(path, value);
       const fs = el("fieldset", {}, el("legend", { textContent: label + " (" + value.length + ")" }));
+      if (value.every(item => typeof item === "number")) fs.classList.add("number-list");
       const key = arrayKey(path);
       if (value.length) arraySchemas.set(key, clone(value.at(-1)));
       value.forEach((item, i) => {
@@ -256,8 +260,52 @@
             ? false
             : "";
 
+  function financialList(path, values) {
+    const list = el("div", { className: "financial-list" });
+    const fixed = path[0] === "patrimonio";
+    const current = fixed ? "importo_anno_corrente" : "importo";
+    const key = arrayKey(path);
+    if (values.length) arraySchemas.set(key, clone(values.at(-1)));
+    values.forEach((item, index) => {
+      const rowPath = path.concat(index);
+      const row = el("section", { className: "financial-row" });
+      const heading = el("div", { className: "financial-row-heading" },
+        el("h3", { textContent: strip(item.descrizione || item.nome) || "Nuova voce" }));
+      const amounts = el("div", { className: "financial-amounts" },
+        field(rowPath.concat(current), item[current], String(edit.anno_esercizio || "Attuale") + " · €"),
+        field(rowPath.concat("importo_anno_precedente"), item.importo_anno_precedente, "Anno precedente · €"));
+      const description = el("details", { className: "financial-description" },
+        el("summary", { textContent: fixed ? "Nome e dettagli" : "Modifica descrizione" }));
+      Object.entries(item).filter(([name]) => ![current, "importo_anno_precedente"].includes(name))
+        .forEach(([name, value]) => description.append(node(rowPath.concat(name), value, human(name))));
+      if (!fixed) {
+        const remove = el("button", { type: "button", className: "sec financial-remove", textContent: "Elimina" });
+        remove.setAttribute("aria-label", "Elimina " + strip(item.descrizione || "voce " + (index + 1)));
+        remove.onclick = () => {
+          if (!confirm("Eliminare questa voce dal rendiconto?")) return;
+          setAt(edit, rowPath, undefined);
+          render();
+        };
+        description.append(remove);
+      }
+      row.append(heading, amounts, description);
+      list.append(row);
+    });
+    if (!fixed) {
+      const add = el("button", { className: "sec add", type: "button",
+        textContent: path[0] === "entrate" ? "+ Aggiungi entrata" : "+ Aggiungi uscita" });
+      add.onclick = () => {
+        const template = arraySchemas.get(key) || { descrizione: "", importo: 0, importo_anno_precedente: 0 };
+        getAt(edit, path).push(blank(template));
+        render();
+      };
+      list.append(add);
+    }
+    return list;
+  }
+
   function box(id, title, sub, badges, fill) {
-    const d = el("details", { className: "box", open: open.has(id) });
+    const d = el("details", { className: "box", open: open.has(id) || view === "bilancio" });
     d.dataset.id = id;
     d.ontoggle = () => {
       d.open ? open.add(id) : open.delete(id);
@@ -625,6 +673,8 @@
         storico_avanzo_per_anno: ["storico_avanzo_per_anno"],
         censimenti: ["censimenti"],
         patrimonio: ["patrimonio", "nota_beni_durevoli"],
+        altri: Object.keys(edit).filter(key => !["slide", ...GENERALE, "entrate", "uscite",
+          "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti", "patrimonio", "nota_beni_durevoli"].includes(key)),
       };
       renderSezioni(c, groups[balanceSection] || groups.entrate);
     }

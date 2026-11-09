@@ -5,7 +5,7 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const memberSections = ['profile', 'consents', 'education', 'censuses'];
+  const memberSections = ['profile', 'contacts', 'consents', 'education', 'censuses'];
   const selected = new Set();
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -187,10 +187,12 @@
       busy = false; $('members-app').inert = false;
       document.querySelectorAll('dialog button').forEach(button => { button.disabled = false; });
       $('confirm-import').disabled = !preview;
+      $('member-section-back').disabled = memberSection === 0;
       if (data) updateSelection();
     }
   }
   const consentKeys = ['guardianType', 'guardians', 'digital', 'consent2a', 'consent2b', 'consent2c', 'magazines'];
+  const contactKeys = ['address', 'streetNumber', 'town', 'province', 'postalCode', 'email', 'phone'];
   function educationDraft() {
     if (educationBranch) drafts[educationBranch] = Object.fromEntries([...$('member-education').querySelectorAll('input,select,textarea')].map(el => [el.name.slice(6), el.value]));
   }
@@ -229,7 +231,10 @@
     profileForm.elements.branch.disabled = !!member && (!window.NAS.user.admin || member.revision > 0);
     const profile = { ...member?.profile };
     if (member && !Object.keys(profile).length) profile.givenName = member.name;
-    for (const [target, keys] of [[$('member-profile'), Object.keys(M.profileFields).filter(key => !consentKeys.includes(key))], [$('member-consents'), consentKeys]]) {
+    for (const [target, keys] of [
+      [$('member-profile'), Object.keys(M.profileFields).filter(key => !consentKeys.includes(key) && !contactKeys.includes(key))],
+      [$('member-contacts'), contactKeys], [$('member-consents'), consentKeys],
+    ]) {
       target.replaceChildren(...keys.map(key => {
         const definition = key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
           : key === 'sex' ? { type: 'select', options: ['M', 'F'] }
@@ -275,11 +280,20 @@
   });
   $('member-section-back').onclick = () => showMemberSection(memberSection - 1, true);
   $('member-section-next').onclick = () => showMemberSection(memberSection + 1, true);
+  let revealingInvalid = false;
+  profileForm.addEventListener('invalid', event => {
+    if (revealingInvalid) return;
+    revealingInvalid = true;
+    queueMicrotask(() => { revealingInvalid = false; });
+    const index = memberSections.findIndex(section => $('member-panel-' + section).contains(event.target));
+    if (index >= 0) showMemberSection(index);
+  }, true);
   profileForm.onsubmit = event => {
     event.preventDefault();
     educationDraft();
     const branch = profileForm.elements.branch.value;
-    const profile = Object.fromEntries([...$('member-profile').querySelectorAll('input,select,textarea'), ...$('member-consents').querySelectorAll('input,select,textarea')].map(el => [el.name.slice(8), el.value]));
+    const profile = Object.fromEntries(['member-profile', 'member-contacts', 'member-consents']
+      .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value]));
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
       await A.request(editing ? 'members/' + editing.id : 'members', editing ? 'PATCH' : 'POST', payload);
@@ -305,6 +319,7 @@
     list.append(...result.warnings.map(warning => node('li', warning)));
     $('import-preview').append(node('h3', `${result.rows} censimenti · ${result.newCount} nuovi soci · ${result.updatedCount} soci aggiornati`),
       node('p', 'Colonne escluse: ' + (result.ignoredColumns.join(', ') || 'nessuna')), list);
+    $('import-section-nav').dispatchEvent(new CustomEvent('section-select', { detail: 'import-review-panel' }));
   }, $('import-error'));
   $('confirm-import').onclick = () => {
     if (!preview || !confirm('Salvare i dati analizzati sul NAS? I dati anagrafici importati sostituiranno quelli precedenti.')) return;
@@ -402,7 +417,11 @@
   $('select-results').onclick = () => { results().forEach(member => selected.add(member.id)); render(); };
   $('clear-selection').onclick = () => { selected.clear(); render(); };
   $('new-member').onclick = () => openMember(null);
-  $('open-import').onclick = () => { $('import-error').textContent = ''; $('import-dialog').showModal(); };
+  $('open-import').onclick = () => {
+    $('import-error').textContent = '';
+    $('import-section-nav').dispatchEvent(new CustomEvent('section-select', { detail: preview ? 'import-review-panel' : 'import-source-panel' }));
+    $('import-dialog').showModal();
+  };
   $('reload-members').onclick = () => run(load);
   const dirty = () => $('member-dialog').open && formSnapshot !== JSON.stringify([...new FormData(profileForm)]);
   const canClose = dialog => !busy && (dialog.id !== 'member-dialog' || !dirty() || confirm('Chiudere senza salvare le modifiche alla scheda?'));

@@ -9,10 +9,11 @@
     <link rel="icon" href="../../assets/img/logo-grande.png" />
     <link rel="stylesheet" href="../../assets/css/theme.css" />
     <link rel="stylesheet" href="core/regia.css" />
+    <link rel="stylesheet" href="../../assets/css/section-nav.css" />
   </head>
 
   <body>
-    <header>
+    <header class="reserved-header">
       <img src="../../assets/img/logo-grande.webp" alt="" decoding="async" width="460" height="526" />
       <h1>Regia</h1>
       <span id="b-assemblea" class="pill">Assemblea…</span>
@@ -92,7 +93,12 @@
         </p>
       </section>
 
-      <section class="dati-live card">
+      <nav class="section-nav regia-section-nav" data-section-nav data-section-mobile aria-label="Strumenti della regia" hidden>
+        <button type="button" data-section-target="regia-slides-panel">Slide</button>
+        <button type="button" data-section-target="regia-data-panel">Dati live</button>
+        <button type="button" data-section-target="regia-server-panel">Server</button>
+      </nav>
+      <section id="regia-data-panel" class="dati-live card" data-section-panel>
         <h3>Presenti e ufficio di presidenza</h3>
         <details class="note">
           <summary>Come funziona</summary>
@@ -109,7 +115,7 @@
         <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
       </section>
 
-      <section class="fb card">
+      <section id="regia-server-panel" class="fb card" data-section-panel>
         <div id="legacy-service-metrics">
           <h3>Firebase <small>piano gratuito Spark</small></h3>
           <div class="kpi">
@@ -162,7 +168,7 @@
         </div>
       </section>
 
-      <section class="lista card">
+      <section id="regia-slides-panel" class="lista card" data-section-panel>
         <h3>Slide</h3>
         <ol id="slide"></ol>
       </section>
@@ -187,5 +193,6 @@
     <script src="../../assets/js/shared/nas-metrics.js" defer></script>
     <script src="core/monitoraggio.js?v=live-2" defer></script>
     <script src="core/regia.js" defer></script>
+    <script src="../../assets/js/shared/section-nav.js" defer></script>
   </body>
 </html>

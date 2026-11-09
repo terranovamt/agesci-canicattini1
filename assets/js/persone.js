@@ -11,6 +11,7 @@
   let busy = false;
   let branchFilter = 'ALL';
   let peopleData = [];
+  const branchDrafts = new Map();
   function field(labelText, input) {
     const label = document.createElement('label');
     label.append(document.createTextNode(labelText), input);
@@ -29,13 +30,15 @@
       const option = document.createElement('option');
       option.value = value; option.textContent = text; service.append(option);
     }
-    service.value = person.serviceBranch || '';
-    const originalBranch = service.value;
+    const originalBranch = person.serviceBranch || '';
+    service.value = branchDrafts.get(person.id) ?? originalBranch;
     const branchStatus = document.createElement('span');
     branchStatus.className = 'person-save-status';
-    branchStatus.textContent = 'Nessuna modifica';
+    branchStatus.textContent = service.value === originalBranch ? 'Nessuna modifica' : 'Da salvare';
     fields.append(field('Branca di servizio', service));
     service.onchange = () => {
+      if (service.value === originalBranch) branchDrafts.delete(person.id);
+      else branchDrafts.set(person.id, service.value);
       save.disabled = service.value === originalBranch;
       branchStatus.textContent = save.disabled ? 'Nessuna modifica' : 'Da salvare';
       article.classList.toggle('person-card-dirty', !save.disabled);
@@ -50,12 +53,15 @@
     save.className = 'button button-secondary';
     save.type = 'submit';
     save.textContent = 'Salva branca';
-    save.disabled = true;
+    save.disabled = service.value === originalBranch;
     actions.append(branchStatus);
     actions.append(save);
     edit.onsubmit = e => {
       e.preventDefault();
-      run(() => A.request('people/' + person.id, 'PATCH', { serviceBranch: service.value }));
+      run(async () => {
+        await A.request('people/' + person.id, 'PATCH', { serviceBranch: service.value });
+        branchDrafts.delete(person.id);
+      });
     };
     if (person.hasPassword) {
       const reset = document.createElement('button');
@@ -72,6 +78,7 @@
       actions.append(reset);
     }
     edit.append(fields, actions);
+    article.classList.toggle('person-card-dirty', !save.disabled);
     article.append(title, hint, edit);
     return article;
   }
@@ -132,6 +139,10 @@
     } catch (error) { status.textContent = error.message }
     finally { busy = false; app.inert = false }
   }
-  document.getElementById('reload-people').onclick = () => run(async () => {});
+  document.getElementById('reload-people').onclick = () => {
+    if (branchDrafts.size && !confirm('Scartare le branche non salvate e ricaricare?')) return;
+    branchDrafts.clear();
+    run(async () => {});
+  };
   run(async () => {});
 })();

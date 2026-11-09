@@ -928,3 +928,7 @@ details.note .meter {
     font-size: 20px;
   }
 }
+@media (max-width: 760px) {
+  #app > .regia-section-nav { grid-column: 1 / -1; order: 3; width: 100%; }
+  #app > [data-section-panel] { order: 4; }
+}

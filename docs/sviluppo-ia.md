@@ -121,15 +121,40 @@ questa guida, nei test o nella memoria dell'assistente.
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
-- La scheda socio mantiene i pannelli Anagrafica, Consensi, Percorso e
+- La scheda socio mantiene i pannelli Anagrafica, Contatti, Consensi, Percorso e
   Censimenti nel DOM mentre si naviga. Non ricreare i campi al cambio pannello:
   valori e bozze devono sopravvivere; il salvataggio resta esplicito.
 - Gli accessi amministrativi sono presentati per branca e filtrabili senza
   ampliare l'allowlist: il server continua a esporre solo i capi di
   `NAS_CAPO_CODES` e consente solo cambio branca e reset password.
+- Le assegnazioni di branca non salvate restano in `branchDrafts` passando
+  tra filtri. Eliminarle solo dopo un PATCH riuscito o conferma di ricarica.
+- `assets/js/shared/section-nav.js` controlla pulsanti `data-section-target`
+  e pannelli `data-section-panel` mantenuti nel DOM. La selezione usa
+  `aria-pressed`/`aria-controls`; l'evento `section-select` apre un pannello
+  dai flussi applicativi (modifica PDF, analisi import). La validazione
+  mostra il pannello del primo campo non valido.
+- `data-section-mobile` limita il cambio visibilita a 760px: in regia
+  anteprime e comandi diretta restano sempre disponibili, mentre Slide,
+  Dati live e Server sono alternativi su telefono e affiancati su desktop.
+- Le voci entrate/uscite hanno importi affiancati e descrizione richiudibile;
+  aggiunta e rimozione restano esplicite. Le sei voci del patrimonio mantengono
+  posizione e identita senza comandi di aggiunta/rimozione. Altri dati
+  rende accessibili anche eventuali chiavi di bilancio non standard.
+- Audit schermate: dashboard (Strumenti/Riepilogo/Come iniziare), gestione
+  PDF (Biblioteca/Carica), statistiche (Visite/Server/Segnalazioni/Versione),
+  Libro soci (Ricerca/Passaggi/Campi e modelli), import (CSV/Controllo).
+  Macro e stampa restano flussi brevi a singola attivita; setup conserva
+  editor slide, wizard nuovo anno e strumenti avanzati separati.
+  Home, archivio, assemblea pubblica, PEG e guida mantengono lettura libera
+  e navigazione ad ancore; player, alias PEG e 404 non richiedono tab.
+  Non inserire una seconda intestazione su documenti, regia, guida o player.
 - Verificare le interazioni browser in
   `tests/documents-browser.test.cjs`, `tests/members-browser.test.cjs` e
   `tests/people-ui.test.cjs`, oltre a `tests/setup.test.cjs`.
+  `tests/section-navigation-browser.test.cjs` copre l'inventario completo
+  a 375/768/1024/1440px (markup/CSS/controller condiviso); i test specifici
+  coprono dati, salvataggi, import e autorizzazioni con servizi simulati.
 
 ### Persistenza
 

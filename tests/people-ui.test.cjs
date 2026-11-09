@@ -67,6 +67,13 @@ test("access management shows only configured chiefs and allows only branch chan
   assert.equal(edit.children[1].children[1].disabled, true);
   const serviceLabel = edit.children[0].children[0];
   serviceLabel.children[1].value = "R/S";
+  serviceLabel.children[1].onchange();
+  get("people-branches").children.find(button => button.textContent.startsWith("L/C")).click();
+  get("people-branches").children[0].click();
+  const restoredGroup = get("people-list").children.find(group => group.children[0].textContent === "E/G");
+  const restored = restoredGroup.children[1].children[0].children[2];
+  assert.equal(restored.children[0].children[0].children[1].value, "R/S");
+  assert.equal(restored.children[1].children[1].disabled, false);
   edit.onsubmit({ preventDefault() {} });
   await new Promise(resolve => setImmediate(resolve));
   const branchUpdate = calls.find(call => call[1] === "PATCH");

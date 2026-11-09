@@ -10,6 +10,7 @@ main { max-width: 1240px; margin: auto; padding: 28px 20px 60px }
 h2 { margin: 0 0 8px; font-size: 24px; line-height: 1.3 }
 .publish-info p { max-width: 80ch }
 .documents-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start }
+.documents-workspace:has(.section-nav:not([hidden])) { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .panel { padding: clamp(18px, 3vw, 30px); border-radius: var(--radius-xl); background: var(--w); box-shadow: var(--shadow-card); min-width: 0 }
 .eyebrow { margin: 0 0 8px; color: var(--v2); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .12em }
 label { display: block; margin: 20px 0 6px; font-weight: 700; font-size: 14px }
@@ -34,4 +35,11 @@ button:disabled { opacity: .5 }
 @media (max-width: 760px) {
   .documents-workspace { grid-template-columns: 1fr }
   header h1 { flex-basis: 100%; order: -1 }
+  main { padding: 16px 12px 32px; }
+  .publish-info { margin-bottom: 12px; }
+  .publish-info h2 { font-size: 20px; }
+  .panel { padding: 16px; border-radius: 14px; }
+  label { margin-top: 12px; font-size: 13px; }
+  input, textarea { min-width: 0; font-size: 16px; padding: 9px; }
+  .actions button { flex: 1; min-width: 0; min-height: 44px; }
 }

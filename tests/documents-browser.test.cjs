@@ -51,11 +51,11 @@ function fixture(file, css, scripts) {
     .replace(/<iframe\b[\s\S]*?<\/iframe>/g, (original) => (file === "index.html" ? "" : original))
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
       const source = path.normalize(path.join(path.dirname(file), src.split("?")[0]));
-      return scripts.includes(source) ? "<script>" + read(source) + "</script>" : "";
+      return scripts.includes(source) || source === "assets/js/shared/section-nav.js" ? "<script>" + read(source) + "</script>" : "";
     })
     .replace(
       "</head>",
-      "<style>" + read("assets/css/nas.css") + read("assets/css/theme.css") + read(css) + "</style><script>" + mock + "</script></head>",
+      "<style>" + read("assets/css/nas.css") + read("assets/css/theme.css") + read(css) + read("assets/css/section-nav.css") + "</style><script>" + mock + "</script></head>",
     );
 }
 
@@ -179,6 +179,31 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('#calendar-info').open = false;
           }
           if (page === 2) {
+            doc.querySelector('[data-tab="json"]').click();
+            const financialOriginal = doc.querySelector('#json-text').value;
+            doc.querySelector('[data-tab="bilancio"]').click();
+            doc.querySelector('[data-balance="entrate"]').click();
+            const amount = doc.querySelector('.financial-amounts input');
+            amount.value = '123.45';
+            amount.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+            doc.querySelector('[data-balance="uscite"]').click();
+            doc.querySelector('[data-balance="entrate"]').click();
+            const amountBoxes = [...doc.querySelector('.financial-amounts').querySelectorAll('input')].map(input => input.getBoundingClientRect());
+            results.push({ financialDraft: doc.querySelector('.financial-amounts input').value === '123.45',
+              financialPairs: amountBoxes.length === 2 && Math.abs(amountBoxes[0].top - amountBoxes[1].top) <= 1 &&
+                amountBoxes[0].right <= amountBoxes[1].left && amountBoxes.every(box => box.width >= 100),
+              financialFits: doc.documentElement.scrollWidth <= doc.documentElement.clientWidth });
+            const entryCount = doc.querySelectorAll('.financial-row').length;
+            doc.querySelector('.financial-list > .add').click();
+            results.push({ financialAdd: doc.querySelectorAll('.financial-row').length === entryCount + 1 });
+            doc.querySelectorAll('.financial-remove')[entryCount].click();
+            results.push({ financialRemove: doc.querySelectorAll('.financial-row').length === entryCount });
+            doc.querySelector('[data-balance="patrimonio"]').click();
+            results.push({ fixedAssets: doc.querySelectorAll('.financial-row').length === 6 &&
+              !doc.querySelector('.financial-list .add, .financial-remove') });
+            doc.querySelector('[data-tab="json"]').click();
+            doc.querySelector('#json-text').value = financialOriginal;
+            doc.querySelector('#json-apply').click();
             doc.querySelector('[data-tab="bilancio"]').click();
             const balanceNav = doc.querySelector('#balance-nav');
             doc.querySelector('[data-balance="censimenti"]').click();

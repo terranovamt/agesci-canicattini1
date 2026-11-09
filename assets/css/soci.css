@@ -132,6 +132,27 @@
   .members-table td:nth-child(5), .members-table td:nth-child(6) { grid-column: 1 / -1; text-align: left; }
   .members-table td:nth-child(4)::before { text-align: left; }
 }
+#member-dialog { height: min(820px, calc(100dvh - 2rem)); overflow: hidden; }
+#member-form { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+#member-form > .members-dialog-heading,
+#member-form > .member-section-nav,
+#member-form > .member-section-progress,
+#member-form > .members-dialog-actions { flex: none; }
+#member-form > .member-section-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 0 4px 16px; scroll-padding: 16px; }
+#member-form > .members-dialog-actions { position: static; margin-top: 8px; }
+#member-form .member-section-nav { display: flex; overflow-x: auto; }
+#member-form .member-section-nav button { flex: 1 0 85px; }
+#member-form .members-dialog-heading .eyebrow { margin: 0; font-size: 11px; }
+#member-form .members-dialog-heading h2 { font-size: 22px; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  #member-dialog { height: 100dvh; max-height: 100dvh; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  #member-form .members-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  #member-form .members-wide { grid-column: 1 / -1; }
+  #member-form .members-form-grid input, #member-form .members-form-grid select { font-size: 16px; padding: 8px; }
+  #member-form .members-dialog-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #member-form .members-dialog-actions #member-save { grid-column: 1 / -1; grid-row: 2; }
+  #member-draft-status { display: none; }
+}
 @media print {
   body > * { display: none !important; }
   body > #members-print { display: block !important; }

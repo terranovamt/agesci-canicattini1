@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Guida · Assemblea di Gruppo</title>
     <link rel="stylesheet" href="../../assets/css/theme.css" />
+    <link rel="stylesheet" href="../../assets/css/section-nav.css" />
     <link rel="icon" href="../../assets/img/logo-grande.png" />
     <style>
       * {
@@ -98,6 +99,14 @@
       nav.toc a:hover {
         background: var(--y);
         color: var(--vd);
+      }
+      @media (max-width: 760px) {
+        .hero { padding: 24px 16px 48px; }
+        .hero p { font-size: 14px; }
+        nav.toc { flex-wrap: nowrap; justify-content: start; overflow-x: auto; padding: 6px; }
+        nav.toc a { flex: none; border-radius: 9px; font-size: 13px; }
+        section { padding: 16px; border-radius: 14px; }
+        h2 { font-size: 19px; }
       }
       section {
         scroll-margin-top: 76px;
@@ -326,7 +335,7 @@
   </head>
 
   <body>
-    <div class="hd">
+    <div class="hd reserved-header">
       <b>Guida · Assemblea di Gruppo</b
       ><img src="../../assets/img/logo-grande.webp" alt="" decoding="async" loading="lazy" width="460" height="526" />
     </div>
@@ -339,7 +348,7 @@
       <div class="bar"></div>
     </div>
     <main>
-      <nav class="toc">
+      <nav class="toc section-nav" aria-label="Sezioni della guida">
         <a href="#link">Link</a><a href="#regia">Regia</a><a href="#pubblico">Pubblico</a
         ><a href="#setup">Setup GitHub</a> <a href="#dati">dati.js</a><a href="#firebase">Firebase</a
         ><a href="#limiti">Limiti gratuiti</a><a href="#problemi">Problemi</a>

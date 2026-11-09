@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../assets/css/home.css" />
     <link rel="stylesheet" href="../assets/css/nas-metrics.css" />
     <link rel="stylesheet" href="../assets/css/nas.css" />
+    <link rel="stylesheet" href="../assets/css/section-nav.css" />
   </head>
   <body class="reserved-page metrics-page">
     <header class="reserved-header">
@@ -28,6 +29,13 @@
       </div>
       <p id="statistics-status" class="metrics-status" role="status" aria-live="polite">Verifica accesso...</p>
       <div id="statistics-data" hidden>
+        <nav class="section-nav" data-section-nav aria-label="Sezioni statistiche" hidden>
+          <button type="button" data-section-target="statistics-traffic">Visite e andamento</button>
+          <button type="button" data-section-target="statistics-server">Server live</button>
+          <button type="button" data-section-target="statistics-diagnostic-panel">Segnalazioni</button>
+          <button type="button" data-section-target="statistics-version">Versione NAS</button>
+        </nav>
+        <div id="statistics-version" data-section-panel>
         <section class="statistics-release" aria-labelledby="statistics-release-title">
           <div class="statistics-release-heading">
             <div>
@@ -42,6 +50,8 @@
             Ultimo commit NAS: <a id="stats-release-latest-commit" target="_blank" rel="noopener"></a>
           </p>
         </section>
+        </div>
+        <div id="statistics-traffic" data-section-panel>
         <section class="metrics-section" aria-labelledby="statistics-today">
           <h2 id="statistics-today">Il sito oggi</h2>
           <dl class="metrics-overview statistics-kpis">
@@ -92,6 +102,8 @@
             <p class="metrics-status">Visualizzazioni di pagina, non persone uniche.</p>
           </section>
         </div>
+        </div>
+        <div id="statistics-server" data-section-panel>
         <section class="metrics-section statistics-hourly" aria-labelledby="statistics-hourly-title">
           <div class="statistics-history-heading">
             <div>
@@ -124,7 +136,8 @@
           </div>
           <p id="stats-hour-note" class="metrics-status" role="status"></p>
         </section>
-        <div class="statistics-bottom">
+        </div>
+        <div class="statistics-bottom" id="statistics-diagnostic-panel" data-section-panel>
           <section class="metrics-section statistics-alerts" aria-labelledby="statistics-diagnostics">
             <div class="statistics-history-heading">
               <h2 id="statistics-diagnostics">Segnalazioni</h2>
@@ -161,5 +174,6 @@
     <script src="../assets/js/shared/accesso.js" defer></script>
     <script src="../assets/js/shared/nas-metrics.js" defer></script>
     <script src="../assets/js/statistiche.js" defer></script>
+    <script src="../assets/js/shared/section-nav.js" defer></script>
   </body>
 </html>

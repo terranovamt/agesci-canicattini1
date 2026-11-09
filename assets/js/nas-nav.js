@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  if (!window.LIVE?.nas || document.querySelector('.reserved-header, .setup-header')) return;
+  if (!window.LIVE?.nas || document.querySelector('.reserved-header, .setup-header, #stage')) return;
   const base = window.LIVE.basePath || '';
   const header = document.createElement('header');
   header.className = 'nas-navbar';
