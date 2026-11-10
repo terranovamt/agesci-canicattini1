@@ -33,10 +33,12 @@ async function startNasDemo() {
       const code = String(7654321 + index);
       const chief = people.find(person => person.code === code);
       await request("people/" + chief.id, "PATCH", { serviceBranch: branch });
+      const units = branch === "L/C" ? ["Bianchi", "Neri", "Rossi", "Grigi", "Bruni", "Fulvi"] :
+        branch === "E/G" ? ["Aquile", "Lupi", "Aironi", "Volpi", "Leoni"] : [];
+      const memberCount = branch === "L/C" ? 30 : branch === "E/G" ? 35 : 17;
       const members = [];
-      for (let number = 0; number < 6; number++) {
-        const unit = branch === "L/C" ? (number < 3 ? "Bianchi" : "Rossi") :
-          branch === "E/G" ? (number < 3 ? "Aironi" : "Aquile") : "";
+      for (let number = 0; number < memberCount; number++) {
+        const unit = units.length ? units[Math.floor(number / (memberCount / units.length))] : "";
         const { member } = await request("members", "POST", {
           code: String(9000000 + index * 100 + number), branch,
           profile: { givenName: "Socio " + (number + 1), surname: "Demo " + branch },
@@ -46,7 +48,7 @@ async function startNasDemo() {
       }
       const attendance = members.map((member, number) => ({
         personId: member.id, status: number < 4 ? "presente" : number === 4 ? "assente" : "",
-        paidCents: [1000, 500, 0, 1200, 0, 0][number],
+        paidCents: number === 0 ? 1000 : number === 1 ? 500 : number === 3 ? 1200 : 0,
       }));
       const event = {
         branch, kind: "riunione", title: "DEMO - Riunione di oggi " + branch,
@@ -70,11 +72,11 @@ async function startNasDemo() {
       if (branch === "L/C") event.tournament = {
         members: members.map((member, number) => ({
           personId: member.id, unit: member.unit,
-          punctuality: number < 3 ? true : number === 3 ? false : null,
-          loyalty: number < 4 ? 4 : null, balooRules: number < 4 ? 5 : null,
-          huntNotebook: number < 4 ? 3 : null, style: number < 4 ? 4 : null, eye: null,
+          punctuality: number % 6 < 3 ? true : number % 6 === 3 ? false : null,
+          loyalty: number % 6 < 4 ? 4 : null, balooRules: number % 6 < 4 ? 5 : null,
+          huntNotebook: number % 6 < 4 ? 3 : null, style: number % 6 < 4 ? 4 : null, eye: null,
         })),
-        presentations: [{ unit: "Bianchi", score: 5 }, { unit: "Rossi", score: 4 }],
+        presentations: units.map((unit, unitIndex) => ({ unit, score: 5 - unitIndex % 3 })),
       };
       await request("activities/events", "POST", event);
       await request("activities/events", "POST", {
@@ -87,13 +89,15 @@ async function startNasDemo() {
           time: "09:00", title: "Esplorazione", place: "Bosco",
         }),
       });
-      if (branch !== "R/S") await request("activities/paths", "POST", {
-        branch, personId: members[0].id, kind: branch === "L/C" ? "hunt" : "specialty",
-        title: branch === "L/C" ? "DEMO - Stagione di caccia" : "DEMO - Naturalista",
-        closed: false,
-        steps: [{ title: "Riconoscere tre alberi", done: true },
-          { title: "Preparare un gioco nella natura", done: false }],
-      });
+      if (branch !== "R/S") for (const [number, member] of members.entries()) {
+        await request("activities/paths", "POST", {
+          branch, personId: member.id, kind: branch === "L/C" ? "hunt" : "specialty",
+          title: branch === "L/C" ? "DEMO - Stagione di caccia" : "DEMO - Naturalista",
+          closed: false,
+          steps: [{ title: "Riconoscere tre alberi", done: number % 2 === 0 },
+            { title: "Preparare un gioco nella natura", done: false }],
+        });
+      }
     }
     for (const code of ["7654321", "7654322", "7654323"]) {
       await request("auth/login", "POST", { code, password: app.password, confirmation: app.password });

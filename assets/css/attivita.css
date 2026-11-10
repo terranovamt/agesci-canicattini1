@@ -196,6 +196,11 @@
 }
 #paths-panel .path-card { padding: 12px; border-radius: 12px; }
 .path-member-link { display: flex; align-items: center; min-height: 44px; color: #50336a; font-weight: 700; }
+.activity-path-unit { min-width: 0; padding: 8px 12px; border: 1px solid #cfc4d9; border-top: 5px solid var(--unit-color, #795699); border-radius: 12px; background: color-mix(in srgb, var(--unit-color, #795699) 8%, white); }
+.activity-path-unit > summary { display: flex; align-items: center; min-height: 44px; font-weight: 700; cursor: pointer; }
+.activity-path-unit > summary::after { content: ""; width: 28px; height: 10px; margin-left: 8px; border: 1px solid #625269; border-radius: 3px; background: linear-gradient(90deg, var(--unit-color) 50%, var(--unit-color-secondary) 50%); }
+.activity-path-unit-members { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 4px 12px; }
+.activity-path-unit .path-member-link { padding: 4px 8px; border-top: 1px solid #cfc4d955; }
 #paths-panel .path-card h3 { margin: 4px 0; font-size: 1rem; }
 #paths-panel .path-card p { margin: 4px 0; font-size: .85rem; }
 #paths-panel .path-card progress { margin: 6px 0; height: 6px; }

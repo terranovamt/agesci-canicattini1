@@ -376,7 +376,7 @@ oltre un anno restano esclusi.
 
 Sestiglia/squadriglia e ruolo si assegnano da questa vista, non dalla scheda
 personale o dalle macro. La scheda li riepiloga in sola lettura e permette di
-aprire **Storico assegnazioni per anno**. L'anno di riferimento e il massimo
+aprire lo storico con il pulsante **+**. L'anno di riferimento e il massimo
 anno censimento importato (o l'anno corrente se mancano censimenti): viene
 conservata l'ultima assegnazione registrata in ogni anno. Un import successivo
 o un riavvio non riscrive gli anni passati. Lo storico parte dalle informazioni

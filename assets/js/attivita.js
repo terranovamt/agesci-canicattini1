@@ -115,7 +115,7 @@
         (rs && document.querySelector('[data-section-target="paths-panel"]').getAttribute('aria-pressed') === 'true'))
       document.querySelector('[data-section-target="events-panel"]').click();
     const selectedMember = pathMember();
-    $('paths-heading').textContent = selectedMember ? 'Percorsi di ' + selectedMember.name : 'Percorsi individuali';
+    $('paths-heading').textContent = selectedMember ? 'Percorso di ' + selectedMember.name : 'Percorso';
     $('paths-member-back').hidden = !selectedMember;
     $('paths-member-back').href = selectedMember
       ? `soci.html?member=${selectedMember.id}&section=education` : 'soci.html';
@@ -150,13 +150,35 @@
     }));
     if (!events.length) $('events-list').append(node('p', 'Nessuna attività trovata. Crea il primo incontro di branca.', 'members-note'));
     $('paths-members').hidden = !!selectedMember;
-    $('paths-members').replaceChildren(...(selectedMember ? [] : roster().filter(member => matches(member.name)).map(member => {
-      const link = node('a', member.name + ' · Apri percorsi', 'activity-card path-member-link');
-      link.href = `attivita.html?member=${member.id}#paths-panel`;
-      return link;
-    })));
-    if (!selectedMember && !$('paths-members').children.length)
-      $('paths-members').append(node('p', 'Nessun socio trovato nella branca.', 'members-note'));
+    if (!selectedMember) {
+      const grouped = roster().filter(member => matches(member.name)).reduce((groups, member) => {
+        const unit = member.unit || (branch() === 'L/C' ? 'Senza sestiglia' : 'Senza squadriglia');
+        if (!groups.has(unit)) groups.set(unit, []);
+        groups.get(unit).push(member);
+        return groups;
+      }, new Map());
+      const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b, 'it'));
+      $('paths-members').replaceChildren(...groups.map(([unit, members], index) => {
+        const group = node('details', undefined, 'activity-path-unit');
+        const [color, color2] = attendanceColors(unit);
+        group.style.setProperty('--unit-color', color);
+        group.style.setProperty('--unit-color-secondary', color2);
+        group.open = index === 0;
+        group.append(node('summary', `${unit} · ${members.length}`));
+        const list = node('div', undefined, 'activity-path-unit-members');
+        list.append(...members.map(member => {
+          const link = node('a', member.name, 'path-member-link');
+          link.href = `soci.html?member=${member.id}&section=education`;
+          return link;
+        }));
+        group.append(list);
+        return group;
+      }));
+      if (!groups.length) $('paths-members').append(node('p',
+        'Nessun socio trovato nella branca.', 'members-note'));
+    } else {
+      $('paths-members').replaceChildren();
+    }
     const paths = data.paths.map(item => pathDrafts.get(item.id) || item)
       .filter(item => selectedMember && item.branch === branch() && item.personId === selectedMember.id &&
         matches(item.title + ' ' + item.memberName));
@@ -330,6 +352,7 @@
     const add = button('+ Aggiungi momento', () => {
       group.open = true; appendProgram({ date }).querySelector('input[name^="program-time-"]').focus();
     });
+    add.classList.add('activity-program-day-add');
     group.append(summary, rows, add);
     const next = [...$('event-program').children].find(day => day.dataset.date > date);
     $('event-program').insertBefore(group, next || null);
@@ -1022,7 +1045,7 @@
       $('event-error').textContent = 'Aggiungi un momento al programma per salvare il luogo.';
       setEventView('programma');
       $('event-program-section').open = true;
-      $('add-program-item').focus();
+      document.querySelector('#event-program .activity-program-day-add')?.focus();
       return;
     }
     let feeCents, attendance;
@@ -1077,11 +1100,6 @@
   $('new-winter-camp').onclick = () => openEvent(null, false, false, 'winter-camp');
   $('new-path').onclick = () => openPath();
   $('add-event-task').onclick = () => appendStep($('event-tasks')).focus();
-  $('add-program-item').onclick = () => {
-    $('event-program-section').open = true;
-    const row = appendProgram(); row.closest('.activity-program-day').open = true;
-    row.querySelector('input[type="text"]')?.focus();
-  };
   $('add-event-material').onclick = addActivityMaterial;
   $('add-path-step').onclick = () => { appendStep($('path-steps')).focus(); closure(); };
   eventForm.elements.kind.onchange = () => {

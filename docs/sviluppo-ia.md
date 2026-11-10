@@ -356,6 +356,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   revisioni ottimistiche. Zero tappe completate significa Definito, alcune
   In lavorazione, tutte (non vuote) Conquistato. La stagione L/C richiede
   chiusura esplicita dopo tutte le prede; solo dopo si avviano specialita.
+  La scheda Percorso raggruppa i soci per sestiglia/squadriglia e apre il
+  profilo individuale nella scheda Percorso senza modificare prede o tappe.
+  Nel programma l'aggiunta del momento e disponibile una volta per giornata.
   I campi multiselect del Libro soci restano indipendenti e preservati.
   Le schede attivita elencano i presenti e collegano `soci.html?member=ID`;
   la scheda socio carica `/api/activities/members/ID` (solo dati di quel

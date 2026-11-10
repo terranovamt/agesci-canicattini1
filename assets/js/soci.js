@@ -425,13 +425,14 @@
       const lc = educationBranch === 'L/C', values = drafts[educationBranch] || {};
       const card = node('section', undefined, 'member-assignment-summary');
       card.append(node('h4', lc ? 'Sestiglia e ruolo' : 'Squadriglia e ruolo'),
-        node('p', [values[M.unitField(educationBranch)] || 'Non assegnata', values.ruolo || 'Ruolo non assegnato'].join(' · ')),
-        node('small', lc ? 'Si modificano dalla schermata Sestiglie.' : 'Si modificano dalla schermata Squadriglie.'));
+        node('p', [values[M.unitField(educationBranch)] || 'Non assegnata', values.ruolo || 'Ruolo non assegnato'].join(' · ')));
       const previous = values.pista;
       if (previous && data.fields.some(field => field.branch === educationBranch && legacyPista(field)))
         card.append(node('p', 'Nota di percorso precedente: ' + previous, 'members-note'));
-      const history = node('details'), list = node('div');
-      history.append(node('summary', 'Storico assegnazioni per anno'));
+      const history = node('details', undefined, 'member-assignment-history'), list = node('div');
+      const historyToggle = node('summary', '+');
+      historyToggle.setAttribute('aria-label', 'Storico assegnazioni');
+      history.append(historyToggle);
       for (const item of (editing?.assignmentHistory || []).filter(item => item.branch === educationBranch))
         list.append(node('p', `${item.year} · ${item.unit || (lc ? 'Senza sestiglia' : 'Senza squadriglia')} · ${item.role || 'Nessun ruolo'}`));
       if (!list.children.length) list.append(node('p', 'Nessuno storico registrato. Le assegnazioni precedenti all’attivazione dello storico non sono ricostruibili.'));

@@ -47,8 +47,6 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         const data = await ACCESSO.request('activities');
         const meeting = data.events.find(event=>event.kind==='riunione');
         const member = data.members.find(member=>member.id===data.paths[0].personId);
-        await ACCESSO.request('activities/paths','POST',{branch:'L/C',kind:'hunt',personId:
-          data.members.find(other=>other.id!==member.id).id,title:'Percorso di un altro socio',closed:false,steps:[]});
         const free = await ACCESSO.request('activities/events','POST',{branch:'L/C',kind:'riunione',
           title:'DEMO - Gratis',date:meeting.date,feeCents:0,program:[],tasks:[],
           attendance:[{personId:member.id,status:'presente',due:true,paidCents:0}]});
@@ -59,7 +57,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor:1, mobile:width < 500 });
         await go("attivita.html");
         await wait("!document.getElementById('activities-app').hidden");
-        assert.equal(await page.evaluate("document.getElementById('activities-search').closest('label').hidden"), true);
+        assert.equal(await page.evaluate("document.getElementById('activities-search').closest('label').hidden"), false,
+          "the 30-member branch exposes search");
         assert.equal(await page.evaluate("document.querySelector('.reserved-location a').textContent.includes('Home capi')"), true);
         assert.equal(await page.evaluate("document.querySelector('.reserved-location [aria-current=page]').textContent"), "Attività");
         assert.equal(await page.evaluate("!!document.querySelector('#events-list .activity-event-extra, #events-list .activity-participants, .event-help')"), false);
@@ -78,6 +77,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await shot(label + "-correzioni-presenze");
         await click('[data-event-view="programma"]');
         await page.evaluate("document.querySelector('.activity-program-extra').open=true");
+        assert.equal(await page.evaluate("document.querySelectorAll('#event-program .activity-program-day-add').length === document.querySelectorAll('#event-program .activity-program-day').length && !document.getElementById('add-program-item')"), true,
+          "each day has its own add action and the duplicate global action is gone");
         assert.equal(await page.evaluate(`[...document.querySelectorAll('.activity-program-item input[type=date]')].some(input=>input.checkVisibility())`), false);
         assert.equal(await page.evaluate(`[...document.querySelectorAll('#event-program button')].some(button=>/questo giorno/i.test(button.textContent))`), false);
         assert.equal(await page.evaluate(`(() => {
@@ -108,10 +109,23 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         if (width >= 1000)
           assert.ok(await page.evaluate("document.getElementById('member-dialog').getBoundingClientRect().width") >= Math.min(1100,width*.8));
         await shot(label + "-correzioni-socio");
+        const pathsBeforeProfile = await page.evaluate("ACCESSO.request('activities').then(data => data.paths)");
+        await go("attivita.html#paths-panel");
+        await wait("!document.getElementById('activities-app').hidden && !document.getElementById('paths-panel').hidden");
+        assert.equal(await page.evaluate("document.querySelectorAll('#paths-members .activity-path-unit').length"), 6);
+        const firstPathLink = await page.evaluate("document.querySelector('#paths-members .activity-path-unit .path-member-link').getAttribute('href')");
+        assert.match(firstPathLink, /soci\.html\?member=\d+&section=education/);
+        await go(firstPathLink);
+        await wait("document.getElementById('member-dialog')?.open && !document.getElementById('member-panel-education').hidden");
+        await wait("document.getElementById('member-paths-list').textContent.includes('Stagione di caccia')");
+        assert.match(await page.evaluate("document.getElementById('member-paths-list').textContent"), /Stagione di caccia/);
+        assert.equal(await page.evaluate("document.getElementById('member-paths').textContent.includes('Percorsi individuali')"), false);
+        assert.deepEqual(await page.evaluate("ACCESSO.request('activities').then(data => data.paths)"), pathsBeforeProfile,
+          "opening a member path does not move or alter their prey");
+        await page.evaluate("document.getElementById('member-dialog').close()");
         await go("attivita.html?member=" + context.member.id + "#paths-panel");
         await wait("!document.getElementById('activities-app').hidden && !document.getElementById('paths-panel').hidden");
-        assert.equal(await page.evaluate("document.getElementById('paths-list').textContent.includes('Percorso di un altro socio')"), false);
-        assert.match(await page.evaluate("document.getElementById('paths-list').textContent"), /Stagione di caccia/);
+        assert.equal(await page.evaluate("document.getElementById('paths-list').textContent.includes('Stagione di caccia')"), true);
         await click("#new-path");
         assert.equal(await page.evaluate("document.querySelector('#path-form [name=personId]').value"), String(context.member.id));
         assert.equal(await page.evaluate("document.documentElement.scrollWidth > innerWidth"), false);
@@ -130,7 +144,7 @@ test("demo screens expose navigation, individual paths, clear attendance and com
       await wait("document.getElementById('event-error').textContent.includes('momento')");
       assert.equal(await page.evaluate("document.getElementById('event-dialog').open"), true);
       assert.equal(await page.evaluate("document.getElementById('event-place').value"), "Base demo");
-      await click("#add-program-item");
+      await click("#event-program .activity-program-day[open] .activity-program-day-add");
       await page.evaluate(`{
         const title = document.querySelector('#event-program [name^="program-title-"]');
         title.value='Accoglienza'; title.dispatchEvent(new Event('input',{bubbles:true}));
@@ -561,6 +575,9 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#paths-tab");
         if (await page.evaluate("document.getElementById('paths-members').checkVisibility()")) {
           await page.send("Page.navigate", { url: await page.evaluate("document.querySelector('#paths-members a').href") });
+          await wait("document.readyState === 'complete' && document.getElementById('member-dialog')?.open && !document.getElementById('member-panel-education').hidden");
+          assert.equal(await page.evaluate("document.getElementById('member-paths').hidden"), false);
+          await page.send("Page.navigate", { url: await page.evaluate("document.getElementById('member-paths-link').href") });
           await wait("document.readyState === 'complete' && !document.getElementById('activities-app')?.hidden && !document.getElementById('new-path')?.hidden");
         }
         if (label === "telefono") {
@@ -642,7 +659,7 @@ test("login autofill, education dates, activities and progression work on four s
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=title]').value"), "Campo invernale");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=date]').value"), "2027-01-02");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=endDate]').value"), "2027-01-05");
-      await click("#add-program-item");
+      await click("#event-program .activity-program-day[open] .activity-program-day-add");
       await fill('#event-program [name="program-time-1"]', "08:00", "change");
       await fill('#event-program [name="program-title-1"]', "Lancio");
       await expand(".activity-program-extra");

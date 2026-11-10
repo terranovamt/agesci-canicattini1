@@ -292,7 +292,10 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.branchLocked = form.elements.branch.disabled;
           results.prefilled = $('member-assignment').textContent.includes('Aquile') &&
             !form.elements['extra:squadriglia'] && !form.elements['extra:ruolo'];
-          results.assignmentHistory = $('member-assignment').querySelector('details').textContent.includes('Storico assegnazioni per anno');
+          const historyToggle = $('member-assignment').querySelector('details summary');
+          results.assignmentHistory = historyToggle.textContent.trim() === '+' &&
+            historyToggle.getAttribute('aria-label') === 'Storico assegnazioni';
+          results.assignmentNoDirections = !$('member-assignment').textContent.includes('Si modificano dalla schermata');
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
           $('member-tab-guardians').click();
           results.guardianParsed = $('member-guardians').children.length === 1 &&
@@ -508,7 +511,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
-        "contextualUnitLabels", "assignmentHistory", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
+        "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
         "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
