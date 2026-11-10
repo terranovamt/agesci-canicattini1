@@ -24,6 +24,15 @@ body.reserved-page .reserved-header .brand,
 .nas-navbar img { width: 48px; height: 48px; object-fit: contain }
 .nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
 .nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
+.reserved-location { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; box-sizing: border-box; width: calc(100% - 32px); max-width: 1360px; margin: 0 auto; padding: 6px 0; border-bottom: 1px solid #d6ccdf; color: #39234c; font: 600 14px/1.4 system-ui, sans-serif; }
+.reserved-location a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: #50336a; text-underline-offset: 3px; }
+.reserved-location strong { flex: 1; min-width: 80px; overflow-wrap: anywhere; }
+.reserved-location a:focus-visible { outline: 3px solid #926bb5; outline-offset: 3px; }
+@media (max-width: 420px) {
+  .reserved-location { gap: 0 12px; font-size: 13px; }
+  .reserved-location strong { flex-basis: calc(100% - 120px); text-align: right; }
+}
+@media print { .reserved-location { display: none; } }
 body.reserved-page:has(> .members-page) > .reserved-header {
   gap: 8px 16px;
   padding: 8px max(16px, calc((100vw - 1200px) / 2));

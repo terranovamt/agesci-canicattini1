@@ -7,6 +7,9 @@
   const pathLabels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
   const pathDrafts = new Map();
   const materialOptions = new Map();
+  const linkedMemberId = new URLSearchParams(location.search).get('member');
+  let activityPlaceChanged = false;
+  let attendanceUnits = [];
   let materialFilter = 'all';
   let pathSaving = false, pathSaveError = '', tournamentSort = 'total', tournamentAscending = false;
   const tournamentFields = [
@@ -29,7 +32,7 @@
       endDate: eventForm.elements.endDate.value, program: readProgram() });
     const today = AM.clock().date;
     for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
-      const date = row.querySelector('input[type="date"]').value;
+      const date = row.querySelector('input[name^="program-date-"]').value;
       const time = row.querySelector('input[name^="program-time-"]').value;
       const current = date === today && live.active && live.current &&
         live.current.time === time && live.current.title === row.querySelector('input[name^="program-title-"]').value;
@@ -53,6 +56,17 @@
     element.type = 'button'; element.onclick = action; return element;
   }
   function roster() { return data.members.filter(member => member.branch === branch()); }
+  function pathMember() {
+    return roster().find(member => String(member.id) === linkedMemberId);
+  }
+  function attendanceColors(unit) {
+    const saved = attendanceUnits.find(item => item.branch === branch() && M.unitKey(item.name) === M.unitKey(unit));
+    const identity = branch() === 'E/G' ? M.patrolIdentity(unit) : null;
+    const color = saved?.color || (branch() === 'L/C'
+      ? Object.entries(M.sestigliaColors).find(([name]) => M.unitKey(name) === M.unitKey(unit))?.[1]
+      : identity?.color);
+    return [color || M.branchColors[branch()], saved?.color2 || identity?.color2 || color || M.branchColors[branch()]];
+  }
   function memberLink(person) {
     const link = node('a', person.name);
     link.href = 'soci.html?member=' + person.personId;
@@ -100,10 +114,20 @@
     if ((!lc && activeTab.getAttribute('aria-pressed') === 'true') ||
         (rs && document.querySelector('[data-section-target="paths-panel"]').getAttribute('aria-pressed') === 'true'))
       document.querySelector('[data-section-target="events-panel"]').click();
-    $('paths-heading').textContent = lc ? 'Stagione di caccia e specialità' : 'Specialità e brevetti';
+    const selectedMember = pathMember();
+    $('paths-heading').textContent = selectedMember ? 'Percorsi di ' + selectedMember.name : 'Percorsi individuali';
+    $('paths-member-back').hidden = !selectedMember;
+    $('paths-member-back').href = selectedMember
+      ? `soci.html?member=${selectedMember.id}&section=education` : 'soci.html';
+    document.querySelector('.path-filters').hidden = !selectedMember;
+    $('new-path').hidden = !selectedMember;
+    $('paths-hint').hidden = false;
     $('paths-hint').textContent = lc
       ? 'Spunta le prede, poi concludi esplicitamente la caccia per avviare una specialità.'
       : 'Spunta le tappe completate, poi salva i percorsi.';
+    if (!selectedMember) $('paths-hint').textContent = linkedMemberId
+      ? 'Socio non disponibile nella branca selezionata. Scegli un socio della branca.'
+      : 'Scegli un socio per aprire i suoi percorsi individuali. Puoi cercarlo per nome.';
     $('events-hint').textContent = 'Prima l’attività in corso o la prossima. Scegli cosa fare.';
     const query = $('activities-search').value.trim().toLocaleLowerCase('it');
     const matches = text => text.toLocaleLowerCase('it').includes(query);
@@ -115,67 +139,27 @@
       (eventOrder(a) ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date))).map(item => {
       const card = node('article', undefined, 'activity-card activity-event-row');
       card.style.setProperty('--branch-color', M.branchColors[branch()]);
-      card.append(node('p', item.kind + ' · ' + dateRange(item), 'eyebrow'), node('h3', item.title),
-        node('p', `${item.attendance.filter(person => person.status === 'presente').length} presenti · ${item.attendance.filter(person => !person.status).length} da registrare`, 'members-note'));
-      const extra = node('details', undefined, 'activity-event-extra');
-      extra.append(node('summary', 'Riepilogo'));
-      if (branch() === 'L/C') {
-        const byUnit = new Map();
-        for (const person of item.attendance) {
-          const unit = person.unit || 'Senza sestiglia';
-          if (!byUnit.has(unit)) byUnit.set(unit, []);
-          byUnit.get(unit).push(person);
-        }
-        if (byUnit.size) {
-          const summary = node('details', undefined, 'activity-unit-attendance');
-          summary.append(node('summary', 'Presenze per sestiglia'));
-          for (const [unit, people] of [...byUnit].sort(([a], [b]) => a.localeCompare(b, 'it'))) {
-            const count = status => people.filter(person => person.status === status).length;
-            summary.append(node('p', `${unit} · ${count('presente')}/${people.length} presenti · ${count('assente')} assenti · ${count('giustificato')} giustificati · ${people.filter(person => !person.status).length} da registrare`));
-          }
-          extra.append(summary);
-        }
-      }
-      if (item.program?.length) extra.append(node('p', `${item.program.length} momenti in programma`));
-      const needs = [...(item.materials || []), ...(item.shopping || [])].filter(part => !part.done).length;
-      if (needs) extra.append(node('p', `${needs} materiali o acquisti da preparare`));
-      const participants = node('details', undefined, 'activity-participants');
-      participants.open = false;
-      participants.append(node('summary', 'Soci presenti'));
-      const list = node('ul');
-      const present = item.attendance.filter(person => person.status === 'presente');
-      if (branch() !== 'R/S') {
-        const groups = new Map();
-        for (const person of present) {
-          const unit = person.unit || (branch() === 'L/C' ? 'Senza sestiglia' : 'Senza squadriglia');
-          if (!groups.has(unit)) groups.set(unit, []);
-          groups.get(unit).push(person);
-        }
-        for (const [unit, people] of [...groups].sort(([a], [b]) => a.localeCompare(b, 'it'))) {
-          const label = node('li'); label.append(node('strong', unit)); list.append(label);
-          for (const person of people) { const entry = node('li'); entry.append(memberLink(person)); list.append(entry); }
-        }
-      } else for (const person of present) {
-        const entry = node('li'); entry.append(memberLink(person)); list.append(entry);
-      }
-      if (!list.children.length) participants.append(node('p', 'Nessuna presenza registrata.', 'members-note'));
-      else participants.append(list);
-      extra.append(participants);
-      if (item.feeCents || item.attendance.some(person => person.paidCents)) {
-        const sums = AM.totals(item);
-        const total = node('span', ` · ${AM.money(sums.remaining)} da ricevere`);
-        card.lastElementChild.append(total);
-      }
+      card.append(node('p', dateRange(item), 'eyebrow'), node('h3', item.title));
       const actions = node('div', undefined, 'activity-event-actions');
       actions.append(button('Presenze', () => openEvent(item, true)),
-        button('Quote', () => { openEvent(item); setEventView('quote'); }),
         button('Programma', () => { openEvent(item); setEventView('programma'); }));
-      card.append(actions, extra);
+      if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0))
+        actions.append(button('Quote', () => { openEvent(item); setEventView('quote'); }));
+      card.append(actions);
       return card;
     }));
     if (!events.length) $('events-list').append(node('p', 'Nessuna attività trovata. Crea il primo incontro di branca.', 'members-note'));
+    $('paths-members').hidden = !!selectedMember;
+    $('paths-members').replaceChildren(...(selectedMember ? [] : roster().filter(member => matches(member.name)).map(member => {
+      const link = node('a', member.name + ' · Apri percorsi', 'activity-card path-member-link');
+      link.href = `attivita.html?member=${member.id}#paths-panel`;
+      return link;
+    })));
+    if (!selectedMember && !$('paths-members').children.length)
+      $('paths-members').append(node('p', 'Nessun socio trovato nella branca.', 'members-note'));
     const paths = data.paths.map(item => pathDrafts.get(item.id) || item)
-      .filter(item => item.branch === branch() && matches(item.title + ' ' + item.memberName));
+      .filter(item => selectedMember && item.branch === branch() && item.personId === selectedMember.id &&
+        matches(item.title + ' ' + item.memberName));
     const progressionCounts = [
       ['Definito', paths.filter(item => state(item) === 'Definito').length],
       ['In lavorazione', paths.filter(item => state(item) === 'In lavorazione').length],
@@ -222,7 +206,7 @@
       if (pathDrafts.has(item.id)) card.append(node('p', 'Modifiche da salvare', 'path-draft-label'));
       return card;
     }));
-    if (!filtered.length) $('paths-list').append(node('p', 'Nessun percorso trovato. Aggiungi un percorso per un socio.', 'members-note'));
+    if (selectedMember && !filtered.length) $('paths-list').append(node('p', 'Nessun percorso trovato per questo socio. Aggiungi il suo primo percorso.', 'members-note'));
     $('new-path').disabled = pathSaving || !roster().length;
     updatePathSaveBar();
     renderTournament();
@@ -266,7 +250,10 @@
   window.addEventListener('beforeunload', event => {
     if (pathDrafts.size) { event.preventDefault(); event.returnValue = ''; }
   });
-  function snapshot(form) { return JSON.stringify([...new FormData(form)]); }
+  function snapshot(form) {
+    return JSON.stringify([[...new FormData(form)],
+      ...(form === eventForm ? [readProgram(), [...materialOptions.values()]] : [])]);
+  }
   function setEventView(view) {
     const tournamentEnabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
     if (!['presenze', 'quote', 'programma', 'torneo', 'ora'].includes(view) ||
@@ -276,7 +263,6 @@
     eventForm.dataset.view = view;
     $('event-program-view').hidden = view !== 'programma';
     $('event-people-view').hidden = !['presenze', 'quote'].includes(view);
-    $('event-fee-setting').hidden = view !== 'quote';
     $('event-totals').hidden = view !== 'quote';
     $('event-tournament').hidden = view !== 'torneo' || !tournamentEnabled;
     if (view === 'torneo') $('event-tournament').open = true;
@@ -341,7 +327,7 @@
     group = node('details', undefined, 'activity-program-day'); group.dataset.date = date;
     const summary = node('summary', dateShort(date));
     const rows = node('div', undefined, 'activity-program-day-rows');
-    const add = button('+ Momento in questo giorno', () => {
+    const add = button('+ Aggiungi momento', () => {
       group.open = true; appendProgram({ date }).querySelector('input[name^="program-time-"]').focus();
     });
     group.append(summary, rows, add);
@@ -360,7 +346,7 @@
     }
     if (day <= last) programDay(end);
     for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
-      const date = row.querySelector('input[type="date"]').value;
+      const date = row.querySelector('input[name^="program-date-"]').value;
       if (date) programDay(date).querySelector('.activity-program-day-rows').append(row);
     }
     for (const group of $('event-program').children) {
@@ -379,7 +365,7 @@
     const index = ++programIndex;
     const label = (name, control) => { const wrapper = node('label', name); wrapper.append(control); return wrapper; };
     const activeDay = [...$('event-program').children].findLast(group => group.open);
-    const day = node('input'); day.type = 'date'; day.required = true;
+    const day = node('input'); day.type = 'hidden';
     day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
     const time = node('input'); time.type = 'text'; time.inputMode = 'numeric'; time.maxLength = 5;
@@ -388,9 +374,9 @@
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;
     title.placeholder = 'es. Lancio o gioco uno';
-    const place = node('input'); place.type = 'text'; place.maxLength = 200; place.value = item.place || '';
+    const place = node('input'); place.type = 'hidden';
+    place.value = activityPlaceChanged || !Object.hasOwn(item, 'place') ? $('event-place').value : item.place || '';
     place.name = `program-place-${index}`;
-    place.placeholder = 'Luogo o punto di ritrovo';
     const description = node('textarea'); description.rows = 2; description.maxLength = 2000;
     description.name = `program-description-${index}`;
     description.value = item.description || ''; description.placeholder = 'Descrivi cosa fare';
@@ -408,18 +394,19 @@
     });
     const remove = button('Rimuovi momento', () => row.remove());
     const extra = node('details', undefined, 'activity-program-extra');
-    extra.append(node('summary', 'Luogo, descrizione e materiali'), label('Giorno', day),
-      label('Luogo', place), label('Cosa si fa', description),
-      node('h4', 'Materiali'), materialList, addMaterial,
-      node('label', 'Nota materiali'), note, remove);
-    row.append(label('Ora', time), label('Momento', title), extra);
-    day.onchange = () => {
-      if (day.value) {
-        const group = programDay(day.value); group.open = true;
-        group.querySelector('.activity-program-day-rows').append(row);
-        sortProgramDay(group); updateProgramTimeline();
-      }
-    };
+    const noteDetails = node('details', undefined, 'program-material-note');
+    noteDetails.open = !!note.value.trim();
+    noteDetails.append(node('summary', 'Nota materiali'), label('Nota aggiuntiva', note));
+    const descriptionColumn = node('div', undefined, 'program-description-column');
+    descriptionColumn.append(label('Cosa si fa', description));
+    const materialsColumn = node('div', undefined, 'program-materials-column');
+    materialsColumn.append(node('h4', 'Materiali'), materialList, addMaterial);
+    const content = node('div', undefined, 'program-extra-content');
+    content.append(descriptionColumn, materialsColumn);
+    extra.append(node('summary', 'Descrizione e materiali'), content, noteDetails, remove);
+    const legacyPlace = node('p', place.value ? 'Luogo: ' + place.value : 'Luogo non indicato', 'program-legacy-place members-note');
+    legacyPlace.hidden = !$('event-place-note').dataset.mixed;
+    row.append(day, place, label('Ora', time), label('Momento', title), legacyPlace, extra);
     time.addEventListener('change', () => {
       sortProgramDay(row.closest('.activity-program-day'));
       updateProgramTimeline();
@@ -443,7 +430,10 @@
     name.addEventListener('keydown', event => {
       if (event.key === 'Enter') { event.preventDefault(); quantity.focus(); }
     });
-    row.append(name, quantity, unit, remove); container.append(row);
+    const field = (text, control) => {
+      const label = node('label', text); label.append(control); return label;
+    };
+    row.append(field('Nome', name), field('Quantità', quantity), field('Unità', unit), remove); container.append(row);
     return row;
   }
   function sortProgramDay(group) {
@@ -505,11 +495,18 @@
         [...list.querySelectorAll('[data-material-shopping]')].find(button => button.dataset.materialShopping === item.key)?.focus();
       });
       shopping.dataset.materialShopping = item.key;
-      const reusedLabel = node('label', 'Riusato', 'material-reused');
-      const reused = node('input'); reused.type = 'checkbox'; reused.checked = item.reused;
-      reused.setAttribute('aria-label', `Riusato: ${item.title}`);
-      reused.onchange = () => { setMaterialOption(item, { reused: reused.checked }); renderMaterialsSummary(); };
-      reusedLabel.prepend(reused);
+      const reusedLabel = node('label', 'Totale necessario', 'material-reused');
+      const reused = node('select');
+      options(reused, [['true', 'Riutilizzo gli stessi · massimo tra i momenti'],
+        ['false', 'Occorrono per ogni momento · somma']]);
+      reused.value = String(item.reused);
+      reused.setAttribute('aria-label', `Totale necessario: ${item.title}`);
+      reused.dataset.materialReuse = item.key;
+      reused.onchange = () => {
+        setMaterialOption(item, { reused: reused.value === 'true' }); renderMaterialsSummary();
+        [...list.querySelectorAll('[data-material-reuse]')].find(control => control.dataset.materialReuse === item.key)?.focus();
+      };
+      reusedLabel.append(reused);
       controls.append(ready, shopping, reusedLabel); row.append(controls); return row;
     }));
     $('event-materials-empty').hidden = visible.length > 0;
@@ -531,10 +528,10 @@
     const key = materialKey(title, unit);
     materialOptions.set(key, { ...(materialOptions.get(key) || {}), title, unit,
       quantity: quantity === '' ? null : Number(quantity),
-      reused: $('activity-material-reused').checked,
+      reused: $('activity-material-reused').value === 'true',
       shopping: $('activity-material-shopping').checked, done: false });
     name.value = $('activity-material-quantity').value = $('activity-material-unit').value = '';
-    $('activity-material-reused').checked = true;
+    $('activity-material-reused').value = 'true';
     $('activity-material-shopping').checked = false;
     renderMaterialsSummary(); name.focus();
   }
@@ -724,6 +721,8 @@
       return;
     }
     totals($('event-totals'), { feeCents, attendance });
+    $('event-view-nav').querySelector('[data-event-view="quote"]').hidden =
+      !(feeCents > 0 || attendance.some(person => person.paidCents > 0));
     const query = $('event-member-search').value.trim().toLocaleLowerCase('it');
     const filter = $('event-member-filter').value;
     let visible = 0;
@@ -736,7 +735,8 @@
       row.querySelector('[data-person-status]').textContent = eventView === 'quote'
         ? remaining ? AM.money(remaining) + ' da ricevere' : excess ? AM.money(excess) + ' in più'
           : !person.due ? 'Quota non dovuta' : 'Saldato'
-        : person.status ? person.status[0].toUpperCase() + person.status.slice(1) : 'Segna presente';
+        : person.status ? (person.status === 'presente' ? '✓ ' : person.status === 'assente' ? '− ' : '') +
+          person.status[0].toUpperCase() + person.status.slice(1) : '○ Da registrare';
       const action = row.querySelector('[data-person-action]');
       if (eventView === 'quote') {
         action.removeAttribute('aria-pressed');
@@ -811,6 +811,16 @@
   window.addEventListener('focus', () => { if ($('event-dialog').open) renderLiveProgram(); });
   function openEvent(item, focusAttendance = false, focusTournament = false, starter = '') {
     editingEvent = item || null; eventForm.reset(); $('event-error').textContent = '';
+    activityPlaceChanged = false;
+    const places = [...new Set((item?.program || []).map(moment => moment.place || ''))];
+    const mixedPlaces = places.length > 1;
+    $('event-place').value = mixedPlaces ? '' : places[0] || '';
+    $('event-place').placeholder = mixedPlaces ? 'Più luoghi esistenti · lascia vuoto per conservarli' : 'Luogo o punto di ritrovo';
+    $('event-place-note').hidden = !mixedPlaces;
+    $('event-place-note').dataset.mixed = mixedPlaces ? 'true' : '';
+    $('event-place-note').textContent = mixedPlaces
+      ? 'Luoghi esistenti: ' + places.map(place => place || 'non indicato').join(' · ') +
+        '. Sono conservati per ogni momento. Modificando questo campo imposti un luogo unico per tutti.' : '';
     materialOptions.clear(); materialFilter = 'all';
     for (const material of item?.materials || []) {
       const saved = { ...material, reused: material.reused !== false, shopping: !!material.shopping };
@@ -851,9 +861,12 @@
       return groups;
     }, new Map()).entries()].sort(([a], [b]) => a.localeCompare(b, 'it'));
     $('event-search-label').hidden = persons.length <= 12;
-    $('event-attendance').replaceChildren(...grouped.map(([unit, group], groupIndex) => {
+    $('event-attendance').replaceChildren(...grouped.map(([unit, group]) => {
       const container = node('details', undefined, 'activity-attendance-group');
-      container.dataset.unit = unit || 'Soci'; container.open = groupIndex === 0;
+      container.dataset.unit = unit || 'Soci'; container.open = true;
+      const [color, color2] = attendanceColors(unit);
+      container.style.setProperty('--unit-color', color);
+      container.style.setProperty('--unit-color-secondary', color2);
       container.append(node('summary', unit || 'Soci'));
       const rows = group.map(person => {
       const row = node('section', undefined, 'activity-person');
@@ -874,7 +887,7 @@
             updateAttendance(); paid.focus(); paid.select();
           }
         } else {
-          select.value = select.value === 'presente' ? '' : 'presente';
+          select.value = select.value === 'presente' ? 'assente' : 'presente';
           select.onchange();
         }
         updateEventSaveState();
@@ -904,7 +917,9 @@
       paidLabel.append(paid);
       const controls = node('details', undefined, 'activity-presence-options');
       const more = node('summary', '⋯'); more.setAttribute('aria-label', 'Assenza o altra presenza: ' + person.name);
-      controls.append(more, label);
+      const profile = memberLink(person); profile.textContent = 'Scheda socio →';
+      profile.className = 'activity-person-profile';
+      controls.append(more, label, profile);
       const payment = node('details', undefined, 'activity-payment');
       payment.id = 'activity-payment-' + person.personId;
       payment.append(node('summary', 'Dettagli del versamento'));
@@ -961,6 +976,8 @@
     closed.setCustomValidity(closed.checked && !complete ? 'Conquista tutte le prede o riapri la stagione togliendo la spunta.' : '');
   }
   function openPath(item) {
+    const selectedMember = pathMember();
+    if (!selectedMember || item && (item.personId !== selectedMember.id || item.branch !== branch())) return;
     item = item && (pathDrafts.get(item.id) || item);
     editingPath = item || null; pathForm.reset(); $('path-error').textContent = '';
     $('path-heading').textContent = item ? 'Gestisci percorso' : 'Nuovo percorso';
@@ -968,8 +985,7 @@
     options(pathForm.elements.kind, types.map(value => [value, pathLabels[value]]));
     pathForm.elements.kind.value = item?.kind || types[0];
     pathForm.elements.kind.disabled = !!item;
-    const members = roster().map(member => [String(member.id), member.name]);
-    if (item && !members.some(([id]) => id === String(item.personId))) members.push([String(item.personId), item.memberName + ' (branca precedente)']);
+    const members = [[String(selectedMember.id), selectedMember.name]];
     options(pathForm.elements.personId, members);
     if (item) pathForm.elements.personId.value = String(item.personId);
     pathForm.elements.personId.disabled = !!item;
@@ -1012,6 +1028,13 @@
   }
   eventForm.onsubmit = event => {
     event.preventDefault();
+    if ($('event-place').value.trim() && !$('event-program').querySelector('.activity-program-item')) {
+      $('event-error').textContent = 'Aggiungi un momento al programma per salvare il luogo.';
+      setEventView('programma');
+      $('event-program-section').open = true;
+      $('add-program-item').focus();
+      return;
+    }
     let feeCents, attendance;
     try { feeCents = AM.cents(eventForm.elements.fee.value); attendance = readAttendance(); }
     catch (error) { $('event-error').textContent = error.message; return; }
@@ -1028,6 +1051,9 @@
     event.preventDefault();
     if (busy || pathSaving) return;
     const personId = Number(pathForm.elements.personId.value);
+    if (!pathMember() || personId !== pathMember().id) {
+      $('path-error').textContent = 'Scegli un socio della branca visibile.'; return;
+    }
     if (branch() === 'L/C' && pathForm.elements.kind.value === 'specialty' && !editingPath &&
         !data.paths.some(item => item.personId === personId && item.kind === 'hunt' && item.closed)) {
       $('path-error').textContent = 'Prima di avviare una specialità, completa e segna come conclusa la stagione di caccia di questo lupetto.';
@@ -1085,13 +1111,13 @@
         eventForm.elements.endDate.value < eventForm.elements.date.value)
       eventForm.elements.endDate.value = eventForm.elements.date.value;
     previousStartDate = eventForm.elements.date.value;
-    for (const date of $('event-program').querySelectorAll('input[type="date"]'))
+    for (const date of $('event-program').querySelectorAll('input[name^="program-date-"]'))
       if (date.value < eventForm.elements.date.value || date.value > eventForm.elements.endDate.value)
         date.value = eventForm.elements.date.value;
     prepareProgramDays();
   };
   eventForm.elements.endDate.oninput = () => {
-    for (const date of $('event-program').querySelectorAll('input[type="date"]'))
+    for (const date of $('event-program').querySelectorAll('input[name^="program-date-"]'))
       if (date.value < eventForm.elements.date.value || date.value > eventForm.elements.endDate.value)
         date.value = eventForm.elements.endDate.value;
     prepareProgramDays();
@@ -1121,6 +1147,13 @@
   for (const control of $('event-view-nav').querySelectorAll('[data-event-view]'))
     control.onclick = () => setEventView(control.dataset.eventView);
   eventForm.elements.fee.oninput = updateAttendance;
+  $('event-place').oninput = () => {
+    activityPlaceChanged = true;
+    for (const place of $('event-program').querySelectorAll('input[name^="program-place-"]'))
+      place.value = $('event-place').value;
+    for (const label of $('event-program').querySelectorAll('.program-legacy-place')) label.hidden = true;
+    $('event-place-note').hidden = true; $('event-place-note').dataset.mixed = '';
+  };
   eventForm.addEventListener('input', updateEventSaveState);
   eventForm.addEventListener('input', event => {
     updateProgramTimeline();
@@ -1158,8 +1191,14 @@
     $('activities-retry').hidden = true;
     $('activities-status').textContent = 'Caricamento…';
     try {
-      data = await A.request('activities');
+      const [activities, members] = await Promise.all([
+        A.request('activities'), A.request('members'),
+      ]);
+      data = activities; attendanceUnits = members?.units || [];
       options($('activities-branch'), data.branches.map(branch => [branch, branch]));
+      const linkedMember = data.members.find(member => String(member.id) === linkedMemberId &&
+        data.branches.includes(member.branch));
+      if (linkedMember) $('activities-branch').value = linkedMember.branch;
       $('activities-branch').closest('label').hidden = data.branches.length === 1;
       $('activities-app').hidden = false; render(); $('activities-status').textContent = '';
       const params = new URLSearchParams(location.search), eventId = params.get('event');

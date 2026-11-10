@@ -5,8 +5,9 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const allMemberSections = ['activities', 'education', 'profile'];
+  const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'guardians', 'censuses'];
   let memberSections = allMemberSections;
+  let pathLoadToken = 0;
   let guardianNextIndex = 0;
   const selected = new Set();
   let sortKey = '', sortDirection = 0;
@@ -349,7 +350,6 @@
       document.querySelectorAll('dialog button').forEach(button => { button.disabled = false; });
       if ($('member-dialog').open) configureMemberSections();
       $('confirm-import').disabled = !preview;
-      $('member-section-back').disabled = memberSection === 0;
       if (data) {
         updateSelection();
         $('propose-transfer').disabled = !!passageSelection().error;
@@ -363,7 +363,7 @@
     ['Pista / sentiero', 'Pista', 'Sentiero'].includes(field.label);
   const editableEducation = field => !assignmentField(field) && !legacyPista(field);
   function educationDraft() {
-    if (educationBranch && !$('member-education').hidden) {
+    if (educationBranch && memberSections.includes('education')) {
       const formData = new FormData(profileForm);
       drafts[educationBranch] = { ...drafts[educationBranch], ...Object.fromEntries(data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
         .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || ''])) };
@@ -444,13 +444,67 @@
     }
     return field;
   }
+  async function renderMemberPaths(member) {
+    const token = ++pathLoadToken;
+    const section = $('member-paths'), list = $('member-paths-list');
+    const status = $('member-paths-status'), link = $('member-paths-link');
+    const supportsPaths = member?.kind === 'ragazzo' && ['L/C', 'E/G'].includes(member.branch);
+    list.replaceChildren();
+    section.hidden = !supportsPaths;
+    if (!supportsPaths) {
+      status.textContent = '';
+      return;
+    }
+    link.hidden = false;
+    link.href = 'attivita.html?member=' + encodeURIComponent(member.id) + '#paths-panel';
+    status.textContent = 'Caricamento percorsi individuali…';
+    try {
+      const result = await A.request('activities');
+      if (token !== pathLoadToken || editing?.id !== member.id) return;
+      if (!Array.isArray(result.paths)) throw new Error('Dati dei percorsi non validi');
+      const paths = result.paths.filter(path => path.personId === member.id && path.branch === member.branch);
+      if (!paths.length) {
+        status.textContent = 'Nessun percorso individuale registrato per questo socio.';
+        return;
+      }
+      const labels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
+      for (const path of paths) {
+        const steps = Array.isArray(path.steps) ? path.steps : [];
+        const completed = steps.filter(step => step.done).length;
+        const state = path.closed ? 'Conclusa' : !completed ? 'Definito'
+          : completed === steps.length ? 'Conquistato' : 'In lavorazione';
+        const card = node('article', undefined, 'member-individual-path');
+        card.append(node('h4', path.title), node('p',
+          `${labels[path.kind] || 'Percorso'} · ${state}${steps.length ? ` · ${completed}/${steps.length} tappe` : ''}`,
+          'member-individual-path-status'));
+        if (steps.length) {
+          const items = node('ul');
+          items.append(...steps.map(step => node('li', `${step.done ? '✓' : '○'} ${step.title}`)));
+          card.append(items);
+        }
+        list.append(card);
+      }
+      status.textContent = '';
+    } catch (error) {
+      if (token !== pathLoadToken || editing?.id !== member.id) return;
+      status.textContent = 'Percorsi non disponibili: ' + error.message;
+    }
+  }
   function configureMemberSections() {
     const current = memberSections[memberSection];
     const adult = M.isAdult({ ...editing, branch: profileForm.elements.branch.value });
-    for (const id of ['member-panel-guardians', 'member-education']) {
-      const section = $(id);
-      section.hidden = adult;
-      section.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = adult; });
+    memberSections = allMemberSections.filter(section => !adult || !['guardians', 'education'].includes(section));
+    for (const section of allMemberSections) {
+      const omitted = !memberSections.includes(section);
+      const tab = $('member-tab-' + section), panel = $('member-panel-' + section);
+      tab.hidden = omitted;
+      panel.hidden = omitted;
+      if (omitted) {
+        tab.tabIndex = -1;
+        tab.setAttribute('aria-selected', 'false');
+      }
+      if (['guardians', 'education'].includes(section))
+        panel.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = omitted; });
     }
     $('member-education-context').hidden = !adult;
     $('member-activities-context').hidden = !!editing && !adult;
@@ -467,19 +521,16 @@
       tab.tabIndex = i === memberSection ? 0 : -1;
       $('member-panel-' + section).hidden = i !== memberSection;
     });
-    $('member-section-progress').textContent =
-      `Sezione ${memberSection + 1} di ${memberSections.length} · ${$('member-tab-' + memberSections[memberSection]).textContent}`;
-    $('member-section-back').disabled = memberSection === 0;
-    $('member-section-next').hidden = memberSection === memberSections.length - 1;
-    $('member-save').hidden = false;
     if (focus) $('member-tab-' + memberSections[memberSection]).focus();
     $('member-panel-' + memberSections[memberSection]).scrollTop = 0;
-    if (focus) $('member-tab-' + memberSections[memberSection]).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    $('member-tab-' + memberSections[memberSection]).scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
-  function openMember(member) {
+  function openMember(member, initialSection = 'activities') {
     editing = member;
     window.MEMBER_ACTIVITIES?.load(member);
-    memberSection = 0;
+    memberSections = allMemberSections;
+    memberSection = Math.max(0, allMemberSections.indexOf(initialSection));
+    renderMemberPaths(member);
     drafts = structuredClone(member?.values || {});
     educationBranch = '';
     profileForm.reset();
@@ -526,7 +577,6 @@
     if (!member?.censuses.length) $('member-censuses').append(node('p', 'Nessun censimento importato.'));
     renderEducation();
     configureMemberSections();
-    showMemberSection(0);
     formSnapshot = JSON.stringify([...new FormData(profileForm)]);
     $('member-dialog').showModal();
   }
@@ -559,8 +609,6 @@
       showMemberSection(next, true);
     };
   });
-  $('member-section-back').onclick = () => showMemberSection(memberSection - 1, true);
-  $('member-section-next').onclick = () => showMemberSection(memberSection + 1, true);
   let revealingInvalid = false;
   profileForm.addEventListener('invalid', event => {
     if (revealingInvalid) return;
@@ -574,10 +622,11 @@
     educationDraft();
     const branch = profileForm.elements.branch.value;
     const profileTargets = ['member-profile', 'member-contacts'];
-    if (!$('member-panel-guardians').hidden) profileTargets.push('member-guardian-type', 'member-guardian-source');
+    const hasGuardianSection = memberSections.includes('guardians');
+    if (hasGuardianSection) profileTargets.push('member-guardian-type', 'member-guardian-source');
     const profile = { ...editing?.profile, ...Object.fromEntries(profileTargets
       .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value])) };
-    if (!$('member-panel-guardians').hidden) profile.guardianContacts = guardianPayload();
+    if (hasGuardianSection) profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
       await A.request(editing ? 'members/' + editing.id : 'members', editing ? 'PATCH' : 'POST', payload);
@@ -737,11 +786,12 @@
   }
   run(async () => {
     await load();
-    const memberId = new URLSearchParams(location.search).get('member');
+    const params = new URLSearchParams(location.search);
+    const memberId = params.get('member');
     if (memberId) {
       const member = data.members.find(member => String(member.id) === memberId);
       if (!member) throw new Error('Socio non disponibile o fuori dalla tua branca.');
-      openMember(member);
+      openMember(member, params.get('section') === 'education' ? 'education' : 'activities');
     }
   }, undefined, '');
 })();

@@ -170,16 +170,18 @@
       <button id="save-unit" type="submit" class="button button-primary">Crea</button>
     </form>
   </dialog>
-  <dialog id="member-dialog" class="members-dialog">
+  <dialog id="member-dialog" class="members-dialog" aria-labelledby="member-title">
     <form id="member-form">
-      <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2><p id="member-outstanding" role="status" aria-live="polite" hidden></p></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
+      <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2><p id="member-outstanding" role="status" aria-live="polite" hidden></p></div><button class="button button-secondary" type="button" data-close="member-dialog">Torna all’elenco</button></div>
       <p id="member-error" role="alert"></p>
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
         <button type="button" role="tab" id="member-tab-activities" aria-controls="member-panel-activities" aria-selected="true">Attività</button>
         <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false" tabindex="-1">Percorso</button>
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="false" tabindex="-1">Anagrafica</button>
+        <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false" tabindex="-1">Contatti</button>
+        <button type="button" role="tab" id="member-tab-guardians" aria-controls="member-panel-guardians" aria-selected="false" tabindex="-1">Genitori</button>
+        <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false" tabindex="-1">Censimenti</button>
       </nav>
-      <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
       <section id="member-panel-activities" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-activities">
         <p id="member-activities-context" hidden></p>
         <details id="member-activities" class="member-activities" open hidden>
@@ -191,6 +193,12 @@
         </details>
       </section>
       <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
+        <section id="member-paths" aria-labelledby="member-paths-heading">
+          <h3 id="member-paths-heading">Percorsi individuali</h3>
+          <p id="member-paths-status" class="members-note" role="status" aria-live="polite"></p>
+          <div id="member-paths-list"></div>
+          <a id="member-paths-link" class="button button-secondary" href="attivita.html#paths-panel" hidden>Gestisci percorso</a>
+        </section>
         <h3>Percorso educativo di branca</h3>
         <p id="member-education-context" hidden>Il percorso educativo dei ragazzi non si applica ai soci adulti. I dati precedenti restano conservati.</p>
         <div id="member-education" class="members-form-grid"><div id="member-assignment" class="members-wide"></div></div>
@@ -202,26 +210,23 @@
           <label>Branca<select name="branch" required></select></label>
         </div>
         <div id="member-profile" class="members-form-grid"></div>
-        <section id="member-panel-contacts" class="member-profile-section" aria-label="Indirizzo e contatti">
-          <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
-        </section>
-        <section id="member-panel-guardians" class="member-profile-section" aria-label="Responsabili genitoriali">
-          <h3>Responsabili genitoriali</h3>
-          <div id="member-guardian-type"></div>
-          <p id="member-guardian-warning" role="status"></p>
-          <div id="member-guardians"></div>
-          <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
-          <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
-        </section>
-        <section id="member-panel-censuses" class="member-profile-section" aria-label="Storico censimenti AGESCI">
-          <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>
-        </section>
+      </section>
+      <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" aria-label="Indirizzo e contatti" hidden>
+        <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
+      </section>
+      <section id="member-panel-guardians" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-guardians" aria-label="Responsabili genitoriali" hidden>
+        <h3>Responsabili genitoriali</h3>
+        <div id="member-guardian-type"></div>
+        <p id="member-guardian-warning" role="status"></p>
+        <div id="member-guardians"></div>
+        <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
+        <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
+      </section>
+      <section id="member-panel-censuses" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-censuses" aria-label="Storico censimenti AGESCI" hidden>
+        <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>
       </section>
       <div class="members-dialog-actions">
-        <button id="member-section-back" class="button button-secondary" type="button">Indietro</button>
-        <button id="member-section-next" class="button button-secondary" type="button">Continua</button>
-        <button id="member-save" class="button button-primary" type="submit" hidden>Salva scheda</button>
-        <span id="member-draft-status">Bozza mantenuta passando tra le sezioni.</span>
+        <button id="member-save" class="button button-primary" type="submit">Salva scheda</button>
       </div>
     </form>
   </dialog>
@@ -264,6 +269,7 @@
   <div id="members-print" hidden></div>
   <!-- include:footer {"top":"reserved-content"} -->
   <script src="../config/site.js"></script>
+  <script src="../assets/js/nas-nav.js" defer></script>
   <script src="../assets/js/shared/accesso.js"></script>
   <script src="../assets/js/soci-model.js"></script>
   <script src="../assets/js/activities-model.js"></script>

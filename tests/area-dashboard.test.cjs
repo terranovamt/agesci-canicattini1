@@ -162,6 +162,42 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
   assert.equal(get("dashboard-branch-tools").children.length, 3);
 });
 
+test("free activities hide fees even when attendance marks a member as due", async () => {
+  const elements = new Map();
+  const element = () => ({
+    hidden: true, textContent: "", children: [], dataset: {},
+    replaceChildren(...children) { this.children = children; },
+    append(...children) { this.children.push(...children); },
+    setAttribute() {}, removeAttribute() {},
+  });
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, element());
+    return elements.get(id);
+  };
+  let paidCents = 0;
+  const window = {
+    ACTIVITIES_MODEL: require("../assets/js/activities-model.js"),
+    NAS: { user: { serviceBranch: "L/C" } },
+    ACCESSO: { verificata: () => true, request: async () => ({ events: [{
+      id: 1, branch: "L/C", title: "Riunione gratuita", date: "2099-01-01",
+      feeCents: 0, attendance: [{ status: "presente", due: true, paidCents }],
+      totals: { expected: 0, paid: paidCents, remaining: 0 },
+    }] }) },
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8"), {
+    window, document: { getElementById: get, createElement: element, head: { append() {} } },
+    fetch: async () => ({ ok: true, json: async () => [] }), Date,
+  });
+  window.AREA_DASHBOARD.load();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get("dashboard-fees-action").hidden, true);
+  assert.equal(get("dashboard-event-finances").textContent, "");
+  paidCents = 500;
+  await get("dashboard-event-retry").onclick();
+  assert.equal(get("dashboard-fees-action").hidden, false, "existing payments remain accessible if the fee is removed");
+  assert.match(get("dashboard-event-finances").textContent, /5,00/);
+});
+
 test("non-admin dashboard does not request or show server statistics", () => {
   const source = fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8");
   const element = () => ({ hidden: true, dataset: {}, replaceChildren() {}, append() {} });

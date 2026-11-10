@@ -102,8 +102,12 @@ consentiti. Le modifiche manuali non riscrivono lo storico ufficiale. Gli
 account preesistenti senza scheda devono essere completati prima di applicare macro.
 
 Le schede socio aprono su **Attività**, con partecipazioni e quote; seguono
-**Percorso** e **Anagrafica**. I dati personali, i contatti, i responsabili e
-i censimenti sono raccolti in Anagrafica; i dati educativi sono in Percorso.
+**Percorso**, **Anagrafica**, **Contatti**, **Genitori** e **Censimenti**,
+ognuna con i propri dati, senza duplicazioni. Percorso mostra prima le prede,
+le specialita e i brevetti di quel socio, poi i dati educativi. Il collegamento
+alla gestione apre solo i suoi percorsi, con ritorno alla stessa scheda.
+Le schede conservano la bozza passando da una sezione all'altra e offrono
+un unico **Salva scheda**; **Torna all'elenco** chiude la scheda.
 Le schede Co.Ca. e quelle con tipologia account **capo**, anche se registrate
 in L/C, E/G o R/S, non mostrano Percorso e Genitori; i dati già salvati restano
 conservati. Promessa e anno in branca sono affiancati sugli schermi ampi e su
@@ -163,15 +167,22 @@ quando si riapre l'incontro, senza segnare assenze automatiche.
 
 Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni L/C,
 **Torneo** mostrano solo i controlli pertinenti, senza ricreare il modulo.
-Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia:
-la prima unita e aperta, un tocco sul nome segna Presente e il menu della
-riga permette Assente o Giustificato. R/S resta un elenco unico.
+Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia,
+con colori dell'unita e card dei soci. Un tocco alterna Presente e Assente:
+lo stato e riconoscibile dal testo, dal simbolo e dal colore, non solo dal colore.
+Il menu della card permette anche Giustificato o Da registrare.
+R/S resta un elenco unico.
 Le attivita possono coprire piu giorni: ogni giornata ha un'intestazione e i
 momenti sono ordinati per ora, mostrata in una colonna a sinistra. Il momento
-in corso e' evidenziato e quelli passati attenuati; luogo e descrizione restano
-nei dettagli del momento. Materiali strutturati per momento hanno nome,
+in corso e' evidenziato e quelli passati attenuati. Il giorno viene ereditato
+dal blocco della giornata: non va reinserito per ogni momento.
+Il luogo si imposta una sola volta nei dati dell'attivita; eventuali luoghi
+diversi gia salvati nei momenti restano conservati finche il campo comune
+non viene modificato esplicitamente. Materiali strutturati per momento hanno nome,
 quantita e unita; il riepilogo li raggruppa senza distinguere maiuscole e
-spazi. **Riusato** calcola il massimo delle quantita invece della somma.
+spazi. La scelta del totale distingue gli stessi materiali riutilizzati
+(quantita massima fra i momenti) da quelli necessari per ogni momento
+(somma delle quantita).
 La vista **Da comprare** filtra il riepilogo, senza una lista separata;
 quantita non indicate restano da definire. Le vecchie note testuali restano
 visibili come note del momento. Il riepilogo delle cose da fare rimane disponibile.
@@ -189,7 +200,8 @@ oggi mostra il prossimo evento. L'admin mantiene una vista di gruppo.
 **Attivita in corso** apre subito il momento previsto adesso, con luogo,
 descrizione, materiali e momento successivo. **Presenze** e affiancato,
 con accesso diretto al registro; **Quote · Da ricevere** apre i debitori
-gia filtrati. Preparazione e quote sono riepiloghi secondari.
+gia filtrati. Le azioni e gli importi delle quote compaiono solo con quota
+positiva o versamenti gia registrati.
 La scorciatoia **Programma** apre direttamente la preparazione di questo
 evento; senza un evento disponibile diventa **Attivita**.
 
@@ -209,15 +221,21 @@ riunioni, route e schede personali. Restano disponibili libro soci,
 documenti e strumenti comuni in **Altro**: la personalizzazione non modifica
 i permessi.
 
-Ogni scheda attivita offre Presenze, Quote e Programma; **Riepilogo** contiene
-i soci presenti con collegamento alla scheda personale. La ricerca compare
+Ogni scheda attivita offre Presenze e Programma; Quote compare solo quando
+prevista o con versamenti da conservare. Non ci sono riepiloghi duplicati
+delle presenze nell'elenco attivita. La ricerca compare
 negli elenchi con piu di 12 soci; i filtri rimangono ripiegati finche non servono.
-Nella scheda socio il saldo e sotto il nome, nella scheda **Attività**;
+Nella scheda socio il saldo, quando presente, e sotto il nome;
 lo **Storico attività** e' gia aperto, con partecipazioni confermate dalla piu recente; un interruttore
 include anche assenze e presenze da
 registrare. Ogni voce riporta data, branca, presenza, quota e link all'attivita.
 I capi vedono solo eventi della propria branca e soci attualmente accessibili;
 l'amministratore puo consultare lo storico anche delle branche precedenti.
+
+Le pagine operative mostrano il nome della pagina e **Home capi** per tornare
+all'inizio, oltre ai collegamenti ad Attivita e Soci. Gli editor hanno un
+ritorno esplicito all'elenco e mantengono titolo e salvataggio raggiungibili
+mentre si scorre il contenuto.
 
 Per un'attivita a pagamento impostare **Quota per socio**, oppure zero per
 un'attivita gratuita. Per ciascun socio **Quota dovuta** stabilisce se la

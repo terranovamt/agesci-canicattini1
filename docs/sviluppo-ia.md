@@ -129,10 +129,15 @@ questa guida, nei test o nella memoria dell'assistente.
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
-- La scheda socio mantiene nel DOM le sezioni Attività, Percorso e Anagrafica,
-  nell'ordine indicato e con apertura su Attività. I campi personali, contatti,
-  responsabili e censimenti sono nella sezione Anagrafica. Non ricreare i campi
-  al cambio sezione: valori e bozze devono sopravvivere; il salvataggio resta esplicito.
+- La scheda socio mantiene nel DOM le sezioni Attività, Percorso, Anagrafica,
+  Contatti, Genitori e Censimenti, nell'ordine indicato e con apertura su
+  Attività. Sono pannelli distinti: non riunire gli ultimi tre in Anagrafica.
+  Non ricreare i campi al cambio sezione: valori e bozze devono sopravvivere;
+  il salvataggio resta esplicito. Un pannello nascosto per navigazione non
+  rende inapplicabili i suoi campi e non deve escluderli dal salvataggio.
+  I percorsi appartengono al singolo socio: `?member=ID#paths-panel` apre la
+  gestione individuale; `soci.html?member=ID&section=education` ritorna alla
+  sua scheda. Entrambi verificano il roster autorizzato, senza cambiare permessi.
 - Gli accessi amministrativi sono presentati per branca e filtrabili senza
   ampliare l'allowlist: il server continua a esporre solo i capi di
   `NAS_CAPO_CODES` e consente solo cambio branca e reset password.

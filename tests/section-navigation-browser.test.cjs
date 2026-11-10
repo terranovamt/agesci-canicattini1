@@ -104,6 +104,16 @@ test('all screens fit real responsive viewports and section navigation preserves
             record({ dimensions: win.innerWidth === width && win.innerHeight === height });
             const applicationRoot = ${JSON.stringify(applicationRoots)}[names[page]];
             if (applicationRoot) record({ applicationVisible: visible(doc.querySelector(applicationRoot)) });
+            if (names[page].startsWith('area-riservata/') &&
+                !['area-riservata/index.html', 'area-riservata/assemblea/index.html'].includes(names[page])) {
+              const location = doc.querySelector('.reserved-location');
+              const home = location?.querySelector('a');
+              const current = location?.querySelector('[aria-current="page"]');
+              record({ wayfinding: visible(location) && !!current?.textContent &&
+                home?.getAttribute('href') === '/area-riservata/' &&
+                home.textContent.includes('Home capi') &&
+                home.getBoundingClientRect().height >= 44 });
+            }
             const navs = [...doc.querySelectorAll('[data-section-nav]')];
             if (names[page] === 'area-riservata/index.html') {
               // This fixture represents an admin; runtime permission tests cover other roles.

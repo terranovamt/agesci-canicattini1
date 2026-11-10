@@ -48,6 +48,8 @@
       </section>
       <section id="paths-panel" data-section-panel>
         <div class="members-heading"><h2 id="paths-heading">Specialità e brevetti</h2><button id="new-path" class="button button-primary" type="button">+ Percorso</button></div>
+        <a id="paths-member-back" class="button button-secondary" hidden>Torna alla scheda</a>
+        <div id="paths-members" class="activities-grid"></div>
         <p id="paths-hint" class="members-note" hidden></p>
         <details class="path-filters"><summary>Filtra percorsi</summary>
         <label class="activities-state-filter">Mostra stato<select id="paths-state">
@@ -69,9 +71,10 @@
       </section>
     </section>
   </main>
-  <dialog id="event-dialog" class="members-dialog activities-dialog">
+  <dialog id="event-dialog" class="members-dialog activities-dialog" aria-labelledby="event-heading">
     <form id="event-form">
-      <div class="members-dialog-heading"><h2 id="event-heading">Nuova attività</h2><button class="button button-secondary" type="button" data-close="event-dialog">Chiudi</button></div>
+      <div class="members-dialog-heading"><h2 id="event-heading">Nuova attività</h2><button class="button button-secondary" type="button" data-close="event-dialog">Torna alle attività</button></div>
+      <div class="event-editor-body">
       <p id="event-draft-banner" class="event-draft-banner" hidden>Bozza non registrata. L’attività nasce con «Salva attività».</p>
       <nav id="event-view-nav" class="event-view-nav" aria-label="Cosa vuoi fare">
         <button type="button" data-event-view="presenze">Presenze</button>
@@ -93,12 +96,15 @@
           <label>Tipo<select name="kind" required></select></label>
           <label>Dal<input name="date" type="date" required></label>
           <label>Al<input name="endDate" type="date" required></label>
+          <label id="event-fee-setting">Quota per socio (€)<input name="fee" type="number" inputmode="decimal" min="0" max="1000000" step="0.01" value="0" required></label>
           <label class="members-wide">Titolo<input name="title" maxlength="200" required></label>
+          <label class="members-wide">Luogo dell’attività<input id="event-place" name="place" maxlength="200" placeholder="Luogo o punto di ritrovo" aria-describedby="event-place-note"></label>
+          <p id="event-place-note" class="members-note members-wide" hidden></p>
         </div>
       </details>
       <div id="event-program-view" data-event-panel="programma">
       <details id="event-program-section" class="event-editor-section" open>
-        <summary>Programma giorno per giorno</summary>
+        <summary hidden>Programma giorno per giorno</summary>
         <div id="event-program" class="activity-program"></div>
         <button id="add-program-item" type="button" class="button button-secondary">+ Aggiungi momento</button>
       </details>
@@ -115,7 +121,7 @@
           <label>Materiale<input id="activity-material-name" type="text" list="material-suggestions" maxlength="200" autocomplete="off"></label>
           <label>Quantità<input id="activity-material-quantity" type="number" min="0" max="1000000" step="any" inputmode="decimal"></label>
           <label>Unità<input id="activity-material-unit" type="text" maxlength="32" placeholder="pezzi, kg…"></label>
-          <label class="activities-check"><input id="activity-material-reused" type="checkbox" checked>Riusato</label>
+          <label>Totale necessario<select id="activity-material-reused"><option value="true">Riutilizzo gli stessi · massimo tra i momenti</option><option value="false">Occorrono per ogni momento · somma</option></select></label>
           <label class="activities-check"><input id="activity-material-shopping" type="checkbox">Da comprare</label>
           <button id="add-event-material" type="button" class="button button-secondary">Aggiungi</button>
         </div>
@@ -129,10 +135,6 @@
       </div>
       <section id="event-people-view" data-event-panel="persone" aria-labelledby="event-people-heading">
       <h3 id="event-people-heading">Presenze</h3>
-      <details id="event-fee-setting"><summary>Quota per socio</summary><label>Importo (€)<input name="fee" type="number" inputmode="decimal" min="0" max="1000000" step="0.01" value="0" required></label></details>
-      <details class="event-help"><summary>Come funzionano presenze e quote</summary>
-        <p class="members-note">Quota zero per attività gratuite. Seleziona «Quota dovuta» per chi deve pagarla, anche prima dell’attività. Il versato è il totale ricevuto dal socio, inclusi gli acconti; non viene azzerato cambiando presenza. Le presenze non indicate restano da registrare, non diventano assenze.</p>
-      </details>
       <div class="event-people-totals">
         <p id="event-attendance-count" class="members-note" role="status"></p>
         <div id="event-totals" class="activity-totals" role="status" aria-live="polite"></div>
@@ -156,13 +158,14 @@
         <div id="tournament-members" class="tournament-judging" tabindex="0" role="region" aria-label="Griglia valutazioni, scorribile orizzontalmente"></div>
       </details>
       <p id="event-error" role="alert"></p>
+      </div>
       <div class="members-dialog-actions event-save-bar">
         <p id="event-save-state" class="activity-save-state" role="status" aria-live="polite"></p>
         <button type="submit" class="button button-primary">Salva attività</button>
       </div>
     </form>
   </dialog>
-  <dialog id="path-dialog" class="members-dialog activities-dialog">
+  <dialog id="path-dialog" class="members-dialog activities-dialog" aria-labelledby="path-heading">
     <form id="path-form">
       <div class="members-dialog-heading"><h2 id="path-heading">Nuovo percorso</h2><button class="button button-secondary" type="button" data-close="path-dialog">Chiudi</button></div>
       <div class="members-form-grid">
@@ -182,6 +185,7 @@
   </dialog>
   <!-- include:footer {"top":"reserved-content"} -->
   <script src="../config/site.js" defer></script>
+  <script src="../assets/js/nas-nav.js" defer></script>
   <script src="../assets/js/nas-telemetry.js" defer></script>
   <script src="../assets/js/shared/accesso.js" defer></script>
   <script src="../assets/js/shared/section-nav.js" defer></script>

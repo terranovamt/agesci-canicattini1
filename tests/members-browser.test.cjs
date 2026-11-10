@@ -47,6 +47,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       window.calls = [];
       window.ACCESSO = { request: async (route, method = 'GET', value) => {
         window.calls.push(structuredClone({route, method, value}));
+        if (route === 'activities') return { paths: [], events: [], members: [], branches: ['L/C', 'E/G', 'R/S'] };
         if (method === 'PATCH' && !route.includes('/transfers/')) {
           const member = snapshot.members.find(m => m.id === Number(route.split('/')[1]));
           member.profile = value.profile; member.branch = value.branch;
@@ -170,8 +171,9 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           const filters = $('members-filters').elements;
           results.noDuplicateFilters = $('members-quick-filters').hidden && $('members-selection').hidden;
           const resetFilters = $('members-reset-filters');
-          results.advancedCensusFilters = ['search', 'year', 'status', 'showSuspended']
-            .every(name => $('members-advanced-search').contains(filters[name])) && !$('members-advanced-search').open;
+          results.advancedCensusFilters = !$('members-advanced-search').contains(filters.search) &&
+            ['year', 'status', 'showSuspended'].every(name => $('members-advanced-search').contains(filters[name])) &&
+            !$('members-advanced-search').open;
           results.resetHiddenWithoutFilters = $('members-active-filters').hidden && !resetFilters.getClientRects().length &&
             !$('members-filters').contains(resetFilters) && !filters.search.checkVisibility();
           filters.search.value = 'Esempio'; $('members-filters').oninput();
@@ -240,13 +242,15 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.map(tab => tab.textContent).join('|') === 'Attività|Percorso|Anagrafica' &&
+          results.sectionNavigation = memberTabs.map(tab => tab.textContent.trim()).join('|') === 'Attività|Percorso|Anagrafica|Contatti|Genitori|Censimenti' &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 &&
             memberTabs[0].getAttribute('aria-selected') === 'true' && !$('member-panel-activities').hidden &&
-            document.querySelectorAll('#member-dialog [role=tabpanel]').length === 3 &&
+            document.querySelectorAll('#member-dialog [role=tabpanel]').length === 6 &&
             $('member-panel-activities').contains($('member-activities')) &&
             !$('member-panel-profile').contains($('member-activities')) &&
-            ['contacts', 'guardians', 'censuses'].every(section => $('member-panel-profile').contains($('member-panel-' + section)));
+            ['contacts', 'guardians', 'censuses'].every(section =>
+              !$('member-panel-profile').contains($('member-panel-' + section)) &&
+              $('member-panel-' + section).parentElement === $('member-form'));
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
@@ -254,8 +258,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
             $('member-panel-profile').hidden && !$('member-panel-education').hidden;
           memberTabs[2].click();
-          results.sectionProgress = $('member-section-progress').textContent.includes('3 di 3') &&
-            $('member-section-next').hidden;
+          results.activeSectionClear = memberTabs[2].getAttribute('aria-selected') === 'true' &&
+            !$('member-panel-profile').hidden && $('member-panel-activities').hidden;
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
@@ -263,12 +267,17 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           const saveRect = $('member-save').getBoundingClientRect();
           results.saveReachable = saveRect.bottom <= innerHeight && saveRect.height >= 44;
           results.allSectionsReachable = memberTabs.every(tab => {
+            tab.scrollIntoView({block:'nearest', inline:'nearest'});
+            tab.click();
             const rect = tab.getBoundingClientRect();
-            return rect.left >= 0 && rect.right <= innerWidth && rect.height >= 44;
+            return rect.left >= 0 && rect.right <= innerWidth && rect.height >= 44 &&
+              tab.getAttribute('aria-selected') === 'true' && !$(tab.getAttribute('aria-controls')).hidden;
           });
+          memberTabs[0].click();
           results.usefulScrollArea = $('member-panel-activities').clientHeight >= Math.min(150, innerHeight / 3);
           results.shortFullscreen = (innerHeight > 500 && innerWidth > 760) || (dialogRect.width === innerWidth && dialogRect.height === innerHeight);
-          results.dialogCapped = innerWidth <= 760 || innerHeight <= 500 || (dialogRect.width <= 760 && dialogRect.height <= 760);
+          results.dialogUsesSpace = innerWidth <= 760 || innerHeight <= 500 ||
+            (dialogRect.width >= Math.min(1100, innerWidth * .8) && dialogRect.width <= 1200 && dialogRect.height <= innerHeight);
           results.measures = { dialog: [Math.round(dialogRect.width), Math.round(dialogRect.height)],
             scrollArea: $('member-panel-activities').clientHeight, searchTop: results.lowHeightSearchTop };
           results.sectionContentsReachable = memberTabs.every(tab => {
@@ -285,7 +294,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
             !form.elements['extra:squadriglia'] && !form.elements['extra:ruolo'];
           results.assignmentHistory = $('member-assignment').querySelector('details').textContent.includes('Storico assegnazioni per anno');
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
-          memberTabs[2].click();
+          $('member-tab-guardians').click();
           results.guardianParsed = $('member-guardians').children.length === 1 &&
             form.elements['guardian:0:taxCode'].value === 'ABCDEF80A01H501U' &&
             form.elements['guardian:0:email'].value === 'guardian@example.invalid' &&
@@ -334,8 +343,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.emailType = form.elements['profile:email'].type === 'email';
           memberTabs[0].click();
           form.requestSubmit();
-          results.invalidContactsVisible = !$('member-panel-profile').hidden && $('member-dialog').open &&
-            $('member-tab-profile').getAttribute('aria-selected') === 'true';
+          results.invalidContactsVisible = !$('member-panel-contacts').hidden && $('member-dialog').open &&
+            $('member-tab-contacts').getAttribute('aria-selected') === 'true';
           form.elements['profile:email'].value = 'test@example.invalid';
           memberTabs[0].click();
           form.requestSubmit(); await settle();
@@ -498,12 +507,12 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
-        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "sectionProgress",
+        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
         "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
-        "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogCapped", "pickerFits", "macroFits", "documentsFit",
+        "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogUsesSpace", "pickerFits", "macroFits", "documentsFit",
         "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",
         "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));

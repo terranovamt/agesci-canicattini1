@@ -32,7 +32,7 @@
     const profiles = {
       "L/C": { title: "Area capi L/C",
         tools: [["Attività", "attivita.html"], ["Torneo sestiglie", "attivita.html#tournament-panel"],
-          ["Stagione di caccia", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
+          ["Percorsi dei lupetti", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
       "E/G": { title: "Area capi E/G",
         tools: [["Attività", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
           ["Esploratori e guide", "soci.html"]] },
@@ -261,17 +261,17 @@
       const missing = (event.attendance || []).filter(person => person.due &&
         Math.max(0, (event.feeCents || 0) - (person.paidCents || 0)) > 0).length;
       const money = cents => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(cents / 100);
-      const hasFees = event.feeCents || (event.attendance || []).some(person => person.due || person.paidCents);
+      const hasFees = event.feeCents > 0 || (event.attendance || []).some(person => person.paidCents > 0);
       $("dashboard-event-finances").textContent = hasFees
         ? `${money(event.totals?.paid || 0)} incassati · ${money(event.totals?.remaining || 0)} da ricevere`
-        : "Nessuna quota prevista";
+        : "";
       const eventUrl = `attivita.html?event=${encodeURIComponent(event.id)}`;
       if (programShortcut) {
         programShortcut.href = eventUrl + "&vista=programma";
         programShortcut.textContent = "Programma";
       }
       const fees = $("dashboard-fees-action");
-      fees.hidden = false;
+      fees.hidden = !hasFees;
       fees.href = eventUrl + "&vista=quote&filtro=unpaid";
       fees.textContent = missing ? `Quote · Da ricevere (${missing}) →` : "Quote · Da ricevere →";
       action.href = eventUrl + "&vista=programma";
