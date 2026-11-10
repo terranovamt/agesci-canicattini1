@@ -54,19 +54,28 @@
       document.getElementById('riservata').hidden = false;
       document.getElementById('esci').hidden = false;
       document.getElementById('people-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
+      document.getElementById('activities-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
+      document.getElementById('winter-camp-tool').hidden = !window.NAS.user.admin && window.NAS.user.serviceBranch !== 'E/G';
       document.getElementById('people-access-tool').hidden = !window.NAS.user.admin;
       loginFeedback(form, '', '');
       window.AREA_DASHBOARD.load();
     }
-    code.oninput = () => { resetFields(); loginFeedback(form, '', '') };
+    code.oninput = () => {
+      // I gestori password possono emettere input anche senza cambiare il codice.
+      if (code.value.trim() === checkedCode) return;
+      resetFields();
+      loginFeedback(form, '', '');
+    };
     form.onsubmit = async e => {
       e.preventDefault();
+      if (button.disabled) return;
       button.disabled = code.disabled = true;
       loginFeedback(form, 'pending', checkedCode ? 'Accesso in corso…' : 'Verifica del codice in corso…');
       try {
         if (!checkedCode) {
-          const result = await A.request('auth/status', 'POST', { code: code.value });
-          checkedCode = code.value;
+          const submittedCode = code.value.trim();
+          const result = await A.request('auth/status', 'POST', { code: submittedCode });
+          checkedCode = submittedCode;
           fields.hidden = false;
           password.disabled = false;
           togglePassword.disabled = false;

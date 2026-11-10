@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Attività · Canicattini 1</title>
+  <link rel="icon" href="../assets/img/logo-grande.png">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/home.css">
+  <link rel="stylesheet" href="../assets/css/nas.css">
+  <link rel="stylesheet" href="../assets/css/soci.css">
+  <link rel="stylesheet" href="../assets/css/section-nav.css">
+  <link rel="stylesheet" href="../assets/css/attivita.css">
+</head>
+<body class="reserved-page">
+  <header class="reserved-header">
+    <!-- include:brand -->
+    <a href="./">Area riservata</a>
+  </header>
+  <main id="reserved-content" class="members-page activities-page">
+    <div class="members-heading">
+      <div><p class="eyebrow">Vita di branca</p><h1>Attività</h1><p>Incontri, presenze e piccoli passi da conquistare.</p></div>
+      <a class="button button-secondary" href="soci.html">Libro soci →</a>
+    </div>
+    <p id="activities-status" role="status" aria-live="polite"></p>
+    <p id="activities-login" hidden>Accedi dal NAS con una branca di servizio assegnata. <a href="./">Vai all’accesso →</a></p>
+    <button id="activities-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
+    <section id="activities-app" hidden>
+      <div class="activities-context">
+        <label>Branca<select id="activities-branch"></select></label>
+        <label>Cerca<input id="activities-search" type="search" placeholder="Titolo o nome del socio"></label>
+      </div>
+      <nav class="section-nav" data-section-nav aria-label="Gestione attività" hidden>
+        <button type="button" data-section-target="events-panel">Incontri e presenze</button>
+        <button id="paths-tab" type="button" data-section-target="paths-panel">Percorsi individuali</button>
+        <button id="tournament-tab" type="button" data-section-target="tournament-panel" hidden>Torneo delle sestiglie</button>
+      </nav>
+      <section id="events-panel" data-section-panel>
+        <div class="members-heading"><h2>Incontri di branca</h2><div class="activity-create-actions">
+          <button id="new-winter-camp" class="button button-secondary" type="button" hidden>Prepara campo invernale · 2–5 gennaio 2027</button>
+          <button id="new-event" class="button button-primary" type="button">+ Nuova attività</button>
+        </div></div>
+        <p id="events-hint" class="members-note"></p>
+        <div id="events-list" class="activities-grid"></div>
+      </section>
+      <section id="paths-panel" data-section-panel>
+        <div class="members-heading"><h2 id="paths-heading">Specialità e brevetti</h2><button id="new-path" class="button button-primary" type="button">+ Nuovo percorso</button></div>
+        <p id="paths-hint" class="members-note"></p>
+        <label class="activities-state-filter">Mostra stato<select id="paths-state">
+          <option value="">Tutti gli stati</option><option>Definito</option><option>In lavorazione</option><option>Conquistato</option><option>Conclusa</option>
+        </select></label>
+        <p id="paths-counts" role="status" aria-live="polite"></p>
+        <div id="paths-list" class="activities-grid"></div>
+      </section>
+      <section id="tournament-panel" data-section-panel hidden>
+        <div class="members-heading"><h2>Torneo delle sestiglie</h2></div>
+        <p class="members-note">Presenza = presenti / componenti della sestiglia. Puntualità e valutazioni individuali considerano i presenti; la presentazione è un punteggio unico per sestiglia. Ogni categoria è normalizzata in percentuale e la classifica totale ne fa la media, così il numero di componenti non dà vantaggi.</p>
+        <label class="tournament-category-filter">Classifica per<select id="tournament-category"></select></label>
+        <div id="tournament-rankings" class="tournament-rankings"></div>
+        <h3>Riunioni e punteggi</h3>
+        <div id="tournament-events" class="activities-grid"></div>
+      </section>
+    </section>
+  </main>
+  <dialog id="event-dialog" class="members-dialog activities-dialog">
+    <form id="event-form">
+      <div class="members-dialog-heading"><h2 id="event-heading">Nuova attività</h2><button class="button button-secondary" type="button" data-close="event-dialog">Chiudi</button></div>
+      <section id="event-live" class="event-live" tabindex="-1" aria-labelledby="event-live-heading" hidden>
+        <p id="event-live-clock" class="eyebrow"></p>
+        <h3 id="event-live-heading">Cosa facciamo adesso</h3>
+        <div id="event-live-moment" aria-live="polite"></div>
+        <button id="event-live-attendance" class="button button-secondary" type="button">Prendi le presenze ↓</button>
+      </section>
+      <details id="event-settings" class="event-settings" open>
+        <summary>Dati dell’attività e quota</summary>
+        <div class="members-form-grid">
+          <label>Tipo<select name="kind" required></select></label>
+          <label>Dal<input name="date" type="date" required></label>
+          <label>Al<input name="endDate" type="date" required></label>
+          <label class="members-wide">Titolo<input name="title" maxlength="200" required></label>
+          <label>Quota per socio (€)<input name="fee" type="number" inputmode="decimal" min="0" max="1000000" step="0.01" value="0" required></label>
+        </div>
+      </details>
+      <details id="event-program-section" class="event-editor-section" open>
+        <summary>Programma giorno per giorno</summary>
+        <p class="members-note">Aggiungi ogni momento con orario, luogo, descrizione e materiali utili.</p>
+        <div id="event-program" class="activity-program"></div>
+        <button id="add-program-item" type="button" class="button button-secondary">+ Aggiungi momento</button>
+      </details>
+      <details class="event-editor-section">
+        <summary>Riepilogo materiali da preparare</summary>
+        <div id="event-materials" class="activity-checklist"></div>
+        <button id="add-event-material" type="button" class="button button-secondary">+ Aggiungi materiale</button>
+      </details>
+      <details class="event-editor-section">
+        <summary>Riepilogo spesa necessaria</summary>
+        <div id="event-shopping" class="activity-checklist"></div>
+        <button id="add-event-shopping" type="button" class="button button-secondary">+ Aggiungi cosa da comprare</button>
+      </details>
+      <h3>Soci, presenze e quote</h3>
+      <details class="event-help"><summary>Come funzionano presenze e quote</summary>
+        <p class="members-note">Quota zero per attività gratuite. Seleziona «Quota dovuta» per chi deve pagarla, anche prima dell’attività. Il versato è il totale ricevuto dal socio, inclusi gli acconti; non viene azzerato cambiando presenza. Le presenze non indicate restano da registrare, non diventano assenze.</p>
+      </details>
+      <div id="event-totals" class="activity-totals" role="status" aria-live="polite"></div>
+      <details id="event-filters" class="event-filters">
+        <summary>Filtra soci</summary>
+        <div class="members-form-grid">
+          <label>Cerca socio<input id="event-member-search" type="search" placeholder="Nome del socio"></label>
+          <label>Mostra<select id="event-member-filter">
+            <option value="">Tutti i soci</option><option value="presente">Presenti</option>
+            <option value="unpaid">Quote da completare</option><option value="paid">Con versamenti</option>
+          </select></label>
+        </div>
+      </details>
+      <p id="event-attendance-count" class="members-note" role="status"></p>
+      <div id="event-attendance" class="activities-attendance"></div>
+      <details id="event-tournament" class="event-editor-section" hidden>
+        <summary>Punteggi di questa riunione · torneo delle sestiglie</summary>
+        <p class="members-note">Assegna 0–5 punti per le valutazioni; lascia vuoto ciò che non è stato ancora valutato. La presentazione si assegna una sola volta per sestiglia. Presenza usa le presenze registrate qui sopra.</p>
+        <div id="tournament-presentations" class="activity-checklist"></div>
+        <div id="tournament-members" class="activities-attendance"></div>
+      </details>
+      <h3>Attività e cose da fare</h3>
+      <div id="event-tasks" class="activities-steps"></div>
+      <button id="add-event-task" type="button" class="button button-secondary">+ Aggiungi cosa da fare</button>
+      <p id="event-error" role="alert"></p>
+      <div class="members-dialog-actions"><button type="submit" class="button button-primary">Salva attività</button></div>
+    </form>
+  </dialog>
+  <dialog id="path-dialog" class="members-dialog activities-dialog">
+    <form id="path-form">
+      <div class="members-dialog-heading"><h2 id="path-heading">Nuovo percorso</h2><button class="button button-secondary" type="button" data-close="path-dialog">Chiudi</button></div>
+      <div class="members-form-grid">
+        <label>Tipo<select name="kind" required></select></label>
+        <label>Socio<select name="personId" required></select></label>
+        <label class="members-wide">Nome del percorso<input name="title" list="path-catalog" maxlength="200" required></label>
+      </div>
+      <datalist id="path-catalog"></datalist>
+      <p id="path-guidance" class="members-note"></p>
+      <h3 id="path-steps-title">Tappe</h3>
+      <div id="path-steps" class="activities-steps"></div>
+      <button id="add-path-step" type="button" class="button button-secondary">+ Aggiungi tappa</button>
+      <label id="path-closure" class="activities-check"><input name="closed" type="checkbox">Stagione di caccia conclusa</label>
+      <p id="path-error" role="alert"></p>
+      <div class="members-dialog-actions"><button type="submit" class="button button-primary">Salva percorso</button></div>
+    </form>
+  </dialog>
+  <!-- include:footer {"top":"reserved-content"} -->
+  <script src="../config/site.js" defer></script>
+  <script src="../assets/js/nas-telemetry.js" defer></script>
+  <script src="../assets/js/shared/accesso.js" defer></script>
+  <script src="../assets/js/shared/section-nav.js" defer></script>
+  <script src="../assets/js/soci-model.js" defer></script>
+  <script src="../assets/js/activities-model.js" defer></script>
+  <script src="../assets/js/tournament-model.js" defer></script>
+  <script src="../assets/js/attivita.js" defer></script>
+</body>
+</html>

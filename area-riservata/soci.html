@@ -187,6 +187,13 @@
       </nav>
       <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
       <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile">
+        <details id="member-activities" class="member-activities" hidden>
+          <summary id="member-activities-summary">Attività e quote</summary>
+          <p id="member-activities-status" role="status" aria-live="polite"></p>
+          <button id="member-activities-retry" type="button" class="button button-secondary" hidden>Riprova storico</button>
+          <label class="members-check"><input id="member-activities-all" type="checkbox">Mostra anche assenze e presenze da registrare</label>
+          <div id="member-activities-list"></div>
+        </details>
         <div class="members-form-grid">
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
           <label>Branca<select name="branch" required></select></label>
@@ -259,6 +266,8 @@
   <script src="../config/site.js"></script>
   <script src="../assets/js/shared/accesso.js"></script>
   <script src="../assets/js/soci-model.js"></script>
+  <script src="../assets/js/activities-model.js"></script>
+  <script src="../assets/js/member-activities.js"></script>
   <script src="../assets/js/soci-units.js"></script>
   <script src="../assets/js/soci.js"></script>
   <script src="../assets/js/shared/section-nav.js"></script>

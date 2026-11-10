@@ -481,6 +481,7 @@
   }
   function openMember(member) {
     editing = member;
+    window.MEMBER_ACTIVITIES?.load(member);
     memberSection = 0;
     drafts = structuredClone(member?.values || {});
     educationBranch = '';
@@ -737,5 +738,13 @@
     $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';
     return;
   }
-  run(load, undefined, '');
+  run(async () => {
+    await load();
+    const memberId = new URLSearchParams(location.search).get('member');
+    if (memberId) {
+      const member = data.members.find(member => String(member.id) === memberId);
+      if (!member) throw new Error('Socio non disponibile o fuori dalla tua branca.');
+      openMember(member);
+    }
+  }, undefined, '');
 })();

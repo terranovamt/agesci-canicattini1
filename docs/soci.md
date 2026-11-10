@@ -108,7 +108,8 @@ in L/C, E/G o R/S, mostrano soltanto **Anagrafica**, **Contatti** e
 i dati già salvati restano conservati anche dopo una modifica anagrafica.
 Le schede dei ragazzi seguono l'ordine **Anagrafica**, **Percorso**,
 **Contatti**, **Genitori**, **Censimenti**. Nel percorso, promessa e anno in
-branca sono affiancati; seguono tappa (o progressione L/C), assegnazione al
+branca sono affiancati sugli schermi ampi e su righe separate sui telefoni,
+per evitare sovrapposizioni del controllo data; seguono tappa (o progressione L/C), assegnazione al
 gruppo con ruolo, specialita e brevetti. La branca di
 servizio e i ruoli di capo/vice sestiglia o squadriglia non cambiano la
 tipologia della scheda.
@@ -146,6 +147,122 @@ Specialita e brevetti mostrano subito le voci assegnate, ciascuna rimovibile.
 **Aggiungi o modifica** apre un catalogo ricercabile con caselle multiselezione,
 conteggio e messaggio per ricerche senza risultati. Non esiste un pulsante per
 ogni voce del catalogo. Su mobile la lista e scorrevole.
+
+## Attivita di branca e percorsi
+
+Dalla dashboard, **Gestisci attivita** apre la prima gestione operativa sul
+NAS. L'amministratore sceglie la branca; un capo lavora solo nella propria
+branca di servizio, anche in **Visualizza come**. I dati sono persistenti
+nella tabella `activities` dello stesso `site.sqlite`. Le revisioni impediscono
+di sovrascrivere modifiche concorrenti: in caso di conflitto ricaricare la
+pagina prima di riprovare.
+
+**Incontri e presenze** permette di creare riunioni o cacce L/C, riunioni o
+uscite E/G, riunioni o route R/S. Ogni incontro ha titolo, data, presenze
+(da registrare, presente, assente, giustificato) e una lista di attivita o
+cose da fare completabili. La lista presenze usa i ragazzi della branca
+locale, escludendo i sospesi da oltre un anno; nomi e presenze gia registrati
+restano nell'incontro anche dopo un passaggio. I nuovi soci vengono proposti
+quando si riapre l'incontro, senza segnare assenze automatiche.
+
+Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia;
+R/S resta un elenco unico. Le attivita possono coprire piu giorni: inserisci
+per ogni momento giorno, ora, luogo, descrizione e materiali. Due riepiloghi
+separati tengono sotto controllo materiali da preparare e acquisti con quantita
+e stato (pronto/comprato). Il riepilogo delle cose da fare rimane disponibile.
+
+Per preparare il campo EG del **2–5 gennaio 2027**, il collegamento dedicato
+apre una bozza con titolo e date gia compilati; non crea l'attivita finche non
+si preme **Salva attivita**. Completa il programma, le liste e i dati di quote
+prima di salvare.
+
+La dashboard mette prima di ogni altro strumento l'attivita di oggi della
+propria branca, compreso l'ultimo giorno di un campo; se non ci sono attivita
+oggi mostra il prossimo evento. L'admin mantiene una vista di gruppo.
+**Attivita in corso** apre subito il momento previsto adesso, con luogo,
+descrizione, materiali e momento successivo. **Prendi le presenze** resta
+un accesso separato e diretto al registro. Preparazione e quote rimangono
+visibili come riepilogo secondario.
+
+Il momento corrente e l'ultimo con orario gia raggiunto nella giornata,
+fino al momento successivo; dopo l'ultimo viene indicato che e l'ultimo
+previsto. Prima dell'inizio si mostra il primo appuntamento, non un momento
+gia in corso. Sono usati giorno e ora **Europe/Rome**, anche su dispositivi
+con un altro fuso orario; l'indicazione si aggiorna ogni 30 secondi e al
+ritorno alla finestra, senza cancellare modifiche non salvate. Momenti di
+ieri non vengono riproposti oggi. Se mancano gli orari, il programma non
+viene indovinato: nella scheda sono elencati separatamente i momenti senza ora.
+
+La home dei capi usa colori e scorciatoie della branca di servizio: **giallo
+L/C** per riunioni/cacce, torneo, stagione di caccia e specialita; **verde
+E/G** per riunioni/uscite/campi, specialita e brevetti; **rosso R/S** per
+riunioni, route e schede personali. Restano disponibili libro soci,
+documenti e strumenti comuni: la personalizzazione non modifica i permessi.
+
+Ogni scheda attivita mostra subito i **soci presenti**, con collegamento alla
+scheda personale. **Presenze, quote e dettagli** apre l'elenco completo,
+ricercabile per nome e filtrabile per presenti, versamenti o quote da
+completare. Nella scheda socio, in **Anagrafica > Attivita e quote**, compaiono
+le partecipazioni confermate; un'opzione include anche assenze e presenze da
+registrare. Ogni voce riporta data, branca, presenza, quota e link all'attivita.
+I capi vedono solo eventi della propria branca e soci attualmente accessibili;
+l'amministratore puo consultare lo storico anche delle branche precedenti.
+
+Per un'attivita a pagamento impostare **Quota per socio**, oppure zero per
+un'attivita gratuita. Per ciascun socio **Quota dovuta** stabilisce se la
+quota entra nel totale atteso, indipendentemente dalla presenza: puo quindi
+essere attivata per un'iscrizione anticipata o tolta per un'esenzione.
+In una nuova attivita la prima selezione di Presente propone la quota dovuta,
+finche non viene modificata manualmente; negli incontri salvati la scelta
+resta esplicita. **Versato totale** contiene l'importo complessivamente
+ricevuto dal socio, inclusi gli acconti: aggiornarlo al nuovo totale, non al
+singolo incremento. I pagamenti non sono azzerati cambiando presenza o quota.
+
+Gli importi sono salvati come centesimi interi e accettano massimo due
+decimali. Il riepilogo mostra **Totale atteso**, **Incassato** e **Da ricevere**;
+quest'ultimo somma i residui individuali positivi, senza compensarli con i
+versamenti in eccesso di altri soci. Gli eccessi sono evidenziati separatamente
+per verifica o eventuale restituzione; non sono rimborsati automaticamente.
+L'incassato rappresenta le quote registrate, non una cassa al netto delle
+spese. Totali del modulo includono tutti i soci, anche quelli nascosti dai
+filtri. La conferma avviene solo con **Salva attivita**.
+
+Gli incontri precedenti restano compatibili: nessuna quota o pagamento viene
+inventato. In assenza di dati economici la quota e zero. Una richiesta da
+un vecchio client che omette i campi economici conserva quelli gia salvati;
+la rimozione di un socio con versamenti registrati viene rifiutata.
+
+La scheda **Torneo delle sestiglie** e disponibile in L/C e raccoglie i
+punteggi delle riunioni. La presentazione si assegna una sola volta per
+sestiglia (0–5); le valutazioni individuali (puntualita, lealta, regole di
+Baloo, quaderno di caccia, stile/comportamento e occhio) usano 0–5. La presenza
+viene letta dal registro: la percentuale e presenti/componenti della sestiglia.
+Puntualita e valutazioni individuali sono percentuali calcolate sui presenti
+valutati, percio una sestiglia di sette con cinque presenti tutti puntuali
+ottiene 100% in puntualita. Ogni categoria e normalizzata in percentuale; il
+totale e la media delle categorie registrate e non dipende dal numero assoluto
+di componenti. I punteggi non assegnati non vengono considerati zero.
+
+**Percorsi individuali** raccoglie specialita L/C, specialita e brevetti E/G.
+Il nome puo essere scelto dal catalogo o scritto liberamente; i capi aggiungono
+le tappe e ne registrano il completamento. Lo stato e calcolato: **Definito**
+con zero tappe completate (anche senza tappe), **In lavorazione** con alcune
+tappe completate, **Conquistato** solo con tutte le tappe completate e almeno
+una tappa. Schede con avanzamento, conteggi, ricerca per nome/titolo e filtro
+di stato consentono una lettura rapida. In R/S sono disponibili gli incontri;
+la progressione personale R/S rimane nella scheda socio.
+
+In L/C si apre prima una **Stagione di caccia** per il lupetto, aggiungendo le
+prede scelte. Quando tutte sono conquistate, il capo puo selezionare
+**Stagione di caccia conclusa** e salvare. Soltanto dopo una stagione conclusa
+si puo avviare una specialita. Non sono ammesse due stagioni aperte per lo
+stesso lupetto; una stagione vuota non e conclusa. Togliendo la spunta si puo
+riaprire la stagione, purche non ne esista un'altra aperta.
+
+Questi percorsi non migrano ne modificano automaticamente i precedenti campi
+specialita/brevetti del Libro soci: quei campi restano un riepilogo storico,
+mentre tappe e prede si gestiscono da Attivita. Non sono ancora previsti
+gestione dei campi, sincronizzazione dei calendari o notifiche.
 
 Di default sono esclusi da elenco, conteggi ed export i soci il cui ultimo
 censimento ha codice **D** (AGESCI: sospeso da oltre un anno), oppure **S**

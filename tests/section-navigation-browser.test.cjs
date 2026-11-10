@@ -10,7 +10,7 @@ const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'peg/edizioni/2026-2028.html',
   '404.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'area-riservata/persone.html',
-  'area-riservata/soci.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
+  'area-riservata/soci.html', 'area-riservata/attivita.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
   'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html', 'area-riservata/assemblea/index.html'];
 const viewports = [
   [1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390],
@@ -22,6 +22,7 @@ const applicationRoots = {
   'area-riservata/documenti.html': '#documents-app',
   'area-riservata/persone.html': '#people-app',
   'area-riservata/soci.html': '#members-app',
+  'area-riservata/attivita.html': '#activities-app',
   'area-riservata/statistiche.html': '#statistics-data',
   'area-riservata/assemblea/setup.html': '#app',
   'area-riservata/assemblea/regia.html': '#app',
@@ -58,7 +59,7 @@ function fixture(file) {
       ${read('assets/js/nas-nav.js')}
       ${read('assets/js/shared/section-nav.js')}
       ${file === 'area-riservata/assemblea/index.html' ? read('area-riservata/assemblea/core/base.js') : ''}
-      const allowed = ['riservata', 'documents-app', 'members-app', 'people-app', 'statistics-data', 'app'];
+      const allowed = ['riservata', 'documents-app', 'members-app', 'activities-app', 'people-app', 'statistics-data', 'app'];
       allowed.forEach(id => { const node = document.getElementById(id); if (node) node.hidden = false; });
       for (const id of ['login', 'accesso', 'avviso']) {
         const node = document.getElementById(id); if (node) node.hidden = true;
@@ -145,7 +146,7 @@ test('all screens fit real responsive viewports and section navigation preserves
                 if (!nav.hasAttribute('data-section-mobile') || width <= 760)
                   record({ section: buttons[index].dataset.sectionTarget, navigationVisible: visible(nav) });
                 if (visible(nav)) {
-                  const boxes = buttons.map(button => button.getBoundingClientRect());
+                  const boxes = buttons.filter(visible).map(button => button.getBoundingClientRect());
                   record({ section: buttons[index].dataset.sectionTarget,
                     touch: boxes.every(box => box.height >= 44 && box.width >= 44),
                     separate: boxes.every((box, i) => boxes.slice(i + 1).every(next =>

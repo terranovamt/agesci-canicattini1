@@ -27,7 +27,7 @@ const mime = {
   ".woff2": "font/woff2",
 };
 
-async function startNasDev({ basePath = "" } = {}) {
+async function startNasDev({ basePath = "", censusCodes = "" } = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "agesci-nas-dev-"));
   let backend;
   const gateway = http.createServer(async (request, response) => {
@@ -149,6 +149,7 @@ async function startNasDev({ basePath = "" } = {}) {
       dataDir,
       siteRoot: root,
       password,
+      censusCodes,
       publicOrigin: origin,
       basePath,
       secureCookie: false,

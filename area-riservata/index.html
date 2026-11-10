@@ -18,7 +18,7 @@
     </header>
     <main id="reserved-content">
       <div class="reserved-intro dashboard-intro">
-        <h1>Area riservata</h1>
+        <h1 id="dashboard-title">Area riservata</h1>
         <button id="esci" class="text-button" hidden>Esci dall’area riservata</button>
       </div>
       <section id="login">
@@ -58,6 +58,33 @@
       </section>
       <section id="riservata" hidden>
         <p id="dashboard-session-status" class="dashboard-login-status" role="status" aria-live="polite"></p>
+        <p id="dashboard-branch-intro" class="dashboard-branch-intro" hidden></p>
+        <article id="dashboard-event-panel" class="dashboard-workflow dashboard-upcoming-event" aria-labelledby="dashboard-event-heading" hidden>
+          <div class="dashboard-event-main">
+            <p class="eyebrow">Agenda di branca</p>
+            <h2 id="dashboard-event-heading">Prossimo evento</h2>
+            <h3 id="dashboard-event-title">Caricamento…</h3>
+            <p id="dashboard-event-details" role="status">Lettura del programma e delle quote.</p>
+            <div class="dashboard-event-actions">
+              <a id="dashboard-event-action" class="button button-primary" href="attivita.html">Apri evento</a>
+              <a id="dashboard-attendance-action" class="button button-secondary" href="attivita.html" hidden>Prendi le presenze →</a>
+              <button id="dashboard-event-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
+            </div>
+            <div id="dashboard-event-now" class="dashboard-event-now" hidden aria-live="polite">
+              <p id="dashboard-event-clock" class="eyebrow"></p>
+              <h4 id="dashboard-event-moment"></h4>
+              <p id="dashboard-event-place"></p>
+              <p id="dashboard-event-description"></p>
+              <p id="dashboard-event-materials"></p>
+              <p id="dashboard-event-next"></p>
+            </div>
+          </div>
+          <div class="dashboard-event-summary">
+            <p id="dashboard-event-preparation" class="dashboard-hint"></p>
+            <p id="dashboard-event-finances" class="dashboard-hint"></p>
+          </div>
+        </article>
+        <nav id="dashboard-branch-tools" class="dashboard-branch-tools" aria-label="Strumenti della tua branca" hidden></nav>
         <article id="dashboard-group-overview" class="group-census-overview" aria-labelledby="group-census-title" hidden>
           <div class="metrics-heading">
             <h2 id="group-census-title">Censimenti per branca</h2>
@@ -100,10 +127,12 @@
             <a class="text-link" href="assemblea/guida.html">Leggi la guida completa →</a>
           </div>
         </section>
-          <article class="dashboard-tool dashboard-tool-coming" aria-labelledby="activities-coming-title">
+          <article class="dashboard-tool" aria-labelledby="activities-coming-title">
             <h2 id="activities-coming-title">Attività e campi</h2>
-            <p class="dashboard-coming-label">Non operativo · da progettare</p>
-            <p>Questa sezione non gestisce né salva attività o campi.</p>
+            <p>Incontri di branca, presenze, cose da fare e percorsi individuali.</p>
+            <a id="activities-tool" class="button button-secondary" href="attivita.html" hidden>Gestisci attività →</a>
+            <a id="winter-camp-tool" class="button button-secondary" href="attivita.html?new=campo-invernale" hidden>Prepara campo invernale · 2–5 gennaio 2027 →</a>
+            <p class="dashboard-hint">Disponibile sul NAS per i capi con branca assegnata. Prepara programmi, presenze e quote.</p>
           </article>
         </div>
         <aside class="dashboard-stack" id="dashboard-summary-panel" aria-label="Dati pubblicati e statistiche">
@@ -138,6 +167,7 @@
     <script src="../assets/js/shared/accesso.js" defer></script>
     <script src="../assets/js/shared/nas-metrics.js" defer></script>
     <script src="../assets/js/soci-model.js" defer></script>
+    <script src="../assets/js/activities-model.js" defer></script>
     <script src="../assets/js/area-dashboard.js?v=metrics-2" defer></script>
     <script src="../assets/js/area-riservata.js" defer></script>
   </body>

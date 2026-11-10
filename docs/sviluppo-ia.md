@@ -151,14 +151,17 @@ questa guida, nei test o nella memoria dell'assistente.
   aggiunta e rimozione restano esplicite. Le sei voci del patrimonio mantengono
   posizione e identita senza comandi di aggiunta/rimozione. Altri dati
   rende accessibili anche eventuali chiavi di bilancio non standard.
-- Audit schermate: dashboard a pagina unica, senza tab: censimenti admin
-  in cima con colori `SOCI_MODEL.branchColors`; desktop a due colonne
+- Audit schermate: dashboard a pagina unica, senza tab: attivita di oggi
+  prima degli strumenti e dei censimenti admin; desktop a due colonne
   (1.65:1), tablet/mobile in pila. A sinistra Libro soci e Documenti,
   unica card Assemblea (dati pubblicati, avviso pubblicazione, Setup/Regia/Guida)
-  e placeholder Attività e campi; a destra Biblioteca PDF e Sito e server.
+  e accesso ad Attività; a destra Biblioteca PDF e Sito e server.
+  La home dei capi e personalizzata per `serviceBranch`: L/C giallo con
+  torneo e prede, E/G verde con specialita/brevetti, R/S rosso con route.
+  Le scorciatoie aprono tab esistenti senza estendere le autorizzazioni.
   Titolo e dettagli assemblea non rappresentano lo stato della diretta.
   Biblioteca, gestione PDF e assemblea restano disponibili a tutti i capi,
-  anche senza branca; Libro soci solo admin/capi con branca, accessi,
+  anche senza branca; Libro soci e Attività solo admin/capi con branca, accessi,
   censimenti e statistiche solo admin. Restano retry per dati/PDF/censimenti
   e aggiornamento automatico delle metriche. Gestione
   PDF (Biblioteca/Carica), statistiche (sezioni simultanee, non tab),
@@ -340,10 +343,44 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   controlli meno usati. Specialita/brevetti restano multiselect con search in
   `details` collassato (checkbox, non radio/pulsanti per voce); test UX coprono
   preview scelte, ricerca e viewport mobile.
-- La dashboard mostra `Attività e campi` solo come placeholder
-  inerte, senza route o salvataggio: idee future calendario, uscite/campi,
-  partecipanti e promemoria. Nessuna route "Nuova riunione" e presente al
-  momento. La pagina account reale e `area-riservata/persone.html`.
+- `area-riservata/attivita.html` gestisce incontri, presenze e cose da fare
+  per branca, piu percorsi individuali L/C ed E/G. `server/activities.cjs`
+  espone `/api/activities` con sessione e perimetro di branca, anche in
+  Visualizza come; salva nella tabella `activities` di `site.sqlite` con
+  revisioni ottimistiche. Zero tappe completate significa Definito, alcune
+  In lavorazione, tutte (non vuote) Conquistato. La stagione L/C richiede
+  chiusura esplicita dopo tutte le prede; solo dopo si avviano specialita.
+  I campi multiselect del Libro soci restano indipendenti e preservati.
+  Le schede attivita elencano i presenti e collegano `soci.html?member=ID`;
+  la scheda socio carica `/api/activities/members/ID` (solo dati di quel
+  socio, perimetro di branca invariato), con link `attivita.html?event=ID`.
+  `activities-model.js` condivide parsing euro e totali fra UI e server:
+  denaro solo in centesimi interi, quota dovuta esplicita e versato totale
+  indipendenti dalla presenza. Il residuo somma i debiti individuali senza
+  compensarli con eccessi di altri soci. I vecchi client non devono cancellare
+  quote e versamenti omessi dal payload. Lo storico UI e isolato in
+  `member-activities.js`, con retry ed esclusione delle risposte obsolete.
+  Eventi multi-giorno conservano `endDate`, `program` ordinato per giorno/ora,
+  `materials` e `shopping`; ogni momento include luogo, descrizione e materiali.
+  Il form precompila una bozza Campo EG 2–5 gennaio 2027 (`?new=campo-invernale`),
+  ma la persistenza avviene solo al salvataggio. Gli elenchi presenze sono
+  raggruppati usando l'assegnazione `sestiglia`/`squadriglia` in `member_values`.
+  La dashboard usa la stessa API: `attivita.html?event=ID&presenze=1` apre
+  il registro, `?event=ID&ora=1` mostra subito il programma corrente.
+  `activities-model.js` condivide selezione evento e momento corrente:
+  date finali incluse, fuso Europe/Rome, solo momenti della giornata,
+  ultimo orario raggiunto fino al successivo. Orari mancanti non si
+  inventano. Home e scheda aggiornano il momento ogni 30 secondi e al
+  focus, senza ricaricare il form o perdere presenze non salvate.
+  Il tab torneo L/C persiste per riunione punteggi per persona e presentazione
+  per sestiglia; `tournament-model.js` normalizza ogni categoria in percentuale
+  (presenza sul roster fotografato, puntualita e giudizi sui presenti valutati,
+  presentazione una volta per sestiglia) e calcola la media delle categorie
+  disponibili per la classifica, non la somma grezza dei punti. Campi,
+  sincronizzazione calendari e promemoria restano futuri. La pagina account reale e
+  `area-riservata/persone.html`. Per gli screenshot riproducibili usare
+  `ACTIVITIES_SCREENSHOTS=/percorso/assoluto node --test tests/activities-browser.test.cjs`;
+  vengono usati esclusivamente dati sintetici e un NAS temporaneo.
 - Il collegamento `Carica e gestisci documenti` resta visibile nella dashboard
   per tutti i capi, anche senza branca di servizio. L'API PDF richiede la
   sessione ma non i privilegi admin; non confonderla con i modelli interni soci.

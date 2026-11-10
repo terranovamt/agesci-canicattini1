@@ -126,7 +126,9 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           result.educationOrder = [...$('member-education').children].map(element => element.dataset.educationKey || element.id);
           const promise = $('member-form').elements['extra:promessa'].getBoundingClientRect();
           const year = $('member-form').elements['extra:anno'].getBoundingClientRect();
-          result.educationPaired = Math.abs(promise.top - year.top) < 2 && promise.right <= year.left;
+          result.educationPaired = innerWidth <= 760
+            ? promise.bottom <= year.top
+            : Math.abs(promise.top - year.top) < 2 && promise.right <= year.left;
           document.querySelector('[data-close=member-dialog]').click();
           [...$('members-list').querySelectorAll('input[type=checkbox]')]
             .find(input => input.getAttribute('aria-label') === 'Seleziona Example member').click();

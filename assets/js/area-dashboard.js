@@ -1,6 +1,34 @@
 (function () {
   const $ = (id) => document.getElementById(id);
-  let started = false;
+  const AM = window.ACTIVITIES_MODEL;
+  let started = false, agenda = null;
+  function personalize() {
+    const user = window.NAS?.user;
+    const profiles = {
+      "L/C": { title: "Area capi L/C", intro: "Il branco, le sestiglie e il cammino di ogni lupetto.",
+        tools: [["Riunioni e cacce", "attivita.html"], ["Torneo delle sestiglie", "attivita.html#tournament-panel"],
+          ["Stagione di caccia e specialità", "attivita.html#paths-panel"], ["Lupetti e sestiglie", "soci.html"]] },
+      "E/G": { title: "Area capi E/G", intro: "Il reparto, le squadriglie e le imprese da preparare.",
+        tools: [["Riunioni, uscite e campi", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
+          ["Esploratori, guide e squadriglie", "soci.html"]] },
+      "R/S": { title: "Area capi R/S", intro: "Il clan, le riunioni e la prossima route.",
+        tools: [["Riunioni e route", "attivita.html"], ["Rover e scolte", "soci.html"]] },
+    };
+    const profile = !user?.admin && profiles[user?.serviceBranch];
+    if (!profile) return;
+    $("reserved-content").setAttribute("data-branch", user.serviceBranch);
+    $("dashboard-title").textContent = profile.title;
+    $("dashboard-branch-intro").textContent = profile.intro;
+    $("dashboard-branch-intro").hidden = false;
+    const tools = $("dashboard-branch-tools");
+    tools.replaceChildren(...profile.tools.map(([label, href]) => {
+      const link = document.createElement("a");
+      link.className = "button button-secondary";
+      link.href = href; link.textContent = label;
+      return link;
+    }));
+    tools.hidden = false;
+  }
   function metrics() {
     if (!window.LIVE?.nas || !window.NAS?.user?.admin || !window.NAS_METRICS) return;
     const ids = [
@@ -156,17 +184,112 @@
       retry.hidden = false;
     }
   }
+  function renderEvent() {
+      const panel = $("dashboard-event-panel");
+      const user = window.NAS?.user;
+      const events = user?.admin ? agenda : agenda.filter(event => event.branch === user?.serviceBranch);
+      const event = AM.nextEvent(events);
+      const action = $("dashboard-event-action");
+      $("dashboard-event-now").hidden = true;
+      $("dashboard-attendance-action").hidden = true;
+      panel.setAttribute("data-active", "false");
+      $("dashboard-event-heading").textContent = "Prossimo evento";
+      if (!event) {
+        $("dashboard-event-title").textContent = "Nessun prossimo evento";
+        $("dashboard-event-details").textContent = "Aggiungi una riunione o un campo per la tua branca.";
+        $("dashboard-event-preparation").textContent = "";
+        $("dashboard-event-finances").textContent = "";
+        action.href = "attivita.html";
+        action.textContent = "Crea un’attività →";
+        return;
+      }
+      const endDate = event.endDate || event.date;
+      const live = AM.liveProgram(event), active = live.active;
+      panel.setAttribute("data-active", String(active));
+      $("dashboard-event-heading").textContent = active ? "Attività in corso · oggi" : "Prossimo evento";
+      const dateText = start => new Date(start + "T12:00:00").toLocaleDateString("it-IT", {
+        day: "numeric", month: "long", year: "numeric",
+      });
+      $("dashboard-event-title").textContent = event.title;
+      $("dashboard-event-details").textContent = (active ? "Oggi · " : "") +
+        (event.date === endDate ? dateText(event.date) : dateText(event.date) + " – " + dateText(endDate)) +
+        " · " + event.branch + " · " + event.kind;
+      const preparation = (event.program || []).filter(item => item.title).length;
+      const outstanding = [...(event.materials || []), ...(event.shopping || []), ...(event.tasks || [])]
+        .filter(item => !item.done).length;
+      $("dashboard-event-preparation").textContent =
+        `${preparation} momenti in programma · ${outstanding} cose da preparare o completare`;
+      const missing = (event.attendance || []).filter(person => person.due &&
+        Math.max(0, (event.feeCents || 0) - (person.paidCents || 0)) > 0).length;
+      const money = cents => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(cents / 100);
+      const hasFees = event.feeCents || (event.attendance || []).some(person => person.due || person.paidCents);
+      $("dashboard-event-finances").textContent = hasFees
+        ? `${missing} ${missing === 1 ? "quota" : "quote"} da completare · ${money(event.totals?.paid || 0)} incassati su ${money(event.totals?.expected || 0)} attesi · ${money(event.totals?.remaining || 0)} ancora da ricevere`
+        : "Nessuna quota prevista";
+      action.href = `attivita.html?event=${encodeURIComponent(event.id)}&presenze=1`;
+      action.textContent = "Apri programma e presenze →";
+      if (active) {
+        $("dashboard-event-now").hidden = false;
+        $("dashboard-event-clock").textContent = "Adesso · " + live.time + " · ora italiana";
+        const moment = live.current || live.next;
+        $("dashboard-event-moment").textContent = live.current
+          ? `${moment.time} · ${moment.title}`
+          : live.next ? `Si comincia alle ${moment.time} · ${moment.title}` : "Programma di oggi da definire";
+        $("dashboard-event-place").textContent = moment?.place ? "Dove: " + moment.place : "";
+        $("dashboard-event-description").textContent = moment?.description ||
+          (!moment ? "Aggiungi i momenti con giorno e ora per vedere qui cosa fare adesso." : "");
+        $("dashboard-event-materials").textContent = moment?.materials ? "Materiali: " + moment.materials : "";
+        $("dashboard-event-next").textContent = live.current && live.next
+          ? `A seguire · ${live.next.time} · ${live.next.title}`
+          : live.current ? "Ultimo momento con orario previsto per oggi." : "";
+        action.href = `attivita.html?event=${encodeURIComponent(event.id)}&ora=1`;
+        action.textContent = "Attività in corso →";
+        $("dashboard-attendance-action").hidden = false;
+        $("dashboard-attendance-action").href = `attivita.html?event=${encodeURIComponent(event.id)}&presenze=1`;
+      }
+  }
+  async function upcomingEvent() {
+    const panel = $("dashboard-event-panel"), retry = $("dashboard-event-retry");
+    if (!window.NAS?.user?.admin && !window.NAS?.user?.serviceBranch) return;
+    panel.hidden = false;
+    retry.hidden = true;
+    agenda = null;
+    panel.setAttribute("data-active", "false");
+    $("dashboard-event-now").hidden = true;
+    $("dashboard-attendance-action").hidden = true;
+    $("dashboard-event-action").hidden = true;
+    $("dashboard-event-title").textContent = "Caricamento…";
+    $("dashboard-event-details").textContent = "Lettura del programma e delle quote.";
+    $("dashboard-event-preparation").textContent = "";
+    $("dashboard-event-finances").textContent = "";
+    try {
+      const data = await window.ACCESSO.request("activities");
+      if (!data || !Array.isArray(data.events)) throw new Error("Agenda delle attività non valida");
+      agenda = data.events;
+      renderEvent();
+      $("dashboard-event-action").hidden = false;
+    } catch (error) {
+      $("dashboard-event-title").textContent = "Agenda non disponibile";
+      $("dashboard-event-details").textContent = error.message;
+      retry.hidden = false;
+    }
+  }
   window.AREA_DASHBOARD = {
     load() {
       if (started || !window.ACCESSO.verificata()) return;
       started = true;
+      personalize();
       $("dashboard-assembly-retry").onclick = assembly;
       $("dashboard-documents-retry").onclick = documents;
       $("dashboard-group-retry").onclick = groupOverview;
+      $("dashboard-event-retry").onclick = upcomingEvent;
       assembly();
       documents();
       groupOverview();
+      upcomingEvent();
       metrics();
+      window.setInterval?.(() => { if (agenda) renderEvent(); }, 30000);
+      window.addEventListener?.("focus", () => { if (agenda) renderEvent(); });
     },
   };
 })();

@@ -8,6 +8,7 @@ const { DatabaseSync } = require("node:sqlite");
 const { createMonitor } = require("./monitor.cjs");
 const { createPeople, validatePassword } = require("./people.cjs");
 const { createMembers } = require("./members.cjs");
+const { createActivities } = require("./activities.cjs");
 const documents = require("../assets/js/documents-model.js");
 
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -105,6 +106,7 @@ async function createNasServer({
   });
   const people = await createPeople(database, password, censusCodes);
   const members = createMembers(database, people);
+  const activities = createActivities(database, people);
   const streams = new Map();
   const presence = new Map();
   const attempts = new Map();
@@ -218,6 +220,7 @@ async function createNasServer({
       if (await people.handle(url.pathname, request, response,
         { body, send, cookie, sessionId, rateLimit, clearLimit: (key) => attempts.delete(key), ip, seconds: SESSION_SECONDS })) return;
       if (await members.handle(url.pathname, request, response, { body, send, sessionId })) return;
+      if (await activities.handle(url.pathname, request, response, { body, send, sessionId })) return;
       if (url.pathname === "/api/telemetry/config" && method === "GET")
         return send(response, 200, { enabled: monitor.enabled });
       if (url.pathname === "/api/telemetry" && method === "POST") {

@@ -53,6 +53,7 @@ function loginPage(firstAccess) {
     });
     return elements.get(id);
   };
+  get('nas-login-form-submit').disabled = false;
   const c = {
     document: { getElementById: get },
     location: { replace() {} },
@@ -122,6 +123,7 @@ test('NAS returning access shows only password; changing code clears both creden
   assert.equal(t.get('nas-password').autocomplete, 'current-password');
   assert.equal(t.get('nas-password').pattern, undefined);
   t.get('nas-password').value = 'A-long-password!';
+  t.get('census-code').value = '7654322';
   t.get('census-code').oninput();
   assert.equal(t.get('password-fields').hidden, true);
   assert.equal(t.get('nas-password').value, '');
@@ -130,6 +132,24 @@ test('NAS returning access shows only password; changing code clears both creden
   await t.get('nas-login-form').onsubmit({ preventDefault() {} });
   assert.equal(t.calls[1][0], 'auth/status');
 });
+
+for (const firstAccess of [false, true]) {
+  test(`NAS autofill of the same username preserves the password step (first access: ${firstAccess})`, async () => {
+    const t = loginPage(firstAccess);
+    t.get('nas-login-form-submit').disabled = false;
+    t.get('census-code').value = '7654321';
+    await t.get('nas-login-form').onsubmit({ preventDefault() {} });
+    t.get('nas-password').value = 'Autofill-password1!';
+    if (firstAccess) t.get('nas-confirmation').value = 'Autofill-password1!';
+    t.get('census-code').oninput();
+    assert.equal(t.get('password-fields').hidden, false);
+    assert.equal(t.get('nas-password').value, 'Autofill-password1!');
+    await t.get('nas-login-form').onsubmit({ preventDefault() {} });
+    assert.deepEqual(t.calls[1], ['login', 'Autofill-password1!', '7654321',
+      firstAccess ? 'Autofill-password1!' : undefined]);
+    assert.equal(t.get('riservata').hidden, false);
+  });
+}
 
 test('NAS login validates census codes and access management exposes no account-creation form', () => {
   const login = fs.readFileSync(path.join(__dirname, '../area-riservata/index.html'), 'utf8');
