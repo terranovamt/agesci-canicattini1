@@ -27,7 +27,7 @@ test("dashboard does not load data or make requests before verified access", () 
 test("NAS dashboard subscribes to an automatic summary and clears stale counters", async () => {
   const elements = new Map();
   const element = () => ({
-    hidden: true,
+    hidden: true, dataset: {},
     textContent: "",
     children: [],
     style: { setProperty(name, value) { this[name] = value; } },
@@ -38,6 +38,7 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
       this.children = [];
     },
     remove() {},
+    removeAttribute() {},
     setAttribute() {},
   });
   const get = (id) => {
@@ -109,10 +110,11 @@ test("NAS dashboard subscribes to an automatic summary and clears stale counters
 test("branch dashboard highlights today's event, attendance, preparation and missing fees", async () => {
   const elements = new Map();
   const element = () => ({
-    hidden: true, textContent: "", href: "", children: [],
+    hidden: true, textContent: "", href: "", children: [], dataset: {},
     replaceChildren(...children) { this.children = children; },
     append(...children) { this.children.push(...children); },
     setAttribute() {},
+    removeAttribute() {},
   });
   const get = id => {
     if (!elements.has(id)) elements.set(id, element());
@@ -148,20 +150,21 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
   assert.equal(get("dashboard-event-title").textContent, "Campo invernale");
   assert.match(get("dashboard-event-details").textContent, /Oggi/);
   assert.match(get("dashboard-event-preparation").textContent, /2 momenti/);
-  assert.match(get("dashboard-event-preparation").textContent, /3 cose da preparare/);
-  assert.match(get("dashboard-event-finances").textContent, /1 quota da completare/);
+  assert.match(get("dashboard-event-preparation").textContent, /3 da preparare/);
+  assert.match(get("dashboard-fees-action").textContent, /Da ricevere \(1\)/);
   assert.match(get("dashboard-event-finances").textContent, /15,00/);
-  assert.match(get("dashboard-event-finances").textContent, /5,00.*ancora da ricevere/);
-  assert.equal(get("dashboard-event-action").href, "attivita.html?event=12&ora=1");
+  assert.match(get("dashboard-event-finances").textContent, /5,00.*da ricevere/);
+  assert.equal(get("dashboard-event-action").href, "attivita.html?event=12&vista=programma&ora=1");
   assert.match(get("dashboard-event-action").textContent, /Attività in corso/);
-  assert.equal(get("dashboard-attendance-action").href, "attivita.html?event=12&presenze=1");
+  assert.equal(get("dashboard-attendance-action").href, "attivita.html?event=12&vista=presenze");
+  assert.equal(get("dashboard-fees-action").href, "attivita.html?event=12&vista=quote&filtro=unpaid");
   assert.match(get("dashboard-title").textContent, /capi E\/G/);
   assert.equal(get("dashboard-branch-tools").children.length, 3);
 });
 
 test("non-admin dashboard does not request or show server statistics", () => {
   const source = fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8");
-  const element = () => ({ hidden: true, replaceChildren() {}, append() {} });
+  const element = () => ({ hidden: true, dataset: {}, replaceChildren() {}, append() {} });
   const elements = new Map();
   const get = id => {
     if (!elements.has(id)) elements.set(id, element());
@@ -181,13 +184,14 @@ test("non-admin dashboard does not request or show server statistics", () => {
   assert.equal(get("dashboard-group-overview").hidden, true);
 });
 
-  for (const [branch, count, label] of [["L/C", 4, "Torneo delle sestiglie"],
-    ["E/G", 3, "Specialità e brevetti"], ["R/S", 2, "Riunioni e route"]]) {
+  for (const [branch, count, label] of [["L/C", 4, "Torneo sestiglie"],
+    ["E/G", 3, "Specialità e brevetti"], ["R/S", 3, "Rover e scolte"]]) {
     test(`${branch} dashboard prioritizes its live activity and updates the current moment without reloading`, async () => {
       const elements = new Map();
       const element = () => ({
-        hidden: true, textContent: "", children: [], attributes: {},
+        hidden: true, textContent: "", children: [], attributes: {}, dataset: {},
         setAttribute(key, value) { this.attributes[key] = value; },
+        removeAttribute(key) { delete this.attributes[key]; },
         replaceChildren(...children) { this.children = children; },
         append(...children) { this.children.push(...children); },
       });
@@ -195,7 +199,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
         if (!elements.has(id)) elements.set(id, element());
         return elements.get(id);
       };
-      let now = new Date("2027-01-05T08:30:00Z"), tick, focus, requests = 0;
+      let now = new Date("2027-01-05T08:30:00Z"), tick, focus, refreshMs, requests = 0;
       const model = require("../assets/js/activities-model.js");
       const window = {
         NAS: { user: { admin: false, serviceBranch: branch } },
@@ -203,7 +207,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
           nextEvent: events => model.nextEvent(events, now),
           liveProgram: event => model.liveProgram(event, now),
         },
-        setInterval(callback) { tick = callback; },
+        setInterval(callback, interval) { tick = callback; refreshMs = interval; },
         addEventListener(name, callback) { if (name === "focus") focus = callback; },
         ACCESSO: { verificata: () => true, request: async route => {
           assert.equal(route, "activities"); requests++;
@@ -224,6 +228,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
       });
       window.AREA_DASHBOARD.load();
       await new Promise(resolve => setImmediate(resolve));
+      assert.equal(refreshMs, 30000);
       assert.equal(get("reserved-content").attributes["data-branch"], branch);
       assert.equal(get("dashboard-branch-tools").children.length, count);
       assert.ok(get("dashboard-branch-tools").children.some(link => link.textContent === label));
@@ -234,6 +239,12 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.match(get("dashboard-event-description").textContent, /Preparare le squadre/);
       assert.match(get("dashboard-event-materials").textContent, /Corde/);
       assert.match(get("dashboard-event-next").textContent, /10:00 · Cerchio/);
+      assert.equal(get("dashboard-event-action").textContent, "Attività in corso");
+      assert.equal(get("dashboard-attendance-action").textContent, "Presenze");
+      assert.equal(get("dashboard-event-action").href, "attivita.html?event=10&vista=programma&ora=1");
+      assert.equal(get("dashboard-attendance-action").href, "attivita.html?event=10&vista=presenze");
+      assert.equal(get("dashboard-branch-tools").children[0].textContent, "Programma");
+      assert.equal(get("dashboard-branch-tools").children[0].href, "attivita.html?event=10&vista=programma");
       now = new Date("2027-01-05T09:00:00Z");
       tick();
       assert.equal(get("dashboard-event-moment").textContent, "10:00 · Cerchio");
@@ -247,15 +258,16 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.equal(get("dashboard-event-panel").attributes["data-active"], "false");
       assert.equal(get("dashboard-event-now").hidden, true);
       assert.equal(get("dashboard-attendance-action").hidden, true);
-      assert.equal(get("dashboard-event-title").textContent, "Nessun prossimo evento");
+      assert.equal(get("dashboard-event-title").textContent, "Nessuna attività in programma");
       assert.equal(requests, 1, "clock updates must not reload the dashboard");
     });
   }
 test("admin census errors expose retry and recover without losing tools", async () => {
   const elements = new Map();
   const element = () => ({
-    hidden: true, children: [], style: { setProperty() {} },
+    hidden: true, children: [], dataset: {}, style: { setProperty() {} },
     setAttribute() {},
+    removeAttribute() {},
     replaceChildren() { this.children = []; },
     append(...children) { this.children.push(...children); },
   });
@@ -308,7 +320,10 @@ test("dashboard presents one operational layout without tabs or duplicate docume
   assert.match(html, /class="dashboard-publication-notice"/);
   assert.doesNotMatch(html, /Benvenuto|Il gruppo, a colpo|Dal lavoro alla presentazione/);
   assert.match(html, /<article id="dashboard-metrics"[^>]*hidden>/);
-  assert.match(html, /non indica lo stato della diretta/);
+  assert.match(html, /Riepilogo dei dati pubblicati, non della diretta/);
+  assert.match(html, /<details id="dashboard-more"[^>]*>\s*<summary>Altro/);
+  assert.ok(html.indexOf('id="dashboard-more"') < html.indexOf('id="documents-tool"'),
+    "secondary tools stay available behind Altro");
   assert.match(html, /<form id="nas-login-form"[\s\S]*id="accesso-stato"[\s\S]*?<\/form>/);
   assert.match(html, /<form id="login-form"[\s\S]*id="legacy-accesso-stato"[\s\S]*?<\/form>/);
   assert.ok(html.indexOf('id="dashboard-group-overview"') < html.indexOf('class="dashboard-layout"'));
@@ -335,7 +350,8 @@ function loginHarness({ nas = true, firstAccess = false, admin = false, serviceB
       },
       removeAttribute(name) { delete this.attributes[name]; },
       focus() { this.focused = true; },
-      querySelector() { return get(id + "-submit"); },
+      querySelector(selector) { return get(id + (selector.startsWith('label') ? "-password-label" : "-submit")); },
+      querySelectorAll() { return [...elements.values()].filter(input => input.attributes['aria-invalid']); },
       insertBefore(child) { child.parent = this; },
     });
     return elements.get(id);
@@ -383,7 +399,8 @@ for (const firstAccess of [false, true]) {
     assert.equal(get("census-code").disabled, true);
     app.status();
     await check;
-    assert.equal(status.dataset.state, "info");
+    assert.equal(status.dataset.state, "");
+    assert.equal(status.textContent, "");
     assert.equal(form.attributes["aria-busy"], "false");
     assert.equal(get("password-fields").hidden, false);
     assert.equal(get("confirmation-field").hidden, !firstAccess);
@@ -399,6 +416,9 @@ for (const firstAccess of [false, true]) {
     app.login("Credenziali non valide");
     await failure;
     assert.equal(status.dataset.state, "error");
+    assert.equal(status.attributes.role, "alert");
+    assert.equal(get("nas-password").attributes["aria-invalid"], "true");
+    assert.equal(get("nas-password").focused, true);
     assert.match(status.textContent, /Accesso non riuscito: Credenziali non valide/);
     assert.equal(get("nas-password").value, "");
     assert.equal(get("nas-password").type, "password");
@@ -521,7 +541,7 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
         link.href = "../documents/pdf/documento-" + i + ".pdf";
         li.append(link); document.getElementById("dashboard-document-links").append(li);
       }
-      const visible = control => control.getClientRects().length && !control.disabled;
+      const visible = control => control.checkVisibility() && !control.disabled;
       const measure = name => {
         const controls = [...document.querySelectorAll("a[href], button, summary, input")].filter(visible);
         const focusLink = document.querySelector('#documents-tool a');
@@ -543,7 +563,11 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
       const panels = [];
       document.getElementById("login").hidden = true;
       {
+        const more = document.getElementById("dashboard-more");
+        const initiallyCollapsed = !more.open && !visible(document.getElementById("documents-tool"));
+        more.open = true;
         const measured = measure("unified");
+        measured.secondaryCollapsed = initiallyCollapsed;
         measured.allToolsVisible = ["people-tool", "documents-tool", "dashboard-assembly-panel",
           "dashboard-documents-title", "dashboard-metrics", "activities-coming-title", "dashboard-group-overview"]
           .every(id => visible(document.getElementById(id)));
@@ -551,7 +575,7 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
         measured.mainColumns = getComputedStyle(document.querySelector(".dashboard-layout")).gridTemplateColumns.split(" ").length;
         const left = document.getElementById("dashboard-work-panel").getBoundingClientRect();
         const right = document.getElementById("dashboard-summary-panel").getBoundingClientRect();
-        measured.columnsPositioned = innerWidth > 1000 ? Math.abs(left.top - right.top) < 1 && left.right <= right.left :
+        measured.columnsPositioned = innerWidth >= 800 ? Math.abs(left.top - right.top) < 1 && left.right <= right.left :
           left.bottom <= right.top;
         measured.columnRatio = left.width / right.width;
         const actions = [...document.querySelectorAll(".people-tool-actions .button")];
@@ -629,9 +653,10 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
         assert.equal(state.noClipping, true, "no clipped controls: " + label);
       }
       for (const panel of measured.panels) {
+        assert.equal(panel.secondaryCollapsed, true, "secondary tools are hidden until Altro is opened");
         assert.equal(panel.allToolsVisible, true);
         assert.equal(panel.noTabs, true);
-        assert.equal(panel.columnsPositioned, true);
+        assert.equal(panel.columnsPositioned, true, width + ": " + JSON.stringify(panel));
         assert.equal(panel.keyboardFocus, true);
         assert.equal(panel.contentWidth, Math.min(panel.availableWidth - 32, 1120));
       }
@@ -642,8 +667,8 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
       assert.equal(tools.toolColumns, width > 600 ? 2 : 1);
       assert.equal(tools.censusFits, true);
       assert.equal(tools.branchesOneRow, true);
-      assert.equal(tools.mainColumns, width > 1000 ? 2 : 1);
-      if (width > 1000) assert.ok(Math.abs(tools.columnRatio - 1.65) < .02);
+      assert.equal(tools.mainColumns, tools.availableWidth >= 800 ? 2 : 1);
+      if (tools.availableWidth >= 800) assert.ok(Math.abs(tools.columnRatio - 1.5) < .02);
       assert.deepEqual(tools.assemblyLinks, ["assemblea/setup.html", "assemblea/regia.html", "assemblea/guida.html"]);
       for (const login of measured.login) assert.equal(login.cardWidth, Math.min(login.availableWidth - 32, 580));
       t.diagnostic(`${width}x${height}: dashboard ${tools.contentWidth}px; login ${measured.login[0].cardWidth}px; ` +

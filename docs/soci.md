@@ -150,14 +150,14 @@ ogni voce del catalogo. Su mobile la lista e scorrevole.
 
 ## Attivita di branca e percorsi
 
-Dalla dashboard, **Gestisci attivita** apre la prima gestione operativa sul
+Dalla dashboard, **Attivita** apre la gestione operativa sul
 NAS. L'amministratore sceglie la branca; un capo lavora solo nella propria
 branca di servizio, anche in **Visualizza come**. I dati sono persistenti
 nella tabella `activities` dello stesso `site.sqlite`. Le revisioni impediscono
-di sovrascrivere modifiche concorrenti: in caso di conflitto ricaricare la
-pagina prima di riprovare.
+di sovrascrivere modifiche concorrenti: in caso di conflitto copiare le
+modifiche prima di ricaricare la pagina.
 
-**Incontri e presenze** permette di creare riunioni o cacce L/C, riunioni o
+**Attivita** permette di creare riunioni o cacce L/C, riunioni o
 uscite E/G, riunioni o route R/S. Ogni incontro ha titolo, data, presenze
 (da registrare, presente, assente, giustificato) e una lista di attivita o
 cose da fare completabili. La lista presenze usa i ragazzi della branca
@@ -165,24 +165,32 @@ locale, escludendo i sospesi da oltre un anno; nomi e presenze gia registrati
 restano nell'incontro anche dopo un passaggio. I nuovi soci vengono proposti
 quando si riapre l'incontro, senza segnare assenze automatiche.
 
-Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia;
-R/S resta un elenco unico. Le attivita possono coprire piu giorni: inserisci
-per ogni momento giorno, ora, luogo, descrizione e materiali. Due riepiloghi
+Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni L/C,
+**Torneo** mostrano solo i controlli pertinenti, senza ricreare il modulo.
+Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia:
+la prima unita e aperta, un tocco sul nome segna Presente e il menu della
+riga permette Assente o Giustificato. R/S resta un elenco unico.
+Le attivita possono coprire piu giorni: apri la giornata e aggiungi ora e
+titolo in riga; luogo, descrizione e materiali sono nei dettagli. Due riepiloghi
 separati tengono sotto controllo materiali da preparare e acquisti con quantita
 e stato (pronto/comprato). Il riepilogo delle cose da fare rimane disponibile.
 
-Per preparare il campo EG del **2–5 gennaio 2027**, il collegamento dedicato
+Per preparare il campo EG del **2–5 gennaio 2027**, in **Altro · modelli di attivita**
+il collegamento dedicato
 apre una bozza con titolo e date gia compilati; non crea l'attivita finche non
 si preme **Salva attivita**. Completa il programma, le liste e i dati di quote
-prima di salvare.
+prima di salvare. La barra di salvataggio resta raggiungibile e segnala
+bozza, modifiche non salvate e salvataggio.
 
 La dashboard mette prima di ogni altro strumento l'attivita di oggi della
 propria branca, compreso l'ultimo giorno di un campo; se non ci sono attivita
 oggi mostra il prossimo evento. L'admin mantiene una vista di gruppo.
 **Attivita in corso** apre subito il momento previsto adesso, con luogo,
-descrizione, materiali e momento successivo. **Prendi le presenze** resta
-un accesso separato e diretto al registro. Preparazione e quote rimangono
-visibili come riepilogo secondario.
+descrizione, materiali e momento successivo. **Presenze** e affiancato,
+con accesso diretto al registro; **Quote · Da ricevere** apre i debitori
+gia filtrati. Preparazione e quote sono riepiloghi secondari.
+La scorciatoia **Programma** apre direttamente la preparazione di questo
+evento; senza un evento disponibile diventa **Attivita**.
 
 Il momento corrente e l'ultimo con orario gia raggiunto nella giornata,
 fino al momento successivo; dopo l'ultimo viene indicato che e l'ultimo
@@ -197,13 +205,15 @@ La home dei capi usa colori e scorciatoie della branca di servizio: **giallo
 L/C** per riunioni/cacce, torneo, stagione di caccia e specialita; **verde
 E/G** per riunioni/uscite/campi, specialita e brevetti; **rosso R/S** per
 riunioni, route e schede personali. Restano disponibili libro soci,
-documenti e strumenti comuni: la personalizzazione non modifica i permessi.
+documenti e strumenti comuni in **Altro**: la personalizzazione non modifica
+i permessi.
 
-Ogni scheda attivita mostra subito i **soci presenti**, con collegamento alla
-scheda personale. **Presenze, quote e dettagli** apre l'elenco completo,
-ricercabile per nome e filtrabile per presenti, versamenti o quote da
-completare. Nella scheda socio, in **Anagrafica > Attivita e quote**, compaiono
-le partecipazioni confermate; un'opzione include anche assenze e presenze da
+Ogni scheda attivita offre Presenze, Quote e Programma; **Riepilogo** contiene
+i soci presenti con collegamento alla scheda personale. La ricerca compare
+negli elenchi con piu di 12 soci; i filtri rimangono ripiegati finche non servono.
+Nella scheda socio il saldo e sotto il nome e lo **Storico attivita** e gia
+aperto, con partecipazioni confermate dalla piu recente; un interruttore
+include anche assenze e presenze da
 registrare. Ogni voce riporta data, branca, presenza, quota e link all'attivita.
 I capi vedono solo eventi della propria branca e soci attualmente accessibili;
 l'amministratore puo consultare lo storico anche delle branche precedenti.
@@ -216,10 +226,14 @@ In una nuova attivita la prima selezione di Presente propone la quota dovuta,
 finche non viene modificata manualmente; negli incontri salvati la scelta
 resta esplicita. **Versato totale** contiene l'importo complessivamente
 ricevuto dal socio, inclusi gli acconti: aggiornarlo al nuovo totale, non al
-singolo incremento. I pagamenti non sono azzerati cambiando presenza o quota.
+singolo incremento. Toccando una riga in Quote si apre il versamento e viene
+proposto il totale a saldo, conservando gli acconti; modificare l'importo
+se serve, poi usare **Salva attivita**. I pagamenti non sono azzerati cambiando
+presenza o quota.
 
 Gli importi sono salvati come centesimi interi e accettano massimo due
-decimali. Il riepilogo mostra **Totale atteso**, **Incassato** e **Da ricevere**;
+decimali. Il riepilogo mostra in riga **Totale atteso**, **Incassato**,
+**Da ricevere** e **In eccesso**;
 quest'ultimo somma i residui individuali positivi, senza compensarli con i
 versamenti in eccesso di altri soci. Gli eccessi sono evidenziati separatamente
 per verifica o eventuale restituzione; non sono rimborsati automaticamente.
@@ -242,19 +256,29 @@ valutati, percio una sestiglia di sette con cinque presenti tutti puntuali
 ottiene 100% in puntualita. Ogni categoria e normalizzata in percentuale; il
 totale e la media delle categorie registrate e non dipende dal numero assoluto
 di componenti. I punteggi non assegnati non vengono considerati zero.
+La classifica mostra tutte le categorie e il totale in una sola tabella:
+toccare l'intestazione ordina per categoria; su telefono si scorre
+orizzontalmente mantenendo sestiglia e totale visibili. **Valuta riunione**
+apre la riunione di oggi, la prossima o l'ultima disponibile, con presentazione
+per sestiglia e giudizi individuali in griglia.
 
-**Percorsi individuali** raccoglie specialita L/C, specialita e brevetti E/G.
+**Percorsi** raccoglie specialita L/C, specialita e brevetti E/G.
 Il nome puo essere scelto dal catalogo o scritto liberamente; i capi aggiungono
 le tappe e ne registrano il completamento. Lo stato e calcolato: **Definito**
 con zero tappe completate (anche senza tappe), **In lavorazione** con alcune
 tappe completate, **Conquistato** solo con tutte le tappe completate e almeno
 una tappa. Schede con avanzamento, conteggi, ricerca per nome/titolo e filtro
-di stato consentono una lettura rapida. In R/S sono disponibili gli incontri;
+di stato consentono una lettura rapida. Le tappe si spuntano direttamente
+nella scheda e si confermano con **Salva percorsi**: cambi di filtro o branca
+non cancellano le modifiche, che restano da salvare anche dopo un errore.
+**Altro > Modifica percorso** serve per cambiare titolo o tappe.
+In R/S sono disponibili gli incontri;
 la progressione personale R/S rimane nella scheda socio.
 
 In L/C si apre prima una **Stagione di caccia** per il lupetto, aggiungendo le
-prede scelte. Quando tutte sono conquistate, il capo puo selezionare
-**Stagione di caccia conclusa** e salvare. Soltanto dopo una stagione conclusa
+prede scelte. Quando tutte sono conquistate compare
+**Concludi stagione di caccia**, da confermare con **Salva percorsi**.
+Soltanto dopo una stagione conclusa
 si puo avviare una specialita. Non sono ammesse due stagioni aperte per lo
 stesso lupetto; una stagione vuota non e conclusa. Togliendo la spunta si puo
 riaprire la stagione, purche non ne esista un'altra aperta.

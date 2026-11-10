@@ -2,25 +2,51 @@
   const $ = (id) => document.getElementById(id);
   const AM = window.ACTIVITIES_MODEL;
   let started = false, agenda = null;
+  function loginAccessibility() {
+    if (!document.forms?.length) return;
+    for (const [formId, statusId, inputIds] of [
+      ["login-form", "legacy-accesso-stato", ["chiave"]],
+      ["nas-login-form", "accesso-stato", ["census-code", "nas-password", "nas-confirmation"]],
+    ]) {
+      const form = $(formId), status = $(statusId);
+      if (!form || !status) continue;
+      const inputs = inputIds.map($).filter(Boolean);
+      inputs.forEach(input => input.addEventListener?.("input", () => {
+        input.removeAttribute("aria-invalid");
+        if (status.dataset.state === "error") {
+          status.dataset.state = "";
+          status.textContent = "";
+          status.setAttribute("role", "status");
+          status.setAttribute("aria-live", "polite");
+        }
+      }));
+      form.addEventListener?.("invalid", event => {
+        event.target.setAttribute("aria-invalid", "true");
+      }, true);
+    }
+  }
+  loginAccessibility();
   function personalize() {
     const user = window.NAS?.user;
+    $("reserved-content").dataset.view = user?.admin ? "admin" : "branch";
     const profiles = {
-      "L/C": { title: "Area capi L/C", intro: "Il branco, le sestiglie e il cammino di ogni lupetto.",
-        tools: [["Riunioni e cacce", "attivita.html"], ["Torneo delle sestiglie", "attivita.html#tournament-panel"],
-          ["Stagione di caccia e specialità", "attivita.html#paths-panel"], ["Lupetti e sestiglie", "soci.html"]] },
-      "E/G": { title: "Area capi E/G", intro: "Il reparto, le squadriglie e le imprese da preparare.",
-        tools: [["Riunioni, uscite e campi", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
-          ["Esploratori, guide e squadriglie", "soci.html"]] },
-      "R/S": { title: "Area capi R/S", intro: "Il clan, le riunioni e la prossima route.",
-        tools: [["Riunioni e route", "attivita.html"], ["Rover e scolte", "soci.html"]] },
+      "L/C": { title: "Area capi L/C",
+        tools: [["Attività", "attivita.html"], ["Torneo sestiglie", "attivita.html#tournament-panel"],
+          ["Stagione di caccia", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
+      "E/G": { title: "Area capi E/G",
+        tools: [["Attività", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
+          ["Esploratori e guide", "soci.html"]] },
+      "R/S": { title: "Area capi R/S",
+        tools: [["Attività e route", "attivita.html"], ["Rover e scolte", "soci.html"], ["Documenti", "documenti.html"]] },
     };
-    const profile = !user?.admin && profiles[user?.serviceBranch];
+    const profile = user?.admin
+      ? { title: "Area di gruppo", tools: [["Tutte le attività", "attivita.html"], ["Libro soci", "soci.html"], ["Accessi capi", "persone.html"]] }
+      : profiles[user?.serviceBranch];
     if (!profile) return;
-    $("reserved-content").setAttribute("data-branch", user.serviceBranch);
+    if (!user.admin) $("reserved-content").setAttribute("data-branch", user.serviceBranch);
     $("dashboard-title").textContent = profile.title;
-    $("dashboard-branch-intro").textContent = profile.intro;
-    $("dashboard-branch-intro").hidden = false;
     const tools = $("dashboard-branch-tools");
+    tools.setAttribute("aria-label", user.admin ? "Scorciatoie di gruppo" : "Scorciatoie di branca");
     tools.replaceChildren(...profile.tools.map(([label, href]) => {
       const link = document.createElement("a");
       link.className = "button button-secondary";
@@ -190,26 +216,39 @@
       const events = user?.admin ? agenda : agenda.filter(event => event.branch === user?.serviceBranch);
       const event = AM.nextEvent(events);
       const action = $("dashboard-event-action");
+      const programShortcut = !user?.admin && $("dashboard-branch-tools").children[0];
+      if (programShortcut) {
+        programShortcut.href = "attivita.html";
+        programShortcut.textContent = "Attività";
+      }
       $("dashboard-event-now").hidden = true;
       $("dashboard-attendance-action").hidden = true;
+      $("dashboard-fees-action").hidden = true;
       panel.setAttribute("data-active", "false");
-      $("dashboard-event-heading").textContent = "Prossimo evento";
+      $("dashboard-event-heading").textContent = "La prossima attività";
       if (!event) {
-        $("dashboard-event-title").textContent = "Nessun prossimo evento";
-        $("dashboard-event-details").textContent = "Aggiungi una riunione o un campo per la tua branca.";
+        panel.removeAttribute("data-event-branch");
+        $("dashboard-event-title").textContent = "Nessuna attività in programma";
+        $("dashboard-event-details").textContent = user?.admin
+          ? "Crea la prossima attività di gruppo o di branca."
+          : "Crea la prossima riunione, uscita o campo.";
         $("dashboard-event-preparation").textContent = "";
         $("dashboard-event-finances").textContent = "";
         action.href = "attivita.html";
         action.textContent = "Crea un’attività →";
         return;
       }
+      panel.dataset.eventBranch = event.branch;
       const endDate = event.endDate || event.date;
       const live = AM.liveProgram(event), active = live.active;
       panel.setAttribute("data-active", String(active));
-      $("dashboard-event-heading").textContent = active ? "Attività in corso · oggi" : "Prossimo evento";
-      const dateText = start => new Date(start + "T12:00:00").toLocaleDateString("it-IT", {
-        day: "numeric", month: "long", year: "numeric",
-      });
+      $("dashboard-event-heading").textContent = active ? "Oggi · " + event.branch : "La prossima attività";
+      const dateText = start => {
+        const [year, month, day] = start.split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day, 12)).toLocaleDateString("it-IT", {
+          day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Rome",
+        });
+      };
       $("dashboard-event-title").textContent = event.title;
       $("dashboard-event-details").textContent = (active ? "Oggi · " : "") +
         (event.date === endDate ? dateText(event.date) : dateText(event.date) + " – " + dateText(endDate)) +
@@ -218,19 +257,32 @@
       const outstanding = [...(event.materials || []), ...(event.shopping || []), ...(event.tasks || [])]
         .filter(item => !item.done).length;
       $("dashboard-event-preparation").textContent =
-        `${preparation} momenti in programma · ${outstanding} cose da preparare o completare`;
+        `${preparation} momenti · ${outstanding} da preparare`;
       const missing = (event.attendance || []).filter(person => person.due &&
         Math.max(0, (event.feeCents || 0) - (person.paidCents || 0)) > 0).length;
       const money = cents => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(cents / 100);
       const hasFees = event.feeCents || (event.attendance || []).some(person => person.due || person.paidCents);
       $("dashboard-event-finances").textContent = hasFees
-        ? `${missing} ${missing === 1 ? "quota" : "quote"} da completare · ${money(event.totals?.paid || 0)} incassati su ${money(event.totals?.expected || 0)} attesi · ${money(event.totals?.remaining || 0)} ancora da ricevere`
+        ? `${money(event.totals?.paid || 0)} incassati · ${money(event.totals?.remaining || 0)} da ricevere`
         : "Nessuna quota prevista";
-      action.href = `attivita.html?event=${encodeURIComponent(event.id)}&presenze=1`;
-      action.textContent = "Apri programma e presenze →";
+      const eventUrl = `attivita.html?event=${encodeURIComponent(event.id)}`;
+      if (programShortcut) {
+        programShortcut.href = eventUrl + "&vista=programma";
+        programShortcut.textContent = "Programma";
+      }
+      const fees = $("dashboard-fees-action");
+      fees.hidden = false;
+      fees.href = eventUrl + "&vista=quote&filtro=unpaid";
+      fees.textContent = missing ? `Quote · Da ricevere (${missing}) →` : "Quote · Da ricevere →";
+      action.href = eventUrl + "&vista=programma";
+      action.textContent = "Programma →";
+      const attendance = $("dashboard-attendance-action");
+      attendance.hidden = false;
+      attendance.href = eventUrl + "&vista=presenze";
+      attendance.textContent = "Presenze";
       if (active) {
         $("dashboard-event-now").hidden = false;
-        $("dashboard-event-clock").textContent = "Adesso · " + live.time + " · ora italiana";
+        $("dashboard-event-clock").textContent = "Adesso · " + live.time + " · ora di Roma";
         const moment = live.current || live.next;
         $("dashboard-event-moment").textContent = live.current
           ? `${moment.time} · ${moment.title}`
@@ -242,10 +294,8 @@
         $("dashboard-event-next").textContent = live.current && live.next
           ? `A seguire · ${live.next.time} · ${live.next.title}`
           : live.current ? "Ultimo momento con orario previsto per oggi." : "";
-        action.href = `attivita.html?event=${encodeURIComponent(event.id)}&ora=1`;
-        action.textContent = "Attività in corso →";
-        $("dashboard-attendance-action").hidden = false;
-        $("dashboard-attendance-action").href = `attivita.html?event=${encodeURIComponent(event.id)}&presenze=1`;
+        action.href = eventUrl + "&vista=programma&ora=1";
+        action.textContent = "Attività in corso";
       }
   }
   async function upcomingEvent() {
@@ -257,7 +307,10 @@
     panel.setAttribute("data-active", "false");
     $("dashboard-event-now").hidden = true;
     $("dashboard-attendance-action").hidden = true;
+    $("dashboard-fees-action").hidden = true;
     $("dashboard-event-action").hidden = true;
+    panel.removeAttribute("data-event-branch");
+    $("dashboard-event-heading").textContent = "Agenda";
     $("dashboard-event-title").textContent = "Caricamento…";
     $("dashboard-event-details").textContent = "Lettura del programma e delle quote.";
     $("dashboard-event-preparation").textContent = "";

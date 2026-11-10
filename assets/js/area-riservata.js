@@ -1,10 +1,17 @@
 (function () {
   const A = window.ACCESSO;
   const feedback = document.getElementById(window.NAS ? 'accesso-stato' : 'legacy-accesso-stato');
-  function loginFeedback(form, state, message) {
+  function loginFeedback(form, state, message, target) {
+    form.querySelectorAll('input[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
     feedback.setAttribute('data-state', state);
+    feedback.setAttribute('role', state === 'error' ? 'alert' : 'status');
+    feedback.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
     form.setAttribute('aria-busy', String(state === 'pending'));
     feedback.textContent = message;
+    if (state === 'error' && target) {
+      target.setAttribute('aria-invalid', 'true');
+      target.focus();
+    }
   }
   if (window.NAS) {
     const form = document.getElementById('nas-login-form');
@@ -37,7 +44,6 @@
     togglePassword.onclick = () => toggleVisibility(password, togglePassword);
     toggleConfirmation.onclick = () => toggleVisibility(confirmation, toggleConfirmation);
     document.getElementById('login-form').hidden = true;
-    document.getElementById('legacy-login-hint').textContent = 'Accesso riservato ai capi censiti nel gruppo.';
     form.hidden = false;
     function resetFields() {
       checkedCode = '';
@@ -46,6 +52,7 @@
       password.value = confirmation.value = '';
       conceal(password, togglePassword);
       conceal(confirmation, toggleConfirmation);
+      form.querySelector('label[for="nas-password"]').textContent = 'Password';
       button.textContent = 'Continua';
     }
     function showTools() {
@@ -90,7 +97,8 @@
           password.title = result.firstAccess ? 'Almeno 8 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale, come @' : '';
           password.autocomplete = result.firstAccess ? 'new-password' : 'current-password';
           button.textContent = result.firstAccess ? 'Imposta password e accedi' : 'Accedi';
-          loginFeedback(form, 'info', result.firstAccess ? 'Primo accesso: scegli e conferma la password.' : 'Codice verificato. Inserisci la password.');
+          form.querySelector('label[for="nas-password"]').textContent = result.firstAccess ? 'Scegli una password' : 'Password';
+          loginFeedback(form, '', '');
           password.focus();
         } else {
           await A.entra(password.value, checkedCode, confirmation.disabled ? undefined : confirmation.value);
@@ -100,10 +108,13 @@
           showTools();
         }
       } catch (error) {
-        loginFeedback(form, 'error', 'Accesso non riuscito: ' + error.message);
-        password.value = confirmation.value = '';
+        const mismatch = !confirmation.disabled && password.value !== confirmation.value;
+        const target = !checkedCode ? code : mismatch ? confirmation : password;
+        if (!mismatch) password.value = confirmation.value = '';
         conceal(password, togglePassword);
         conceal(confirmation, toggleConfirmation);
+        code.disabled = false;
+        loginFeedback(form, 'error', 'Accesso non riuscito: ' + error.message, target);
       } finally { button.disabled = code.disabled = false }
     };
     document.getElementById('esci').onclick = async () => {
@@ -134,9 +145,9 @@
       await A.entra(key);
       mostraStrumenti();
     } catch (e) {
-      loginFeedback(form, 'error', 'Accesso non riuscito: ' + e.message);
       document.getElementById('login').hidden = false;
       document.getElementById('riservata').hidden = true;
+      loginFeedback(form, 'error', 'Accesso non riuscito: ' + e.message, input);
     } finally { form.querySelector('button').disabled = false }
   }
   form.onsubmit = e => { e.preventDefault(); login(input.value.trim()) };

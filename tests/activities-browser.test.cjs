@@ -81,7 +81,7 @@ test("branch chiefs land on today's program, including the last camp day, across
             return {branch:document.getElementById('reserved-content').dataset.branch,
               title:document.getElementById('dashboard-title').textContent,
               color:getComputedStyle(panel).borderTopColor,
-              first:panel.getBoundingClientRect().top < document.getElementById('dashboard-work-panel').getBoundingClientRect().top,
+              first:panel.getBoundingClientRect().top < document.getElementById('dashboard-more').getBoundingClientRect().top,
               actionVisible:action.getBoundingClientRect().bottom <= innerHeight,
               overflow:document.documentElement.scrollWidth > innerWidth,
               now:document.getElementById('dashboard-event-moment').textContent,
@@ -112,7 +112,7 @@ test("branch chiefs land on today's program, including the last camp day, across
           }`);
           assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
           await page.evaluate("document.getElementById('event-live-attendance').click()");
-          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance select')"), true);
+          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance [data-person-action]')"), true);
           await page.evaluate("document.getElementById('event-dialog').close()");
           for (const href of dashboard.urls.filter(href => href.includes("#"))) {
             await go(href);
@@ -212,9 +212,18 @@ test("login autofill, education dates, activities and progression work on four s
       await page.send("Page.navigate", { url: base + "/area-riservata/" + route });
       await wait("document.readyState === 'complete' && !!window.ACCESSO");
     };
-    const click = async selector => page.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+    const click = async selector => page.evaluate(`{
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element?.checkVisibility()) throw new Error('Control not visible: ' + ${JSON.stringify(selector)});
+      element.scrollIntoView({block:'nearest'}); element.click();
+    }`);
+    const expand = async selector => {
+      if (!await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).open`))
+        await click(selector + " > summary");
+    };
     const fill = async (selector, value, event = "input") => page.evaluate(`{
       const input = document.querySelector(${JSON.stringify(selector)});
+      if (!input?.checkVisibility()) throw new Error('Field not visible: ' + ${JSON.stringify(selector)});
       input.value = ${JSON.stringify(value)}; input.dispatchEvent(new Event(${JSON.stringify(event)}, {bubbles:true}));
     }`);
     const shot = async name => {
@@ -222,15 +231,23 @@ test("login autofill, education dates, activities and progression work on four s
         const dialog = document.querySelector('dialog[open]');
         const root = dialog || document.querySelector('main');
         const controls = [...root.querySelectorAll('input:not([type=checkbox]), textarea, select, button, a.button')]
-          .filter(element => element.getClientRects().length);
+          .filter(element => element.checkVisibility());
         const clipped = controls.filter(element => { const r = element.getBoundingClientRect();
-          return r.width < 43 || r.height < 43 || r.left < -1 || r.right > innerWidth + 1; });
+          return r.width < 43 || r.height < 43 ||
+            (!element.closest('.tournament-judging, .tournament-rankings') && (r.left < -1 || r.right > innerWidth + 1)); });
+        const scrollRegionsFit = [...root.querySelectorAll('.tournament-judging, .tournament-rankings')]
+          .filter(element => element.checkVisibility()).every(element => {
+            const r = element.getBoundingClientRect();
+            return r.left >= 0 && r.right <= innerWidth + 1 && element.tabIndex === 0;
+          });
         return {page:document.documentElement.scrollWidth <= innerWidth,
           dialog:!dialog || dialog.scrollWidth <= dialog.clientWidth,
+          scrollRegionsFit,
           clipped:clipped.map(element => element.outerHTML)};
       })()`);
       assert.equal(fits.page, true, name + ": page overflow");
       assert.equal(fits.dialog, true, name + ": dialog overflow");
+      assert.equal(fits.scrollRegionsFit, true, name + ": accessible table scroll regions fit");
       assert.deepEqual(fits.clipped, [], name + ": clipped controls");
       if (process.env.ACTIVITIES_SCREENSHOTS) {
         await fs.mkdir(process.env.ACTIVITIES_SCREENSHOTS, { recursive: true });
@@ -305,14 +322,26 @@ test("login autofill, education dates, activities and progression work on four s
         await fill("#activities-branch", branch, "change");
         await shot(label + "-05-incontri-" + branch.replace("/", ""));
         await click("#new-event");
+        assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /Bozza non registrata/);
+        assert.equal(await page.evaluate("document.querySelector('#event-form button[type=submit]').textContent.trim()"), "Salva attività");
+        await expand('#event-program-view > details:last-child');
+        await click('#event-tasks + button');
+        assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /modifiche non salvate/);
         const options = await page.evaluate("[...document.querySelector('#event-form [name=kind]').options].map(option => option.value)");
         assert.deepEqual(options, branch === "L/C" ? ["riunione", "caccia"] : branch === "E/G" ? ["riunione", "uscita"] : ["riunione", "route"]);
         await fill('#event-form [name=kind]', options[1], "change");
         await fill('#event-form [name=title]', "Incontro " + branch + " " + label);
         await fill('#event-form [name=date]', "2025-11-15");
-        await fill("#event-attendance select", "presente", "change");
+        await click('[data-event-view="presenze"]');
+        await click("#event-attendance [data-person-action]");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
+        await click('[data-event-view="quote"]');
+        await expand("#event-fee-setting");
         await fill('#event-form [name=fee]', "10.25");
+        await click("#event-attendance [data-person-action]");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25");
         await fill('#event-attendance [data-paid]', "5");
+        await click("#event-attendance .activity-person:nth-of-type(2) [data-person-action]");
         await page.evaluate(`{
           const row = document.querySelectorAll('#event-attendance .activity-person')[1];
           row.querySelector('[data-due]').click();
@@ -323,32 +352,40 @@ test("login autofill, education dates, activities and progression work on four s
           const text = document.getElementById('event-totals').textContent;
           return ['20,50','20,00','5,25','4,75'].map(amount=>text.includes(amount));
         })()`), [true, true, true, true], "live amounts must keep excess separate from debt");
-        await click("#add-event-task");
+        await click('[data-event-view="programma"]');
         await fill('#event-tasks textarea', "Preparare i materiali");
         await shot(label + "-06-attivita-" + branch.replace("/", ""));
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
+        assert.equal(await page.evaluate("document.getElementById('activities-status').textContent"), "Attività salvata.");
         await shot(label + "-05-incontri-" + branch.replace("/", ""));
         assert.equal(await page.evaluate("document.querySelector('#events-list .activity-participants').textContent.includes('Socio')"), true);
         await click("#events-list button");
         assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
-        if (branch !== "R/S") assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-unit-heading').textContent"),
-          branch === "L/C" ? "Bianchi" : "Aironi");
+        if (branch !== "R/S") assert.match(await page.evaluate("document.querySelector('#event-attendance .activity-attendance-group > summary').textContent"),
+          branch === "L/C" ? /Bianchi/ : /Aironi/);
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "5.00");
         const memberUrl = await page.evaluate("document.querySelector('#events-list .activity-participants a').href");
+        await click('[data-event-view="quote"]');
+        await click("#event-attendance [data-person-action]");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25",
+          "suggest the cumulative balance, not another full payment on top of the advance");
+        await fill('#event-attendance [data-paid]', "5");
         await shot(label + "-12-quote-" + branch.replace("/", ""));
-        if (width <= 760) await click("#event-filters > summary");
+        await expand("#event-filters");
         await fill("#event-member-filter", "unpaid", "change");
         assert.equal(await page.evaluate("[...document.querySelectorAll('#event-attendance .activity-person')].filter(row=>!row.hidden).length"), 1);
         assert.equal(await page.evaluate("document.getElementById('event-totals').textContent.includes('20,50')"), true);
         await fill("#event-member-filter", "", "change");
+        await click('[data-event-view="programma"]');
+        await expand('#event-program-view > details:last-child');
         await click("#event-tasks input[type=checkbox]");
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
         await page.send("Page.navigate", { url: memberUrl });
         await wait("document.readyState === 'complete' && document.getElementById('member-dialog')?.open");
         await wait("document.getElementById('member-activities-summary').textContent.includes('partecipazion')");
-        await click("#member-activities-summary");
+        assert.equal(await page.evaluate("document.getElementById('member-activities').open"), true);
         await wait("document.querySelector('#member-activities-list a') !== null");
         assert.equal(await page.evaluate("document.getElementById('member-activities-list').textContent.includes('5,25')"), true);
         await shot(label + "-13-storico-" + branch.replace("/", ""));
@@ -390,19 +427,39 @@ test("login autofill, education dates, activities and progression work on four s
             await click('#path-form button[type=submit]');
             await wait("!document.getElementById('path-dialog').open");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "Definito");
-            await click("#paths-list button"); await click("#path-steps input[type=checkbox]");
-            await click('#path-form button[type=submit]');
-            await wait("!document.getElementById('path-dialog').open");
+            await click("#paths-list .path-inline-steps input");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "In lavorazione");
-            await click("#paths-list button");
-            await page.evaluate("document.querySelectorAll('#path-steps input[type=checkbox]')[1].click()");
-            await click('#path-form button[type=submit]');
-            await wait("!document.getElementById('path-dialog').open");
+            await fill("#activities-branch", "E/G", "change");
+            await fill("#activities-branch", "L/C", "change");
+            assert.equal(await page.evaluate("document.querySelector('#paths-list .path-inline-steps input').checked"), true,
+              "switching branch must preserve an unsaved path tick");
+            await page.evaluate(`{
+              const request = ACCESSO.request;
+              let fail = true;
+              ACCESSO.request = (...args) => {
+                if (fail && args[0].startsWith('activities/paths/') && args[1] === 'PATCH') {
+                  fail = false; return Promise.reject(new Error('Connessione interrotta'));
+                }
+                return request(...args);
+              };
+            }`);
+            await click("#save-paths");
+            await wait("document.getElementById('paths-save-status').textContent.includes('Connessione interrotta')");
+            assert.equal(await page.evaluate("document.querySelector('#paths-list .path-inline-steps input').checked"), true);
+            assert.equal(await page.evaluate("document.getElementById('paths-save-bar').hidden"), false,
+              "a failed save must retain the draft and expose retry");
+            await click("#save-paths");
+            await wait("document.getElementById('paths-save-bar').hidden");
+            await click("#paths-list .path-inline-steps label:nth-child(2) input");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "Conquistato");
-            await click("#paths-list button"); await click("#path-form [name=closed]");
+            await click("#save-paths");
+            await wait("document.getElementById('paths-save-bar').hidden");
+            assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "Conquistato",
+              "all prey completed must not silently close the hunting season");
+            await click("#paths-list .path-card > button");
             await shot(label + "-08-stagione-conclusa");
-            await click('#path-form button[type=submit]');
-            await wait("!document.getElementById('path-dialog').open");
+            await click("#save-paths");
+            await wait("document.getElementById('paths-save-bar').hidden");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "Conclusa");
             await click("#new-path");
           }
@@ -414,20 +471,26 @@ test("login autofill, education dates, activities and progression work on four s
           await wait("!document.getElementById('path-dialog').open");
         }
         await shot(label + "-09-percorsi-" + branch.replace("/", ""));
-        await click("#paths-list button");
+        await expand("#paths-list .path-more");
+        await click("#paths-list .path-more button");
         await shot(label + "-10-tappe-" + branch.replace("/", ""));
         await click("#path-dialog [data-close]");
+        await expand(".path-filters");
         await fill("#paths-state", "Definito", "change");
         assert.equal(await page.evaluate("[...document.querySelectorAll('#paths-list .activity-state')].every(item=>item.textContent==='Definito')"), true);
         await fill("#paths-state", "", "change");
         if (branch === "L/C" && label !== "telefono") {
-          await page.evaluate(`[...document.querySelectorAll('#paths-list article')].find(card=>card.textContent.includes('Stagione di caccia')).querySelector('button').click()`);
+          await page.evaluate(`{
+            const card = [...document.querySelectorAll('#paths-list article')].find(card=>card.textContent.includes('Stagione di caccia'));
+            card.querySelector('.path-more').open = true; card.querySelector('.path-more button').click();
+          }`);
           await shot(label + "-08-stagione-conclusa");
           await click("#path-dialog [data-close]");
         }
         await click('[data-section-target="events-panel"]');
       }
       await fill("#activities-branch", "E/G", "change");
+      await expand(".activity-more");
       await click("#new-winter-camp");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=title]').value"), "Campo invernale");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=date]').value"), "2027-01-02");
@@ -435,16 +498,22 @@ test("login autofill, education dates, activities and progression work on four s
       await click("#add-program-item");
       await fill('#event-program [name="program-time-1"]', "08:00");
       await fill('#event-program [name="program-title-1"]', "Lancio");
+      await expand(".activity-program-extra");
       await fill('#event-program [name="program-place-1"]', "Sede scout");
       await fill("#event-program textarea", "Ci troviamo e presentiamo il campo.");
+      await expand('#event-program-view > details:nth-child(2)');
       await click("#add-event-material");
       await fill('#event-materials [name="checklist-title-1"]', "Cartellone e pennarelli");
+      await expand('#event-program-view > details:nth-child(3)');
       await click("#add-event-shopping");
       await fill('#event-shopping [name="checklist-title-2"]', "Pasta");
       await fill('#event-shopping [name="checklist-quantity-2"]', "4 kg");
       await shot(label + "-14-campo-programma");
       if (label === "desktop") {
+        await click('[data-event-view="quote"]');
+        await expand("#event-fee-setting");
         await fill('#event-form [name=fee]', "25.00");
+        await click("#event-attendance [data-person-action]");
         await page.evaluate(`{
           const due = document.querySelector('#event-attendance [data-due]');
           due.click();
@@ -468,8 +537,11 @@ test("login autofill, education dates, activities and progression work on four s
         await wait("document.getElementById('dashboard-event-title').textContent === 'Campo invernale'");
         assert.match(await page.evaluate("document.getElementById('dashboard-event-details').textContent"), /gennaio 2027/);
         assert.match(await page.evaluate("document.getElementById('dashboard-event-preparation').textContent"), /1 momenti/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-event-finances').textContent"), /1 quota da completare/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-event-action').href"), /event=.*presenze=1/);
+        assert.match(await page.evaluate("document.getElementById('dashboard-fees-action').textContent"), /Da ricevere \(1\)/);
+        assert.match(await page.evaluate("document.getElementById('dashboard-event-action').href"), /event=/);
+        assert.doesNotMatch(await page.evaluate("document.getElementById('dashboard-event-action').href"), /presenze=1/);
+        assert.equal(await page.evaluate("document.getElementById('dashboard-attendance-action').textContent"), "Presenze");
+        assert.match(await page.evaluate("document.getElementById('dashboard-attendance-action').href"), /event=.*vista=presenze/);
         await shot("desktop-17-prossimo-evento");
 
         await go("attivita.html");
@@ -478,18 +550,15 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#new-event");
         await fill('#event-form [name=title]', "Riunione torneo di prova");
         await fill('#event-form [name=date]', "2026-11-20");
-        await page.evaluate(`{
-          const rows = [...document.querySelectorAll('#event-attendance .activity-person')];
-          rows[0].querySelector('select').value = 'presente';
-          rows[0].querySelector('select').dispatchEvent(new Event('change',{bubbles:true}));
-          rows[1].querySelector('select').value = 'assente';
-          rows[1].querySelector('select').dispatchEvent(new Event('change',{bubbles:true}));
-        }`);
-        await click("#event-tournament > summary");
+        await click('[data-event-view="presenze"]');
+        await click("#event-attendance [data-person-action]");
+        await expand("#event-attendance .activity-person:nth-of-type(2) .activity-presence-options");
+        await fill("#event-attendance .activity-person:nth-of-type(2) select", "assente", "change");
+        await click('[data-event-view="torneo"]');
         await fill("#tournament-presentations input", "5");
         await fill("#tournament-members .tournament-person select", "true", "change");
         await page.evaluate(`{
-          const scores = document.querySelectorAll('#tournament-members .tournament-person:first-of-type input');
+          const scores = document.querySelector('.tournament-person').querySelectorAll('input');
           scores.forEach(input => { input.value = '5'; input.dispatchEvent(new Event('input',{bubbles:true})); });
         }`);
         const disabledScores = await page.evaluate(`([...document.querySelectorAll('#tournament-members .tournament-person')].map(row => ({
@@ -503,7 +572,10 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#tournament-tab");
         assert.ok(await page.evaluate("!!document.querySelector('#tournament-rankings tbody')"), "the LC leaderboard should render saved scores");
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('93.8%')"), true);
-        await fill("#tournament-category", "punctuality", "change");
+        const categories = await page.evaluate("[...document.querySelectorAll('#tournament-rankings [data-sort]')].map(button=>button.dataset.sort)");
+        assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "eye", "total"]);
+        await click('#tournament-rankings [data-sort="punctuality"]');
+        assert.equal(await page.evaluate("document.querySelector('#tournament-rankings [data-sort=punctuality]').closest('th').getAttribute('aria-sort')"), "descending");
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('100.0%')"), true);
         await shot("desktop-16-classifica-torneo");
         await click("#tournament-events button");

@@ -49,7 +49,8 @@ function loginPage(firstAccess) {
       value: '', type: 'password', hidden: true, disabled: true, required: false, attributes: {},
       focus() {}, setAttribute(name, value) { this.attributes[name] = value },
       removeAttribute(name) { delete this.attributes[name]; if (name === 'pattern') this.pattern = undefined },
-      querySelector(selector) { return get(id + (selector === 'button[type="submit"]' ? '-submit' : '-button')) }
+      querySelector(selector) { return get(id + (selector === 'button[type="submit"]' ? '-submit' : '-button')) },
+      querySelectorAll() { return [...elements.values()].filter(input => input.attributes['aria-invalid']); }
     });
     return elements.get(id);
   };

@@ -18,9 +18,8 @@
     <a href="index.html">Area riservata</a>
   </header>
   <main id="reserved-content" class="members-page">
-    <div class="members-heading">
-      <div><p class="eyebrow">Anagrafe di gruppo</p><h1>Libro soci</h1>
-        <p>Anagrafiche, censimenti e percorsi. Tutto al posto giusto.</p></div>
+    <div class="members-heading members-page-heading">
+      <h1>Libro soci</h1>
       <a id="members-access-link" class="button button-secondary" href="persone.html">Persone e accessi</a>
     </div>
     <p id="members-status" role="status" aria-live="polite"></p>
@@ -32,10 +31,7 @@
         <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
       </nav>
       <div id="members-search-panel" data-section-panel>
-      <div class="members-heading">
-        <div><h2>Soci per branca</h2><p>Premi una branca per filtrare, ripremila per rimuovere il filtro.</p></div>
-      </div>
-      <div id="members-summary" class="members-summary"></div>
+      <div id="members-summary" class="members-summary" role="group" aria-label="Filtra soci per branca"></div>
       <button id="members-incoming" class="button button-secondary" type="button" hidden></button>
       <div class="members-controls">
       <div class="members-toolbar members-primary-actions">
@@ -50,10 +46,10 @@
         </details>
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
+        <label class="members-search members-main-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
         <details id="members-advanced-search" class="members-advanced-search">
-          <summary>Ricerca avanzata</summary>
+          <summary>Altri filtri</summary>
           <div class="members-filters-advanced">
-            <label class="members-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
             <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
             <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
             <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
@@ -176,7 +172,7 @@
   </dialog>
   <dialog id="member-dialog" class="members-dialog">
     <form id="member-form">
-      <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
+      <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2><p id="member-outstanding" role="status" aria-live="polite" hidden></p></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
       <p id="member-error" role="alert"></p>
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
         <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
@@ -187,12 +183,12 @@
       </nav>
       <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
       <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile">
-        <details id="member-activities" class="member-activities" hidden>
+        <details id="member-activities" class="member-activities" open hidden>
           <summary id="member-activities-summary">Attività e quote</summary>
           <p id="member-activities-status" role="status" aria-live="polite"></p>
           <button id="member-activities-retry" type="button" class="button button-secondary" hidden>Riprova storico</button>
-          <label class="members-check"><input id="member-activities-all" type="checkbox">Mostra anche assenze e presenze da registrare</label>
-          <div id="member-activities-list"></div>
+          <label class="members-check"><input id="member-activities-all" type="checkbox">Anche assenze e da registrare</label>
+          <ol id="member-activities-list" aria-label="Storico attività, più recenti prima"></ol>
         </details>
         <div class="members-form-grid">
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>

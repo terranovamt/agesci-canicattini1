@@ -348,13 +348,11 @@ al cambio anno. **Salva sul NAS** rimane necessario per pubblicare.
 
 ## Dashboard dell'area riservata
 
-Dopo l'accesso, la dashboard mostra titolo, esercizio, data, convocazioni e
-numero di slide visibili dell'assemblea, oltre al numero di PDF e ai primi
-tre documenti pubblicati. Questi riepiloghi leggono i file del sito: non
+Dopo l'accesso, la dashboard mostra prima l'attivita di oggi o la prossima:
+**Attivita in corso** e **Presenze** sono affiancati, **Quote** apre i debitori.
+Seguono le scorciatoie della branca; **Altro** raccoglie strumenti di gruppo,
+assemblea, documenti e metriche admin. I riepiloghi assemblea e PDF leggono i file del sito: non
 indicano lo stato della diretta né le modifiche locali ancora da pubblicare.
 Eventuali errori di caricamento hanno un pulsante per riprovare.
 
-Le schede **Prepara l'assemblea**, **Condividi i documenti** e **Accompagna la
-diretta** spiegano i rispettivi strumenti; il percorso **Prepara → Pubblica →
-Vai in regia** chiarisce quando i contenuti diventano visibili al pubblico.
 I dati della dashboard vengono caricati solo dopo l'accesso verificato.

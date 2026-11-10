@@ -85,7 +85,7 @@ test('all screens fit real responsive viewports and section navigation preserves
           frame.srcdoc = pages[page]; await loaded;
           const doc = frame.contentDocument;
           const win = frame.contentWindow;
-          const visible = node => !!node && node.getClientRects().length > 0 &&
+          const visible = node => !!node && node.checkVisibility() &&
             win.getComputedStyle(node).visibility !== 'hidden';
           for (const [width, height] of ${JSON.stringify(viewports)}) {
             frame.style.width = width + 'px';
@@ -109,10 +109,14 @@ test('all screens fit real responsive viewports and section navigation preserves
               // This fixture represents an admin; runtime permission tests cover other roles.
               for (const id of ['people-tool', 'dashboard-group-overview', 'dashboard-metrics'])
                 doc.getElementById(id).hidden = false;
+              const more = doc.getElementById('dashboard-more');
+              record({ moreClosed: !more.open, secondaryHidden: !visible(doc.getElementById('documents-tool')) });
+              more.open = true;
               record({ unifiedDashboard: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&
                 ['people-tool', 'documents-tool', 'dashboard-assembly-panel', 'dashboard-documents-title',
                   'dashboard-metrics', 'dashboard-group-overview', 'activities-coming-title']
                   .every(id => visible(doc.getElementById(id))) });
+              more.open = false;
             }
             if (names[page] === 'area-riservata/statistiche.html') {
               record({ allStatisticsVisible: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&

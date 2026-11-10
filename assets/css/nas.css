@@ -24,6 +24,20 @@ body.reserved-page .reserved-header .brand,
 .nas-navbar img { width: 48px; height: 48px; object-fit: contain }
 .nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
 .nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
+body.reserved-page:has(> .members-page) > .reserved-header {
+  gap: 8px 16px;
+  padding: 8px max(16px, calc((100vw - 1200px) / 2));
+}
+body.reserved-page:has(> .members-page) > .reserved-header .brand { min-height: 44px; padding: 4px 8px }
+body.reserved-page:has(> .members-page) > .reserved-header img { width: 36px; height: 36px }
+body.reserved-page:has(> .members-page) > .reserved-header :is(a, button, summary, select) { min-height: 44px }
+body.reserved-page:has(> .members-page) > .reserved-header :is(a, button, summary, select):focus-visible {
+  outline: 3px solid var(--y, #fdc500);
+  outline-offset: 3px;
+}
+body.reserved-page:has(> .members-page) > .reserved-header :is(.view-as-form, .view-as-active) :focus-visible {
+  outline-color: var(--vd, #211638);
+}
 #nas-login-form [hidden], #people-tool[hidden], #people-access-tool[hidden] { display: none }
 #password-fields, #confirmation-field { display: grid; gap: 10px }
 #nas-login-form p { font-size: 14px }

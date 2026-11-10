@@ -152,10 +152,10 @@ questa guida, nei test o nella memoria dell'assistente.
   posizione e identita senza comandi di aggiunta/rimozione. Altri dati
   rende accessibili anche eventuali chiavi di bilancio non standard.
 - Audit schermate: dashboard a pagina unica, senza tab: attivita di oggi
-  prima degli strumenti e dei censimenti admin; desktop a due colonne
-  (1.65:1), tablet/mobile in pila. A sinistra Libro soci e Documenti,
-  unica card Assemblea (dati pubblicati, avviso pubblicazione, Setup/Regia/Guida)
-  e accesso ad Attività; a destra Biblioteca PDF e Sito e server.
+  prima degli strumenti e dei censimenti admin; Attivita in corso e Presenze
+  affiancati, Quote diretto ai debitori e 3–4 scorciatoie. Libro soci,
+  Documenti, Assemblea, Biblioteca e metriche sono in Altro, chiuso all'avvio;
+  al suo interno due colonne da 800px, altrimenti in pila.
   La home dei capi e personalizzata per `serviceBranch`: L/C giallo con
   torneo e prede, E/G verde con specialita/brevetti, R/S rosso con route.
   Le scorciatoie aprono tab esistenti senza estendere le autorizzazioni.
@@ -365,8 +365,17 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   Il form precompila una bozza Campo EG 2–5 gennaio 2027 (`?new=campo-invernale`),
   ma la persistenza avviene solo al salvataggio. Gli elenchi presenze sono
   raggruppati usando l'assegnazione `sestiglia`/`squadriglia` in `member_values`.
-  La dashboard usa la stessa API: `attivita.html?event=ID&presenze=1` apre
-  il registro, `?event=ID&ora=1` mostra subito il programma corrente.
+  La dashboard usa la stessa API: `attivita.html?event=ID&vista=presenze`
+  apre il registro, `vista=quote&filtro=unpaid` apre i debitori,
+  `vista=programma` il programma; `ora=1` apre il momento corrente.
+  Il vecchio `presenze=1` resta compatibile. Le viste mantengono montati
+  gli stessi controlli: cambiare vista o aggiornare l'orologio non resetta
+  una bozza. Una sola barra Salva attivita resta raggiungibile.
+  Giorni ripiegabili, momenti ora/titolo e dettagli opzionali evitano il
+  lungo modulo; ricerca soci solo oltre 12, filtri sotto un riepilogo.
+  Le tappe dei percorsi sono modificabili in linea, con bozze in memoria,
+  revisioni invariate e Salva percorsi; errori e filtri non le cancellano.
+  La scheda socio apre lo storico cronologico e mostra il residuo vicino al nome.
   `activities-model.js` condivide selezione evento e momento corrente:
   date finali incluse, fuso Europe/Rome, solo momenti della giornata,
   ultimo orario raggiunto fino al successivo. Orari mancanti non si
@@ -376,12 +385,15 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   per sestiglia; `tournament-model.js` normalizza ogni categoria in percentuale
   (presenza sul roster fotografato, puntualita e giudizi sui presenti valutati,
   presentazione una volta per sestiglia) e calcola la media delle categorie
-  disponibili per la classifica, non la somma grezza dei punti. Campi,
+  disponibili per la classifica, non la somma grezza dei punti. La tabella
+  contiene tutte le categorie e il totale, ordinabili da intestazione,
+  con regione scorribile da tastiera; i giudizi si inseriscono in griglia.
+  Campi,
   sincronizzazione calendari e promemoria restano futuri. La pagina account reale e
   `area-riservata/persone.html`. Per gli screenshot riproducibili usare
   `ACTIVITIES_SCREENSHOTS=/percorso/assoluto node --test tests/activities-browser.test.cjs`;
   vengono usati esclusivamente dati sintetici e un NAS temporaneo.
-- Il collegamento `Carica e gestisci documenti` resta visibile nella dashboard
+- Il collegamento `Carica e gestisci documenti` resta disponibile in Altro nella dashboard
   per tutti i capi, anche senza branca di servizio. L'API PDF richiede la
   sessione ma non i privilegi admin; non confonderla con i modelli interni soci.
 - Libro soci: intestazioni con ciclo crescente/decrescente/nessun ordinamento,
