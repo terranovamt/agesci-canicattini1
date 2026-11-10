@@ -354,10 +354,11 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   espone `/api/activities` con sessione e perimetro di branca, anche in
   Visualizza come; salva nella tabella `activities` di `site.sqlite` con
   revisioni ottimistiche. Zero tappe completate significa Definito, alcune
-  In lavorazione, tutte (non vuote) Conquistato. La stagione L/C richiede
-  chiusura esplicita dopo tutte le prede; solo dopo si avviano specialita.
+  In lavorazione, tutte (non vuote) Conquistato. La stagione L/C puo essere
+  conclusa esplicitamente dopo tutte le prede; non blocca l'avvio di specialita.
   La scheda Percorso raggruppa i soci per sestiglia/squadriglia e apre il
-  profilo individuale nella scheda Percorso senza modificare prede o tappe.
+  profilo individuale nella scheda Percorso; le tappe si aggiornano con un
+  tocco e si salvano subito, senza uscire dal profilo.
   Nel programma l'aggiunta del momento e disponibile una volta per giornata.
   I campi multiselect del Libro soci restano indipendenti e preservati.
   Le schede attivita elencano i presenti e collegano `soci.html?member=ID`;

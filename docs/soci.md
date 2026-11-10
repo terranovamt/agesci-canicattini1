@@ -289,9 +289,8 @@ con zero tappe completate (anche senza tappe), **In lavorazione** con alcune
 tappe completate, **Conquistato** solo con tutte le tappe completate e almeno
 una tappa. Schede con avanzamento, conteggi, ricerca per nome/titolo e filtro
 di stato consentono una lettura rapida. Le tappe si spuntano direttamente
-nella scheda e si confermano con **Salva percorsi**: cambi di filtro o branca
-non cancellano le modifiche, che restano da salvare anche dopo un errore.
-**Altro > Modifica percorso** serve per cambiare titolo o tappe.
+nella scheda socio e vengono salvate subito con un tocco. Dalla gestione
+attivita si possono aggiungere percorsi o modificarne il titolo e le tappe.
 In R/S sono disponibili gli incontri;
 la progressione personale R/S rimane nella scheda socio.
 

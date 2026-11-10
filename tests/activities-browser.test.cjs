@@ -109,7 +109,6 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         if (width >= 1000)
           assert.ok(await page.evaluate("document.getElementById('member-dialog').getBoundingClientRect().width") >= Math.min(1100,width*.8));
         await shot(label + "-correzioni-socio");
-        const pathsBeforeProfile = await page.evaluate("ACCESSO.request('activities').then(data => data.paths)");
         await go("attivita.html#paths-panel");
         await wait("!document.getElementById('activities-app').hidden && !document.getElementById('paths-panel').hidden");
         assert.equal(await page.evaluate("document.querySelectorAll('#paths-members .activity-path-unit').length"), 6);
@@ -120,6 +119,15 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await wait("document.getElementById('member-paths-list').textContent.includes('Stagione di caccia')");
         assert.match(await page.evaluate("document.getElementById('member-paths-list').textContent"), /Stagione di caccia/);
         assert.equal(await page.evaluate("document.getElementById('member-paths').textContent.includes('Percorsi individuali')"), false);
+        const pathBeforeTick = await page.evaluate(`ACCESSO.request('activities').then(data =>
+          data.paths.find(path => path.personId === Number(new URLSearchParams(location.search).get('member'))))`);
+        const stepBeforeTick = await page.evaluate("document.querySelector('#member-paths-list input[type=checkbox]').checked");
+        await click("#member-paths-list input[type=checkbox]");
+        await wait(`ACCESSO.request('activities').then(data =>
+          data.paths.find(path => path.id === ${pathBeforeTick.id})?.revision === ${pathBeforeTick.revision + 1})`);
+        assert.equal(await page.evaluate("document.getElementById('member-paths-status').textContent"), "Salvato.");
+        assert.notEqual(await page.evaluate("document.querySelector('#member-paths-list input[type=checkbox]').checked"), stepBeforeTick);
+        const pathsBeforeProfile = await page.evaluate("ACCESSO.request('activities').then(data => data.paths)");
         assert.deepEqual(await page.evaluate("ACCESSO.request('activities').then(data => data.paths)"), pathsBeforeProfile,
           "opening a member path does not move or alter their prey");
         await page.evaluate("document.getElementById('member-dialog').close()");

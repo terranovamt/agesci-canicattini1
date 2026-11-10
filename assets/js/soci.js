@@ -8,6 +8,7 @@
   const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'guardians', 'censuses'];
   let memberSections = allMemberSections;
   let pathLoadToken = 0;
+  let memberPaths = [], memberPathSaving = false;
   let guardianNextIndex = 0;
   const selected = new Set();
   let sortKey = '', sortDirection = 0;
@@ -445,47 +446,87 @@
     }
     return field;
   }
+  function drawMemberPaths(member, feedback = '') {
+    const list = $('member-paths-list'), status = $('member-paths-status');
+    const labels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
+    list.replaceChildren(...memberPaths.map(path => {
+      const steps = Array.isArray(path.steps) ? path.steps : [];
+      const completed = steps.filter(step => step.done).length;
+      const state = path.closed ? 'Conclusa' : !completed ? 'Definito'
+        : completed === steps.length ? 'Conquistato' : 'In lavorazione';
+      const card = node('article', undefined, 'member-individual-path');
+      card.dataset.pathId = path.id;
+      card.append(node('h4', path.title), node('p',
+        `${labels[path.kind] || 'Percorso'} · ${state}${steps.length ? ` · ${completed}/${steps.length} tappe` : ''}`,
+        'member-individual-path-status'));
+      const items = node('ul', undefined, 'member-path-steps');
+      steps.forEach((step, index) => {
+        const row = node('li'), label = node('label', undefined, 'member-path-step');
+        const checkbox = node('input');
+        checkbox.type = 'checkbox'; checkbox.checked = !!step.done;
+        checkbox.disabled = memberPathSaving || path.closed;
+        checkbox.dataset.stepIndex = index;
+        checkbox.setAttribute('aria-label', `${step.title} · ${path.title}`);
+        checkbox.onchange = () => updateMemberPath(member, path, {
+          steps: steps.map((item, stepIndex) => stepIndex === index
+            ? { ...item, done: checkbox.checked } : item),
+        });
+        label.append(checkbox, node('span', step.title));
+        row.append(label); items.append(row);
+      });
+      card.append(items);
+      if (path.kind === 'hunt' && !path.closed && steps.length && steps.every(step => step.done)) {
+        const close = node('button', 'Concludi caccia', 'button button-secondary');
+        close.type = 'button'; close.disabled = memberPathSaving;
+        close.onclick = () => updateMemberPath(member, path, { closed: true });
+        card.append(close);
+      }
+      return card;
+    }));
+    status.textContent = feedback || (memberPaths.length ? '' : 'Nessun percorso. Aggiungine uno.');
+  }
+  async function updateMemberPath(member, path, changes) {
+    if (memberPathSaving) return;
+    memberPathSaving = true;
+    $('member-paths-status').textContent = 'Salvataggio…';
+    $('member-paths-list').querySelectorAll('input, button').forEach(control => { control.disabled = true; });
+    let feedback = 'Salvato.';
+    try {
+      const saved = await A.request('activities/paths/' + path.id, 'PATCH', {
+        kind: path.kind, personId: path.personId, title: path.title,
+        steps: changes.steps || path.steps, closed: changes.closed ?? path.closed,
+        branch: path.branch, revision: path.revision,
+      });
+      memberPaths = memberPaths.map(item => item.id === saved.id ? saved : item);
+    } catch (error) {
+      feedback = 'Modifica non salvata: ' + error.message;
+    } finally {
+      memberPathSaving = false;
+      if (editing?.id === member.id) drawMemberPaths(member, feedback);
+    }
+  }
   async function renderMemberPaths(member) {
     const token = ++pathLoadToken;
-    const section = $('member-paths'), list = $('member-paths-list');
-    const status = $('member-paths-status'), link = $('member-paths-link');
+    const section = $('member-paths'), status = $('member-paths-status'), link = $('member-paths-link');
     const supportsPaths = member?.kind === 'ragazzo' && ['L/C', 'E/G'].includes(member.branch);
-    list.replaceChildren();
+    memberPaths = [];
+    $('member-paths-list').replaceChildren();
     section.hidden = !supportsPaths;
     if (!supportsPaths) {
       status.textContent = '';
       return;
     }
+    $('member-paths-heading').textContent = member.branch === 'L/C' ? 'Specialità e caccia' : 'Specialità e brevetti';
     link.hidden = false;
+    link.textContent = member.branch === 'L/C' ? '+ Aggiungi caccia o specialità' : '+ Aggiungi specialità o brevetto';
     link.href = 'attivita.html?member=' + encodeURIComponent(member.id) + '#paths-panel';
-    status.textContent = 'Caricamento percorsi individuali…';
+    status.textContent = 'Caricamento…';
     try {
       const result = await A.request('activities');
       if (token !== pathLoadToken || editing?.id !== member.id) return;
       if (!Array.isArray(result.paths)) throw new Error('Dati dei percorsi non validi');
-      const paths = result.paths.filter(path => path.personId === member.id && path.branch === member.branch);
-      if (!paths.length) {
-        status.textContent = 'Nessun percorso individuale registrato per questo socio.';
-        return;
-      }
-      const labels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
-      for (const path of paths) {
-        const steps = Array.isArray(path.steps) ? path.steps : [];
-        const completed = steps.filter(step => step.done).length;
-        const state = path.closed ? 'Conclusa' : !completed ? 'Definito'
-          : completed === steps.length ? 'Conquistato' : 'In lavorazione';
-        const card = node('article', undefined, 'member-individual-path');
-        card.append(node('h4', path.title), node('p',
-          `${labels[path.kind] || 'Percorso'} · ${state}${steps.length ? ` · ${completed}/${steps.length} tappe` : ''}`,
-          'member-individual-path-status'));
-        if (steps.length) {
-          const items = node('ul');
-          items.append(...steps.map(step => node('li', `${step.done ? '✓' : '○'} ${step.title}`)));
-          card.append(items);
-        }
-        list.append(card);
-      }
-      status.textContent = '';
+      memberPaths = result.paths.filter(path => path.personId === member.id && path.branch === member.branch);
+      drawMemberPaths(member);
     } catch (error) {
       if (token !== pathLoadToken || editing?.id !== member.id) return;
       status.textContent = 'Percorsi non disponibili: ' + error.message;
