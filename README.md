@@ -131,6 +131,42 @@ non inserire informazioni riservate. Non condividere vecchi URL con password.
 
 ## Anteprima locale
 
+### Demo con dati fittizi (branch `dev`)
+
+Installa **Node.js 24 o successivo**, poi scarica il branch `dev` oppure esegui:
+
+```sh
+git clone --branch dev --single-branch https://github.com/terranovamt/agesci-canicattini1.git
+cd agesci-canicattini1
+node tools/nas-demo.cjs
+```
+
+Non serve `npm install`. Apri l'indirizzo locale stampato nel terminale
+(`http://127.0.0.1:PORTA/agesci-canicattini1/area-riservata/`).
+La porta viene scelta automaticamente fra quelle libere.
+
+| Vista | Codice censimento |
+| --- | --- |
+| Amministratore | `23816938` |
+| Capo L/C | `7654321` |
+| Capo E/G | `7654322` |
+| Capo R/S | `7654323` |
+
+Password comune, valida **solo per questa demo**: `Nas-local-test-password1-only!`.
+
+Il comando crea un vero database SQLite temporaneo con 18 soci inventati,
+sestiglie/squadriglie, attivita' di oggi, campi di due giorni, presenze,
+quote pagate/parziali/in eccesso, torneo L/C e percorsi di esempio.
+Le date si adattano al giorno di avvio in Europe/Rome. Puoi modificare e
+salvare i dati normalmente: rimangono disponibili finche' il comando e' in
+esecuzione. **Ctrl+C** chiude il server ed elimina il database della demo;
+al prossimo avvio si riparte dai dati di esempio.
+Il server ascolta solo sul tuo computer e non usa configurazioni, database
+o credenziali del NAS. Non copiare questo database sul NAS e non eseguire
+il comando sul server di produzione.
+
+### Altre anteprime
+
 Per collaudare backend NAS e monitor con database temporaneo, usare Node 24:
 `node tools/nas-dev.cjs`. Il comando stampa URL e password di solo test;
 nessun dato reale del NAS viene modificato. CPU/RAM host richiedono Linux/NAS.
