@@ -258,7 +258,7 @@
         .filter(item => !item.done).length;
       $("dashboard-event-preparation").textContent =
         `${preparation} momenti · ${outstanding} da preparare`;
-      const missing = (event.attendance || []).filter(person => person.due &&
+      const missing = (event.attendance || []).filter(person =>
         Math.max(0, (event.feeCents || 0) - (person.paidCents || 0)) > 0).length;
       const money = cents => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(cents / 100);
       const hasFees = event.feeCents > 0 || (event.attendance || []).some(person => person.paidCents > 0);

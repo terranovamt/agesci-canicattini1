@@ -9,11 +9,11 @@ test("euro input uses exact cents and rejects negative, fractional or non-finite
     assert.throws(() => M.cents(input), Error, input);
 });
 
-test("fee balances keep advances, exemptions and excess payments separate from other members' debts", () => {
+test("the activity fee applies to everyone, keeping advances and excess payments separate from others' debts", () => {
   assert.deepEqual(M.totals({ feeCents: 1025, attendance: [
     { due: true, paidCents: 500 }, { due: true, paidCents: 1500 }, { due: false, paidCents: 100 },
     { due: true, paidCents: 0 }, { due: false, paidCents: 0 },
-  ] }), { expected: 3075, paid: 2100, remaining: 1550, excess: 575 });
+  ] }), { expected: 5125, paid: 2100, remaining: 3500, excess: 475 });
   assert.deepEqual(M.totals({ feeCents: 0, attendance: [{ due: true, paidCents: 250 }] }),
     { expected: 0, paid: 250, remaining: 0, excess: 250 });
 });

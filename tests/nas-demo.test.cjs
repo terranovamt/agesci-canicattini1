@@ -26,7 +26,7 @@ test("local demo provides fictional data, working logins, branch scope and edita
     const meeting = data.events.find(event => event.branch === "L/C" && event.kind === "riunione");
     assert.equal(meeting.tournament.members.length, 6);
     assert.equal(meeting.tournament.members[0].eye, null);
-    assert.deepEqual(meeting.totals, { expected: 4000, paid: 2700, remaining: 1500, excess: 200 });
+    assert.deepEqual(meeting.totals, { expected: 6000, paid: 2700, remaining: 3500, excess: 200 });
     assert.equal(meeting.program[0].materials[0].quantity, 6);
     assert.ok(data.events.some(event => event.endDate > event.date && event.program.some(moment => moment.date === event.endDate)));
     for (const [index, branch] of ["L/C", "E/G", "R/S"].entries()) {

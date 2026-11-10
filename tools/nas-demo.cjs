@@ -46,7 +46,7 @@ async function startNasDemo() {
       }
       const attendance = members.map((member, number) => ({
         personId: member.id, status: number < 4 ? "presente" : number === 4 ? "assente" : "",
-        due: number < 4, paidCents: [1000, 500, 0, 1200, 0, 0][number],
+        paidCents: [1000, 500, 0, 1200, 0, 0][number],
       }));
       const event = {
         branch, kind: "riunione", title: "DEMO - Riunione di oggi " + branch,

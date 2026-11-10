@@ -20,7 +20,7 @@
       status.className = 'member-history-status'; status.dataset.status = event.status || '';
       const meta = node('p', event.kind + ' · ' + event.branch + ' · '); meta.append(status);
       card.append(time, heading, meta);
-      const expected = event.due ? event.feeCents : 0;
+      const expected = event.feeCents;
       const fee = node('p', !event.feeCents && !event.paidCents ? 'Gratuita' :
         'Quota ' + AM.money(expected) + ' · Versato ' + AM.money(event.paidCents) +
         ' · Da ricevere ' + AM.money(Math.max(0, expected - event.paidCents)) +
@@ -51,7 +51,7 @@
         if (!Array.isArray(result.events)) throw new Error('Storico attività non valido');
         events = [...result.events].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
         const remaining = events.reduce((sum, event) =>
-          sum + Math.max(0, (event.due ? event.feeCents : 0) - event.paidCents), 0);
+          sum + Math.max(0, event.feeCents - event.paidCents), 0);
         balance.textContent = 'Da ricevere · ' + AM.money(remaining);
         balance.dataset.outstanding = remaining ? 'yes' : 'no';
         const count = events.filter(event => event.status === 'presente').length;

@@ -479,13 +479,15 @@ test("login autofill, education dates, activities and progression work on four s
         await expand("#event-settings");
         await fill('#event-form [name=fee]', "10.25");
         await click('[data-event-view="quote"]');
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-due]') === null"), true);
+        assert.equal(await page.evaluate("document.getElementById('event-totals').textContent.includes('20,50')"), true,
+          "the quota is due by both members before any payment, including unrecorded attendance");
         await click("#event-attendance [data-person-action]");
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25");
         await fill('#event-attendance [data-paid]', "5");
         await click("#event-attendance .activity-person:nth-of-type(2) [data-person-action]");
         await page.evaluate(`{
           const row = document.querySelectorAll('#event-attendance .activity-person')[1];
-          row.querySelector('[data-due]').click();
           const paid = row.querySelector('[data-paid]'); paid.value='15';
           paid.dispatchEvent(new Event('input',{bubbles:true}));
         }`);
@@ -673,8 +675,6 @@ test("login autofill, education dates, activities and progression work on four s
         await click('[data-event-view="quote"]');
         await click("#event-attendance [data-person-action]");
         await page.evaluate(`{
-          const due = document.querySelector('#event-attendance [data-due]');
-          due.click();
           const paid = document.querySelector('#event-attendance [data-paid]');
           paid.value = '10'; paid.dispatchEvent(new Event('input',{bubbles:true}));
         }`);
@@ -695,7 +695,7 @@ test("login autofill, education dates, activities and progression work on four s
         await wait("document.getElementById('dashboard-event-title').textContent === 'Campo invernale'");
         assert.match(await page.evaluate("document.getElementById('dashboard-event-details').textContent"), /gennaio 2027/);
         assert.match(await page.evaluate("document.getElementById('dashboard-event-preparation').textContent"), /1 momenti/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-fees-action').textContent"), /Da ricevere \(1\)/);
+        assert.match(await page.evaluate("document.getElementById('dashboard-fees-action').textContent"), /Da ricevere \(2\)/);
         assert.match(await page.evaluate("document.getElementById('dashboard-event-action').href"), /event=/);
         assert.doesNotMatch(await page.evaluate("document.getElementById('dashboard-event-action').href"), /presenze=1/);
         assert.equal(await page.evaluate("document.getElementById('dashboard-attendance-action').textContent"), "Presenze");

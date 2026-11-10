@@ -707,7 +707,6 @@
   function readAttendance() {
     return [...$('event-attendance').querySelectorAll('.activity-person')].map(row => ({
       personId: Number(row.dataset.personId), status: row.querySelector('select').value,
-      due: row.querySelector('[data-due]').checked,
       paidCents: AM.cents(row.querySelector('[data-paid]').value),
     }));
   }
@@ -727,14 +726,14 @@
     const filter = $('event-member-filter').value;
     let visible = 0;
     [...$('event-attendance').querySelectorAll('.activity-person')].forEach((row, index) => {
-      const person = attendance[index], expected = person.due ? feeCents : 0;
+      const person = attendance[index], expected = feeCents;
       const remaining = Math.max(0, expected - person.paidCents);
       const excess = Math.max(0, person.paidCents - expected);
       row.dataset.status = person.status;
       row.dataset.balanceState = remaining ? 'unpaid' : excess ? 'excess' : 'paid';
       row.querySelector('[data-person-status]').textContent = eventView === 'quote'
         ? remaining ? AM.money(remaining) + ' da ricevere' : excess ? AM.money(excess) + ' in più'
-          : !person.due ? 'Quota non dovuta' : 'Saldato'
+          : 'Saldato'
         : person.status ? (person.status === 'presente' ? '✓ ' : person.status === 'assente' ? '− ' : '') +
           person.status[0].toUpperCase() + person.status.slice(1) : '○ Da registrare';
       const action = row.querySelector('[data-person-action]');
@@ -878,7 +877,7 @@
           action.setAttribute('aria-expanded', String(payment.open));
           if (payment.open) {
             try {
-              const previous = AM.cents(paid.value), expected = due.checked ? AM.cents(eventForm.elements.fee.value) : 0;
+              const previous = AM.cents(paid.value), expected = AM.cents(eventForm.elements.fee.value);
               if (!paid.dataset.edited && expected > previous) {
                 paid.value = ((previous + Math.max(0, expected - previous)) / 100).toFixed(2);
                 paid.dataset.edited = 'suggested';
@@ -899,16 +898,7 @@
       select.name = 'attendance-' + person.personId; select.dataset.personId = person.personId;
       options(select, [['', 'Da registrare'], ['presente', 'Presente'], ['assente', 'Assente'], ['giustificato', 'Giustificato']]);
       select.value = person.status; label.append(select);
-      const dueLabel = node('label', undefined, 'activities-check'), due = node('input');
-      due.type = 'checkbox'; due.name = 'due-' + person.personId; due.dataset.due = '';
-      due.checked = person.due ?? person.status === 'presente';
-      dueLabel.append(due, 'Quota dovuta');
-      let manualDue = !!item;
-      due.onchange = () => { manualDue = true; updateAttendance(); };
-      select.onchange = () => {
-        if (!manualDue) due.checked = select.value === 'presente';
-        updateAttendance();
-      };
+      select.onchange = updateAttendance;
       const paidLabel = node('label', 'Versato totale (€)'), paid = node('input');
       paid.type = 'number'; paid.name = 'paid-' + person.personId; paid.dataset.paid = '';
       paid.min = '0'; paid.max = String(AM.maxCents / 100); paid.step = '0.01'; paid.inputMode = 'decimal'; paid.required = true;
@@ -927,7 +917,7 @@
         action.setAttribute('aria-expanded', String(payment.open)); updateAttendance();
       });
       const paymentControls = node('div', undefined, 'activity-person-controls');
-      paymentControls.append(dueLabel, paidLabel);
+      paymentControls.append(paidLabel);
       const balance = node('div', undefined, 'activity-fee-balance'); balance.dataset.balance = '';
       payment.append(paymentControls, balance, node('p', 'Il versato è il totale ricevuto, acconti inclusi.', 'members-note'));
       row.append(action, controls, payment); return row;

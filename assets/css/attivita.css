@@ -132,7 +132,7 @@
 .activity-presence-options > summary, .activity-payment > summary { min-height: 44px; box-sizing: border-box; font-size: .76rem; color: #625269; }
 .activity-presence-options label { padding-bottom: 10px; }
 .activity-person-profile { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 6px; color: #50336a; font-size: .85rem; }
-.activity-payment .activity-person-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.activity-payment .activity-person-controls { grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .activity-payment .activity-fee-balance { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: .7rem; }
 .activity-payment .activity-fee-balance strong { display: block; }
 .activity-payment .members-note { font-size: .75rem; }

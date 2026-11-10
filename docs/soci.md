@@ -238,12 +238,12 @@ ritorno esplicito all'elenco e mantengono titolo e salvataggio raggiungibili
 mentre si scorre il contenuto.
 
 Per un'attivita a pagamento impostare **Quota per socio**, oppure zero per
-un'attivita gratuita. Per ciascun socio **Quota dovuta** stabilisce se la
-quota entra nel totale atteso, indipendentemente dalla presenza: puo quindi
-essere attivata per un'iscrizione anticipata o tolta per un'esenzione.
-In una nuova attivita la prima selezione di Presente propone la quota dovuta,
-finche non viene modificata manualmente; negli incontri salvati la scelta
-resta esplicita. **Versato totale** contiene l'importo complessivamente
+un'attivita gratuita. La quota e dovuta automaticamente da tutti i soci
+nell'elenco dell'attivita, anche assenti, giustificati o con presenza ancora
+da registrare: non c'e una casella da attivare per ogni socio.
+La regola vale anche per le attivita gia salvate; eventuali vecchie spunte
+individuali non modificano piu l'importo dovuto.
+**Versato totale** contiene l'importo complessivamente
 ricevuto dal socio, inclusi gli acconti: aggiornarlo al nuovo totale, non al
 singolo incremento. Toccando una riga in Quote si apre il versamento e viene
 proposto il totale a saldo, conservando gli acconti; modificare l'importo

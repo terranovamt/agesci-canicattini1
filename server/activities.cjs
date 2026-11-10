@@ -100,7 +100,7 @@ function createActivities(db, people) {
       data.materials ??= [];
       data.shopping ??= [];
       data.attendance = data.attendance.map(person => ({
-        ...person, due: person.due ?? person.status === "presente", paidCents: person.paidCents ?? 0,
+        ...person, due: data.feeCents > 0, paidCents: person.paidCents ?? 0,
       }));
       data.totals = AM.totals(data);
     }
@@ -231,10 +231,9 @@ function createActivities(db, people) {
           if (!member) fail(400, "Socio non appartenente alla branca");
           seen.add(item.personId);
           const previous = existing?.attendance.find(person => person.personId === item.personId);
-          const due = Object.hasOwn(item, "due") ? item.due : previous?.due ?? item.status === "presente";
-          if (typeof due !== "boolean") fail(400, "Quota dovuta non valida");
+          if (Object.hasOwn(item, "due") && typeof item.due !== "boolean") fail(400, "Quota dovuta non valida");
           const paidCents = amount(Object.hasOwn(item, "paidCents") ? item.paidCents : previous?.paidCents ?? 0);
-          return { personId: item.personId, name: member.name, status: item.status, due, paidCents,
+          return { personId: item.personId, name: member.name, status: item.status, due: feeCents > 0, paidCents,
             unit: previous?.unit ?? member.unit ?? "" };
         });
         if (existing?.attendance.some(person => person.paidCents > 0 && !seen.has(person.personId)))

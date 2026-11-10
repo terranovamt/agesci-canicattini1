@@ -25,6 +25,40 @@ async function start(dataDir) {
   return { request, close: async () => { server.stop(); await once(server, "close"); } };
 }
 
+test("the quota is due by everyone regardless of attendance or legacy flags, without resetting payments", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-fees-"));
+  const app = await start(directory);
+  try {
+    const r = (...args) => app.request(...args);
+    await r("auth/login", "POST", { code: "23816938", password });
+    const attendance = [];
+    for (const [index, status] of ["presente", "assente", "giustificato", ""].entries()) {
+      const { member } = await r("members", "POST", { code: "91000" + index, branch: "L/C",
+        profile: { givenName: "Socio", surname: "Quota " + index } }, 201);
+      attendance.push({ personId: member.id, status, due: false, paidCents: [500, 1500, 0, 100][index] });
+    }
+    let event = await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
+      title: "Quota per tutti", date: "2026-11-10", feeCents: 1000, attendance, tasks: [] });
+    assert.ok(event.attendance.every(person => person.due));
+    assert.deepEqual(event.totals, { expected: 4000, paid: 2100, remaining: 2400, excess: 500 });
+    const absent = (await r("activities/members/" + attendance[1].personId)).events[0];
+    assert.equal(absent.status, "assente");
+    assert.equal(absent.due, true);
+    assert.equal(absent.paidCents, 1500);
+    event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 0 });
+    assert.ok(event.attendance.every(person => !person.due));
+    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 2100 });
+    event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 2000,
+      attendance: event.attendance.map(person => ({ ...person, due: false, status: "" })) });
+    assert.deepEqual(event.attendance.map(person => person.paidCents), [500, 1500, 0, 100]);
+    assert.deepEqual(event.totals, { expected: 8000, paid: 2100, remaining: 5900, excess: 0 });
+    assert.deepEqual((await r("activities")).events.find(item => item.id === event.id).totals, event.totals);
+  } finally {
+    await app.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("branch activities persist dates, attendance and tasks; scoped paths enforce prey completion and revisions", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-activities-"));
   let app = await start(directory);

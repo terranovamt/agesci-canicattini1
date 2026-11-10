@@ -12,7 +12,7 @@
   }
   function totals(event) {
     return event.attendance.reduce((result, person) => {
-      const expected = person.due ? event.feeCents || 0 : 0;
+      const expected = event.feeCents || 0;
       const paid = person.paidCents || 0;
       result.expected += expected;
       result.paid += paid;

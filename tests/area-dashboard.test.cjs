@@ -134,7 +134,7 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
         attendance: [
           { due: true, paidCents: 1000 }, { due: true, paidCents: 500 }, { due: false, paidCents: 0 },
         ],
-        totals: { expected: 2000, paid: 1500, remaining: 500 }, program: [{ title: "Lancio" }, { title: "Gioco" }],
+        totals: { expected: 3000, paid: 1500, remaining: 1500 }, program: [{ title: "Lancio" }, { title: "Gioco" }],
         materials: [{ done: false }], shopping: [{ done: false }], tasks: [{ done: false }],
       }] };
       throw new Error("Non-admin must not request census overview");
@@ -151,9 +151,9 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
   assert.match(get("dashboard-event-details").textContent, /Oggi/);
   assert.match(get("dashboard-event-preparation").textContent, /2 momenti/);
   assert.match(get("dashboard-event-preparation").textContent, /3 da preparare/);
-  assert.match(get("dashboard-fees-action").textContent, /Da ricevere \(1\)/);
+  assert.match(get("dashboard-fees-action").textContent, /Da ricevere \(2\)/);
   assert.match(get("dashboard-event-finances").textContent, /15,00/);
-  assert.match(get("dashboard-event-finances").textContent, /5,00.*da ricevere/);
+  assert.match(get("dashboard-event-finances").textContent, /15,00.*da ricevere/);
   assert.equal(get("dashboard-event-action").href, "attivita.html?event=12&vista=programma&ora=1");
   assert.match(get("dashboard-event-action").textContent, /Attività in corso/);
   assert.equal(get("dashboard-attendance-action").href, "attivita.html?event=12&vista=presenze");

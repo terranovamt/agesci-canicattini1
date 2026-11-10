@@ -361,8 +361,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   la scheda socio carica `/api/activities/members/ID` (solo dati di quel
   socio, perimetro di branca invariato), con link `attivita.html?event=ID`.
   `activities-model.js` condivide parsing euro e totali fra UI e server:
-  denaro solo in centesimi interi, quota dovuta esplicita e versato totale
-  indipendenti dalla presenza. Il residuo somma i debiti individuali senza
+  denaro solo in centesimi interi, quota automatica per tutti i soci
+  nell'elenco dell'attivita indipendentemente dalla presenza, versato totale
+  comprensivo degli acconti. Il residuo somma i debiti individuali senza
   compensarli con eccessi di altri soci. I vecchi client non devono cancellare
   quote e versamenti omessi dal payload. Lo storico UI e isolato in
   `member-activities.js`, con retry ed esclusione delle risposte obsolete.
