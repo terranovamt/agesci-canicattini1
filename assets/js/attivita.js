@@ -41,6 +41,8 @@
         (endTime ? endTime <= live.time : time < live.time) &&
         !current;
       row.dataset.timeState = current ? 'current' : past ? 'past' : 'upcoming';
+      row.querySelector('.program-now').hidden = !current;
+      updateProgramSummary(row);
     }
   }
   function options(select, values) {
@@ -356,13 +358,52 @@
     const summary = node('summary', dateShort(date));
     const rows = node('div', undefined, 'activity-program-day-rows');
     const add = button('+ Aggiungi momento', () => {
-      group.open = true; appendProgram({ date }, true).querySelector('input[name^="program-time-"]').focus();
+      selectProgramDay(date); appendProgram({ date }, true).querySelector('input[name^="program-title-"]').focus();
     });
     add.classList.add('activity-program-day-add');
     group.append(summary, rows, add);
     const next = [...$('event-program').children].find(day => day.dataset.date > date);
     $('event-program').insertBefore(group, next || null);
     return group;
+  }
+  function selectProgramDay(date) {
+    for (const group of $('event-program').children) group.open = group.dataset.date === date;
+    renderDayTabs();
+  }
+  function renderDayTabs() {
+    const groups = [...$('event-program').children], tabs = $('event-day-tabs');
+    tabs.hidden = groups.length < 2;
+    tabs.replaceChildren(...groups.map(group => {
+      const count = group.querySelectorAll('.activity-program-item').length;
+      const tab = button(dateShort(group.dataset.date) + (count ? ` (${count})` : ''), () => {
+        selectProgramDay(group.dataset.date);
+        [...tabs.children].find(item => item.dataset.date === group.dataset.date)?.focus();
+      });
+      tab.dataset.date = group.dataset.date;
+      tab.setAttribute('aria-pressed', String(group.open));
+      return tab;
+    }));
+  }
+  function setRowOpen(row, open) {
+    if (open) for (const other of $('event-program').querySelectorAll('.activity-program-item[data-open]'))
+      if (other !== row) setRowOpen(other, false);
+    if (open) row.dataset.open = 'true'; else delete row.dataset.open;
+    for (const control of row.querySelectorAll('[data-row-toggle]')) control.setAttribute('aria-expanded', String(open));
+  }
+  function updateProgramSummary(row) {
+    const value = name => row.querySelector(`[name^="program-${name}-"]`).value;
+    const time = value('time'), end = value('end-time'), place = value('place');
+    row.querySelector('.program-row-summary').replaceChildren(
+      node('strong', (time || '--:--') + (end ? '–' + end : '')),
+      node('span', value('title') || 'Nuovo momento'), ...(place ? [node('small', place)] : []));
+  }
+  function refreshDaySelects() {
+    const dates = [...$('event-program').children].map(group => group.dataset.date);
+    for (const select of $('event-program').querySelectorAll('.program-day-select')) {
+      const current = select.closest('.activity-program-item').querySelector('input[name^="program-date-"]').value;
+      options(select, dates.map(date => [date, dateShort(date)]));
+      select.value = current;
+    }
   }
   function prepareProgramDays() {
     const start = eventForm.elements.date.value, end = eventForm.elements.endDate.value;
@@ -388,18 +429,20 @@
     const groups = [...$('event-program').children];
     if (!groups.some(group => group.open))
       (groups.find(group => group.dataset.date === today) || groups.at(-1))?.setAttribute('open', '');
+    refreshDaySelects();
+    renderDayTabs();
   }
   function appendProgram(item = {}, isNew = false) {
     const row = node('fieldset', undefined, 'activity-program-item');
     const index = ++programIndex;
-    const label = (name, control) => { const wrapper = node('label', name); wrapper.append(control); return wrapper; };
+    const label = (name, control) => { const wrapper = node('label'); wrapper.append(node('span', name, 'program-label'), control); return wrapper; };
     const activeDay = [...$('event-program').children].findLast(group => group.open);
     const day = node('input'); day.type = 'hidden';
     day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
-    const time = node('input'); time.type = 'time'; time.required = isNew; time.value = item.time || '';
+    const time = node('input'); time.type = 'time'; time.value = item.time || '';
     time.name = `program-time-${index}`;
-    const endTime = node('input'); endTime.type = 'time'; endTime.required = isNew; endTime.value = item.endTime || '';
+    const endTime = node('input'); endTime.type = 'time'; endTime.value = item.endTime || '';
     endTime.name = `program-end-time-${index}`;
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;
@@ -422,8 +465,17 @@
       const row = appendProgramMaterial(materialList);
       row.querySelector('[data-material-name]').focus();
     });
-    const remove = button('Rimuovi momento', () => row.remove());
-    const extra = node('details', undefined, 'activity-program-extra');
+    const remove = button('Rimuovi momento', () => { row.remove(); renderDayTabs(); renderMaterialsSummary(); });
+    const extra = node('div', undefined, 'activity-program-extra');
+    const daySelect = node('select', undefined, 'program-day-select');
+    daySelect.addEventListener('change', () => {
+      day.value = daySelect.value;
+      programDay(day.value).querySelector('.activity-program-day-rows').append(row);
+      sortProgramDay(programDay(day.value));
+      selectProgramDay(day.value);
+      updateProgramTimeline();
+      daySelect.focus();
+    });
     const noteDetails = node('details', undefined, 'program-material-note');
     noteDetails.open = !!note.value.trim();
     noteDetails.append(node('summary', 'Nota materiali'), label('Nota aggiuntiva', note));
@@ -433,19 +485,29 @@
     materialsColumn.append(node('h4', 'Materiali'), materialList, addMaterial);
     const content = node('div', undefined, 'program-extra-content');
     content.append(descriptionColumn, materialsColumn);
-    extra.append(node('summary', 'Descrizione e materiali'), content, noteDetails, remove);
+    extra.append(label('Giorno', daySelect), content, noteDetails, remove);
     const legacyPlace = node('p', place.value ? 'Luogo: ' + place.value : 'Luogo non indicato', 'program-legacy-place members-note');
     legacyPlace.hidden = !$('event-place-note').dataset.mixed;
     const times = node('div', undefined, 'activity-program-times');
     times.append(label('Inizio', time), label('Fine', endTime));
-    row.append(day, place, times, label('Momento', title), legacyPlace, extra);
+    const toggle = () => setRowOpen(row, row.dataset.open !== 'true');
+    const summary = button('', toggle); summary.className = 'program-row-summary'; summary.dataset.rowToggle = '';
+    const detail = button('Dettagli', toggle); detail.className = 'program-detail-toggle'; detail.dataset.rowToggle = '';
+    for (const control of [summary, detail]) control.setAttribute('aria-expanded', 'false');
+    const now = node('span', 'In corso', 'program-now'); now.hidden = true;
+    row.append(day, place, summary, times, label('Momento', title), detail, now, legacyPlace, extra);
+    const checkRange = () => endTime.setCustomValidity(endTime.value && !time.value ? 'Indica anche l’ora di inizio' : '');
     time.addEventListener('change', () => {
+      checkRange();
       sortProgramDay(row.closest('.activity-program-day'));
       updateProgramTimeline();
     });
-    endTime.addEventListener('change', updateProgramTimeline);
+    endTime.addEventListener('change', () => { checkRange(); updateProgramTimeline(); });
     programDay(day.value).querySelector('.activity-program-day-rows').append(row);
     sortProgramDay(programDay(day.value));
+    updateProgramSummary(row);
+    refreshDaySelects();
+    if (isNew) { setRowOpen(row, true); renderDayTabs(); }
     return row;
   }
   function appendProgramMaterial(container, item = {}) {
@@ -542,6 +604,8 @@
       reusedLabel.append(reused);
       controls.append(ready, shopping, reusedLabel); row.append(controls); return row;
     }));
+    $('event-materials-section').querySelector(':scope > summary').textContent =
+      items.length ? `Materiali · ${items.length}` : 'Materiali';
     $('event-materials-empty').hidden = visible.length > 0;
     $('event-materials-empty').textContent = items.length
       ? 'Nessun materiale in questa vista.' : 'Nessun materiale nel programma.';
@@ -869,6 +933,7 @@
     $('event-settings').open = !item;
     $('event-filters').open = false;
     $('event-program-section').open = true;
+    $('event-materials-section').open = matchMedia('(min-width: 1100px)').matches;
     programIndex = 0;
     options(eventForm.elements.kind, kinds[branch()].map(value => [value, value[0].toUpperCase() + value.slice(1)]));
     const winterCamp = starter === 'winter-camp';
@@ -1159,6 +1224,8 @@
       if (parent.tagName === 'DETAILS') parent.open = true;
       parent = parent.parentElement;
     }
+    const invalidRow = event.target.closest('.activity-program-item');
+    if (invalidRow) { setRowOpen(invalidRow, true); renderDayTabs(); }
   }, true);
   for (const control of $('event-view-nav').querySelectorAll('[data-event-view]'))
     control.onclick = () => setEventView(control.dataset.eventView);
