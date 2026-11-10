@@ -34,9 +34,11 @@
     for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
       const date = row.querySelector('input[name^="program-date-"]').value;
       const time = row.querySelector('input[name^="program-time-"]').value;
+      const endTime = row.querySelector('input[name^="program-end-time-"]').value;
       const current = date === today && live.active && live.current &&
         live.current.time === time && live.current.title === row.querySelector('input[name^="program-title-"]').value;
-      const past = date < today || date === today && live.active && time && time < live.time &&
+      const past = date < today || date === today && live.active && time &&
+        (endTime ? endTime <= live.time : time < live.time) &&
         !current;
       row.dataset.timeState = current ? 'current' : past ? 'past' : 'upcoming';
     }
@@ -354,7 +356,7 @@
     const summary = node('summary', dateShort(date));
     const rows = node('div', undefined, 'activity-program-day-rows');
     const add = button('+ Aggiungi momento', () => {
-      group.open = true; appendProgram({ date }).querySelector('input[name^="program-time-"]').focus();
+      group.open = true; appendProgram({ date }, true).querySelector('input[name^="program-time-"]').focus();
     });
     add.classList.add('activity-program-day-add');
     group.append(summary, rows, add);
@@ -387,7 +389,7 @@
     if (!groups.some(group => group.open))
       (groups.find(group => group.dataset.date === today) || groups.at(-1))?.setAttribute('open', '');
   }
-  function appendProgram(item = {}) {
+  function appendProgram(item = {}, isNew = false) {
     const row = node('fieldset', undefined, 'activity-program-item');
     const index = ++programIndex;
     const label = (name, control) => { const wrapper = node('label', name); wrapper.append(control); return wrapper; };
@@ -395,9 +397,10 @@
     const day = node('input'); day.type = 'hidden';
     day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
-    const time = node('input'); time.type = 'text'; time.inputMode = 'numeric'; time.maxLength = 5;
-    time.pattern = '([01][0-9]|2[0-3]):[0-5][0-9]'; time.placeholder = '08:00'; time.value = item.time || '';
+    const time = node('input'); time.type = 'time'; time.required = isNew; time.value = item.time || '';
     time.name = `program-time-${index}`;
+    const endTime = node('input'); endTime.type = 'time'; endTime.required = isNew; endTime.value = item.endTime || '';
+    endTime.name = `program-end-time-${index}`;
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;
     title.placeholder = 'es. Lancio o gioco uno';
@@ -433,11 +436,14 @@
     extra.append(node('summary', 'Descrizione e materiali'), content, noteDetails, remove);
     const legacyPlace = node('p', place.value ? 'Luogo: ' + place.value : 'Luogo non indicato', 'program-legacy-place members-note');
     legacyPlace.hidden = !$('event-place-note').dataset.mixed;
-    row.append(day, place, label('Ora', time), label('Momento', title), legacyPlace, extra);
+    const times = node('div', undefined, 'activity-program-times');
+    times.append(label('Inizio', time), label('Fine', endTime));
+    row.append(day, place, times, label('Momento', title), legacyPlace, extra);
     time.addEventListener('change', () => {
       sortProgramDay(row.closest('.activity-program-day'));
       updateProgramTimeline();
     });
+    endTime.addEventListener('change', updateProgramTimeline);
     programDay(day.value).querySelector('.activity-program-day-rows').append(row);
     sortProgramDay(programDay(day.value));
     return row;
@@ -485,7 +491,7 @@
             Number(material.querySelector('[data-material-quantity]').value),
           unit: material.querySelector('[data-material-unit]').value,
         }));
-      return { date: field('date'), time: field('time'), title: field('title'),
+      return { date: field('date'), time: field('time'), endTime: field('end-time'), title: field('title'),
         place: field('place'), description: field('description'),
         materials, materialNote: row.dataset.legacyMaterials !== undefined && note === row.dataset.legacyMaterials ? '' : note };
     });
@@ -815,8 +821,11 @@
     }
     $('event-live-clock').textContent = 'Oggi · ' + dateLabel(live.date) + ' · ' + live.time + ' · ora italiana';
     const content = $('event-live-moment'), moment = live.current || live.next;
-    content.replaceChildren(node('h4', live.current ? `${moment.time} · ${moment.title}`
-      : live.next ? `Si comincia alle ${moment.time} · ${moment.title}` : 'Nessun momento con orario per oggi'));
+    const timeRange = moment ? `${moment.time}${moment.endTime ? '–' + moment.endTime : ''}` : '';
+    const noMoment = readProgram().some(item => item.date === live.date && item.time)
+      ? 'Programma di oggi concluso' : 'Nessun momento con orario per oggi';
+    content.replaceChildren(node('h4', live.current ? `${timeRange} · ${moment.title}`
+      : live.next ? `Si comincia alle ${timeRange} · ${moment.title}` : noMoment));
     if (moment) {
       if (moment.place) content.append(node('p', 'Dove: ' + moment.place));
       if (moment.description) content.append(node('p', moment.description));
@@ -825,9 +834,12 @@
           `${item.title}${item.quantity === null ? '' : ` · ${item.quantity}${item.unit ? ' ' + item.unit : ''}`}`).join(', ')));
       if (moment.materialNote || typeof moment.materials === 'string' && moment.materials)
         content.append(node('p', 'Nota materiali: ' + (moment.materialNote || moment.materials)));
-    } else content.append(node('p', 'Completa il programma indicando giorno e ora: non viene ipotizzata un’attività in corso.'));
+    } else content.append(node('p', noMoment === 'Programma di oggi concluso'
+      ? 'Nessun altro momento con orario è previsto oggi.'
+      : 'Completa il programma indicando giorno e ora: non viene ipotizzata un’attività in corso.'));
     if (live.current) content.append(node('p', live.next
-      ? `A seguire · ${live.next.time} · ${live.next.title}` : 'Ultimo momento con orario previsto per oggi.'));
+      ? `A seguire · ${live.next.time}${live.next.endTime ? '–' + live.next.endTime : ''} · ${live.next.title}`
+      : 'Ultimo momento con orario previsto per oggi.'));
     for (const item of live.unscheduled) content.append(node('p', 'Oggi, senza orario · ' + item.title));
   }
   $('event-live-attendance').onclick = () => {

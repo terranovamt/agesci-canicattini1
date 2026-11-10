@@ -112,7 +112,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
           branch: "E/G", kind: "uscita", title: "Campo invernale", date: "2027-01-02", endDate: "2027-01-05",
           feeCents: 2500, attendance: [], tasks: [{ title: "Ritirare le chiavi", done: false }],
           program: [
-            { date: "2027-01-02", time: "08:00", title: "Lancio", place: "Sede scout", description: "Cerchio e lancio del campo", materials: "Cartellone e pennarelli" },
+            { date: "2027-01-02", time: "08:00", endTime: "09:00", title: "Lancio", place: "Sede scout", description: "Cerchio e lancio del campo", materials: "Cartellone e pennarelli" },
             { date: "2027-01-02", time: "10:00", title: "Spostamento", place: "Fermata del pullman", description: "Partenza verso la base",
               materials: [{ title: "Cerchi", quantity: 6, unit: "pezzi" }], materialNote: "Da riportare" },
           ],
@@ -124,7 +124,9 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
         });
         assert.equal(camp.endDate, "2027-01-05");
         assert.equal(camp.program[0].time, "08:00");
+        assert.equal(camp.program[0].endTime, "09:00");
         assert.equal(camp.program[1].place, "Fermata del pullman");
+        assert.equal(Object.hasOwn(camp.program[1], "endTime"), false, "legacy moments keep their missing end time");
         assert.deepEqual(camp.program[1].materials, [{ title: "Cerchi", quantity: 6, unit: "pezzi" }]);
         assert.equal(camp.program[1].materialNote, "Da riportare");
         assert.equal(camp.materials[0].done, false);
@@ -148,6 +150,12 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
         await r("activities/events", "POST", {
           branch: "E/G", kind: "uscita", title: "Orario errato", date: "2027-01-02",
           attendance: [], tasks: [], program: [{ date: "2027-01-02", title: "Lancio", time: "25:90" }],
+        }, 400);
+        await r("activities/events", "POST", {
+          branch: "E/G", kind: "uscita", title: "Intervallo errato", date: "2027-01-02",
+          attendance: [], tasks: [], program: [
+            { date: "2027-01-02", title: "Lancio", time: "08:00", endTime: "08:00" },
+          ],
         }, 400);
         await r("activities/events", "POST", {
           branch: "E/G", kind: "uscita", title: "Torneo non consentito", date: "2027-01-02",

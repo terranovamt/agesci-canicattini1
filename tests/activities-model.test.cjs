@@ -70,6 +70,23 @@ test("live program uses Rome time, includes the last camp day and switches at ex
   assert.equal(M.clock(new Date("2027-07-05T08:00:00Z")).time, "10:00", "summer time");
 });
 
+test("live program stops the current moment at its end time", () => {
+  const event = { date: "2027-01-05", program: [
+    { date: "2027-01-05", time: "08:00", endTime: "09:00", title: "Lancio" },
+    { date: "2027-01-05", time: "09:30", endTime: "10:00", title: "Gioco" },
+  ] };
+  assert.equal(M.liveProgram(event, new Date("2027-01-05T06:59:00Z")).next.title, "Lancio");
+  assert.equal(M.liveProgram(event, new Date("2027-01-05T07:00:00Z")).current.title, "Lancio");
+  assert.equal(M.liveProgram(event, new Date("2027-01-05T07:59:00Z")).current.title, "Lancio");
+  const between = M.liveProgram(event, new Date("2027-01-05T08:00:00Z"));
+  assert.equal(between.current, null);
+  assert.equal(between.next.title, "Gioco");
+  assert.equal(M.liveProgram(event, new Date("2027-01-05T08:30:00Z")).current.title, "Gioco");
+  const finished = M.liveProgram(event, new Date("2027-01-05T09:00:00Z"));
+  assert.equal(finished.current, null);
+  assert.equal(finished.next, null);
+});
+
 test("agenda excludes expired events and prioritizes ongoing camps over future meetings", () => {
   const now = new Date("2027-01-05T09:00:00Z");
   const events = [

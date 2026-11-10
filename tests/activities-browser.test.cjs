@@ -80,6 +80,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         })()`), false);
         await go("attivita.html?event=" + context.meeting.id + "&vista=presenze");
         await wait("document.getElementById('event-dialog')?.open");
+        assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), false,
+          "activity data appear only in Program");
         await click("#event-attendance [data-person-action]");
         assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
         assert.match(await page.evaluate("document.querySelector('#event-attendance [data-person-action]').textContent"), /Assente/);
@@ -88,6 +90,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         assert.match(await page.evaluate("document.querySelector('#event-attendance [data-person-action]').textContent"), /Presente/);
         await shot(label + "-correzioni-presenze");
         await click('[data-event-view="programma"]');
+        assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), true,
+          "activity data appear in Program");
         await page.evaluate("document.querySelector('.activity-program-extra').open=true");
         assert.equal(await page.evaluate("document.querySelectorAll('#event-program .activity-program-day-add').length === document.querySelectorAll('#event-program .activity-program-day').length && !document.getElementById('add-program-item')"), true,
           "each day has its own add action and the duplicate global action is gone");
@@ -172,7 +176,11 @@ test("demo screens expose navigation, individual paths, clear attendance and com
       assert.equal(await page.evaluate("document.getElementById('event-place').value"), "Base demo");
       await click("#event-program .activity-program-day[open] .activity-program-day-add");
       await page.evaluate(`{
+        const start = document.querySelector('#event-program [name^="program-time-"]');
+        const end = document.querySelector('#event-program [name^="program-end-time-"]');
         const title = document.querySelector('#event-program [name^="program-title-"]');
+        start.value='08:00'; start.dispatchEvent(new Event('change',{bubbles:true}));
+        end.value='09:00'; end.dispatchEvent(new Event('change',{bubbles:true}));
         title.value='Accoglienza'; title.dispatchEvent(new Event('input',{bubbles:true}));
       }`);
       await click('#event-form button[type=submit]');
@@ -701,7 +709,13 @@ test("login autofill, education dates, activities and progression work on four s
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=date]').value"), "2027-01-02");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=endDate]').value"), "2027-01-05");
       await click("#event-program .activity-program-day[open] .activity-program-day-add");
+      assert.equal(await page.evaluate(`(() => {
+        const start = document.querySelector('#event-program [name="program-time-1"]');
+        const end = document.querySelector('#event-program [name="program-end-time-1"]');
+        return start.type === 'time' && start.required && end.type === 'time' && end.required;
+      })()`), true, "new moments require separate start and end times");
       await fill('#event-program [name="program-time-1"]', "08:00", "change");
+      await fill('#event-program [name="program-end-time-1"]', "09:00", "change");
       await fill('#event-program [name="program-title-1"]', "Lancio");
       await expand(".activity-program-extra");
       await fill('#event-place', "Sede scout");
@@ -716,7 +730,7 @@ test("login autofill, education dates, activities and progression work on four s
         document.querySelector('.activity-program-item').scrollIntoView({block:'center'});
       }`);
       await shot(label + "-14a-programma-timeline");
-      await expand('#event-program-view > details:nth-child(2)');
+      await expand("#event-materials-section");
       await fill("#activity-material-name", "Pasta");
       await fill("#activity-material-quantity", "4");
       await fill("#activity-material-unit", "kg");

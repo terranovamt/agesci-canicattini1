@@ -154,10 +154,16 @@ La porta viene scelta automaticamente fra quelle libere.
 
 Password comune, valida **solo per questa demo**: `Nas-local-test-password1-only!`.
 
-Il comando crea un vero database SQLite temporaneo con 30 soci L/C in 6
-sestiglie, 35 soci E/G in 5 squadriglie e 17 soci R/S, oltre ad attivita' di
-oggi, campi di due giorni, presenze, quote pagate/parziali/in eccesso,
-torneo L/C e percorsi individuali.
+Il comando ricrea da zero un database SQLite temporaneo che simula un anno
+di vita del gruppo: 30 soci L/C in 6 sestiglie, 35 soci E/G in 5 squadriglie
+e 17 soci R/S. Nomi e cognomi italiani, date di nascita, indirizzi e famiglie
+sono **inventati**; le email usano il dominio riservato `example.test`.
+Trovi oltre 150 attivita': riunioni settimanali, uscite mensili, campi estivi
+e invernali, programmi con inizio/fine e materiali, presenze e assenze,
+quote saldate, acconti, debiti e versamenti in eccesso. Il torneo L/C ha uno
+storico di valutazioni; i percorsi comprendono cacce aperte e concluse,
+specialita' e brevetti in vari stati, con riconoscimenti gia' assegnati.
+Sono presenti anche una riunione oggi e un'uscita nei prossimi giorni.
 Le date si adattano al giorno di avvio in Europe/Rome. Puoi modificare e
 salvare i dati normalmente: rimangono disponibili finche' il comando e' in
 esecuzione. **Ctrl+C** chiude il server ed elimina il database della demo;

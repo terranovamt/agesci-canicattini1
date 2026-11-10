@@ -284,15 +284,16 @@
         $("dashboard-event-now").hidden = false;
         $("dashboard-event-clock").textContent = "Adesso · " + live.time + " · ora di Roma";
         const moment = live.current || live.next;
+        const timeRange = moment ? `${moment.time}${moment.endTime ? "–" + moment.endTime : ""}` : "";
         $("dashboard-event-moment").textContent = live.current
-          ? `${moment.time} · ${moment.title}`
-          : live.next ? `Si comincia alle ${moment.time} · ${moment.title}` : "Programma di oggi da definire";
+          ? `${timeRange} · ${moment.title}`
+          : live.next ? `Si comincia alle ${timeRange} · ${moment.title}` : "Programma di oggi da definire";
         $("dashboard-event-place").textContent = moment?.place ? "Dove: " + moment.place : "";
         $("dashboard-event-description").textContent = moment?.description ||
           (!moment ? "Aggiungi i momenti con giorno e ora per vedere qui cosa fare adesso." : "");
         $("dashboard-event-materials").textContent = moment?.materials ? "Materiali: " + moment.materials : "";
         $("dashboard-event-next").textContent = live.current && live.next
-          ? `A seguire · ${live.next.time} · ${live.next.title}`
+          ? `A seguire · ${live.next.time}${live.next.endTime ? "–" + live.next.endTime : ""} · ${live.next.title}`
           : live.current ? "Ultimo momento con orario previsto per oggi." : "";
         action.href = eventUrl + "&vista=programma&ora=1";
         action.textContent = "Attività in corso";

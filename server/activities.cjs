@@ -198,7 +198,12 @@ function createActivities(db, people) {
           let day;
           try { day = M.date(item.date); } catch { fail(400, "Data del programma non valida"); }
           if (!day || day < date || day > endDate) fail(400, "La data del programma deve rientrare nell'attività");
-          if (item.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)) fail(400, "Orario del programma non valido");
+          const time = optionalText(item.time, 5), endTime = optionalText(item.endTime, 5);
+          if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time) ||
+              endTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime))
+            fail(400, "Orario del programma non valido");
+          if (endTime && (!time || endTime <= time))
+            fail(400, "L’orario di fine deve essere successivo all’inizio");
           if (item.materials !== undefined && item.materials !== null &&
               typeof item.materials !== "string" && !Array.isArray(item.materials))
             fail(400, "Materiali del momento non validi");
@@ -214,7 +219,7 @@ function createActivities(db, people) {
                 unit: optionalText(material.unit, 32) };
             });
           }
-          return { date: day, time: optionalText(item.time, 5), title: text(item.title, 200),
+          return { date: day, time, ...(endTime ? { endTime } : {}), title: text(item.title, 200),
             place: optionalText(item.place, 200), description: optionalText(item.description, 2000),
             materials, materialNote: optionalText(item.materialNote, 1000) };
         }).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));

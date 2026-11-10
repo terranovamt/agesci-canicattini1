@@ -85,7 +85,8 @@
     const active = event.date <= local.date && (event.endDate || event.date) >= local.date;
     const moments = (event.program || []).filter(item => item.date === local.date && item.time)
       .slice().sort((a, b) => a.time.localeCompare(b.time));
-    const current = active ? moments.filter(item => item.time <= local.time).at(-1) || null : null;
+    const current = active ? moments.filter(item => item.time <= local.time &&
+      (!item.endTime || local.time < item.endTime)).at(-1) || null : null;
     const next = active ? moments.find(item => item.time > local.time) || null : null;
     return { ...local, active, current, next,
       unscheduled: active ? (event.program || []).filter(item => item.date === local.date && !item.time) : [] };

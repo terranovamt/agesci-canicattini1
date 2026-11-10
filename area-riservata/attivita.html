@@ -83,13 +83,14 @@
         <button type="button" data-event-view="torneo" hidden>Torneo</button>
         <button type="button" data-event-view="ora">Ora</button>
       </nav>
-      <p id="event-context" class="members-note"></p>
       <section id="event-live" class="event-live" tabindex="-1" aria-labelledby="event-live-heading" hidden>
         <p id="event-live-clock" class="eyebrow"></p>
         <h3 id="event-live-heading">Cosa facciamo adesso</h3>
         <div id="event-live-moment" aria-live="polite"></div>
         <button id="event-live-attendance" class="button button-secondary" type="button">Prendi le presenze</button>
       </section>
+      <div id="event-program-view" data-event-panel="programma">
+      <p id="event-context" class="members-note"></p>
       <details id="event-settings" class="event-settings" open>
         <summary>Dati dell’attività</summary>
         <div class="members-form-grid">
@@ -102,12 +103,11 @@
           <p id="event-place-note" class="members-note members-wide" hidden></p>
         </div>
       </details>
-      <div id="event-program-view" data-event-panel="programma">
       <details id="event-program-section" class="event-editor-section" open>
         <summary hidden>Programma giorno per giorno</summary>
         <div id="event-program" class="activity-program"></div>
       </details>
-      <details class="event-editor-section">
+      <details id="event-materials-section" class="event-editor-section">
         <summary>Materiali</summary>
         <p id="event-materials-empty" class="members-note" hidden>Nessun materiale nel programma.</p>
         <div class="event-material-filters" role="group" aria-label="Filtra materiali">

@@ -20,13 +20,37 @@ test("local demo provides fictional data, working logins, branch scope and edita
     await request("auth/login", "POST", { code: "23816938", password: app.password });
     const data = await request("activities");
     assert.equal(data.members.length, 82);
-    assert.equal(data.events.length, 6);
-    assert.equal(data.paths.length, 65);
-    assert.ok(data.events.every(event => event.title.startsWith("DEMO -")));
+    assert.ok(data.events.length >= 150, "a full year of meetings and outings across three branches");
+    assert.equal(data.paths.length, 115);
+    assert.equal(new Set(data.members.map(member => member.name)).size, 82);
+    assert.ok(data.members.every(member => !/Socio \d|Demo/.test(member.name)));
+    const profiles = (await request("members")).members.filter(member => member.kind === "ragazzo");
+    assert.equal(profiles.length, 82);
+    assert.ok(profiles.every(member => member.profile.birthDate && member.profile.town &&
+      member.profile.email.endsWith("@example.test")));
+    const today = require("../assets/js/activities-model.js").clock().date;
+    const historical = data.events.filter(event => event.date < today);
+    assert.ok(historical.some(event => new Date(today) - new Date(event.date) >= 350 * 86400000),
+      "history goes back nearly a year");
+    assert.ok(historical.every(event => event.endDate <= today &&
+      event.attendance.every(person => person.status)));
+    assert.ok(historical.every(event => event.program.every(moment => moment.time < moment.endTime)));
+    assert.ok(historical.some(event => event.totals.remaining > 0 && event.totals.excess > 0),
+      "older outings include debts, partial payments and excess payments");
+    assert.ok(data.paths.some(path => path.kind === "hunt" && path.closed));
+    assert.ok(data.paths.some(path => path.kind === "badge"));
+    assert.ok(data.paths.some(path => path.steps.every(step => step.done)));
+    assert.ok(data.paths.some(path => path.steps.every(step => !step.done)));
     const meeting = data.events.find(event => event.branch === "L/C" && event.kind === "riunione");
     assert.equal(meeting.tournament.members.length, 30);
     assert.equal(meeting.tournament.members[0].eye, null);
-    assert.equal(meeting.tournament.members[0].behavior, 5);
+    for (const event of data.events.filter(event => event.tournament)) {
+      for (const person of event.tournament.members) {
+        if (event.attendance.find(entry => entry.personId === person.personId).status !== "presente")
+          for (const key of ["punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior"])
+            assert.equal(person[key], null, "absent or unrecorded members have no tournament evaluation");
+      }
+    }
     assert.equal(meeting.tournament.presentations.length, 6);
     assert.deepEqual(meeting.totals, { expected: 30000, paid: 2700, remaining: 27500, excess: 200 });
     assert.equal(meeting.program[0].materials[0].quantity, 6);
@@ -46,7 +70,7 @@ test("local demo provides fictional data, working logins, branch scope and edita
         assert.deepEqual(Object.fromEntries(Object.entries(counts).map(([unit, members]) => [unit, members.length])),
           { Aquile: 7, Lupi: 7, Aironi: 7, Volpi: 7, Leoni: 7 });
       }
-      assert.equal(scoped.events.length, 2);
+      assert.ok(scoped.events.length >= 50);
       assert.ok(scoped.events.every(event => event.branch === branch));
       const event = scoped.events.find(event => event.kind === "riunione");
       await request("activities/events/" + event.id, "PATCH", {
