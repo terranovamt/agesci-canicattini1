@@ -13,7 +13,6 @@
     { key: 'huntNotebook', label: 'Quaderno di caccia', type: 'points' },
     { key: 'style', label: 'Stile', type: 'points' },
     { key: 'behavior', label: 'Comportamento', type: 'points' },
-    { key: 'eye', label: 'Occhio', type: 'points' },
   ];
   const score = value => Number.isInteger(value) && value >= 0 && value <= 5 ? value * 20 : null;
   function standings(members, attendance, presentationScores) {
@@ -32,15 +31,15 @@
       const punctual = present.filter(person => typeof person.punctuality === 'boolean');
       values.punctuality = punctual.length
         ? punctual.filter(person => person.punctuality).length / punctual.length * 100 : null;
-      for (const key of ['loyalty', 'balooRules', 'huntNotebook', 'style', 'behavior', 'eye']) {
+      for (const key of ['loyalty', 'balooRules', 'huntNotebook', 'style', 'behavior']) {
         const rated = present.map(person => score(person[key])).filter(value => value !== null);
         values[key] = rated.length ? rated.reduce((sum, value) => sum + value, 0) / rated.length : null;
       }
       const styleBehavior = [values.style, values.behavior].filter(value => value !== null);
       const ranked = [values.presentation, values.presence, values.punctuality, values.loyalty,
         values.balooRules, values.huntNotebook,
-        styleBehavior.length ? styleBehavior.reduce((sum, value) => sum + value, 0) / styleBehavior.length : null,
-        values.eye].filter(value => value !== null);
+        styleBehavior.length ? styleBehavior.reduce((sum, value) => sum + value, 0) / styleBehavior.length : null]
+        .filter(value => value !== null);
       values.total = ranked.length ? ranked.reduce((sum, value) => sum + value, 0) / ranked.length : null;
       return { unit, members: people.length, present: present.length, values };
     }).sort((a, b) => (b.values.total ?? -1) - (a.values.total ?? -1) || a.unit.localeCompare(b.unit, 'it'));

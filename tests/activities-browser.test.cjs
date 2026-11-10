@@ -112,6 +112,11 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await go("attivita.html#paths-panel");
         await wait("!document.getElementById('activities-app').hidden && !document.getElementById('paths-panel').hidden");
         assert.equal(await page.evaluate("document.querySelectorAll('#paths-members .activity-path-unit').length"), 6);
+        assert.equal(await page.evaluate("[...document.querySelectorAll('#paths-members .activity-path-unit')].every(group => group.open)"), true);
+        assert.equal(await page.evaluate("[...document.querySelectorAll('#paths-members .activity-path-unit')].every(group => group.style.getPropertyValue('--unit-color') === group.style.getPropertyValue('--unit-color-secondary'))"), true,
+          "L/C sestiglie use one color rather than a two-color patrol swatch");
+        assert.equal(await page.evaluate("document.querySelector('.activity-more').hidden"), true,
+          "the activity-model menu is hidden when this branch has no model");
         const firstPathLink = await page.evaluate("document.querySelector('#paths-members .activity-path-unit .path-member-link').getAttribute('href')");
         assert.match(firstPathLink, /soci\.html\?member=\d+&section=education/);
         await go(firstPathLink);
@@ -602,6 +607,8 @@ test("login autofill, education dates, activities and progression work on four s
             await click("#paths-list .path-inline-steps input");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "In lavorazione");
             await fill("#activities-branch", "E/G", "change");
+            assert.equal(await page.evaluate("document.querySelector('.activity-more').hidden"), false,
+              "the activity model remains available for E/G");
             await fill("#activities-branch", "L/C", "change");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .path-inline-steps input').checked"), true,
               "switching branch must preserve an unsaved path tick");
@@ -761,17 +768,17 @@ test("login autofill, education dates, activities and progression work on four s
           id: row.dataset.personId, absent: row.classList.contains('is-absent'),
           disabled: [...row.querySelectorAll('select:disabled, input:disabled')].map(input => input.outerHTML)
         })))`);
-        assert.deepEqual(disabledScores.filter(row => row.absent).map(row => row.disabled.length), [7], JSON.stringify(disabledScores));
+        assert.deepEqual(disabledScores.filter(row => row.absent).map(row => row.disabled.length), [6], JSON.stringify(disabledScores));
         await shot("desktop-15-torneo-sestiglie");
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
         await click("#tournament-tab");
         assert.ok(await page.evaluate("!!document.querySelector('#tournament-rankings tbody')"), "the LC leaderboard should render saved scores");
-        assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('93.8%')"), true);
+        assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('92.9%')"), true);
         const categories = await page.evaluate("[...document.querySelectorAll('#tournament-rankings [data-sort]')].map(button=>button.dataset.sort)");
-        assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior", "eye", "total"]);
+        assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior", "total"]);
         assert.deepEqual(await page.evaluate("[...document.querySelectorAll('.tournament-judging-table thead th')].map(cell=>cell.textContent.trim())"),
-          ["Componente", "Puntualità", "Lealtà", "Regole di Baloo", "Quaderno di caccia", "Stile", "Comportamento", "Occhio"]);
+          ["Componente", "Puntualità", "Lealtà", "Regole di Baloo", "Quaderno di caccia", "Stile", "Comportamento"]);
         await click('#tournament-rankings [data-sort="punctuality"]');
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings [data-sort=punctuality]').closest('th').getAttribute('aria-sort')"), "descending");
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('100.0%')"), true);

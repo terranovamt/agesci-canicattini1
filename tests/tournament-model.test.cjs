@@ -42,10 +42,11 @@ test("LC tournament percentages normalize by category and sestiglia membership",
   assert.equal(bianchi.values.loyalty, 100);
   assert.equal(bianchi.values.style, 100);
   assert.equal(bianchi.values.behavior, 40);
+  assert.equal(Object.hasOwn(bianchi.values, "eye"), false, "legacy eye scores are not tournament parameters");
   assert.equal(bianchi.values.presentation, 100);
   assert.equal(rossi.values.punctuality, 100);
   assert.equal(rossi.values.loyalty, 100);
-  assert.equal(categories.length, 9);
+  assert.equal(categories.length, 8);
 });
 
 test("unrecorded tournament scores are excluded instead of silently counting as zero", () => {

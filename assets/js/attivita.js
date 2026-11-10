@@ -14,7 +14,7 @@
   let pathSaving = false, pathSaveError = '', tournamentSort = 'total', tournamentAscending = false;
   const tournamentFields = [
     ['loyalty', 'Lealtà'], ['balooRules', 'Regole di Baloo'], ['huntNotebook', 'Quaderno di caccia'],
-    ['style', 'Stile'], ['behavior', 'Comportamento'], ['eye', 'Occhio'],
+    ['style', 'Stile'], ['behavior', 'Comportamento'],
   ];
   let data, editingEvent, editingPath, busy = false, originalForm = '', previousStartDate = '';
   let programIndex = 0, eventView = 'programma';
@@ -65,7 +65,10 @@
     const color = saved?.color || (branch() === 'L/C'
       ? Object.entries(M.sestigliaColors).find(([name]) => M.unitKey(name) === M.unitKey(unit))?.[1]
       : identity?.color);
-    return [color || M.branchColors[branch()], saved?.color2 || identity?.color2 || color || M.branchColors[branch()]];
+    const primary = color || M.branchColors[branch()];
+    return branch() === 'L/C'
+      ? [primary, primary]
+      : [primary, saved?.color2 || identity?.color2 || primary];
   }
   function memberLink(person) {
     const link = node('a', person.name);
@@ -109,6 +112,7 @@
       [...document.querySelectorAll('.activities-context > label')].every(label => label.hidden);
     $('paths-tab').hidden = rs;
     $('tournament-tab').hidden = !lc;
+    $('activity-models').hidden = branch() !== 'E/G';
     $('new-winter-camp').hidden = branch() !== 'E/G';
     const activeTab = document.querySelector('[data-section-target="tournament-panel"]');
     if ((!lc && activeTab.getAttribute('aria-pressed') === 'true') ||
@@ -158,12 +162,12 @@
         return groups;
       }, new Map());
       const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b, 'it'));
-      $('paths-members').replaceChildren(...groups.map(([unit, members], index) => {
+      $('paths-members').replaceChildren(...groups.map(([unit, members]) => {
         const group = node('details', undefined, 'activity-path-unit');
         const [color, color2] = attendanceColors(unit);
         group.style.setProperty('--unit-color', color);
         group.style.setProperty('--unit-color-secondary', color2);
-        group.open = index === 0;
+        group.open = true;
         group.append(node('summary', `${unit} · ${members.length}`));
         const list = node('div', undefined, 'activity-path-unit-members');
         list.append(...members.map(member => {
