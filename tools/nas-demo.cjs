@@ -74,7 +74,8 @@ async function startNasDemo() {
           personId: member.id, unit: member.unit,
           punctuality: number % 6 < 3 ? true : number % 6 === 3 ? false : null,
           loyalty: number % 6 < 4 ? 4 : null, balooRules: number % 6 < 4 ? 5 : null,
-          huntNotebook: number % 6 < 4 ? 3 : null, style: number % 6 < 4 ? 4 : null, eye: null,
+          huntNotebook: number % 6 < 4 ? 3 : null, style: number % 6 < 4 ? 4 : null,
+          behavior: number % 6 < 4 ? 5 : null, eye: null,
         })),
         presentations: units.map((unit, unitIndex) => ({ unit, score: 5 - unitIndex % 3 })),
       };

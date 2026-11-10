@@ -268,13 +268,14 @@ la rimozione di un socio con versamenti registrati viene rifiutata.
 La scheda **Torneo delle sestiglie** e disponibile in L/C e raccoglie i
 punteggi delle riunioni. La presentazione si assegna una sola volta per
 sestiglia (0–5); le valutazioni individuali (puntualita, lealta, regole di
-Baloo, quaderno di caccia, stile/comportamento e occhio) usano 0–5. La presenza
+Baloo, quaderno di caccia, stile, comportamento e occhio) usano 0–5. La presenza
 viene letta dal registro: la percentuale e presenti/componenti della sestiglia.
 Puntualita e valutazioni individuali sono percentuali calcolate sui presenti
 valutati, percio una sestiglia di sette con cinque presenti tutti puntuali
 ottiene 100% in puntualita. Ogni categoria e normalizzata in percentuale; il
 totale e la media delle categorie registrate e non dipende dal numero assoluto
-di componenti. I punteggi non assegnati non vengono considerati zero.
+di componenti; stile e comportamento sono distinti in tabella ma pesano insieme
+come una categoria. I punteggi non assegnati non vengono considerati zero.
 La classifica mostra tutte le categorie e il totale in una sola tabella:
 toccare l'intestazione ordina per categoria; su telefono si scorre
 orizzontalmente mantenendo sestiglia e totale visibili. **Valuta riunione**
@@ -297,10 +298,10 @@ la progressione personale R/S rimane nella scheda socio.
 In L/C si apre prima una **Stagione di caccia** per il lupetto, aggiungendo le
 prede scelte. Quando tutte sono conquistate compare
 **Concludi stagione di caccia**, da confermare con **Salva percorsi**.
-Soltanto dopo una stagione conclusa
-si puo avviare una specialita. Non sono ammesse due stagioni aperte per lo
-stesso lupetto; una stagione vuota non e conclusa. Togliendo la spunta si puo
-riaprire la stagione, purche non ne esista un'altra aperta.
+La specialita puo essere avviata senza attendere la conclusione della caccia.
+Non sono ammesse due stagioni aperte per lo stesso lupetto; una stagione vuota
+non e conclusa. Togliendo la spunta si puo riaprire la stagione, purche non ne
+esista un'altra aperta.
 
 Questi percorsi non migrano ne modificano automaticamente i precedenti campi
 specialita/brevetti del Libro soci: quei campi restano un riepilogo storico,

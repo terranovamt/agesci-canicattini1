@@ -398,8 +398,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   Il tab torneo L/C persiste per riunione punteggi per persona e presentazione
   per sestiglia; `tournament-model.js` normalizza ogni categoria in percentuale
   (presenza sul roster fotografato, puntualita e giudizi sui presenti valutati,
-  presentazione una volta per sestiglia) e calcola la media delle categorie
-  disponibili per la classifica, non la somma grezza dei punti. La tabella
+  presentazione una volta per sestiglia), separa stile e comportamento nella
+  vista mantenendo per loro un peso condiviso nel totale, e calcola la media
+  delle categorie disponibili per la classifica, non la somma grezza dei punti. La tabella
   contiene tutte le categorie e il totale, ordinabili da intestazione,
   con regione scorribile da tastiera; i giudizi si inseriscono in griglia.
   Campi,

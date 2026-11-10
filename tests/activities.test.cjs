@@ -166,7 +166,8 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
             const present = attendance.find(item => item.personId === person.id).status === "presente";
             return { personId: person.id, unit: person.unit,
               punctuality: present, loyalty: present ? 5 : null, balooRules: present ? 5 : null,
-              huntNotebook: present ? 5 : null, style: present ? 5 : null, eye: present ? 5 : null };
+              huntNotebook: present ? 5 : null, style: present ? 5 : null,
+              behavior: present ? 4 : null, eye: present ? 5 : null };
           }),
           presentations: [{ unit: "Bianchi", score: 5 }, { unit: "Rossi", score: 5 }],
         };
@@ -182,6 +183,11 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
         assert.equal(bianchi.values.presence, 5 / 7 * 100);
         assert.equal(bianchi.values.punctuality, 100);
         assert.equal(data.events.find(item => item.id === meeting.id).tournament.members[0].unit, "Bianchi");
+        assert.equal(meeting.tournament.members[0].behavior, 4);
+        await r("activities/events/" + meeting.id, "PATCH", {
+          ...meeting, tournament: { ...tournament,
+            members: tournament.members.map((person, index) => index ? person : { ...person, behavior: "4" }) },
+        }, 400);
         await r("activities/events/" + meeting.id, "PATCH", {
           ...meeting, tournament: { ...tournament, members: tournament.members.map((person, index) =>
             index ? person : { ...person, unit: "Rossi" }) },
@@ -227,7 +233,9 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
 
     const pathValue = { branch: "L/C", kind: "hunt", personId: ids["L/C"],
       title: "Stagione di caccia", steps: [], closed: false };
-    await r("activities/paths", "POST", { ...pathValue, kind: "specialty" }, 409);
+    const specialtyBeforeHunt = await r("activities/paths", "POST", {
+      ...pathValue, kind: "specialty", title: "Specialita senza caccia conclusa",
+    });
     await r("activities/paths", "POST", { ...pathValue, closed: true }, 400);
     let hunt = await r("activities/paths", "POST", pathValue);
     await r("activities/paths", "POST", pathValue, 409);
@@ -237,7 +245,9 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/paths/" + hunt.id, "PATCH", { ...hunt, closed: true }, 400);
     hunt = await r("activities/paths/" + hunt.id, "PATCH", { ...hunt, steps: hunt.steps.map(step => ({ ...step, done: true })) });
     assert.equal(hunt.closed, false, "all prey completed still needs explicit closure");
-    await r("activities/paths", "POST", { ...pathValue, kind: "specialty" }, 409);
+    const specialtyDuringHunt = await r("activities/paths", "POST", {
+      ...pathValue, kind: "specialty", title: "Specialita con caccia aperta",
+    });
     hunt = await r("activities/paths/" + hunt.id, "PATCH", { ...hunt, closed: true });
     await r("activities/paths/" + hunt.id, "PATCH", { ...hunt, steps: [{ title: "Preda incompleta", done: false }] }, 400);
     const specialty = await r("activities/paths", "POST", { ...pathValue, kind: "specialty", title: "Amico della natura" });
@@ -278,6 +288,8 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     assert.equal((await r("activities/members/" + ids["L/C"])).events[0].paidCents, 1500);
     assert.equal(restored.paths.find(item => item.id === hunt.id).closed, true);
     assert.equal(restored.paths.find(item => item.id === nextHunt.id).closed, false);
+    assert.ok(restored.paths.some(item => item.id === specialtyBeforeHunt.id));
+    assert.ok(restored.paths.some(item => item.id === specialtyDuringHunt.id));
     const member = (await r("members")).members.find(member => member.id === ids["L/C"]);
     await r("members/macro", "POST", { action: "passage", members: [{ id: member.id, revision: member.revision }] });
     const transfer = (await r("members")).transfers.find(transfer => transfer.personId === member.id);

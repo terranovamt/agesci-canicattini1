@@ -620,7 +620,20 @@ test("login autofill, education dates, activities and progression work on four s
             await wait("document.getElementById('paths-save-bar').hidden");
             assert.equal(await page.evaluate("document.querySelector('#paths-list .activity-state').textContent"), "Conquistato",
               "all prey completed must not silently close the hunting season");
-            await click("#paths-list .path-card > button");
+            await click("#new-path");
+            await fill("#path-form [name=kind]", "specialty", "change");
+            await fill("#path-form [name=title]", "Specialità senza caccia conclusa");
+            await click("#add-path-step");
+            await fill('#path-steps textarea', "Scegliere una tappa");
+            await click('#path-form button[type=submit]');
+            await wait("!document.getElementById('path-dialog').open");
+            assert.equal(await page.evaluate("document.getElementById('paths-list').textContent.includes('Specialità senza caccia conclusa')"), true,
+              "a specialty can start before explicitly closing the hunting season");
+            await page.evaluate(`{
+              const hunt = [...document.querySelectorAll('#paths-list .path-card')]
+                .find(card => card.querySelector('.eyebrow').textContent === 'Stagione di caccia');
+              hunt.querySelector(':scope > button').click();
+            }`);
             await shot(label + "-08-stagione-conclusa");
             await click("#save-paths");
             await wait("document.getElementById('paths-save-bar').hidden");
@@ -740,7 +753,7 @@ test("login autofill, education dates, activities and progression work on four s
           id: row.dataset.personId, absent: row.classList.contains('is-absent'),
           disabled: [...row.querySelectorAll('select:disabled, input:disabled')].map(input => input.outerHTML)
         })))`);
-        assert.deepEqual(disabledScores.filter(row => row.absent).map(row => row.disabled.length), [6], JSON.stringify(disabledScores));
+        assert.deepEqual(disabledScores.filter(row => row.absent).map(row => row.disabled.length), [7], JSON.stringify(disabledScores));
         await shot("desktop-15-torneo-sestiglie");
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
@@ -748,7 +761,9 @@ test("login autofill, education dates, activities and progression work on four s
         assert.ok(await page.evaluate("!!document.querySelector('#tournament-rankings tbody')"), "the LC leaderboard should render saved scores");
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('93.8%')"), true);
         const categories = await page.evaluate("[...document.querySelectorAll('#tournament-rankings [data-sort]')].map(button=>button.dataset.sort)");
-        assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "eye", "total"]);
+        assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior", "eye", "total"]);
+        assert.deepEqual(await page.evaluate("[...document.querySelectorAll('.tournament-judging-table thead th')].map(cell=>cell.textContent.trim())"),
+          ["Componente", "Puntualità", "Lealtà", "Regole di Baloo", "Quaderno di caccia", "Stile", "Comportamento", "Occhio"]);
         await click('#tournament-rankings [data-sort="punctuality"]');
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings [data-sort=punctuality]').closest('th').getAttribute('aria-sort')"), "descending");
         assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('100.0%')"), true);

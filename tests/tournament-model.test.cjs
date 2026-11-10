@@ -11,6 +11,7 @@ test("LC tournament percentages normalize by category and sestiglia membership",
       balooRules: index < 5 ? 5 : null,
       huntNotebook: index < 5 ? 5 : null,
       style: index < 5 ? 5 : null,
+      behavior: index < 5 ? 2 : null,
       eye: index < 5 ? 5 : null,
     })),
     ...Array.from({ length: 4 }, (_, index) => ({
@@ -20,6 +21,7 @@ test("LC tournament percentages normalize by category and sestiglia membership",
       balooRules: index < 2 ? 5 : null,
       huntNotebook: index < 2 ? 5 : null,
       style: index < 2 ? 5 : null,
+      behavior: index < 2 ? 2 : null,
       eye: index < 2 ? 5 : null,
     })),
   ];
@@ -38,10 +40,12 @@ test("LC tournament percentages normalize by category and sestiglia membership",
   assert.equal(bianchi.values.punctuality, 100,
     "five punctual attendees out of seven roster members still score 100% in punctuality");
   assert.equal(bianchi.values.loyalty, 100);
+  assert.equal(bianchi.values.style, 100);
+  assert.equal(bianchi.values.behavior, 40);
   assert.equal(bianchi.values.presentation, 100);
   assert.equal(rossi.values.punctuality, 100);
   assert.equal(rossi.values.loyalty, 100);
-  assert.equal(categories.length, 8);
+  assert.equal(categories.length, 9);
 });
 
 test("unrecorded tournament scores are excluded instead of silently counting as zero", () => {
@@ -56,4 +60,13 @@ test("unrecorded tournament scores are excluded instead of silently counting as 
   assert.equal(result[0].values.punctuality, null);
   assert.equal(result[0].values.loyalty, null);
   assert.equal(result[0].values.total, 50);
+});
+
+test("style and behavior are separate categories but retain one shared total weight", () => {
+  const result = standings([
+    { personId: 1, unit: "Lupi", style: 5, behavior: null, loyalty: 5 },
+  ], [{ personId: 1, status: "presente" }], []);
+  assert.equal(result[0].values.style, 100);
+  assert.equal(result[0].values.behavior, null);
+  assert.equal(result[0].values.total, 100);
 });

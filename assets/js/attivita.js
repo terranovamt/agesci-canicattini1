@@ -14,7 +14,7 @@
   let pathSaving = false, pathSaveError = '', tournamentSort = 'total', tournamentAscending = false;
   const tournamentFields = [
     ['loyalty', 'Lealtà'], ['balooRules', 'Regole di Baloo'], ['huntNotebook', 'Quaderno di caccia'],
-    ['style', 'Stile e comportamento'], ['eye', 'Occhio'],
+    ['style', 'Stile'], ['behavior', 'Comportamento'], ['eye', 'Occhio'],
   ];
   let data, editingEvent, editingPath, busy = false, originalForm = '', previousStartDate = '';
   let programIndex = 0, eventView = 'programma';
@@ -123,7 +123,7 @@
     $('new-path').hidden = !selectedMember;
     $('paths-hint').hidden = false;
     $('paths-hint').textContent = lc
-      ? 'Spunta le prede, poi concludi esplicitamente la caccia per avviare una specialità.'
+      ? 'Segna le prede completate; concludi la caccia quando sono tutte conquistate.'
       : 'Spunta le tappe completate, poi salva i percorsi.';
     if (!selectedMember) $('paths-hint').textContent = linkedMemberId
       ? 'Socio non disponibile nella branca selezionata. Scegli un socio della branca.'
@@ -588,7 +588,7 @@
     head.append(header); table.append(head);
     for (const [unit, group] of [...groups].sort(([a], [b]) => a.localeCompare(b, 'it'))) {
       const body = node('tbody'), groupRow = node('tr'), groupCell = node('th', unit);
-      groupCell.colSpan = 7; groupCell.scope = 'rowgroup'; groupRow.append(groupCell); body.append(groupRow);
+      groupCell.colSpan = 2 + tournamentFields.length; groupCell.scope = 'rowgroup'; groupRow.append(groupCell); body.append(groupRow);
       const records = group.map(person => {
         const row = node('tr', undefined, 'tournament-person');
         row.dataset.personId = person.personId; row.dataset.unit = person.unit || '';
@@ -971,12 +971,9 @@
     $('path-steps-title').textContent = hunt ? 'Prede scelte dal lupetto' : 'Tappe concordate con i capi';
     $('add-path-step').textContent = hunt ? '+ Aggiungi preda' : '+ Aggiungi tappa';
     $('path-closure').hidden = !hunt;
-    const personId = Number(pathForm.elements.personId.value);
     $('path-guidance').textContent = hunt
       ? 'La caccia si conclude solo dopo tutte le prede, con una scelta esplicita.'
-      : branch() === 'L/C' && !data.paths.some(item => item.personId === personId && item.kind === 'hunt' && item.closed)
-        ? 'Per avviare le specialità, questo lupetto deve prima concludere una stagione di caccia.'
-        : 'Le tappe si possono spuntare anche dalla scheda del percorso.';
+      : 'Le tappe si possono spuntare anche dalla scheda del percorso.';
     const catalog = kind === 'badge' ? M.competencyBadges : kind === 'specialty' ? M.specialtyCatalogs[branch()] || [] : [];
     $('path-catalog').replaceChildren(...catalog.map(value => { const option = node('option'); option.value = value; return option; }));
     closure();
@@ -1066,11 +1063,6 @@
     const personId = Number(pathForm.elements.personId.value);
     if (!pathMember() || personId !== pathMember().id) {
       $('path-error').textContent = 'Scegli un socio della branca visibile.'; return;
-    }
-    if (branch() === 'L/C' && pathForm.elements.kind.value === 'specialty' && !editingPath &&
-        !data.paths.some(item => item.personId === personId && item.kind === 'hunt' && item.closed)) {
-      $('path-error').textContent = 'Prima di avviare una specialità, completa e segna come conclusa la stagione di caccia di questo lupetto.';
-      return;
     }
     const payload = {
       kind: pathForm.elements.kind.value, personId: Number(pathForm.elements.personId.value),

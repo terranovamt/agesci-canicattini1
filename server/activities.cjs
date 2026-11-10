@@ -64,7 +64,7 @@ function tournament(value, eligible, attendance, existing) {
     const unit = prior.get(item.personId)?.unit ?? member?.unit ?? "";
     if (item.unit !== undefined && item.unit !== unit) fail(400, "Sestiglia del torneo non valida");
     const result = { personId: item.personId, unit };
-    for (const key of ["punctuality", "loyalty", "balooRules", "huntNotebook", "style", "eye"]) {
+    for (const key of ["punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior", "eye"]) {
       const score = item[key] ?? null;
       if (key === "punctuality" ? score !== null && typeof score !== "boolean" :
           score !== null && (!Number.isInteger(score) || score < 0 || score > 5))
@@ -266,9 +266,6 @@ function createActivities(db, people) {
         const paths = all("paths").filter(item => item.branch === branch && item.personId === value.personId);
         if (value.kind === "hunt" && !value.closed && paths.some(item => item.id !== existing?.id && item.kind === "hunt" && !item.closed))
           fail(409, "Questo lupetto ha gia una stagione di caccia aperta");
-        if (!existing && branch === "L/C" && value.kind === "specialty" &&
-            !paths.some(item => item.kind === "hunt" && item.closed))
-          fail(409, "Concludi una stagione di caccia prima di iniziare le specialita");
         data = { kind: value.kind, personId: value.personId, memberName: existing?.memberName || member.name,
           title: text(value.title), steps: stages, closed: value.closed };
       }
