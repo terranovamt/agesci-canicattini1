@@ -509,14 +509,12 @@ test("login autofill, education dates, activities and progression work on four s
       await fill("#event-program [data-material-name]", "Cerchi");
       await fill("#event-program [data-material-quantity]", "6");
       await fill("#event-program [data-material-unit]", "pezzi");
-      if (label === "telefono") {
-        await page.evaluate(`{
-          document.querySelector('.activity-program-day').open = true;
-          document.querySelector('.activity-program-extra').open = false;
-          document.querySelector('.activity-program-item').scrollIntoView({block:'center'});
-        }`);
-        await shot("telefono-14a-programma-timeline");
-      }
+      await page.evaluate(`{
+        document.querySelector('.activity-program-day').open = true;
+        document.querySelector('.activity-program-extra').open = false;
+        document.querySelector('.activity-program-item').scrollIntoView({block:'center'});
+      }`);
+      await shot(label + "-14a-programma-timeline");
       await expand('#event-program-view > details:nth-child(2)');
       await fill("#activity-material-name", "Pasta");
       await fill("#activity-material-quantity", "4");

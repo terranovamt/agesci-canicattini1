@@ -49,7 +49,7 @@
 .activity-step textarea { resize: vertical; }
 .activity-create-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .activity-unit-heading { padding: 8px 12px; margin: 12px 0 0; border-radius: 10px; background: #f0eaf5; color: #50336a; }
-.event-editor-section { margin: 16px 0; padding: 0 12px 12px; border: 1px solid #e6dfed; border-radius: 12px; }
+.event-editor-section { margin: 14px 0; padding: 0 0 10px; border: 0; border-top: 1px solid #e6dfed; border-radius: 0; }
 .event-editor-section > summary { min-height: 48px; }
 .activity-program { display: grid; gap: 12px; }
 .activity-program-item { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; padding: 12px; border: 1px solid #ddd3e7; border-radius: 12px; }
@@ -150,11 +150,12 @@
 #event-form .event-save-bar { display: flex; bottom: -1rem; z-index: 5; gap: 8px; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 0; border-top: 1px solid #ddd3e7; background: #fff; }
 #event-form .event-save-bar .activity-save-state { flex: 1; min-width: 0; margin: 0; padding: 7px; font-size: .72rem; font-weight: 500; }
 #event-form .event-save-bar > button { flex: none; min-height: 44px; width: auto; padding: 10px 12px; font-size: .85rem; }
-#event-program-view .event-editor-section { margin: 10px 0; padding: 0 10px 10px; }
-#event-form .activity-program-day { min-width: 0; border: 1px solid #e6dfed; border-radius: 10px; padding: 0 8px 8px; }
-#event-form .activity-program-day > summary { min-height: 44px; box-sizing: border-box; }
+#event-program-view .event-editor-section { margin: 10px 0; padding: 0 0 10px; }
+#event-form .activity-program-day { min-width: 0; border: 0; border-radius: 0; padding: 0 0 10px; }
+#event-form .activity-program-day > summary { min-height: 44px; box-sizing: border-box; font-weight: 700; }
 .activity-program-day-rows { display: grid; gap: 8px; margin-bottom: 8px; }
-#event-form .activity-program-item { grid-template-columns: 112px minmax(0, 1fr); gap: 7px; padding: 8px; margin: 0; }
+#event-form .activity-program-item { grid-template-columns: 112px minmax(0, 1fr); gap: 7px; padding: 8px 0; margin: 0; border: 0; border-radius: 0; }
+#event-form .activity-program-item:not(:last-child) { border-bottom: 1px solid #eee8f3; }
 #event-form .activity-program-item > label { grid-column: auto; font-size: .75rem; }
 #event-form .activity-program-item > button { grid-column: auto; width: 44px; height: 44px; min-width: 44px; align-self: end; padding: 0; font-size: 20px; }
 #event-form .activity-program-item input { min-width: 0; width: 100%; box-sizing: border-box; }
@@ -162,7 +163,7 @@
 #event-form .activity-program-item[data-time-state="current"] { border-color: #398258; border-inline-start: 4px solid #398258; background: #edf7ef; }
 #event-form .activity-program-item[data-time-state="past"] { opacity: .62; }
 .activity-program-extra { grid-column: 1 / -1; min-width: 0; }
-.activity-program-extra > summary { min-height: 44px; box-sizing: border-box; font-size: .75rem; }
+.activity-program-extra > summary { min-height: 44px; box-sizing: border-box; font-size: .75rem; color: #604879; }
 .activity-program-extra > label { margin-bottom: 8px; }
 .program-materials { display: grid; gap: 6px; }
 .program-material-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(74px, .5fr) minmax(72px, .5fr) 44px; gap: 6px; align-items: center; }
@@ -172,7 +173,8 @@
 .event-material-filters button { min-height: 44px; padding: 8px 12px; }
 .event-material-filters button[aria-pressed="true"] { background: #50336a; color: #fff; }
 .event-material-summary { display: grid; gap: 8px; margin: 8px 0; padding: 0; list-style: none; }
-.event-material-summary-row { display: grid; gap: 6px; padding: 9px; border: 1px solid #e6dfed; border-radius: 9px; overflow-wrap: anywhere; }
+.event-material-summary-row { display: grid; gap: 6px; padding: 8px 0; border: 0; border-radius: 0; overflow-wrap: anywhere; }
+.event-material-summary-row:not(:last-child) { border-bottom: 1px solid #e6dfed; }
 .event-material-summary-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .event-material-summary-controls > button { min-height: 44px; }
 .material-reused { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 6px; min-height: 44px; margin: 0; }
