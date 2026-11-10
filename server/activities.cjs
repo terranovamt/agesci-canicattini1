@@ -34,7 +34,18 @@ function checklist(value, shopping = false) {
   return value.map(item => {
     if (!object(item) || typeof item.done !== "boolean") fail(400, "Voce del riepilogo non valida");
     const result = { title: text(item.title, 500), done: item.done };
-    if (shopping) result.quantity = optionalText(item.quantity, 100);
+    if (typeof item.reused === "boolean") result.reused = item.reused;
+    if (typeof item.shopping === "boolean") result.shopping = item.shopping;
+    if (item.unit !== undefined) result.unit = optionalText(item.unit, 32);
+    if (item.quantity !== undefined) {
+      if (typeof item.quantity === "number") {
+        if (!Number.isFinite(item.quantity) || item.quantity < 0 || item.quantity > 1000000)
+          fail(400, "Quantità materiale non valida");
+        result.quantity = item.quantity;
+      } else if (item.quantity === null) result.quantity = null;
+      else if (shopping) result.quantity = optionalText(item.quantity, 100);
+      else fail(400, "Quantità materiale non valida");
+    }
     return result;
   });
 }
@@ -188,9 +199,24 @@ function createActivities(db, people) {
           try { day = M.date(item.date); } catch { fail(400, "Data del programma non valida"); }
           if (!day || day < date || day > endDate) fail(400, "La data del programma deve rientrare nell'attività");
           if (item.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)) fail(400, "Orario del programma non valido");
+          if (item.materials !== undefined && item.materials !== null &&
+              typeof item.materials !== "string" && !Array.isArray(item.materials))
+            fail(400, "Materiali del momento non validi");
+          let materials = Array.isArray(item.materials) ? [] : optionalText(item.materials, 1000);
+          if (Array.isArray(item.materials)) {
+            if (item.materials.length > 100) fail(400, "Troppi materiali per un momento");
+            materials = item.materials.map(material => {
+              if (!object(material)) fail(400, "Materiale del momento non valido");
+              const quantity = material.quantity ?? null;
+              if (quantity !== null && (typeof quantity !== "number" || !Number.isFinite(quantity) ||
+                  quantity < 0 || quantity > 1000000)) fail(400, "Quantità materiale non valida");
+              return { title: text(material.title, 200), quantity,
+                unit: optionalText(material.unit, 32) };
+            });
+          }
           return { date: day, time: optionalText(item.time, 5), title: text(item.title, 200),
             place: optionalText(item.place, 200), description: optionalText(item.description, 2000),
-            materials: optionalText(item.materials, 1000) };
+            materials, materialNote: optionalText(item.materialNote, 1000) };
         }).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
         if (!Array.isArray(value.attendance) || value.attendance.length > 1000)
           fail(400, "Presenze non valide");

@@ -102,6 +102,10 @@ test("branch chiefs land on today's program, including the last camp day, across
           await wait("document.getElementById('event-dialog')?.open");
           assert.equal(await page.evaluate("document.activeElement.id"), "event-live");
           assert.equal(await page.evaluate("document.getElementById('event-live').hidden"), false);
+          assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('#event-program .activity-program-item')].map(row => [
+            row.querySelector('[name^="program-title-"]').value, row.dataset.timeState])`),
+          branch === "L/C" ? [["Gioco nel bosco", "current"], ["Cerchio e verifica", "upcoming"]] :
+            [["Il momento di ieri", "past"], ["Gioco nel bosco", "current"], ["Cerchio e verifica", "upcoming"]]);
           assert.match(await page.evaluate("document.getElementById('event-live-moment').textContent"), /Gioco nel bosco.*Prato della base.*Corde e cartelloni/);
           await shot(label + "-live-programma-" + branch.replace("/", ""));
           // A clock refresh must not reset unsaved attendance or reopen the editor.
@@ -496,18 +500,33 @@ test("login autofill, education dates, activities and progression work on four s
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=date]').value"), "2027-01-02");
       assert.equal(await page.evaluate("document.querySelector('#event-form [name=endDate]').value"), "2027-01-05");
       await click("#add-program-item");
-      await fill('#event-program [name="program-time-1"]', "08:00");
+      await fill('#event-program [name="program-time-1"]', "08:00", "change");
       await fill('#event-program [name="program-title-1"]', "Lancio");
       await expand(".activity-program-extra");
       await fill('#event-program [name="program-place-1"]', "Sede scout");
       await fill("#event-program textarea", "Ci troviamo e presentiamo il campo.");
+      await click("#event-program .activity-program-extra button");
+      await fill("#event-program [data-material-name]", "Cerchi");
+      await fill("#event-program [data-material-quantity]", "6");
+      await fill("#event-program [data-material-unit]", "pezzi");
+      if (label === "telefono") {
+        await page.evaluate(`{
+          document.querySelector('.activity-program-day').open = true;
+          document.querySelector('.activity-program-extra').open = false;
+          document.querySelector('.activity-program-item').scrollIntoView({block:'center'});
+        }`);
+        await shot("telefono-14a-programma-timeline");
+      }
       await expand('#event-program-view > details:nth-child(2)');
+      await fill("#activity-material-name", "Pasta");
+      await fill("#activity-material-quantity", "4");
+      await fill("#activity-material-unit", "kg");
+      await page.evaluate(`{
+        const shopping = document.getElementById('activity-material-shopping');
+        shopping.checked = true; shopping.dispatchEvent(new Event('change', {bubbles:true}));
+      }`);
       await click("#add-event-material");
-      await fill('#event-materials [name="checklist-title-1"]', "Cartellone e pennarelli");
-      await expand('#event-program-view > details:nth-child(3)');
-      await click("#add-event-shopping");
-      await fill('#event-shopping [name="checklist-title-2"]', "Pasta");
-      await fill('#event-shopping [name="checklist-quantity-2"]', "4 kg");
+      assert.match(await page.evaluate("document.getElementById('event-materials').textContent"), /Cerchi — 6 pezzi.*Pasta — 4 kg/);
       await shot(label + "-14-campo-programma");
       if (label === "desktop") {
         await click('[data-event-view="quote"]');
@@ -531,7 +550,7 @@ test("login autofill, education dates, activities and progression work on four s
         await wait("document.getElementById('event-dialog').open");
         assert.equal(await page.evaluate("document.querySelector('#event-form [name=endDate]').value"), "2027-01-05");
         assert.equal(await page.evaluate("document.querySelector('#event-program [name=program-title-1]').value"), "Lancio");
-        assert.equal(await page.evaluate("document.querySelector('#event-shopping [name=checklist-quantity-2]').value"), "4 kg");
+        assert.match(await page.evaluate("document.getElementById('event-materials').textContent"), /Cerchi — 6 pezzi.*Pasta — 4 kg/);
         await page.evaluate("document.getElementById('event-dialog').close()");
         await go("");
         await wait("document.getElementById('dashboard-event-title').textContent === 'Campo invernale'");

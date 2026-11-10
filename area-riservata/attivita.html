@@ -103,14 +103,23 @@
         <button id="add-program-item" type="button" class="button button-secondary">+ Aggiungi momento</button>
       </details>
       <details class="event-editor-section">
-        <summary>Riepilogo materiali da preparare</summary>
-        <div id="event-materials" class="activity-checklist"></div>
-        <button id="add-event-material" type="button" class="button button-secondary">+ Aggiungi materiale</button>
-      </details>
-      <details class="event-editor-section">
-        <summary>Riepilogo spesa necessaria</summary>
-        <div id="event-shopping" class="activity-checklist"></div>
-        <button id="add-event-shopping" type="button" class="button button-secondary">+ Aggiungi cosa da comprare</button>
+        <summary>Materiali</summary>
+        <p id="event-materials-empty" class="members-note" hidden>Nessun materiale nel programma.</p>
+        <div class="event-material-filters" role="group" aria-label="Filtra materiali">
+          <button type="button" data-material-filter="all" aria-pressed="true">Tutti</button>
+          <button type="button" data-material-filter="prepare" aria-pressed="false">Da preparare</button>
+          <button type="button" data-material-filter="shopping" aria-pressed="false">Da comprare</button>
+        </div>
+        <ul id="event-materials" class="event-material-summary"></ul>
+        <div class="event-material-add">
+          <label>Materiale<input id="activity-material-name" type="text" list="material-suggestions" maxlength="200" autocomplete="off"></label>
+          <label>Quantità<input id="activity-material-quantity" type="number" min="0" max="1000000" step="any" inputmode="decimal"></label>
+          <label>Unità<input id="activity-material-unit" type="text" maxlength="32" placeholder="pezzi, kg…"></label>
+          <label class="activities-check"><input id="activity-material-reused" type="checkbox" checked>Riusato</label>
+          <label class="activities-check"><input id="activity-material-shopping" type="checkbox">Da comprare</label>
+          <button id="add-event-material" type="button" class="button button-secondary">Aggiungi</button>
+        </div>
+        <datalist id="material-suggestions"></datalist>
       </details>
       <details class="event-editor-section">
         <summary>Attività e cose da fare</summary>

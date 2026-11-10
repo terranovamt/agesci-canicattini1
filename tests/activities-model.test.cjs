@@ -18,6 +18,32 @@ test("fee balances keep advances, exemptions and excess payments separate from o
     { expected: 0, paid: 250, remaining: 0, excess: 250 });
 });
 
+test("material totals normalize names, use the maximum for reused items and the sum otherwise", () => {
+  const result = M.materialSummary([
+    { title: "Gioco 1", materials: [{ title: "  Cerchi ", quantity: 6, unit: "pezzi" }] },
+    { title: "Gioco 2", materials: [{ title: "CERCHI", quantity: 4, unit: "PEZZI" }] },
+  ]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].title, "Cerchi");
+  assert.equal(result[0].quantity, 6);
+  assert.deepEqual(result[0].details.map(detail => detail.moment), ["Gioco 1", "Gioco 2"]);
+
+  const notReused = M.materialSummary([
+    { title: "Gioco 1", materials: [{ title: "Cerchi", quantity: 6, unit: "pezzi" }] },
+    { title: "Gioco 2", materials: [{ title: "cerchi", quantity: 4, unit: "pezzi" }] },
+  ], [{ title: "CERCHI", unit: "PEZZI", reused: false }]);
+  assert.equal(notReused[0].quantity, 10);
+});
+
+test("material totals stay undefined when a moment quantity is missing", () => {
+  const result = M.materialSummary([
+    { title: "Gioco 1", materials: [{ title: "Corde" }] },
+    { title: "Gioco 2", materials: [{ title: " corde ", quantity: 3 }] },
+  ]);
+  assert.equal(result[0].quantity, null);
+  assert.deepEqual(result[0].details.map(detail => detail.quantity), [null, 3]);
+});
+
 test("live program uses Rome time, includes the last camp day and switches at exact start times", () => {
   const event = { id: 1, date: "2027-01-02", endDate: "2027-01-05", program: [
     { date: "2027-01-04", time: "22:00", title: "Veglia di ieri" },

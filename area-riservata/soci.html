@@ -175,14 +175,13 @@
       <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2><p id="member-outstanding" role="status" aria-live="polite" hidden></p></div><button class="button button-secondary" type="button" data-close="member-dialog">Chiudi</button></div>
       <p id="member-error" role="alert"></p>
       <nav id="member-section-nav" class="member-section-nav" role="tablist" aria-label="Sezioni della scheda">
-        <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="true">Anagrafica</button>
-        <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false">Percorso</button>
-        <button type="button" role="tab" id="member-tab-contacts" aria-controls="member-panel-contacts" aria-selected="false">Contatti</button>
-        <button type="button" role="tab" id="member-tab-guardians" aria-controls="member-panel-guardians" aria-selected="false">Genitori</button>
-        <button type="button" role="tab" id="member-tab-censuses" aria-controls="member-panel-censuses" aria-selected="false">Censimenti</button>
+        <button type="button" role="tab" id="member-tab-activities" aria-controls="member-panel-activities" aria-selected="true">Attività</button>
+        <button type="button" role="tab" id="member-tab-education" aria-controls="member-panel-education" aria-selected="false" tabindex="-1">Percorso</button>
+        <button type="button" role="tab" id="member-tab-profile" aria-controls="member-panel-profile" aria-selected="false" tabindex="-1">Anagrafica</button>
       </nav>
       <p id="member-section-progress" class="member-section-progress" aria-live="polite"></p>
-      <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile">
+      <section id="member-panel-activities" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-activities">
+        <p id="member-activities-context" hidden></p>
         <details id="member-activities" class="member-activities" open hidden>
           <summary id="member-activities-summary">Attività e quote</summary>
           <p id="member-activities-status" role="status" aria-live="polite"></p>
@@ -190,28 +189,33 @@
           <label class="members-check"><input id="member-activities-all" type="checkbox">Anche assenze e da registrare</label>
           <ol id="member-activities-list" aria-label="Storico attività, più recenti prima"></ol>
         </details>
+      </section>
+      <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
+        <h3>Percorso educativo di branca</h3>
+        <p id="member-education-context" hidden>Il percorso educativo dei ragazzi non si applica ai soci adulti. I dati precedenti restano conservati.</p>
+        <div id="member-education" class="members-form-grid"><div id="member-assignment" class="members-wide"></div></div>
+      </section>
+      <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile" hidden>
+        <h3>Dati personali</h3>
         <div class="members-form-grid">
           <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
           <label>Branca<select name="branch" required></select></label>
         </div>
         <div id="member-profile" class="members-form-grid"></div>
-      </section>
-      <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" hidden>
-        <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
-      </section>
-      <section id="member-panel-guardians" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-guardians" hidden>
-        <h3>Responsabili genitoriali</h3>
-        <div id="member-guardian-type"></div>
-        <p id="member-guardian-warning" role="status"></p>
-        <div id="member-guardians"></div>
-        <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
-        <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
-      </section>
-      <section id="member-panel-education" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-education" hidden>
-        <h3>Percorso educativo di branca</h3><div id="member-education" class="members-form-grid"><div id="member-assignment" class="members-wide"></div></div>
-      </section>
-      <section id="member-panel-censuses" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-censuses" hidden>
-        <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>
+        <section id="member-panel-contacts" class="member-profile-section" aria-label="Indirizzo e contatti">
+          <h3>Indirizzo e contatti</h3><div id="member-contacts" class="members-form-grid"></div>
+        </section>
+        <section id="member-panel-guardians" class="member-profile-section" aria-label="Responsabili genitoriali">
+          <h3>Responsabili genitoriali</h3>
+          <div id="member-guardian-type"></div>
+          <p id="member-guardian-warning" role="status"></p>
+          <div id="member-guardians"></div>
+          <button id="add-guardian" class="button button-secondary" type="button">Aggiungi responsabile</button>
+          <details class="guardian-source"><summary>Testo originale AGESCI</summary><div id="member-guardian-source"></div></details>
+        </section>
+        <section id="member-panel-censuses" class="member-profile-section" aria-label="Storico censimenti AGESCI">
+          <h3>Storico censimenti AGESCI</h3><div id="member-censuses"></div>
+        </section>
       </section>
       <div class="members-dialog-actions">
         <button id="member-section-back" class="button button-secondary" type="button">Indietro</button>

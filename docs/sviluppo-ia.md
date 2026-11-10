@@ -129,9 +129,10 @@ questa guida, nei test o nella memoria dell'assistente.
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
-- La scheda socio mantiene i pannelli Anagrafica, Contatti, Genitori, Percorso e
-  Censimenti nel DOM mentre si naviga. Non ricreare i campi al cambio pannello:
-  valori e bozze devono sopravvivere; il salvataggio resta esplicito.
+- La scheda socio mantiene nel DOM le sezioni Attività, Percorso e Anagrafica,
+  nell'ordine indicato e con apertura su Attività. I campi personali, contatti,
+  responsabili e censimenti sono nella sezione Anagrafica. Non ricreare i campi
+  al cambio sezione: valori e bozze devono sopravvivere; il salvataggio resta esplicito.
 - Gli accessi amministrativi sono presentati per branca e filtrabili senza
   ampliare l'allowlist: il server continua a esporre solo i capi di
   `NAS_CAPO_CODES` e consente solo cambio branca e reset password.
@@ -361,7 +362,11 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   quote e versamenti omessi dal payload. Lo storico UI e isolato in
   `member-activities.js`, con retry ed esclusione delle risposte obsolete.
   Eventi multi-giorno conservano `endDate`, `program` ordinato per giorno/ora,
-  `materials` e `shopping`; ogni momento include luogo, descrizione e materiali.
+  `materials` e `shopping`; ogni momento include luogo, descrizione, materiali
+  strutturati (nome, quantita e unita) e, se presente, la nota testuale legacy.
+  Il riepilogo raggruppa i nomi senza distinzione di maiuscole o spazi; i
+  materiali riusati sommano il massimo per momento, gli altri la somma. Se una
+  quantita manca, il totale resta da definire. `shopping` legacy resta conservato.
   Il form precompila una bozza Campo EG 2–5 gennaio 2027 (`?new=campo-invernale`),
   ma la persistenza avviene solo al salvataggio. Gli elenchi presenze sono
   raggruppati usando l'assegnazione `sestiglia`/`squadriglia` in `member_values`.
@@ -371,8 +376,8 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   Il vecchio `presenze=1` resta compatibile. Le viste mantengono montati
   gli stessi controlli: cambiare vista o aggiornare l'orologio non resetta
   una bozza. Una sola barra Salva attivita resta raggiungibile.
-  Giorni ripiegabili, momenti ora/titolo e dettagli opzionali evitano il
-  lungo modulo; ricerca soci solo oltre 12, filtri sotto un riepilogo.
+  Giorni ripiegabili, momenti in timeline ordinati per ora e dettagli opzionali
+  evitano il lungo modulo; ricerca soci solo oltre 12, filtri sotto un riepilogo.
   Le tappe dei percorsi sono modificabili in linea, con bozze in memoria,
   revisioni invariate e Salva percorsi; errori e filtri non le cancellano.
   La scheda socio apre lo storico cronologico e mostra il residuo vicino al nome.

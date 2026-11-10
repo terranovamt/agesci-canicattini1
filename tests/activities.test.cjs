@@ -79,15 +79,24 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
           feeCents: 2500, attendance: [], tasks: [{ title: "Ritirare le chiavi", done: false }],
           program: [
             { date: "2027-01-02", time: "08:00", title: "Lancio", place: "Sede scout", description: "Cerchio e lancio del campo", materials: "Cartellone e pennarelli" },
-            { date: "2027-01-02", time: "10:00", title: "Spostamento", place: "Fermata del pullman", description: "Partenza verso la base", materials: "Biglietti" },
+            { date: "2027-01-02", time: "10:00", title: "Spostamento", place: "Fermata del pullman", description: "Partenza verso la base",
+              materials: [{ title: "Cerchi", quantity: 6, unit: "pezzi" }], materialNote: "Da riportare" },
           ],
-          materials: [{ title: "Kit pronto soccorso", done: false }],
+          materials: [
+            { title: "Kit pronto soccorso", done: false, reused: true, shopping: false, quantity: 1, unit: "kit" },
+            { title: "Nastro", done: false, reused: true, shopping: false, quantity: null, unit: "rotolo" },
+          ],
           shopping: [{ title: "Pasta", quantity: "4 kg", done: false }],
         });
         assert.equal(camp.endDate, "2027-01-05");
         assert.equal(camp.program[0].time, "08:00");
         assert.equal(camp.program[1].place, "Fermata del pullman");
+        assert.deepEqual(camp.program[1].materials, [{ title: "Cerchi", quantity: 6, unit: "pezzi" }]);
+        assert.equal(camp.program[1].materialNote, "Da riportare");
         assert.equal(camp.materials[0].done, false);
+        assert.equal(camp.materials[0].quantity, 1);
+        assert.equal(camp.materials[0].reused, true);
+        assert.equal(camp.materials[1].quantity, null);
         assert.equal(camp.shopping[0].quantity, "4 kg");
         camp = await r("activities/events/" + camp.id, "PATCH", { ...camp, revision: camp.revision,
           title: "Campo invernale EG" });

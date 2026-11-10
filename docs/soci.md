@@ -97,22 +97,18 @@ una presente ma vuota li azzera. L'import non elimina record duplicati.
 
 ## Schede, ricerche ed estrazioni
 
-Aprire il nome di un socio per anagrafica, contatti, dati genitoriali,
-percorso educativo e storico annuale AGESCI. Le modifiche manuali non
-riscrivono lo storico ufficiale. Gli account preesistenti senza scheda devono
-essere completati prima di applicare macro.
+Aprire il nome di un socio per consultare lo storico e modificare i dati
+consentiti. Le modifiche manuali non riscrivono lo storico ufficiale. Gli
+account preesistenti senza scheda devono essere completati prima di applicare macro.
 
+Le schede socio aprono su **Attività**, con partecipazioni e quote; seguono
+**Percorso** e **Anagrafica**. I dati personali, i contatti, i responsabili e
+i censimenti sono raccolti in Anagrafica; i dati educativi sono in Percorso.
 Le schede Co.Ca. e quelle con tipologia account **capo**, anche se registrate
-in L/C, E/G o R/S, mostrano soltanto **Anagrafica**, **Contatti** e
-**Censimenti**. **Genitori** e **Percorso** non compaiono nella navigazione;
-i dati già salvati restano conservati anche dopo una modifica anagrafica.
-Le schede dei ragazzi seguono l'ordine **Anagrafica**, **Percorso**,
-**Contatti**, **Genitori**, **Censimenti**. Nel percorso, promessa e anno in
-branca sono affiancati sugli schermi ampi e su righe separate sui telefoni,
-per evitare sovrapposizioni del controllo data; seguono tappa (o progressione L/C), assegnazione al
-gruppo con ruolo, specialita e brevetti. La branca di
-servizio e i ruoli di capo/vice sestiglia o squadriglia non cambiano la
-tipologia della scheda.
+in L/C, E/G o R/S, non mostrano Percorso e Genitori; i dati già salvati restano
+conservati. Promessa e anno in branca sono affiancati sugli schermi ampi e su
+righe separate sui telefoni. La branca di servizio e i ruoli di capo/vice
+sestiglia o squadriglia non cambiano la tipologia della scheda.
 
 L'amministratore vede tutte le schede, anche quelle con livello FoCa
 valorizzato e ingresso CoCa assente (o No). Il filtro FoCa/CoCa si applica
@@ -170,10 +166,15 @@ Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni L/C,
 Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia:
 la prima unita e aperta, un tocco sul nome segna Presente e il menu della
 riga permette Assente o Giustificato. R/S resta un elenco unico.
-Le attivita possono coprire piu giorni: apri la giornata e aggiungi ora e
-titolo in riga; luogo, descrizione e materiali sono nei dettagli. Due riepiloghi
-separati tengono sotto controllo materiali da preparare e acquisti con quantita
-e stato (pronto/comprato). Il riepilogo delle cose da fare rimane disponibile.
+Le attivita possono coprire piu giorni: ogni giornata ha un'intestazione e i
+momenti sono ordinati per ora, mostrata in una colonna a sinistra. Il momento
+in corso e' evidenziato e quelli passati attenuati; luogo e descrizione restano
+nei dettagli del momento. Materiali strutturati per momento hanno nome,
+quantita e unita; il riepilogo li raggruppa senza distinguere maiuscole e
+spazi. **Riusato** calcola il massimo delle quantita invece della somma.
+La vista **Da comprare** filtra il riepilogo, senza una lista separata;
+quantita non indicate restano da definire. Le vecchie note testuali restano
+visibili come note del momento. Il riepilogo delle cose da fare rimane disponibile.
 
 Per preparare il campo EG del **2–5 gennaio 2027**, in **Altro · modelli di attivita**
 il collegamento dedicato
@@ -211,8 +212,8 @@ i permessi.
 Ogni scheda attivita offre Presenze, Quote e Programma; **Riepilogo** contiene
 i soci presenti con collegamento alla scheda personale. La ricerca compare
 negli elenchi con piu di 12 soci; i filtri rimangono ripiegati finche non servono.
-Nella scheda socio il saldo e sotto il nome e lo **Storico attivita** e gia
-aperto, con partecipazioni confermate dalla piu recente; un interruttore
+Nella scheda socio il saldo e sotto il nome, nella scheda **Attività**;
+lo **Storico attività** e' gia aperto, con partecipazioni confermate dalla piu recente; un interruttore
 include anche assenze e presenze da
 registrare. Ogni voce riporta data, branca, presenza, quota e link all'attivita.
 I capi vedono solo eventi della propria branca e soci attualmente accessibili;

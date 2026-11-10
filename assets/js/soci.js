@@ -5,7 +5,7 @@
   const profileForm = $('member-form'), macroForm = $('macro-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const allMemberSections = ['profile', 'education', 'contacts', 'guardians', 'censuses'];
+  const allMemberSections = ['activities', 'education', 'profile'];
   let memberSections = allMemberSections;
   let guardianNextIndex = 0;
   const selected = new Set();
@@ -363,7 +363,7 @@
     ['Pista / sentiero', 'Pista', 'Sentiero'].includes(field.label);
   const editableEducation = field => !assignmentField(field) && !legacyPista(field);
   function educationDraft() {
-    if (educationBranch && memberSections.includes('education')) {
+    if (educationBranch && !$('member-education').hidden) {
       const formData = new FormData(profileForm);
       drafts[educationBranch] = { ...drafts[educationBranch], ...Object.fromEntries(data.fields.filter(field => field.branch === educationBranch && editableEducation(field))
         .map(field => [field.key, field.type === 'multiselect' ? formData.getAll('extra:' + field.key) : formData.get('extra:' + field.key) || ''])) };
@@ -447,19 +447,16 @@
   function configureMemberSections() {
     const current = memberSections[memberSection];
     const adult = M.isAdult({ ...editing, branch: profileForm.elements.branch.value });
-    memberSections = allMemberSections.filter(section => !adult || !['guardians', 'education'].includes(section));
-    for (const section of allMemberSections) {
-      const omitted = !memberSections.includes(section);
-      const tab = $('member-tab-' + section), panel = $('member-panel-' + section);
-      tab.hidden = omitted;
-      if (omitted) {
-        tab.tabIndex = -1;
-        tab.setAttribute('aria-selected', 'false');
-        panel.hidden = true;
-      }
-      if (['guardians', 'education'].includes(section))
-        panel.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = omitted; });
+    for (const id of ['member-panel-guardians', 'member-education']) {
+      const section = $(id);
+      section.hidden = adult;
+      section.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = adult; });
     }
+    $('member-education-context').hidden = !adult;
+    $('member-activities-context').hidden = !!editing && !adult;
+    $('member-activities-context').textContent = adult
+      ? 'Lo storico delle partecipazioni dei ragazzi non si applica ai soci adulti.'
+      : 'Salva la nuova scheda per consultare attività e quote.';
     showMemberSection(Math.max(0, memberSections.indexOf(current)));
   }
   function showMemberSection(index, focus = false) {
@@ -577,10 +574,10 @@
     educationDraft();
     const branch = profileForm.elements.branch.value;
     const profileTargets = ['member-profile', 'member-contacts'];
-    if (memberSections.includes('guardians')) profileTargets.push('member-guardian-type', 'member-guardian-source');
+    if (!$('member-panel-guardians').hidden) profileTargets.push('member-guardian-type', 'member-guardian-source');
     const profile = { ...editing?.profile, ...Object.fromEntries(profileTargets
       .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value])) };
-    if (memberSections.includes('guardians')) profile.guardianContacts = guardianPayload();
+    if (!$('member-panel-guardians').hidden) profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
       await A.request(editing ? 'members/' + editing.id : 'members', editing ? 'PATCH' : 'POST', payload);

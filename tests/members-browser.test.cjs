@@ -240,16 +240,22 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.length === 5 && !$('member-tab-consents') &&
-            memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1;
+          results.sectionNavigation = memberTabs.map(tab => tab.textContent).join('|') === 'Attività|Percorso|Anagrafica' &&
+            memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 &&
+            memberTabs[0].getAttribute('aria-selected') === 'true' && !$('member-panel-activities').hidden &&
+            document.querySelectorAll('#member-dialog [role=tabpanel]').length === 3 &&
+            $('member-panel-activities').contains($('member-activities')) &&
+            !$('member-panel-profile').contains($('member-activities')) &&
+            ['contacts', 'guardians', 'censuses'].every(section => $('member-panel-profile').contains($('member-panel-' + section)));
           results.saveAvailable = !$('member-save').hidden;
           const givenName = form.elements['profile:givenName'];
           givenName.value = 'Bozza conservata';
           memberTabs[1].click();
           results.draftSurvivesNavigation = givenName.value === 'Bozza conservata' &&
             $('member-panel-profile').hidden && !$('member-panel-education').hidden;
-          memberTabs[4].click();
-          results.sectionProgress = $('member-section-progress').textContent.includes('5 di 5');
+          memberTabs[2].click();
+          results.sectionProgress = $('member-section-progress').textContent.includes('3 di 3') &&
+            $('member-section-next').hidden;
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
@@ -260,11 +266,11 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
             const rect = tab.getBoundingClientRect();
             return rect.left >= 0 && rect.right <= innerWidth && rect.height >= 44;
           });
-          results.usefulScrollArea = $('member-panel-profile').clientHeight >= Math.min(150, innerHeight / 3);
+          results.usefulScrollArea = $('member-panel-activities').clientHeight >= Math.min(150, innerHeight / 3);
           results.shortFullscreen = (innerHeight > 500 && innerWidth > 760) || (dialogRect.width === innerWidth && dialogRect.height === innerHeight);
           results.dialogCapped = innerWidth <= 760 || innerHeight <= 500 || (dialogRect.width <= 760 && dialogRect.height <= 760);
           results.measures = { dialog: [Math.round(dialogRect.width), Math.round(dialogRect.height)],
-            scrollArea: $('member-panel-profile').clientHeight, searchTop: results.lowHeightSearchTop };
+            scrollArea: $('member-panel-activities').clientHeight, searchTop: results.lowHeightSearchTop };
           results.sectionContentsReachable = memberTabs.every(tab => {
             tab.click();
             const panel = $(tab.getAttribute('aria-controls'));
@@ -293,7 +299,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.guardianAdd = $('member-guardians').children.length === 2;
           $('member-guardians').lastElementChild.querySelector('button').click();
           results.guardianRemove = $('member-guardians').children.length === 1;
-          memberTabs[3].click();
+          memberTabs[1].click();
           const specialtyGroup = [...$('member-education').querySelectorAll('.members-choice-field')]
             .find(group => group.querySelector('input[type=checkbox]').name === 'extra:specialita');
           specialtyGroup.querySelector('details').open = true;
@@ -328,7 +334,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.emailType = form.elements['profile:email'].type === 'email';
           memberTabs[0].click();
           form.requestSubmit();
-          results.invalidContactsVisible = !$('member-panel-contacts').hidden && $('member-dialog').open;
+          results.invalidContactsVisible = !$('member-panel-profile').hidden && $('member-dialog').open &&
+            $('member-tab-profile').getAttribute('aria-selected') === 'true';
           form.elements['profile:email'].value = 'test@example.invalid';
           memberTabs[0].click();
           form.requestSubmit(); await settle();

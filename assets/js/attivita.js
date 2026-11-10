@@ -6,13 +6,15 @@
   const kinds = { 'L/C': ['riunione', 'caccia'], 'E/G': ['riunione', 'uscita'], 'R/S': ['riunione', 'route'] };
   const pathLabels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
   const pathDrafts = new Map();
+  const materialOptions = new Map();
+  let materialFilter = 'all';
   let pathSaving = false, pathSaveError = '', tournamentSort = 'total', tournamentAscending = false;
   const tournamentFields = [
     ['loyalty', 'Lealtà'], ['balooRules', 'Regole di Baloo'], ['huntNotebook', 'Quaderno di caccia'],
     ['style', 'Stile e comportamento'], ['eye', 'Occhio'],
   ];
   let data, editingEvent, editingPath, busy = false, originalForm = '', previousStartDate = '';
-  let programIndex = 0, checklistIndex = 0, eventView = 'programma';
+  let programIndex = 0, eventView = 'programma';
   const eventViews = new Map();
   const branch = () => $('activities-branch').value;
   function node(tag, text, className) {
@@ -20,6 +22,21 @@
     if (text !== undefined) element.textContent = text;
     if (className) element.className = className;
     return element;
+  }
+  function updateProgramTimeline() {
+    if (!eventForm.elements.date.value) return;
+    const live = AM.liveProgram({ date: eventForm.elements.date.value,
+      endDate: eventForm.elements.endDate.value, program: readProgram() });
+    const today = AM.clock().date;
+    for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
+      const date = row.querySelector('input[type="date"]').value;
+      const time = row.querySelector('input[name^="program-time-"]').value;
+      const current = date === today && live.active && live.current &&
+        live.current.time === time && live.current.title === row.querySelector('input[name^="program-title-"]').value;
+      const past = date < today || date === today && live.active && time && time < live.time &&
+        !current;
+      row.dataset.timeState = current ? 'current' : past ? 'past' : 'upcoming';
+    }
   }
   function options(select, values) {
     select.replaceChildren(...values.map(([value, label]) => {
@@ -43,6 +60,16 @@
   }
   function dateLabel(date) {
     return new Date(date + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function materialKey(title, unit = '') {
+    return `${title.trim().replace(/\s+/g, ' ').toLocaleLowerCase('it')}\u0000${unit.trim().replace(/\s+/g, ' ').toLocaleLowerCase('it')}`;
+  }
+  function dateShort(date) {
+    const label = new Date(date + 'T12:00:00Z').toLocaleDateString('it-IT', {
+      weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Rome',
+    });
+    const today = AM.clock().date === date;
+    return label[0].toLocaleUpperCase('it') + label.slice(1) + (today ? ' · Oggi' : '');
   }
   function dateRange(item) {
     return item.endDate && item.endDate !== item.date
@@ -312,10 +339,10 @@
     let group = [...$('event-program').children].find(day => day.dataset.date === date);
     if (group) return group;
     group = node('details', undefined, 'activity-program-day'); group.dataset.date = date;
-    const summary = node('summary', dateLabel(date));
+    const summary = node('summary', dateShort(date));
     const rows = node('div', undefined, 'activity-program-day-rows');
     const add = button('+ Momento in questo giorno', () => {
-      group.open = true; appendProgram({ date }).querySelector('input[type="text"]').focus();
+      group.open = true; appendProgram({ date }).querySelector('input[name^="program-time-"]').focus();
     });
     group.append(summary, rows, add);
     const next = [...$('event-program').children].find(day => day.dataset.date > date);
@@ -336,6 +363,10 @@
       const date = row.querySelector('input[type="date"]').value;
       if (date) programDay(date).querySelector('.activity-program-day-rows').append(row);
     }
+    for (const group of $('event-program').children) {
+      group.querySelector('summary').textContent = dateShort(group.dataset.date);
+      sortProgramDay(group);
+    }
     for (const group of [...$('event-program').children])
       if ((group.dataset.date < start || group.dataset.date > end) && !group.querySelector('.activity-program-item')) group.remove();
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
@@ -351,7 +382,8 @@
     const day = node('input'); day.type = 'date'; day.required = true;
     day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
-    const time = node('input'); time.type = 'time'; time.value = item.time || '';
+    const time = node('input'); time.type = 'text'; time.inputMode = 'numeric'; time.maxLength = 5;
+    time.pattern = '([01][0-9]|2[0-3]):[0-5][0-9]'; time.placeholder = '08:00'; time.value = item.time || '';
     time.name = `program-time-${index}`;
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;
@@ -362,58 +394,149 @@
     const description = node('textarea'); description.rows = 2; description.maxLength = 2000;
     description.name = `program-description-${index}`;
     description.value = item.description || ''; description.placeholder = 'Descrivi cosa fare';
-    const materials = node('textarea'); materials.rows = 2; materials.maxLength = 1000;
-    materials.name = `program-materials-${index}`;
-    materials.value = item.materials || ''; materials.placeholder = 'Materiali per questo momento';
+    const note = node('textarea'); note.rows = 2; note.maxLength = 1000;
+    note.name = `program-material-note-${index}`;
+    note.value = item.materialNote || (typeof item.materials === 'string' ? item.materials : '');
+    if (typeof item.materials === 'string') row.dataset.legacyMaterials = item.materials;
+    note.placeholder = 'Nota materiali esistente';
+    note.dataset.legacyMaterialNote = '';
+    const materialList = node('div', undefined, 'program-materials');
+    for (const material of Array.isArray(item.materials) ? item.materials : []) appendProgramMaterial(materialList, material);
+    const addMaterial = button('+ Materiale', () => {
+      const row = appendProgramMaterial(materialList);
+      row.querySelector('[data-material-name]').focus();
+    });
     const remove = button('Rimuovi momento', () => row.remove());
     const extra = node('details', undefined, 'activity-program-extra');
     extra.append(node('summary', 'Luogo, descrizione e materiali'), label('Giorno', day),
-      label('Luogo', place), label('Cosa si fa', description), label('Materiali', materials), remove);
+      label('Luogo', place), label('Cosa si fa', description),
+      node('h4', 'Materiali'), materialList, addMaterial,
+      node('label', 'Nota materiali'), note, remove);
     row.append(label('Ora', time), label('Momento', title), extra);
     day.onchange = () => {
-      if (day.value) { const group = programDay(day.value); group.open = true; group.querySelector('.activity-program-day-rows').append(row); }
+      if (day.value) {
+        const group = programDay(day.value); group.open = true;
+        group.querySelector('.activity-program-day-rows').append(row);
+        sortProgramDay(group); updateProgramTimeline();
+      }
     };
+    time.addEventListener('change', () => {
+      sortProgramDay(row.closest('.activity-program-day'));
+      updateProgramTimeline();
+    });
     programDay(day.value).querySelector('.activity-program-day-rows').append(row);
+    sortProgramDay(programDay(day.value));
     return row;
   }
-  function appendChecklist(container, item = {}, shopping = false) {
-    const row = node('div', undefined, 'activity-checklist-row');
-    const index = ++checklistIndex;
-    row.dataset.shopping = String(shopping);
-    const title = node('input'); title.type = 'text'; title.required = true; title.maxLength = 500;
-    title.name = `checklist-title-${index}`;
-    title.value = item.title || ''; title.placeholder = shopping ? 'Cosa comprare' : 'Materiale';
-    title.setAttribute('aria-label', shopping ? 'Cosa comprare' : 'Materiale');
-    const fields = [title];
-    if (shopping) {
-      const quantity = node('input'); quantity.type = 'text'; quantity.maxLength = 100;
-      quantity.name = `checklist-quantity-${index}`;
-      quantity.value = item.quantity || ''; quantity.placeholder = 'Quantità / note';
-      quantity.setAttribute('aria-label', 'Quantità / note');
-      fields.push(quantity);
-    }
-    const readyLabel = node('label', undefined, 'activities-check');
-    const ready = node('input'); ready.type = 'checkbox'; ready.checked = !!item.done;
-    ready.name = `checklist-ready-${index}`;
-    ready.setAttribute('aria-label', shopping ? 'Acquisto fatto' : 'Materiale pronto');
-    readyLabel.append(ready);
-    const remove = button('×', () => row.remove()); remove.setAttribute('aria-label', 'Rimuovi voce');
-    row.append(...fields, readyLabel, remove);
-    container.append(row);
+  function appendProgramMaterial(container, item = {}) {
+    const row = node('div', undefined, 'program-material-row');
+    const name = node('input'); name.type = 'text'; name.required = true; name.maxLength = 200;
+    name.value = item.title || ''; name.placeholder = 'Materiale'; name.setAttribute('list', 'material-suggestions');
+    name.dataset.materialName = '';
+    const quantity = node('input'); quantity.type = 'number'; quantity.min = '0'; quantity.max = '1000000'; quantity.step = 'any';
+    quantity.inputMode = 'decimal'; quantity.value = item.quantity ?? ''; quantity.placeholder = 'Quantità';
+    quantity.dataset.materialQuantity = '';
+    const unit = node('input'); unit.type = 'text'; unit.maxLength = 32; unit.value = item.unit || '';
+    unit.placeholder = 'Unità'; unit.dataset.materialUnit = '';
+    const remove = button('×', () => { row.remove(); renderMaterialsSummary(); });
+    remove.setAttribute('aria-label', 'Rimuovi materiale del momento');
+    name.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); quantity.focus(); }
+    });
+    row.append(name, quantity, unit, remove); container.append(row);
+    return row;
+  }
+  function sortProgramDay(group) {
+    if (!group) return;
+    const rows = [...group.querySelector('.activity-program-day-rows').children];
+    rows.sort((a, b) => {
+      const first = a.querySelector('input[name^="program-time-"]').value || '99:99';
+      const second = b.querySelector('input[name^="program-time-"]').value || '99:99';
+      return first.localeCompare(second) ||
+        a.querySelector('input[name^="program-title-"]').value.localeCompare(
+          b.querySelector('input[name^="program-title-"]').value, 'it');
+    }).forEach(row => group.querySelector('.activity-program-day-rows').append(row));
   }
   function readProgram() {
     return [...$('event-program').querySelectorAll('.activity-program-item')].map(row => {
       const field = name => row.querySelector(`[name^="program-${name}-"]`).value;
+      const note = field('material-note');
+      const materials = row.dataset.legacyMaterials !== undefined ? row.dataset.legacyMaterials :
+        [...row.querySelectorAll('.program-material-row')].map(material => ({
+          title: material.querySelector('[data-material-name]').value,
+          quantity: material.querySelector('[data-material-quantity]').value === '' ? null :
+            Number(material.querySelector('[data-material-quantity]').value),
+          unit: material.querySelector('[data-material-unit]').value,
+        }));
       return { date: field('date'), time: field('time'), title: field('title'),
-        place: field('place'), description: field('description'), materials: field('materials') };
+        place: field('place'), description: field('description'),
+        materials, materialNote: row.dataset.legacyMaterials !== undefined && note === row.dataset.legacyMaterials ? '' : note };
     });
   }
-  function readChecklist(container, shopping = false) {
-    return [...container.children].map(row => {
-      const fields = row.querySelectorAll('input');
-      return { title: fields[0].value, ...(shopping ? { quantity: fields[1].value } : {}),
-        done: fields[shopping ? 2 : 1].checked };
-    });
+  function renderMaterialsSummary() {
+    const items = AM.materialSummary(readProgram(), [...materialOptions.values()], editingEvent?.shopping || []);
+    const list = $('event-materials');
+    const suggestions = new Map(items.map(item => [item.title.toLocaleLowerCase('it'), item.title]));
+    $('material-suggestions').replaceChildren(...[...suggestions.values()].map(title => {
+      const option = node('option'); option.value = title; return option;
+    }));
+    const visible = items.filter(item => materialFilter === 'all' ||
+      materialFilter === 'shopping' && item.shopping || materialFilter === 'prepare' && !item.shopping);
+    list.replaceChildren(...visible.map(item => {
+      const row = node('li', undefined, 'event-material-summary-row');
+      const details = item.details.map(detail => {
+        const quantity = detail.quantity === null ? 'quantità da definire' :
+          `${new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 }).format(detail.quantity)}${detail.unit ? ' ' + detail.unit : ''}`;
+        return `${detail.moment}: ${detail.note ? 'nota · ' + detail.note : quantity}`;
+      });
+      const total = item.quantity === null ? 'quantità da definire' :
+        `${new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 }).format(item.quantity)}${item.unit ? ' ' + item.unit : ''}`;
+      row.append(node('strong', `${item.title} — ${total} (${details.join(' · ')})`));
+      const controls = node('div', undefined, 'event-material-summary-controls');
+      const ready = button(item.done ? 'Pronto' : 'Segna pronto', () => {
+        setMaterialOption(item, { done: !item.done });
+        renderMaterialsSummary();
+        [...list.querySelectorAll('[data-material-ready]')].find(button => button.dataset.materialReady === item.key)?.focus();
+      });
+      ready.dataset.materialReady = item.key;
+      const shopping = button(item.shopping ? 'Da comprare' : 'Da preparare', () => {
+        setMaterialOption(item, { shopping: !item.shopping });
+        renderMaterialsSummary();
+        [...list.querySelectorAll('[data-material-shopping]')].find(button => button.dataset.materialShopping === item.key)?.focus();
+      });
+      shopping.dataset.materialShopping = item.key;
+      const reusedLabel = node('label', 'Riusato', 'material-reused');
+      const reused = node('input'); reused.type = 'checkbox'; reused.checked = item.reused;
+      reused.setAttribute('aria-label', `Riusato: ${item.title}`);
+      reused.onchange = () => { setMaterialOption(item, { reused: reused.checked }); renderMaterialsSummary(); };
+      reusedLabel.prepend(reused);
+      controls.append(ready, shopping, reusedLabel); row.append(controls); return row;
+    }));
+    $('event-materials-empty').hidden = visible.length > 0;
+    $('event-materials-empty').textContent = items.length
+      ? 'Nessun materiale in questa vista.' : 'Nessun materiale nel programma.';
+  }
+  function setMaterialOption(item, changes) {
+    const key = materialKey(item.title, item.unit);
+    const current = materialOptions.get(key) || { title: item.title, unit: item.unit, reused: true, done: false, shopping: false };
+    materialOptions.set(key, { ...current, ...changes });
+  }
+  function addActivityMaterial() {
+    const name = $('activity-material-name'), title = name.value.trim().replace(/\s+/g, ' ');
+    if (!title) { name.focus(); return; }
+    const quantityInput = $('activity-material-quantity');
+    if (!quantityInput.checkValidity()) { quantityInput.reportValidity(); quantityInput.focus(); return; }
+    const quantity = quantityInput.value;
+    const unit = $('activity-material-unit').value.trim().replace(/\s+/g, ' ');
+    const key = materialKey(title, unit);
+    materialOptions.set(key, { ...(materialOptions.get(key) || {}), title, unit,
+      quantity: quantity === '' ? null : Number(quantity),
+      reused: $('activity-material-reused').checked,
+      shopping: $('activity-material-shopping').checked, done: false });
+    name.value = $('activity-material-quantity').value = $('activity-material-unit').value = '';
+    $('activity-material-reused').checked = true;
+    $('activity-material-shopping').checked = false;
+    renderMaterialsSummary(); name.focus();
   }
   function renderTournamentControls(persons, item) {
     const prior = new Map((item?.tournament?.members || []).map(person => [person.personId, person]));
@@ -657,6 +780,7 @@
     panel.hidden = eventView !== 'ora';
     const nowButton = $('event-view-nav').querySelector('[data-event-view="ora"]');
     nowButton.hidden = !live.active;
+    updateProgramTimeline();
     if (eventView !== 'ora') return;
     if (!live.active) {
       $('event-live-clock').textContent = 'Fuori dai giorni dell’attività';
@@ -670,7 +794,11 @@
     if (moment) {
       if (moment.place) content.append(node('p', 'Dove: ' + moment.place));
       if (moment.description) content.append(node('p', moment.description));
-      if (moment.materials) content.append(node('p', 'Materiali: ' + moment.materials));
+      if (Array.isArray(moment.materials) && moment.materials.length)
+        content.append(node('p', 'Materiali: ' + moment.materials.map(item =>
+          `${item.title}${item.quantity === null ? '' : ` · ${item.quantity}${item.unit ? ' ' + item.unit : ''}`}`).join(', ')));
+      if (moment.materialNote || typeof moment.materials === 'string' && moment.materials)
+        content.append(node('p', 'Nota materiali: ' + (moment.materialNote || moment.materials)));
     } else content.append(node('p', 'Completa il programma indicando giorno e ora: non viene ipotizzata un’attività in corso.'));
     if (live.current) content.append(node('p', live.next
       ? `A seguire · ${live.next.time} · ${live.next.title}` : 'Ultimo momento con orario previsto per oggi.'));
@@ -683,12 +811,17 @@
   window.addEventListener('focus', () => { if ($('event-dialog').open) renderLiveProgram(); });
   function openEvent(item, focusAttendance = false, focusTournament = false, starter = '') {
     editingEvent = item || null; eventForm.reset(); $('event-error').textContent = '';
+    materialOptions.clear(); materialFilter = 'all';
+    for (const material of item?.materials || []) {
+      const saved = { ...material, reused: material.reused !== false, shopping: !!material.shopping };
+      materialOptions.set(materialKey(saved.title, saved.unit || ''), saved);
+    }
     $('event-heading').textContent = item ? item.title : 'Nuova attività';
     $('event-draft-banner').hidden = !!item;
     $('event-settings').open = !item;
     $('event-filters').open = false;
     $('event-program-section').open = true;
-    programIndex = checklistIndex = 0;
+    programIndex = 0;
     options(eventForm.elements.kind, kinds[branch()].map(value => [value, value[0].toUpperCase() + value.slice(1)]));
     const winterCamp = starter === 'winter-camp';
     eventForm.elements.kind.value = item?.kind || (winterCamp ? 'uscita' : 'riunione');
@@ -792,10 +925,9 @@
     $('event-program').replaceChildren();
     for (const programItem of item?.program || []) appendProgram(programItem);
     prepareProgramDays();
-    $('event-materials').replaceChildren();
-    for (const material of item?.materials || []) appendChecklist($('event-materials'), material);
-    $('event-shopping').replaceChildren();
-    for (const purchase of item?.shopping || []) appendChecklist($('event-shopping'), purchase, true);
+    renderMaterialsSummary();
+    for (const filter of $('event-program-view').querySelectorAll('[data-material-filter]'))
+      filter.setAttribute('aria-pressed', String(filter.dataset.materialFilter === materialFilter));
     const tournamentEnabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
     $('event-tournament').hidden = !tournamentEnabled;
     $('event-tournament').open = focusTournament;
@@ -887,8 +1019,8 @@
       kind: eventForm.elements.kind.value, title: eventForm.elements.title.value, date: eventForm.elements.date.value,
       endDate: eventForm.elements.endDate.value, feeCents, attendance,
       tasks: readSteps($('event-tasks')),
-      program: readProgram(), materials: readChecklist($('event-materials')),
-      shopping: readChecklist($('event-shopping'), true),
+      program: readProgram(), materials: [...materialOptions.values()],
+      shopping: editingEvent?.shopping || [],
       ...(branch() === 'L/C' && eventForm.elements.kind.value === 'riunione' ? { tournament: readTournament() } : {}),
     }, 'event-error', 'event-dialog');
   };
@@ -934,8 +1066,7 @@
     const row = appendProgram(); row.closest('.activity-program-day').open = true;
     row.querySelector('input[type="text"]')?.focus();
   };
-  $('add-event-material').onclick = () => appendChecklist($('event-materials'));
-  $('add-event-shopping').onclick = () => appendChecklist($('event-shopping'), {}, true);
+  $('add-event-material').onclick = addActivityMaterial;
   $('add-path-step').onclick = () => { appendStep($('path-steps')).focus(); closure(); };
   eventForm.elements.kind.onchange = () => {
     const enabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
@@ -991,10 +1122,29 @@
     control.onclick = () => setEventView(control.dataset.eventView);
   eventForm.elements.fee.oninput = updateAttendance;
   eventForm.addEventListener('input', updateEventSaveState);
+  eventForm.addEventListener('input', event => {
+    updateProgramTimeline();
+    if (event.target.matches('[data-material-name], [data-material-quantity], [data-material-unit]'))
+      renderMaterialsSummary();
+  });
   eventForm.addEventListener('change', updateEventSaveState);
   eventForm.addEventListener('click', () => queueMicrotask(updateEventSaveState));
   $('event-member-search').oninput = filterAttendance;
   $('event-member-filter').onchange = filterAttendance;
+  $('activity-material-name').addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); $('activity-material-quantity').focus(); }
+  });
+  $('activity-material-quantity').addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); $('activity-material-unit').focus(); }
+  });
+  for (const filter of $('event-program-view').querySelectorAll('[data-material-filter]'))
+    filter.onclick = () => {
+      materialFilter = filter.dataset.materialFilter;
+      for (const option of $('event-program-view').querySelectorAll('[data-material-filter]'))
+        option.setAttribute('aria-pressed', String(option === filter));
+      renderMaterialsSummary();
+      filter.focus();
+    };
   $('paths-state').onchange = render;
   function selectLinkedSection() {
     if (!data) return;
