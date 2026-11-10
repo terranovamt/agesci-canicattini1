@@ -47,11 +47,23 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         const data = await ACCESSO.request('activities');
         const meeting = data.events.find(event=>event.kind==='riunione');
         const member = data.members.find(member=>member.id===data.paths[0].personId);
+        const specialty = await ACCESSO.request('activities/paths','POST',{branch:'L/C',kind:'specialty',
+          personId:member.id,title:'Cuoco',steps:[{title:'Ricetta preparata',done:true}],closed:false});
         const free = await ACCESSO.request('activities/events','POST',{branch:'L/C',kind:'riunione',
           title:'DEMO - Gratis',date:meeting.date,feeCents:0,program:[],tasks:[],
           attendance:[{personId:member.id,status:'presente',due:true,paidCents:0}]});
-        return {member,meeting,free};
+        return {member,meeting,free,specialty};
       })()`);
+      await go("soci.html?member=" + context.member.id + "&section=education");
+      await wait("document.getElementById('member-dialog')?.open && !document.getElementById('member-panel-education').hidden");
+      const specialtyAward = `#member-paths-list [data-path-id="${context.specialty.id}"] button`;
+      await wait(`document.querySelector(${JSON.stringify(specialtyAward)})`);
+      assert.equal(await page.evaluate(`document.querySelector(${JSON.stringify(specialtyAward)})?.textContent`), "Assegna specialità");
+      await click(specialtyAward);
+      await wait("document.getElementById('member-paths-status').textContent === 'Specialità assegnata.'");
+      await wait(`ACCESSO.request('members').then(data =>
+        data.members.find(member => member.id === ${context.member.id})?.values['L/C'].specialita?.includes('Cuoco'))`);
+      await page.evaluate("document.getElementById('member-dialog').close()");
       for (const [label, width, height] of [["telefono",390,844], ["tablet",820,1180],
         ["portatile",1366,768], ["desktop",1920,1080]]) {
         await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor:1, mobile:width < 500 });
@@ -125,13 +137,14 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         assert.match(await page.evaluate("document.getElementById('member-paths-list').textContent"), /Stagione di caccia/);
         assert.equal(await page.evaluate("document.getElementById('member-paths').textContent.includes('Percorsi individuali')"), false);
         const pathBeforeTick = await page.evaluate(`ACCESSO.request('activities').then(data =>
-          data.paths.find(path => path.personId === Number(new URLSearchParams(location.search).get('member'))))`);
-        const stepBeforeTick = await page.evaluate("document.querySelector('#member-paths-list input[type=checkbox]').checked");
-        await click("#member-paths-list input[type=checkbox]");
+          data.paths.find(path => path.personId === Number(new URLSearchParams(location.search).get('member')) && path.kind === 'hunt'))`);
+        const huntCheckbox = `#member-paths-list [data-path-id="${pathBeforeTick.id}"] input[type=checkbox]`;
+        const stepBeforeTick = await page.evaluate(`document.querySelector(${JSON.stringify(huntCheckbox)}).checked`);
+        await click(huntCheckbox);
         await wait(`ACCESSO.request('activities').then(data =>
           data.paths.find(path => path.id === ${pathBeforeTick.id})?.revision === ${pathBeforeTick.revision + 1})`);
         assert.equal(await page.evaluate("document.getElementById('member-paths-status').textContent"), "Salvato.");
-        assert.notEqual(await page.evaluate("document.querySelector('#member-paths-list input[type=checkbox]').checked"), stepBeforeTick);
+        assert.notEqual(await page.evaluate(`document.querySelector(${JSON.stringify(huntCheckbox)}).checked`), stepBeforeTick);
         const pathsBeforeProfile = await page.evaluate("ACCESSO.request('activities').then(data => data.paths)");
         assert.deepEqual(await page.evaluate("ACCESSO.request('activities').then(data => data.paths)"), pathsBeforeProfile,
           "opening a member path does not move or alter their prey");

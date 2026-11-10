@@ -358,7 +358,9 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   conclusa esplicitamente dopo tutte le prede; non blocca l'avvio di specialita.
   La scheda Percorso raggruppa i soci per sestiglia/squadriglia e apre il
   profilo individuale nella scheda Percorso; le tappe si aggiornano con un
-  tocco e si salvano subito, senza uscire dal profilo.
+  tocco e si salvano subito, senza uscire dal profilo. A specialita o brevetto
+  completati, Assegna registra il riconoscimento nei dati educativi del socio;
+  la caccia si conclude con un'azione separata.
   Nel programma l'aggiunta del momento e disponibile una volta per giornata.
   I campi multiselect del Libro soci restano indipendenti e preservati.
   Le schede attivita elencano i presenti e collegano `soci.html?member=ID`;

@@ -293,7 +293,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.prefilled = $('member-assignment').textContent.includes('Aquile') &&
             !form.elements['extra:squadriglia'] && !form.elements['extra:ruolo'];
           const historyToggle = $('member-assignment').querySelector('details summary');
-          results.assignmentHistory = historyToggle.textContent.trim() === '+' &&
+          results.assignmentHistory = historyToggle.textContent.trim() === 'Storico' &&
             historyToggle.getAttribute('aria-label') === 'Storico assegnazioni';
           results.assignmentNoDirections = !$('member-assignment').textContent.includes('Si modificano dalla schermata');
           results.history = $('member-censuses').textContent.includes('2026') && $('member-censuses').textContent.includes('Attivo');
@@ -315,6 +315,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           const specialtyGroup = [...$('member-education').querySelectorAll('.members-choice-field')]
             .find(group => group.querySelector('input[type=checkbox]').name === 'extra:specialita');
           specialtyGroup.querySelector('details').open = true;
+          results.specialtyEmptyPrompt = specialtyGroup.querySelector('summary').textContent.includes('Scegli specialità') &&
+            !specialtyGroup.querySelector('summary').textContent.includes('0 selezionate');
           results.specialtiesNotButtonGrid = specialtyGroup.querySelectorAll('.members-choice-list button, input[type=radio]').length === 0 &&
             specialtyGroup.querySelectorAll('input[type=checkbox]').length === M.specialtyCatalogs['E/G'].length;
           const checkAward = value => {
@@ -533,7 +535,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.prefilled, true);
       assert.equal(results.saved.profile.phone, "000123");
       assert.equal(results.saved.values.squadriglia, "Aquile");
-      for (const key of ["guardianParsed", "guardianAdd", "guardianRemove", "guardianDraft", "awardSearch", "awardFits"])
+      for (const key of ["guardianParsed", "guardianAdd", "guardianRemove", "guardianDraft", "awardSearch", "awardFits", "specialtyEmptyPrompt"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       assert.deepEqual(results.saved.values.specialita, ["Cuoco", "Fotografo"]);
       assert.deepEqual(results.saved.values.brevetti, ["Pioniere"]);

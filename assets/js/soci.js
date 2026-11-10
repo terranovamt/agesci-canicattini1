@@ -46,9 +46,15 @@
       const selectedList = node('div', undefined, 'members-selected-choices');
       const details = node('details');
       const summary = node('summary');
+      const summaryAction = node('span');
+      const summaryCount = node('span', undefined, 'members-choice-count');
+      const choiceLabel = labelText.toLocaleLowerCase('it').replace('specialita', 'specialità');
+      summary.append(summaryAction, summaryCount);
       const updateCount = () => {
         const values = [...group.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value);
-        summary.textContent = `Aggiungi o modifica · ${values.length} ${values.length === 1 ? 'selezionata' : 'selezionate'}`;
+        summaryAction.textContent = values.length ? 'Modifica' : 'Scegli ' + choiceLabel;
+        summaryCount.textContent = values.length
+          ? ` · ${values.length} ${values.length === 1 ? 'selezionata' : 'selezionate'}` : '';
         selectedList.replaceChildren(...values.map(value => {
           const item = node('span', undefined, 'members-selected-choice');
           const remove = node('button', '×');
@@ -431,7 +437,7 @@
       if (previous && data.fields.some(field => field.branch === educationBranch && legacyPista(field)))
         card.append(node('p', 'Nota di percorso precedente: ' + previous, 'members-note'));
       const history = node('details', undefined, 'member-assignment-history'), list = node('div');
-      const historyToggle = node('summary', '+');
+      const historyToggle = node('summary', 'Storico');
       historyToggle.setAttribute('aria-label', 'Storico assegnazioni');
       history.append(historyToggle);
       for (const item of (editing?.assignmentHistory || []).filter(item => item.branch === educationBranch))
@@ -481,6 +487,26 @@
         close.onclick = () => updateMemberPath(member, path, { closed: true });
         card.append(close);
       }
+      if (state === 'Conquistato' && ['specialty', 'badge'].includes(path.kind)) {
+        const key = path.kind === 'specialty' ? 'specialita' : 'brevetti';
+        const field = data.fields.find(item => item.branch === member.branch && item.key === key);
+        const normalize = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it');
+        const current = M.selectedChoices(member.values?.[member.branch]?.[key]);
+        const option = field?.options?.find(value => normalize(value) === normalize(path.title)) ||
+          current.find(value => normalize(value) === normalize(path.title));
+        if (option && current.includes(option)) {
+          card.append(node('p', path.kind === 'specialty' ? 'Specialità assegnata' : 'Brevetto assegnato',
+            'member-path-awarded'));
+        } else if (option) {
+          const award = node('button', path.kind === 'specialty' ? 'Assegna specialità' : 'Assegna brevetto',
+            'button button-secondary');
+          award.type = 'button'; award.disabled = memberPathSaving;
+          award.onclick = () => assignMemberPathAward(member, path, key, option);
+          card.append(award);
+        } else {
+          card.append(node('p', 'Titolo non presente nell’elenco delle assegnazioni.', 'members-note'));
+        }
+      }
       return card;
     }));
     status.textContent = feedback || (memberPaths.length ? '' : 'Nessun percorso. Aggiungine uno.');
@@ -503,6 +529,47 @@
     } finally {
       memberPathSaving = false;
       if (editing?.id === member.id) drawMemberPaths(member, feedback);
+    }
+  }
+  async function assignMemberPathAward(member, path, key, option) {
+    if (memberPathSaving || busy) {
+      $('member-paths-status').textContent = 'Attendi il salvataggio in corso.';
+      return;
+    }
+    memberPathSaving = true;
+    $('member-paths-status').textContent = 'Assegnazione…';
+    $('member-paths-list').querySelectorAll('input, button').forEach(control => { control.disabled = true; });
+    $('member-save').disabled = true;
+    let feedback = '';
+    try {
+      const currentMember = editing?.id === member.id ? editing : member;
+      const wasDirty = dirty();
+      educationDraft();
+      const savedValues = currentMember.values?.[member.branch] || {};
+      const awarded = M.selectedChoices(savedValues[key]);
+      if (awarded.includes(option)) {
+        feedback = 'Già assegnata.';
+        return;
+      }
+      const result = await A.request('members/' + member.id, 'PATCH', {
+        code: currentMember.code, branch: member.branch, profile: currentMember.profile,
+        values: { ...savedValues, [key]: [...awarded, option] }, revision: currentMember.revision,
+      });
+      if (!result?.member) throw new Error('Risposta di salvataggio non valida');
+      editing = result.member;
+      data.members = data.members.map(item => item.id === editing.id ? editing : item);
+      const draftValues = M.selectedChoices(drafts[member.branch]?.[key] ?? awarded);
+      drafts[member.branch] = { ...drafts[member.branch], [key]: [...new Set([...draftValues, option])] };
+      if (educationBranch === member.branch) renderEducation();
+      if (!wasDirty) formSnapshot = JSON.stringify([...new FormData(profileForm)]);
+      feedback = path.kind === 'specialty' ? 'Specialità assegnata.' : 'Brevetto assegnato.';
+    } catch (error) {
+      feedback = 'Assegnazione non salvata: ' + error.message;
+    } finally {
+      memberPathSaving = false;
+      $('member-save').disabled = false;
+      if (editing?.id === member.id)
+        drawMemberPaths(editing, feedback);
     }
   }
   async function renderMemberPaths(member) {

@@ -291,6 +291,9 @@ una tappa. Schede con avanzamento, conteggi, ricerca per nome/titolo e filtro
 di stato consentono una lettura rapida. Le tappe si spuntano direttamente
 nella scheda socio e vengono salvate subito con un tocco. Dalla gestione
 attivita si possono aggiungere percorsi o modificarne il titolo e le tappe.
+Completate tutte le tappe di una specialita o brevetto, **Assegna** registra
+il riconoscimento anche nei dati educativi del socio; la caccia L/C resta
+distinta e richiede **Concludi caccia**.
 In R/S sono disponibili gli incontri;
 la progressione personale R/S rimane nella scheda socio.
 
