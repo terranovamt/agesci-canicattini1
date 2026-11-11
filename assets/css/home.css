@@ -491,6 +491,7 @@ body.docs-page .assembly-explainer { max-width: none; margin: 22px 0 0 }
 body.docs-page .documents-section > [role="status"] { margin-bottom: 8px }
 body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 18px }
 @media (min-width: 1000px) { body.docs-page .assembly-explainer-points { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
+@media (min-width: 1500px) { main#contenuto:has(.hero) { width: min(100% - 48px, 1500px) } main#contenuto:has(.hero) .document-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) } }
 @media (min-width: 1500px) { body.docs-page main#contenuto { width: min(100% - 48px, 1800px); max-width: none } }
 /* Home area riservata: telefono = "adesso" in cima; da tablet menu laterale; portatile 2 colonne; desktop 3 colonne */
 .dashboard-page #riservata:not([hidden]) { display: grid; gap: 0 12px; align-items: start }
