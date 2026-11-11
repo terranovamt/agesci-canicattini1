@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Stiamo lavorando per voi · AGESCI Canicattini 1</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#462678" />
+    <style>
+      :root {
+        --y: #fdc500;
+        --vd: #211638;
+        --v: #462678;
+        --vl: #aeb0d9;
+        --g: #21a067;
+        --o: #f28c28;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font: 16px/1.5 system-ui, "Segoe UI", sans-serif;
+        color: #fff;
+        text-align: center;
+        overflow-x: hidden;
+        background: linear-gradient(180deg, #2a2f6d, var(--v) 70%, #1b6b8a);
+      }
+      body[data-t="notte"] {
+        background: radial-gradient(ellipse at 50% 90%, #5a2a1a, var(--vd) 70%);
+      }
+      main {
+        max-width: 560px;
+      }
+      h1 {
+        margin: 8px 0;
+        font-size: clamp(1.8rem, 6vw, 2.6rem);
+        line-height: 1.15;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      .eyebrow {
+        margin: 0;
+        color: var(--y);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+      }
+      .note {
+        color: var(--vl);
+        font-size: 0.9rem;
+      }
+      .art {
+        width: min(320px, 80vw);
+        margin: 0 auto 8px;
+      }
+      .art svg {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      [data-for] {
+        display: none;
+      }
+      body[data-t="giorno"] [data-for~="giorno"],
+      body[data-t="notte"] [data-for~="notte"] {
+        display: block;
+      }
+      .tent-body {
+        transform-origin: 180px 250px;
+        animation: pitch 3.2s ease-in-out infinite;
+      }
+      .flag {
+        transform-origin: 180px 60px;
+        animation: wave 1.4s ease-in-out infinite;
+      }
+      @keyframes pitch {
+        0%,
+        100% {
+          transform: scaleY(0.82);
+        }
+        50% {
+          transform: scaleY(1);
+        }
+      }
+      @keyframes wave {
+        0%,
+        100% {
+          transform: skewY(-6deg);
+        }
+        50% {
+          transform: skewY(6deg);
+        }
+      }
+      .flame {
+        transform-origin: 180px 250px;
+        animation: flicker 0.9s ease-in-out infinite alternate;
+      }
+      .flame.inner {
+        animation-duration: 0.6s;
+        animation-delay: -0.3s;
+      }
+      .spark {
+        fill: var(--y);
+        opacity: 0;
+        animation: rise 2.4s ease-out infinite;
+      }
+      .spark.b {
+        animation-delay: 0.8s;
+      }
+      .spark.c {
+        animation-delay: 1.6s;
+      }
+      @keyframes flicker {
+        from {
+          transform: scale(0.92, 0.85) rotate(-2deg);
+        }
+        to {
+          transform: scale(1.04, 1.08) rotate(2deg);
+        }
+      }
+      @keyframes rise {
+        0% {
+          opacity: 0;
+          transform: translateY(0);
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-110px);
+        }
+      }
+      .dots span {
+        display: inline-block;
+        animation: blink 1.4s infinite both;
+      }
+      .dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes blink {
+        0%,
+        80%,
+        100% {
+          opacity: 0.2;
+        }
+        40% {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body data-t="giorno">
+    <main>
+      <div class="art" aria-hidden="true">
+        <svg data-for="giorno" viewBox="0 0 360 300">
+          <line x1="180" y1="30" x2="180" y2="90" stroke="#fff" stroke-width="4" />
+          <path class="flag" d="M180 32h56l-14 14 14 14h-56z" fill="var(--y)" />
+          <g class="tent-body">
+            <path d="M60 250 180 90l120 160z" fill="var(--g)" />
+            <path d="M180 90 240 250h-60z" fill="#176b46" />
+            <path d="M180 170l34 80h-68z" fill="var(--vd)" />
+          </g>
+          <path d="M20 250h320" stroke="var(--vl)" stroke-width="4" stroke-linecap="round" />
+        </svg>
+        <svg data-for="notte" viewBox="0 0 360 300">
+          <circle class="spark" cx="165" cy="190" r="4" />
+          <circle class="spark b" cx="195" cy="190" r="3" />
+          <circle class="spark c" cx="180" cy="190" r="5" />
+          <path class="flame" d="M180 80c10 40 50 60 50 120a50 50 0 0 1-100 0c0-34 24-44 28-70 14 14 22 20 22-50z" fill="var(--o)" />
+          <path class="flame inner" d="M180 140c6 24 28 36 28 66a28 28 0 0 1-56 0c0-22 20-30 28-66z" fill="var(--y)" />
+          <path d="M110 262 250 232M250 262 110 232" stroke="#7a4a2a" stroke-width="14" stroke-linecap="round" />
+        </svg>
+      </div>
+
+      <p class="eyebrow" data-for="giorno">Campo in allestimento</p>
+      <h1 data-for="giorno">Stiamo montando le tende!</h1>
+      <p data-for="giorno">Un attimo di pazienza: il sito si sta aggiornando e il campo sarà pronto tra pochissimo.</p>
+
+      <p class="eyebrow" data-for="notte">Veglia al fuoco</p>
+      <h1 data-for="notte">Stiamo accendendo il fuoco di bivacco…</h1>
+      <p data-for="notte">Mentre la legna prende, il sito si aggiorna. Mettetevi comodi: torniamo subito con una novità.</p>
+
+      <p class="note" role="status">
+        Controllo se il sito è pronto<span class="dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+        La pagina si ricarica da sola.
+      </p>
+      <p class="note">AGESCI Canicattini 1 · Gruppo Scout</p>
+    </main>
+    <script>
+      (function () {
+        var forced = new URLSearchParams(location.search).get("tema");
+        var hour = Number(
+          new Intl.DateTimeFormat("it-IT", { hour: "numeric", hourCycle: "h23", timeZone: "Europe/Rome" }).format(new Date()),
+        );
+        var day = hour >= 6 && hour < 18;
+        document.body.dataset.t = forced === "giorno" || forced === "notte" ? forced : day ? "giorno" : "notte";
+        setInterval(function () {
+          fetch("/agesci-canicattini1/healthz", { cache: "no-store" })
+            .then(function (response) {
+              if (response.ok) location.reload();
+            })
+            .catch(function () {});
+        }, 5000);
+      })();
+    </script>
+  </body>
+</html>

@@ -52,8 +52,6 @@ services:
     depends_on:
       app:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:8080:8080"
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
@@ -74,6 +72,34 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  gate:
+    image: agesci-nas-gate:stable
+    build:
+      context: ../..
+      dockerfile: deploy/synology/gate.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/gate-healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   cloudflared:
     image: cloudflare/cloudflared:2026.10.0
     profiles: ["tunnel"]
@@ -82,7 +108,7 @@ services:
     secrets:
       - tunnel_token
     depends_on:
-      web:
+      gate:
         condition: service_healthy
     read_only: true
     cap_drop:

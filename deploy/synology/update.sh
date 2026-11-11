@@ -101,7 +101,8 @@ compose "$release" build
 phase="build dell'immagine calendari"
 compose "$release" --profile maintenance build calendar-sync
 phase="avvio e verifica salute dei container"
-if compose "$release" up -d --wait --force-recreate --wait-timeout 120; then
+if compose "$release" up -d --wait --force-recreate --wait-timeout 120 app web &&
+    compose "$release" up -d --wait --wait-timeout 120 gate; then
     phase="registrazione della release funzionante"
     if [ "$revision" != "$previous" ]; then
         printf '%s\n' "$previous" > "$NAS_ROOT/previous-revision.tmp"
@@ -126,7 +127,8 @@ else
     if [ -n "$previous" ] && [ -d "$NAS_ROOT/releases/$previous" ]; then
         phase="ripristino della release $previous"
         export NAS_RELEASE_REVISION="$previous"
-        compose "$NAS_ROOT/releases/$previous" up -d --build --wait --force-recreate --wait-timeout 120
+        compose "$NAS_ROOT/releases/$previous" up -d --build --wait --force-recreate --wait-timeout 120 app web
+        compose "$NAS_ROOT/releases/$previous" up -d --build --wait --wait-timeout 120 gate
         echo "Ripristinato il codice precedente: $previous"
     fi
     exit 1
