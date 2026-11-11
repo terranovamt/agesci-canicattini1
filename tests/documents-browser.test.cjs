@@ -735,7 +735,7 @@ test("public documents and management work in a browser at all required widths",
       const width = Number(item.viewport.split("x")[0]);
       if (width >= 1100) assert.equal(item.sideBySide, true, where + " shows library and form side by side");
       else if (!item.tabs) assert.equal(item.stacked, true, where + " stacks library above the form");
-      assert.ok(item.contentRatio >= (width >= 1900 ? 0.74 : 0.95), where + " leaves no huge empty margins: " + item.contentRatio);
+      assert.ok(item.contentRatio >= (width >= 1900 ? 0.74 : 0.88), where + " leaves no huge empty margins: " + item.contentRatio);
     }
     assert.equal(results.find((item) => "keyboardFocus" in item).keyboardFocus, true);
     for (const item of results.filter((item) => "reachable" in item)) {

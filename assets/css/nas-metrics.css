@@ -934,8 +934,6 @@
   min-height: 44px;
 }
 .reserved-page.metrics-page main.statistics-page {
-  width: 100%;
-  max-width: 1560px;
   box-sizing: border-box;
 }
 .metrics-page .statistics-bottom {
@@ -969,18 +967,5 @@
   }
   .metrics-page .statistics-hour-values strong {
     font-size: 24px;
-  }
-}
-/* Header e footer allineati al contenuto statistiche (max 1560px, rientro 20px / 14px su mobile). */
-body.reserved-page.metrics-page > .reserved-header,
-body.reserved-page.metrics-page > .site-footer {
-  padding-right: max(20px, calc((100% - 1520px) / 2));
-  padding-left: max(20px, calc((100% - 1520px) / 2));
-}
-@media (max-width: 700px) {
-  body.reserved-page.metrics-page > .reserved-header,
-  body.reserved-page.metrics-page > .site-footer {
-    padding-right: 14px;
-    padding-left: 14px;
   }
 }

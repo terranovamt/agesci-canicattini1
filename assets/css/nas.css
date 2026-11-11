@@ -159,3 +159,17 @@ body.people-page > #reserved-content { width: min(1100px, calc(100% - 28px)); ma
   .people-page .person-actions .button { flex: 1 1 140px }
 }
 body.viewing-as > .reserved-header, body.viewing-as > .nas-navbar { position: sticky; top: 0; z-index: 40 }
+
+/* Stessa larghezza e stessi margini in tutte le pagine dell'area riservata */
+body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) {
+  box-sizing: border-box !important; width: min(calc(100% - 32px), 1800px) !important; max-width: none !important;
+  margin: 24px auto !important; padding-inline: 0 !important;
+}
+.reserved-location { width: min(calc(100% - 32px), 1800px); max-width: none }
+body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: max(16px, calc((100% - 1800px) / 2)) !important }
+@media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: 12px !important } }
+@media (max-width: 600px) {
+  body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { width: calc(100% - 24px) !important }
+  .reserved-location { width: calc(100% - 24px) }
+  body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { margin-block: 16px !important }
+}

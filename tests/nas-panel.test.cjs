@@ -616,8 +616,8 @@ test("statistics page adapts to six viewports keeping every section visible, rea
           serverColumns: columns === expectedColumns,
           readableHourCharts: hourWidth >= 240,
           readableHistory: historyWidth >= Math.min(560, doc.documentElement.clientWidth * 0.8),
-          noWastedMargin: mainBox.width >= Math.min(doc.documentElement.clientWidth, 1560) - 1 &&
-            mainBox.left <= Math.max(1, (doc.documentElement.clientWidth - 1560) / 2 + 1),
+          noWastedMargin: mainBox.width >= Math.min(doc.documentElement.clientWidth - (width <= 600 ? 24 : 32), 1800) - 1 &&
+            mainBox.left <= Math.max(17, (doc.documentElement.clientWidth - 1800) / 2 + 1),
           headerFooterAligned: aligned,
           missingVsZero: doc.getElementById("stats-hour-cpu-current").textContent === "n.d." &&
             doc.getElementById("stats-errors").textContent === "0" && doc.getElementById("stats-errors").dataset.state === "measured",
