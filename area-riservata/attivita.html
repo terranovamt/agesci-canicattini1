@@ -49,14 +49,19 @@
       <section id="paths-panel" data-section-panel>
         <div class="members-heading"><h2 id="paths-heading">Percorso</h2><button id="new-path" class="button button-primary" type="button">+ Percorso</button></div>
         <a id="paths-member-back" class="button button-secondary" hidden>Torna alla scheda</a>
-        <div id="paths-members" class="activities-grid"></div>
-        <p id="paths-hint" class="members-note" hidden></p>
-        <details class="path-filters"><summary>Filtra percorsi</summary>
+        <details class="path-filters" open><summary>Filtra percorsi</summary>
+        <div class="path-filter-fields">
         <label class="activities-state-filter">Mostra stato<select id="paths-state">
           <option value="">Tutti gli stati</option><option>Definito</option><option>In lavorazione</option><option>Conquistato</option><option>Conclusa</option>
         </select></label>
+        <label class="activities-state-filter">Tipo di percorso<select id="paths-kind">
+          <option value="">Tutti i tipi</option><option value="specialty">Specialità</option><option value="badge">Brevetto</option><option value="hunt">Stagione di caccia</option>
+        </select></label>
         <p id="paths-counts" role="status" aria-live="polite"></p>
+        </div>
         </details>
+        <div id="paths-members" class="activities-grid"></div>
+        <p id="paths-hint" class="members-note" hidden></p>
         <div id="paths-list" class="activities-grid"></div>
         <div id="paths-save-bar" hidden>
           <p id="paths-save-status" role="status" aria-live="polite"></p>
