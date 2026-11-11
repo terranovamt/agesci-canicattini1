@@ -173,3 +173,12 @@ body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.r
   .reserved-location { width: calc(100% - 24px) }
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { margin-block: 16px !important }
 }
+
+/* Almeno il 10% di margine a destra e a sinistra su schermi larghi */
+@media (min-width: 900px) {
+  body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))),
+  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])),
+  .reserved-location { width: 80% !important }
+  body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer),
+  body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: 10% !important }
+}

@@ -100,11 +100,12 @@
         </p>
       </section>
 
-      <nav class="section-nav regia-section-nav" data-section-nav aria-label="Strumenti della regia" hidden>
+      <nav class="section-nav regia-section-nav" data-section-nav data-section-mobile="(max-width: 999px), (max-height: 559px), (orientation: portrait)" aria-label="Strumenti della regia" hidden>
         <button type="button" data-section-target="regia-slides-panel">Slide</button>
         <button type="button" data-section-target="regia-data-panel">Dati live</button>
         <button type="button" data-section-target="regia-server-panel">Server</button>
       </nav>
+      <div class="regia-live">
       <section id="regia-data-panel" class="dati-live card" data-section-panel>
         <h3>Presenti e ufficio di presidenza</h3>
         <details class="note">
@@ -176,6 +177,8 @@
           <a id="nas-statistics-link" class="text-link" href="../statistiche.html" hidden>Statistiche del sito</a>
         </div>
       </section>
+
+      </div>
 
       <section id="regia-slides-panel" class="lista card" data-section-panel>
         <h3>Slide</h3>

@@ -1,3 +1,4 @@
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Dashboard regia */
 * {
   box-sizing: border-box;
@@ -930,7 +931,7 @@ details.note .meter {
 }
 @media (max-width: 760px) {
   #app > .regia-section-nav { grid-column: 1 / -1; order: 3; width: 100%; }
-  #app > [data-section-panel] { order: 4; }
+  #app [data-section-panel] { order: 4; }
 }
 
 /* La plancia resta ferma: scorrono solo lo strumento selezionato e gli aiuti aperti. */
@@ -997,7 +998,7 @@ h2#titolo, h3#titolo-next {
   grid-area: tools; display: flex; margin: 0; padding: 0; gap: 4px; width: 100%;
 }
 #app > .regia-section-nav button { flex: 1; min-height: 44px; }
-#app > [data-section-panel] {
+#app [data-section-panel] {
   grid-area: panel; min-height: 0; min-width: 0; overflow: auto; padding: 10px 12px;
 }
 .card.dati-live { display: block; }
@@ -1037,7 +1038,7 @@ h2#titolo, h3#titolo-next {
   .comandi .mini { flex: none; }
   .lbl { font-size: 12px; }
   h2#titolo, h3#titolo-next { font-size: 16px; }
-  #app > [data-section-panel] { padding: 14px 16px; }
+  #app [data-section-panel] { padding: 14px 16px; }
 }
 
 @media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
@@ -1057,7 +1058,7 @@ h2#titolo, h3#titolo-next {
   .lbl { font-size: 12px; }
   h2#titolo { font-size: 18px; }
   h3#titolo-next { font-size: 15px; }
-  #app > [data-section-panel] { padding: 14px 16px; }
+  #app [data-section-panel] { padding: 14px 16px; }
   #dati-live-campi { grid-template-columns: 1fr; }
   .nas-kpi span { font-size: 12px; }
 }
@@ -1091,12 +1092,29 @@ h2#titolo, h3#titolo-next {
   }
   .comandi { flex-direction: column; gap: 4px; justify-content: center; }
   .cmd { flex: none; gap: 4px; }
-  .big-btn { height: 44px; }
-  .comandi .mini { flex: none; flex-wrap: wrap; gap: 4px; }
-  .comandi .mini button { flex: 1 1 45%; font-size: 11px; padding: 6px; }
+  .big-btn { height: 56px; }
+  .comandi .mini { flex: none; flex-wrap: wrap; gap: 6px; }
+  .comandi .mini button { flex: 1 1 45%; min-height: 44px; font-size: 14px; padding: 8px; }
   .lbl { font-size: 10px; }
-  h2#titolo, h3#titolo-next { font-size: 11px; }
-  #app > [data-section-panel] { padding: 6px 8px; }
+  h2#titolo, h3#titolo-next { font-size: 13px; }
+  #app [data-section-panel] { padding: 6px 8px; }
   #dati-live-campi { grid-template-columns: 1fr; }
   .card h3 { font-size: 13px; }
+}
+
+/* Desktop: comandi sotto le anteprime; sotto, Dati live + Server a sinistra e Slide a destra, tutto visibile e a scorrimento interno */
+.regia-live { display: contents; }
+@media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
+  main {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(220px, .6fr);
+    grid-template-rows: auto minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-areas: "avvio avvio avvio" "onda lato comandi" "live live lista";
+  }
+  #app > .regia-section-nav { display: none; }
+  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-height: 0; }
+  .regia-live > [data-section-panel] { grid-area: auto; overflow: auto; }
+  #app > #regia-slides-panel { grid-area: lista; overflow: hidden; }
+  #regia-slides-panel ol { overflow: auto; }
+  .comandi { justify-content: center; }
+  #dati-live-campi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }

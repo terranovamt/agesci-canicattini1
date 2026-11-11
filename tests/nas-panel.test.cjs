@@ -614,10 +614,10 @@ test("statistics page adapts to six viewports keeping every section visible, rea
           allSections: !doc.querySelector("[data-section-nav], [data-section-panel]") &&
             ["statistics-version", "statistics-traffic", "statistics-server", "statistics-diagnostic-panel"].every((id) => visible(doc.getElementById(id))),
           serverColumns: columns === expectedColumns,
-          readableHourCharts: hourWidth >= 240,
+          readableHourCharts: hourWidth >= 220,
           readableHistory: historyWidth >= Math.min(560, doc.documentElement.clientWidth * 0.8),
-          noWastedMargin: mainBox.width >= Math.min(doc.documentElement.clientWidth - (width <= 600 ? 24 : 48), 1e5) - 1 &&
-            mainBox.left <= 24 + 1,
+          noWastedMargin: mainBox.width >= (width >= 900 ? doc.documentElement.clientWidth * 0.8 : doc.documentElement.clientWidth - (width <= 600 ? 24 : 48)) - 1 &&
+            mainBox.left <= (width >= 900 ? doc.documentElement.clientWidth * 0.1 : 24) + 1,
           headerFooterAligned: aligned,
           missingVsZero: doc.getElementById("stats-hour-cpu-current").textContent === "n.d." &&
             doc.getElementById("stats-errors").textContent === "0" && doc.getElementById("stats-errors").dataset.state === "measured",

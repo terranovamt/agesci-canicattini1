@@ -744,7 +744,7 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
         assert.equal(panel.columnsPositioned, true, width + ": " + JSON.stringify(panel));
         assert.equal(panel.keyboardFocus, true);
         const cap = [width <= 600 ? 24 : 48, 1e5];
-        assert.equal(panel.contentWidth, Math.min(panel.availableWidth - cap[0], cap[1]));
+        assert.ok(Math.abs(panel.contentWidth - (width >= 900 ? panel.availableWidth * 0.8 : panel.availableWidth - cap[0])) <= 1);
       }
       const [tools] = measured.panels;
       assert.equal(tools.separated, true);

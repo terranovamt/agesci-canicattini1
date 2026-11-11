@@ -265,3 +265,5 @@ footer {
 .not-found .button {
   margin-right: 18px;
 }
+
+@media (min-width: 900px) { .site-header, .site-footer { padding-inline: 10% } }

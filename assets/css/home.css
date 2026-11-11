@@ -581,3 +581,8 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > .branch-motto { order: 2 }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > h1 { order: 1 }
 }
+
+@media (min-width: 900px) {
+  main#contenuto { width: 80% }
+  .site-header, .site-footer { padding-inline: 10% }
+}

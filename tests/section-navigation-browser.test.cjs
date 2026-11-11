@@ -147,7 +147,7 @@ test('all screens fit real responsive viewports and section navigation preserves
               drafts.forEach((input, i) => { input.value = 'draft-preserved-' + i; });
               for (let index = 0; index < buttons.length; index++) {
                 buttons[index].click();
-                const exclusive = !nav.hasAttribute('data-section-mobile') || width <= 760;
+                const exclusive = !nav.hasAttribute('data-section-mobile') || win.matchMedia(nav.getAttribute('data-section-mobile') || '(max-width: 760px)').matches;
                 record({ section: buttons[index].dataset.sectionTarget,
                   visible: panels.every((panel, i) => panel.hidden === (exclusive && i !== index)),
                   panelVisibility: panels.every((panel, i) => visible(panel) === (!exclusive || i === index)),
@@ -157,7 +157,7 @@ test('all screens fit real responsive viewports and section navigation preserves
                   retained: drafts.every((input, i) => input.value === 'draft-preserved-' + i),
                   drafts: drafts.length });
                 measureOverflow(buttons[index].dataset.sectionTarget);
-                if (!nav.hasAttribute('data-section-mobile') || width <= 760)
+                if (exclusive)
                   record({ section: buttons[index].dataset.sectionTarget, navigationVisible: visible(nav) });
                 if (visible(nav)) {
                   const boxes = buttons.filter(visible).map(button => button.getBoundingClientRect());

@@ -3,7 +3,7 @@
   function mount(nav) {
     const buttons = [...nav.querySelectorAll('[data-section-target]')];
     const panels = buttons.map(button => document.getElementById(button.dataset.sectionTarget));
-    const media = nav.hasAttribute('data-section-mobile') ? matchMedia('(max-width: 760px)') : null;
+    const media = nav.hasAttribute('data-section-mobile') ? matchMedia(nav.getAttribute('data-section-mobile') || '(max-width: 760px)') : null;
     let selected = 0;
     function select(index, focus = false) {
       selected = index;
