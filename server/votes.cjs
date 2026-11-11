@@ -44,7 +44,7 @@ function createVotes(db, people) {
   const received = poll => db.prepare("SELECT count(*) AS n FROM vote_cast WHERE poll_id=?").get(poll.id).n;
   const publicPoll = poll => {
     if (!poll) return null;
-    const counts = poll.live && poll.open && poll.mode === "scelta" ? tallies(poll) : null;
+    const counts = !poll.open || (poll.live && poll.mode === "scelta") ? tallies(poll) : null;
     return { id: poll.id, slide: poll.slide, domanda: poll.question, modalita: poll.mode, opzioni: JSON.parse(poll.options),
       aperta: !!poll.open, ricevuti: received(poll), totale: total(), conteggi: counts };
   };

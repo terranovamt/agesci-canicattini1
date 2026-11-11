@@ -1134,12 +1134,12 @@ h2#titolo, h3#titolo-next {
 
 /* votazione: comandi visibili solo sulle slide di votazione */
 #regia-voto[hidden] { display: none; }
-#regia-voto { padding: 8px 10px; }
-#regia-voto h3 { margin: 0 0 4px; font-size: 15px; }
-#regia-voto .vt-st { margin: 0 0 6px; font-size: 14px; }
-#regia-voto .vt-ris { list-style: none; margin: 0 0 8px; padding: 0; }
-#regia-voto .vt-ris li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid #0002; }
+#regia-voto { padding: 6px 10px; flex: none; max-height: 132px; overflow: auto; }
+#regia-voto h3 { margin: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#regia-voto .vt-st { margin: 0 0 4px; font-size: 13px; }
+#regia-voto .vt-ris { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+#regia-voto .vt-ris li { display: flex; gap: 6px; font-size: 13px; }
 #regia-voto .vt-ris li.vinc { font-weight: 800; color: #1d6b3a; }
 #regia-voto .vt-az { display: flex; gap: 8px; }
-#regia-voto .vt-az button { flex: 1; min-height: 44px; }
+#regia-voto .vt-az button { flex: 1; min-height: 38px; }
 #regia-voto .vt-er { color: #b00020; margin: 6px 0 0; }

@@ -16,23 +16,26 @@ window.VOTO_RENDER = (function () {
   const head = (x, p, tag) => `<div class="vt-lab">${esc(plain(x.titolo))} · ${state(p)}</div><${tag} class="vt-q">${esc(x.domanda || '')}</${tag}>`;
 
   function scelta(x, p) {
-    const tot = p.totale, [f, c, a] = p.conteggi || [0, 0, 0], [lf, lc, la] = p.opzioni;
+    const tot = p.totale, nd = !p.conteggi, [f, c, a] = p.conteggi || [0, 0, 0], [lf, lc, la] = p.opzioni;
+    const sh = n => nd ? '–' : n;
+    const ex = !p.aperta && !nd && f + c + a ? (f > c ? ['ok', 'APPROVATO'] : f < c ? ['ko', 'NON APPROVATO'] : ['eq', 'PARITÀ']) : null;
+    const stamp = ex ? `<div class="vt-stamp ${ex[0]}" role="status">${ex[1]}</div>` : '';
     const base = f + c + a, w = n => base ? n / base * 100 : 0;
     const left = base ? (f + (base - f - c - a) / 2) / base * 100 : 0;
     const label = `${lf} ${f}, ${la} ${a}, ${lc} ${c} su ${tot}`;
-    const hor = `<div class="vt-h"><div class="vt-top"><div>${head(x, p, 'div')}</div>
+    const hor = `<div class="vt-h">${stamp}<div class="vt-top"><div>${head(x, p, 'div')}</div>
       <div class="vt-tot"><span><b>${p.ricevuti}</b><i>/${tot}</i></span><small>voti ricevuti</small></div></div>
       <div class="vt-bar" role="img" aria-label="${esc(label)}">
         <span class="vs vf" style="left:0;width:${w(f)}%"></span>
         <span class="vs vc" style="right:0;width:${w(c)}%"></span>
         <span class="vs va" style="left:${left}%;width:${w(a)}%;opacity:${a ? 1 : 0}"></span></div>
-      <div class="vt-nums"><div class="vn vf"><b>${f}</b><span>${esc(lf)}</span></div>
-        <div class="vn va" style="left:${f && c ? left + w(a) / 2 : 50}%"><b>${a}</b><span>${esc(la)}</span></div><div class="vn vc"><b>${c}</b><span>${esc(lc)}</span></div></div></div>`;
-    const mob = `<div class="vt-m"><i class="vt-line"></i><div class="vt-title">${esc(plain(x.titolo))}</div>
+      <div class="vt-nums"><div class="vn vf"><b>${sh(f)}</b><span>${esc(lf)}</span></div>
+        <div class="vn va" style="left:${f && c ? left + w(a) / 2 : 50}%"><b>${sh(a)}</b><span>${esc(la)}</span></div><div class="vn vc"><b>${sh(c)}</b><span>${esc(lc)}</span></div></div></div>`;
+    const mob = `<div class="vt-m">${stamp}<i class="vt-line"></i><div class="vt-title">${esc(plain(x.titolo))}</div>
       <div class="vt-st">${state(p)}</div><div class="vt-q">${esc(x.domanda || '')}</div>
       <span class="vt-pill">${p.ricevuti} su ${tot}</span>
-      <div class="vt-r first"><span>${esc(lf)}</span><b>${f}</b></div><div class="vt-r"><span>${esc(lc)}</span><b>${c}</b></div>
-      <div class="vt-r hl"><span>${esc(la)}</span><b>${a}</b></div></div>`;
+      <div class="vt-r first"><span>${esc(lf)}</span><b>${sh(f)}</b></div><div class="vt-r no"><span>${esc(lc)}</span><b>${sh(c)}</b></div>
+      <div class="vt-r hl"><span>${esc(la)}</span><b>${sh(a)}</b></div></div>`;
     return hor + mob;
   }
 

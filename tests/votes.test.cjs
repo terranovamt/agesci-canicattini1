@@ -91,7 +91,7 @@ test("secret votes: codes, one vote per member, tallies without links, results a
   await app.request("vote/close", "POST", {});
   assert.equal((await app.request("vote/cast", "POST", { code: codes.righe[2].personale, poll: state.poll.id, scelta: 2 })).status, 409);
   const closed = (await (await app.request("vote/state")).json()).poll;
-  assert.equal(closed.aperta, false); assert.equal(closed.conteggi, null);
+  assert.equal(closed.aperta, false); assert.deepEqual(closed.conteggi, [2, 0, 0]);
   const results = (await (await app.request("vote/results?slide=votazione-test")).json()).poll;
   assert.deepEqual(results.conteggi, [2, 0, 0]);
 
