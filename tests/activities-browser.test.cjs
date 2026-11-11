@@ -134,8 +134,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         assert.equal(await page.evaluate("document.querySelector('.activity-more').hidden"), true,
           "the activity-model menu is hidden when this branch has no model");
         const firstPathLink = await page.evaluate("document.querySelector('#paths-members .activity-path-unit .path-member-link').getAttribute('href')");
-        assert.match(firstPathLink, /soci\.html\?member=\d+&section=education/);
-        await go(firstPathLink);
+        assert.match(firstPathLink, /^attivita\.html\?member=\d+#paths-panel$/);
+        await go(firstPathLink.replace(/^attivita\.html\?member=(\d+).*$/, "soci.html?member=$1&section=education"));
         await wait("document.getElementById('member-dialog')?.open && !document.getElementById('member-panel-education').hidden");
         await wait("document.getElementById('member-paths-list').textContent.includes('Stagione di caccia')");
         assert.match(await page.evaluate("document.getElementById('member-paths-list').textContent"), /Stagione di caccia/);
@@ -607,9 +607,6 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#paths-tab");
         if (await page.evaluate("document.getElementById('paths-members').checkVisibility()")) {
           await page.send("Page.navigate", { url: await page.evaluate("document.querySelector('#paths-members a').href") });
-          await wait("document.readyState === 'complete' && document.getElementById('member-dialog')?.open && !document.getElementById('member-panel-education').hidden");
-          assert.equal(await page.evaluate("document.getElementById('member-paths').hidden"), false);
-          await page.send("Page.navigate", { url: await page.evaluate("document.getElementById('member-paths-link').href") });
           await wait("document.readyState === 'complete' && !document.getElementById('activities-app')?.hidden && !document.getElementById('new-path')?.hidden");
         }
         if (label === "telefono") {

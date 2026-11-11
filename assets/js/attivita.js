@@ -155,6 +155,7 @@
     const selectedMember = pathMember();
     $('paths-heading').textContent = selectedMember ? 'Percorso di ' + selectedMember.name : 'Percorso';
     $('paths-member-back').hidden = !selectedMember;
+    document.querySelector('.path-member-nav').hidden = !selectedMember;
     $('paths-member-back').href = selectedMember
       ? `soci.html?member=${selectedMember.id}&section=education` : 'soci.html';
     $('new-path').hidden = !selectedMember;
@@ -232,7 +233,7 @@
         list.append(...members.flatMap(member => {
           const link = () => {
             const anchor = node('a', member.name, 'path-member-link');
-            anchor.href = `soci.html?member=${member.id}&section=education`;
+            anchor.href = `attivita.html?member=${member.id}#paths-panel`;
             return anchor;
           };
           const memberPaths = data.paths.filter(item => item.branch === branch() && item.personId === member.id &&

@@ -594,7 +594,7 @@
     }
     $('member-paths-heading').textContent = member.branch === 'L/C' ? 'Specialità e caccia' : 'Specialità e brevetti';
     link.hidden = false;
-    link.textContent = member.branch === 'L/C' ? '+ Aggiungi caccia o specialità' : '+ Aggiungi specialità o brevetto';
+    link.textContent = 'Apri nei percorsi →';
     link.href = 'attivita.html?member=' + encodeURIComponent(member.id) + '#paths-panel';
     status.textContent = 'Caricamento…';
     try {
