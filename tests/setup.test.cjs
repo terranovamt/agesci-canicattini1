@@ -849,30 +849,34 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
         check($('#year-dialog').open, 'cancel rejection retains wizard');
         $('#year-dialog').dispatchEvent(new w.Event('cancel', { cancelable:true }));
         check($('#year-dialog').open, 'escape rejection retains wizard');
-        for (let step = 0; step < 7; step++) {
-          check($('#year-progress').textContent === 'Passaggio ' + (step + 1) + ' di 7', 'wizard step ' + step);
+        for (let step = 0; step < 3; step++) {
+          check($('#year-progress').textContent === 'Passaggio ' + (step + 1) + ' di 3', 'wizard step ' + step);
           fits('wizard ' + step);
           check(shown('#year-next') && shown('#year-cancel'), 'wizard actions visible ' + step);
           check($('#year-scroll').clientHeight >= 120, 'useful wizard viewport ' + step);
+          check(shown('#year-summary') === (width >= 1100), width + ': side summary only on desktop');
           if (width >= 1100) check($('#year-dialog').getBoundingClientRect().width >= 1000, width + ': useful wizard width');
-          if (step === 3 && width >= 700) {
-            const fields = [...d.querySelectorAll('#year-fields .year-field')].slice(0,2).map(field => field.getBoundingClientRect());
-            check(Math.abs(fields[0].top - fields[1].top) < 1, width + ': dense wizard amounts');
-          }
-          if (step === 1) fill('#year-fields input[type="datetime-local"]', '2027-11-20T20:30');
-          if ([2,3,4].includes(step)) {
+          if (step === 0) {
             click('#year-next');
-            check($('#year-progress').textContent === 'Passaggio ' + (step + 1) + ' di 7', 'missing amounts block progress ' + step);
-            for (const input of d.querySelectorAll('#year-fields input[type="number"]')) {
-              input.value = '0'; input.dispatchEvent(new w.Event('input', { bubbles:true }));
+            check($('#year-progress').textContent === 'Passaggio 1 di 3', 'missing date blocks progress');
+            fill('#year-fields input[type="datetime-local"]', '2027-11-20T20:30');
+          }
+          if (step === 1) {
+            const amounts = [...d.querySelectorAll('#year-fields input[type="number"]')];
+            check(amounts.every((input, i) => i === 0 || input.value !== ''), 'amounts default to previous year');
+            if (width >= 700) {
+              const fields = [...d.querySelectorAll('#year-fields .year-field')].slice(2, 4).map(field => field.getBoundingClientRect());
+              check(Math.abs(fields[0].top - fields[1].top) < 1, width + ': dense wizard amounts');
             }
-          }
-          if (step === 5) check(d.querySelectorAll('.year-slide').length === w.initialData.slide.length, 'all content slides retained');
-          if (step === 6) {
-            check($('#year-next').textContent === 'Applica alla bozza', 'final draft action');
+            const last = amounts.at(-1), kept = last.value;
+            last.value = ''; last.dispatchEvent(new w.Event('input', { bubbles:true }));
             click('#year-next');
-            check($('#year-dialog').open, 'confirmation checkbox required');
-            $('#year-fields input[type="checkbox"]').checked = true;
+            check($('#year-progress').textContent === 'Passaggio 2 di 3', 'missing amount blocks progress');
+            last.value = kept; last.dispatchEvent(new w.Event('input', { bubbles:true }));
+          }
+          if (step === 2) {
+            check(d.querySelectorAll('.year-slide').length === w.initialData.slide.length + 1, 'all content slides retained');
+            check($('#year-next').textContent === 'Applica alla bozza', 'final draft action');
           }
           click('#year-next');
         }
@@ -897,7 +901,7 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
     assert.ok(output, "browser result missing");
     const report = JSON.parse(output.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
     assert.equal(report.ok, true, report.error || JSON.stringify(report));
-    assert.ok(report.checks > 500);
+    assert.ok(report.checks > 450);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

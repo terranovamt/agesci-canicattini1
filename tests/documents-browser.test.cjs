@@ -243,7 +243,7 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('#nuovo-anno').click();
             const wizard = doc.querySelector('#year-dialog');
             results.push({ wizardOpened: wizard.open, width });
-            for (let step = 0; step < 6; step++) {
+            for (let step = 0; step < 2; step++) {
               for (const input of doc.querySelectorAll('#year-fields input')) {
                 if (input.type === 'number' && input.value === '') input.value = '10';
                 if (input.type === 'datetime-local') input.value = '2027-11-20T20:30';
@@ -254,7 +254,7 @@ test("public documents and management work in a browser at all required widths",
                 fits: wizard.scrollWidth <= wizard.clientWidth,
                 actionsVisible: doc.querySelector('#year-next').getBoundingClientRect().bottom <= frame.contentWindow.innerHeight,
                 valid: doc.querySelector('#year-form').checkValidity() });
-              if (step === 1) results.push({ dateTimeFields: doc.querySelectorAll('#year-fields input[type="datetime-local"]').length,
+              if (step === 0) results.push({ dateTimeFields: doc.querySelectorAll('#year-fields input[type="datetime-local"]').length,
                 duplicateDate: [...doc.querySelectorAll('#year-fields label')].some(label => label.textContent.includes('Data assemblea (es.')) });
               doc.querySelector('#year-form').requestSubmit();
             }
@@ -266,7 +266,6 @@ test("public documents and management work in a browser at all required widths",
               doc.querySelector('#year-cancel').click();
               results.push({ cancelUnchanged: JSON.stringify(readSetup()) === before });
             } else {
-              doc.querySelector('.year-confirm input').checked = true;
               doc.querySelector('#year-form').requestSubmit();
               const after = readSetup();
               results.push({ applied: after.anno_esercizio, archived: after.censimenti.storico_per_anno['2026'].censiti,
