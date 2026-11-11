@@ -6,6 +6,7 @@
   const kinds = { 'L/C': ['riunione', 'caccia'], 'E/G': ['riunione', 'uscita'], 'R/S': ['riunione', 'route'] };
   const pathLabels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
   const pathDrafts = new Map();
+  const pathFilter = { state: '', kind: '' };
   const materialOptions = new Map();
   const linkedMemberId = new URLSearchParams(location.search).get('member');
   let activityPlaceChanged = false;
@@ -61,11 +62,23 @@
   }
   function roster() { return data.members.filter(member => member.branch === branch()); }
   function pathFilterMatch(item) {
-    const selectedState = $('paths-state').value, kind = $('paths-kind').value;
+    const selectedState = pathFilter.state, kind = pathFilter.kind;
     return (!selectedState || state(item) === selectedState || (selectedState === 'Conquistato' && state(item) === 'Conclusa')) &&
       (!kind || item.kind === kind);
   }
-  function pathFiltersActive() { return !!($('paths-state').value || $('paths-kind').value); }
+  function pathFiltersActive() { return !!(pathFilter.state || pathFilter.kind); }
+  function renderPathFilters(scope) {
+    const chip = (label, group, value) => {
+      const element = button(label, () => { pathFilter[group] = pathFilter[group] === value ? '' : value; render(); });
+      element.className = 'members-filter-chip'; element.setAttribute('aria-pressed', String(pathFilter[group] === value));
+      return element;
+    };
+    const states = ['Definito', 'In lavorazione', 'Conquistato', 'Conclusa'];
+    const kinds = Object.keys(pathLabels).filter(kind => scope.some(item => item.kind === kind));
+    $('paths-filters').replaceChildren(
+      ...states.map(label => chip(`${label} ${scope.filter(item => state(item) === label).length}`, 'state', label)),
+      ...kinds.map(kind => chip(`${pathLabels[kind]} ${scope.filter(item => item.kind === kind).length}`, 'kind', kind)));
+  }
   function pathMember() {
     return roster().find(member => String(member.id) === linkedMemberId);
   }
@@ -179,9 +192,6 @@
         return groups;
       }, new Map());
       const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b, 'it'));
-      const branchPaths = data.paths.filter(item => item.branch === branch() && roster().some(member => member.id === item.personId));
-      $('paths-counts').textContent = ['Definito', 'In lavorazione', 'Conquistato', 'Conclusa']
-        .map(label => label + ': ' + branchPaths.filter(item => state(item) === label).length).join(' · ');
       $('paths-members').replaceChildren(...groups.map(([unit, members]) => {
         const group = node('details', undefined, 'activity-path-unit');
         const [color, color2] = attendanceColors(unit);
@@ -229,13 +239,8 @@
     const paths = data.paths.map(item => pathDrafts.get(item.id) || item)
       .filter(item => selectedMember && item.branch === branch() && item.personId === selectedMember.id &&
         matches(item.title + ' ' + item.memberName));
-    const progressionCounts = [
-      ['Definito', paths.filter(item => state(item) === 'Definito').length],
-      ['In lavorazione', paths.filter(item => state(item) === 'In lavorazione').length],
-      ['Conquistato', paths.filter(item => ['Conquistato', 'Conclusa'].includes(state(item))).length],
-      ...(lc ? [['Stagione conclusa', paths.filter(item => state(item) === 'Conclusa').length]] : []),
-    ];
-    if (selectedMember) $('paths-counts').textContent = progressionCounts.map(([label, count]) => label + ': ' + count).join(' · ');
+    renderPathFilters(selectedMember ? paths : data.paths.filter(item => item.branch === branch() &&
+      roster().some(member => member.id === item.personId)));
     const filtered = paths.filter(pathFilterMatch);
     $('paths-list').replaceChildren(...filtered.map(item => {
       const card = node('article', undefined, 'activity-card path-card'), status = state(item);
@@ -1247,7 +1252,7 @@
   };
   pathForm.elements.personId.onchange = guidance;
   pathForm.elements.closed.onchange = closure;
-  $('activities-branch').onchange = () => { $('paths-state').value = ''; $('paths-kind').value = ''; render(); };
+  $('activities-branch').onchange = () => { pathFilter.state = ''; pathFilter.kind = ''; render(); };
   $('activities-search').oninput = render;
   eventForm.addEventListener('invalid', event => {
     if (event.target.closest('#event-program-view')) setEventView('programma');
@@ -1298,8 +1303,6 @@
       renderMaterialsSummary();
       filter.focus();
     };
-  $('paths-state').onchange = render;
-  $('paths-kind').onchange = render;
   function selectLinkedSection() {
     if (!data) return;
     const section = location.hash.slice(1);

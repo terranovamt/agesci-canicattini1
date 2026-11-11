@@ -688,10 +688,9 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#paths-list .path-more button");
         await shot(label + "-10-tappe-" + branch.replace("/", ""));
         await click("#path-dialog [data-close]");
-        await expand(".path-filters");
-        await fill("#paths-state", "Definito", "change");
+        await page.evaluate(`[...document.querySelectorAll('#paths-filters button')].find(item => item.textContent.startsWith('Definito')).click()`);
         assert.equal(await page.evaluate("[...document.querySelectorAll('#paths-list .activity-state')].every(item=>item.textContent==='Definito')"), true);
-        await fill("#paths-state", "", "change");
+        await page.evaluate(`document.querySelector('#paths-filters [aria-pressed="true"]').click()`);
         if (branch === "L/C" && label !== "telefono") {
           await page.evaluate(`{
             const card = [...document.querySelectorAll('#paths-list article')].find(card=>card.textContent.includes('Stagione di caccia'));

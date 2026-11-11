@@ -4,7 +4,6 @@
 .activities-page > .members-heading { margin-bottom: 12px; }
 .activities-page #paths-panel > .members-heading { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
 .activities-page #paths-panel > .members-heading > .button { width: auto; flex: none; padding: 8px 12px; min-height: 44px; font-size: .85rem; }
-.path-filters > summary { min-height: 44px; box-sizing: border-box; padding: 10px 0; cursor: pointer; font-size: .85rem; }
 .activities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr)); gap: 16px; margin: 16px 0; align-items: start; }
 .activity-card { min-width: 0; border: 1px solid #ddd3e7; border-top: 4px solid var(--branch-color, #795699); border-radius: 16px; background: #fff; padding: 18px; overflow-wrap: anywhere; }
 .activity-card h3 { margin: 8px 0; font-size: 1.15rem; }
@@ -15,9 +14,7 @@
 .activity-state[data-state="Conquistato"], .activity-state[data-state="Conclusa"] { background: #e1f1e7; color: #26563b; }
 .activity-card progress { display: block; width: 100%; margin: 12px 0; accent-color: #398258; }
 .activities-state-filter { max-width: 320px; }
-.path-filter-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 0 16px; }
-.path-filter-fields .activities-state-filter { flex: 1 1 200px; }
-.path-filter-fields #paths-counts { flex: 1 0 100%; margin: 4px 0 8px; font-size: .85rem; }
+#paths-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
 .activities-dialog h3 { font-size: 1rem; margin-top: 24px; }
 .event-settings > summary, .event-filters > summary { min-height: 44px; box-sizing: border-box; }
 .activities-dialog .members-dialog-actions { bottom: -1.5rem; padding-bottom: 16px; }
@@ -70,7 +67,6 @@
   .activities-context { grid-template-columns: minmax(90px, 100px) minmax(0, 1fr); gap: 10px; margin: 12px 0; }
   .activities-page h2 { font-size: 1.2rem; margin: .5rem 0; }
   .activities-page .members-note { margin: .5rem 0; }
-  #paths-counts { font-size: .8rem; }
 }
 @media (max-width: 420px) {
   .activities-attendance label { grid-template-columns: minmax(0, 1fr); }
