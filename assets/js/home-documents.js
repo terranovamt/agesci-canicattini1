@@ -174,6 +174,8 @@
         const label = document.createElement("span");
         label.className = "document-label";
         label.textContent = (detail?.label || "Documenti del gruppo") + (file?.year ? " · " + file.year : "");
+        if (list.dataset.order === "latest" && /^\d{4}-\d{2}-\d{2}/.test(file?.publishedAt || ""))
+          label.textContent += " · pubblicato il " + file.publishedAt.slice(0, 10).split("-").reverse().join("/");
         const heading = document.createElement("h3");
         heading.textContent = file ? file.title || file.file.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ") : entry.label;
         const description = document.createElement("p");

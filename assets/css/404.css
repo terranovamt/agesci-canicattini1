@@ -152,9 +152,10 @@ h1 {
 }
 
 .not-found .text-link {
-  display: block;
-  width: fit-content;
-  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 8px 18px 0 0;
   color: color-mix(in srgb, var(--w) 88%, var(--y));
 }
 
@@ -259,4 +260,8 @@ footer {
   footer {
     width: min(100% - 32px, 1200px);
   }
+}
+
+.not-found .button {
+  margin-right: 18px;
 }
