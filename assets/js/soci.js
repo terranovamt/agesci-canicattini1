@@ -149,7 +149,7 @@
   function chosen() { return data.members.filter(member => selected.has(member.id)); }
   function updateSelection() {
     $('members-count').textContent = `${results().length} risultati · ${selected.size} selezionati`;
-    $('open-macro').disabled = $('open-documents').disabled = !selected.size;
+    $('open-macro').disabled = !selected.size;
     $('members-selection').hidden = !selected.size;
     const passage = passageSelection();
     $('open-macro').textContent = passage.error ? 'Proponi passaggio' : `Proponi passaggio ${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)}`;
@@ -814,9 +814,10 @@
     const form = event.currentTarget, payload = Object.fromEntries(new FormData(form));
     run(async () => { await A.request('members/templates', 'POST', payload); form.reset(); await load(); });
   };
+  function docMembers() { return selected.size ? chosen() : results(); }
   function documentTexts() {
     const template = data.templates.find(template => String(template.id) === $('document-template').value);
-    return chosen().map(member => {
+    return docMembers().map(member => {
       const values = { nome: member.profile.givenName || member.name, cognome: member.profile.surname || '',
         codice: member.code, branca: M.branchLabel(member.branch), anno: census(member)?.year || 'Non indicato',
         email: member.profile.email || '', cellulare: member.profile.phone || '',
@@ -828,9 +829,18 @@
       return template.body.replace(/\{\{([^{}]+)\}\}/g, (_, key) => values[key]);
     });
   }
-  function renderDocuments() { $('document-preview').replaceChildren(...documentTexts().map(text => node('article', text, 'member-document'))); }
-  $('open-documents').onclick = () => { renderDocuments(); $('documents-dialog').showModal(); };
-  $('document-template').onchange = renderDocuments;
+  function renderDocuments() {
+    const texts = documentTexts();
+    $('document-count').textContent = `${texts.length} document${texts.length === 1 ? 'o' : 'i'}${selected.size ? '' : ' (tutti i risultati)'}`;
+    $('print-documents').disabled = !texts.length;
+    $('document-preview').replaceChildren(...texts.map(text => node('article', text, 'member-document')));
+  }
+  $('open-documents').onclick = () => {
+    const last = localStorage.getItem('soci-document-template');
+    if ([...$('document-template').options].some(o => o.value === last)) $('document-template').value = last;
+    renderDocuments(); $('documents-dialog').showModal();
+  };
+  $('document-template').onchange = () => { localStorage.setItem('soci-document-template', $('document-template').value); renderDocuments(); };
   $('print-documents').onclick = () => {
     $('members-print').replaceChildren(...documentTexts().map(text => node('article', text, 'member-document')));
     $('documents-dialog').close();

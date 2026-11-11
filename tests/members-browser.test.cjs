@@ -422,6 +422,16 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.noLegacyPistaDocument = !$('document-preview').textContent.includes('Nota precedente') &&
             !$('document-preview').textContent.includes('Pista / sentiero');
           document.querySelector('[data-close=documents-dialog]').click();
+          $('clear-selection').click(); $('members-filters').oninput();
+          results.docsWithoutSelection = !$('open-documents').disabled;
+          $('open-documents').click();
+          results.docsAllResults = $('document-count').textContent.includes('tutti i risultati') &&
+            $('document-preview').children.length === $('members-list').querySelectorAll('input[type=checkbox]').length && $('document-preview').children.length > 0;
+          results.docsSideBySide = innerWidth < 900 ||
+            $('document-preview').getBoundingClientRect().left >= $('document-template').getBoundingClientRect().right;
+          document.querySelector('[data-close=documents-dialog]').click();
+          filters.search.value = 'Persona Locale'; $('members-filters').oninput();
+          $('select-results').click();
           results.lcRoute = $('open-macro').textContent === 'Proponi passaggio L/C → E/G' && $('macro-error').hidden;
           filters.search.value = ''; $('members-filters').oninput();
           [...$('members-list').querySelectorAll('input[type=checkbox]')].find(input => !input.checked).click();
@@ -502,7 +512,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
         "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
-        "noLegacyPistaDocument", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
+        "noLegacyPistaDocument", "docsWithoutSelection", "docsAllResults", "docsSideBySide", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
         "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
         "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogUsesSpace", "pickerFits", "macroFits", "documentsFit",
         "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",

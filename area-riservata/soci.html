@@ -261,10 +261,15 @@
   </dialog>
   <dialog id="documents-dialog" class="members-dialog">
     <div class="members-dialog-heading"><h2>Documenti dai modelli</h2><button class="button button-secondary" type="button" data-close="documents-dialog">Chiudi</button></div>
-    <label>Modello<select id="document-template"></select></label>
-    <p>Una scheda per ogni socio selezionato. Controlla i testi prima di stampare o salvare in PDF. I modelli interni non sostituiscono certificazioni ufficiali AGESCI.</p>
-    <button id="print-documents" class="button button-primary" type="button">Stampa / Salva PDF</button>
-    <div id="document-preview"></div>
+    <div class="documents-layout">
+      <div class="documents-controls">
+        <label>Modello<select id="document-template"></select></label>
+        <p id="document-count" role="status"></p>
+        <p>Una scheda per ogni socio (selezionati, o tutti i risultati se nessuno è selezionato). I modelli interni non sostituiscono certificazioni ufficiali AGESCI.</p>
+        <button id="print-documents" class="button button-primary" type="button">Stampa / Salva PDF</button>
+      </div>
+      <div id="document-preview"></div>
+    </div>
   </dialog>
   <div id="members-print" hidden></div>
   <!-- include:footer {"top":"reserved-content"} -->
