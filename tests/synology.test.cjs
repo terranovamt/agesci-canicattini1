@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
+const { once } = require("node:events");
 const { test } = require("node:test");
 
 const root = path.join(__dirname, "..");
@@ -104,6 +106,41 @@ test("NAS app image includes every local runtime module required by the server",
     }
   }
   check("server/nas.cjs");
+});
+
+test("NAS app starts with only the files copied into its runtime image", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "nas-image-"));
+  const app = path.join(directory, "app");
+  let server;
+  try {
+    for (const [, source, target] of read("server/Dockerfile").matchAll(/^COPY (\S+) \/app\/(\S+)$/gm)) {
+      const destination = path.join(app, target);
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.cpSync(path.join(root, source), destination, { recursive: true });
+    }
+    const { createNasServer } = require(path.join(app, "server/nas.cjs"));
+    server = await createNasServer({
+      dataDir: path.join(directory, "data"),
+      password: "Image-test-only-password1!",
+      publicOrigin: "https://nas-test.invalid",
+      basePath: prefix,
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    for (const route of ["/healthz", prefix + "/healthz"]) {
+      const response = await fetch(origin + route);
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { ok: true });
+    }
+  } finally {
+    if (server) {
+      const closed = once(server, "close");
+      server.stop();
+      await closed;
+    }
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("NAS does not publish a public listener or embed a tunnel token", () => {

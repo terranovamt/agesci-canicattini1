@@ -23,7 +23,7 @@ test("NAS updater tracks only NAS and keeps runtime data outside releases", () =
 
 test("NAS updater serializes deployments and records only healthy versions", () => {
   assert.match(script, /mkdir "\$NAS_ROOT\/update.lock"/);
-  const health = script.indexOf('if compose "$release" up -d --wait');
+  const health = script.indexOf("if start_release; then");
   const record = script.indexOf('> "$NAS_ROOT/current-revision.tmp"');
   assert.ok(health >= 0 && record > health);
   assert.match(script, /compose "\$NAS_ROOT\/releases\/\$previous" up -d --build --wait/);
@@ -52,8 +52,10 @@ test("NAS updater preserves data, retains two healthy releases and rolls back fa
     fs.writeFileSync(path.join(repository, "deploy/synology/update.sh"), script);
     fs.copyFileSync(path.join(__dirname, "../deploy/synology/sync-calendars.sh"),
       path.join(repository, "deploy/synology/sync-calendars.sh"));
-    fs.writeFileSync(path.join(repository, "deploy/synology/compose.yaml"), "services: {}\n");
-    execFileSync("git", ["init", "-q", "-b", "NAS", repository]);
+    const composeFile = "services:\n  app: {}\n  web: {}\n  gate: {}\n";
+    fs.writeFileSync(path.join(repository, "deploy/synology/compose.yaml"), composeFile);
+    execFileSync("git", ["init", "-q", repository]);
+    execFileSync("git", ["-C", repository, "symbolic-ref", "HEAD", "refs/heads/NAS"]);
     execFileSync("git", ["-C", repository, "add", "."]);
     execFileSync("git", ["-C", repository, "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
       "commit", "-qm", "NAS deployment fixture"]);
@@ -65,13 +67,40 @@ test("NAS updater preserves data, retains two healthy releases and rolls back fa
     fs.writeFileSync(path.join(bin, "docker"),
       `#!/bin/sh
 printf "%s %s\\n" "$NAS_RELEASE_REVISION" "$*" >> "$NAS_ROOT/operations.log"
+previous_arg=""
+compose_file=""
+for arg in "$@"; do
+  if [ "$previous_arg" = "-f" ]; then compose_file="$arg"; fi
+  previous_arg="$arg"
+done
 case "$*" in
+  *" config --services")
+    printf 'app\\nweb\\n'
+    if grep -q '^  gate:' "$compose_file"; then printf 'gate\\n'; fi
+    exit 0 ;;
+  *" stop web") rm -f "$NAS_ROOT/legacy-listener" ;;
+  *" stop gate") rm -f "$NAS_ROOT/gate-listener" ;;
   *" up "*)
-    if [ "$NAS_RELEASE_REVISION" = "$FAIL_REVISION" ]; then exit 17; fi ;;
+    case "$*" in
+      *" gate")
+        if ! grep -q '^  gate:' "$compose_file"; then echo "no such service: gate" >&2; exit 20; fi
+        if [ -f "$NAS_ROOT/legacy-listener" ]; then echo "port 8080 already in use" >&2; exit 21; fi
+        if [ "$NAS_RELEASE_REVISION" = "$FAIL_GATE_REVISION" ]; then exit 23; fi
+        touch "$NAS_ROOT/gate-listener" ;;
+      *" app web")
+        if [ "$NAS_RELEASE_REVISION" = "$FAIL_REVISION" ]; then exit 17; fi
+        if ! grep -q '^  gate:' "$compose_file"; then
+          if [ -f "$NAS_ROOT/gate-listener" ]; then echo "port 8080 already in use" >&2; exit 21; fi
+          touch "$NAS_ROOT/legacy-listener"
+        fi ;;
+    esac ;;
   *" build"*)
     if [ "$NAS_RELEASE_REVISION" = "$FAIL_BUILD_REVISION" ]; then exit 18; fi ;;
   *" ps --all")
     if [ "$NAS_RELEASE_REVISION" = "$FAIL_PS_REVISION" ]; then exit 19; fi ;;
+  *" logs "*)
+    if [ "$NAS_RELEASE_REVISION" = "$FAIL_LOGS_REVISION" ]; then exit 22; fi
+    printf 'fixture backend startup log\\n' ;;
 esac
 if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
 `, { mode: 0o755 });
@@ -96,6 +125,10 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     assert.ok(operations.includes("--env-file " + path.join(root, "nas.env")));
     assert.ok(operations.includes("--env-file " + path.join(root, ".env")));
     assert.match(operations, /--project-name agesci-nas/);
+    const gateStart = operations.indexOf("up -d --wait --wait-timeout 120 gate");
+    const appStart = operations.indexOf("up -d --wait --force-recreate --wait-timeout 120 app web");
+    assert.ok(gateStart >= 0 && appStart > gateStart, "gate must be healthy before app/web are replaced");
+    assert.doesNotMatch(operations, /--force-recreate[^\n]* gate/);
     assert.match(run(), /NAS gia' aggiornato/);
     assert.equal(fs.readFileSync(path.join(root, "operations.log"), "utf8"), operations);
     fs.writeFileSync(path.join(root, ".env"), "NAS_CAPO_CODES=7654321,7654322\n");
@@ -131,8 +164,16 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
       assert.match(error.stderr.toString(), /fallito durante: build delle immagini app e web/);
       return true;
     });
+    const beforeGateFailure = fs.readFileSync(path.join(root, "operations.log"), "utf8");
+    assert.throws(() => run({ FAIL_GATE_REVISION: failed }), error => {
+      assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
+      return true;
+    });
+    const gateFailure = fs.readFileSync(path.join(root, "operations.log"), "utf8").slice(beforeGateFailure.length);
+    assert.doesNotMatch(gateFailure, new RegExp(failed + " compose .*up .*app web"));
     assert.throws(() => run({ FAIL_REVISION: failed, FAIL_PS_REVISION: failed }), error => {
       assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
+      assert.match(error.stdout.toString(), /fixture backend startup log/);
       assert.match(error.stderr.toString(), /tento comunque il ripristino/);
       return true;
     });
@@ -142,6 +183,24 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     assert.deepEqual(releases(), [second, third, failed, "b".repeat(40)].sort());
     assert.match(fs.readFileSync(path.join(root, "operations.log"), "utf8"),
       new RegExp(third + " compose .*up -d --build --wait"));
+
+    // Older releases bind web to 8080 and have no gate service.
+    fs.writeFileSync(path.join(root, "releases", third, "deploy/synology/compose.yaml"),
+      composeFile.replace("  gate: {}\n", ""));
+    fs.unlinkSync(path.join(root, "gate-listener"));
+    fs.writeFileSync(path.join(root, "legacy-listener"), "");
+    const beforeLegacy = fs.readFileSync(path.join(root, "operations.log"), "utf8");
+    assert.throws(() => run({ FAIL_REVISION: failed, FAIL_LOGS_REVISION: failed }), error => {
+      assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
+      assert.match(error.stderr.toString(), /Impossibile leggere i log/);
+      assert.doesNotMatch(error.stderr.toString(), /no such service|port 8080 already in use/);
+      return true;
+    });
+    const legacyOperations = fs.readFileSync(path.join(root, "operations.log"), "utf8").slice(beforeLegacy.length);
+    assert.ok(legacyOperations.indexOf("stop web") < legacyOperations.indexOf("up -d --wait --wait-timeout 120 gate"));
+    assert.ok(legacyOperations.indexOf("stop gate") < legacyOperations.indexOf("up -d --build --wait --force-recreate"));
+    assert.equal(fs.readFileSync(path.join(root, "current-revision"), "utf8").trim(), third);
+    assert.equal(fs.readFileSync(path.join(root, "current-configuration"), "utf8"), beforeFailure);
     run();
     assert.deepEqual(releases(), [third, failed, "b".repeat(40)].sort());
     assert.equal(fs.readFileSync(path.join(root, "data/keep.txt"), "utf8"), "existing runtime data");

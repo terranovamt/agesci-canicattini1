@@ -96,13 +96,30 @@ compose() {
 phase="verifica della configurazione Compose"
 compose "$release" config --quiet
 bash -n "$release/deploy/synology/update.sh"
+previous_has_gate=false
+if [ -n "$previous" ] && [ -d "$NAS_ROOT/releases/$previous" ]; then
+    previous_services="$(compose "$NAS_ROOT/releases/$previous" config --services)"
+    if grep -qx gate <<< "$previous_services"; then
+        previous_has_gate=true
+    fi
+fi
 phase="build delle immagini app e web"
 compose "$release" build
 phase="build dell'immagine calendari"
 compose "$release" --profile maintenance build calendar-sync
-phase="avvio e verifica salute dei container"
-if compose "$release" up -d --wait --force-recreate --wait-timeout 120 app web &&
-    compose "$release" up -d --wait --wait-timeout 120 gate; then
+
+start_release() {
+    if [ -n "$previous" ] && [ "$previous_has_gate" = false ]; then
+        phase="trasferimento della porta 8080 da web al proxy di attesa"
+        compose "$release" stop web || return $?
+    fi
+    phase="avvio del proxy di attesa"
+    compose "$release" up -d --wait --wait-timeout 120 gate || return $?
+    phase="avvio e verifica salute di app e web"
+    compose "$release" up -d --wait --force-recreate --wait-timeout 120 app web
+}
+
+if start_release; then
     phase="registrazione della release funzionante"
     if [ "$revision" != "$previous" ]; then
         printf '%s\n' "$previous" > "$NAS_ROOT/previous-revision.tmp"
@@ -124,11 +141,18 @@ else
     if ! compose "$release" ps --all; then
         echo "Impossibile leggere lo stato dei container; tento comunque il ripristino." >&2
     fi
+    if ! compose "$release" logs --no-color --tail=80 app web gate; then
+        echo "Impossibile leggere i log dei container; tento comunque il ripristino." >&2
+    fi
     if [ -n "$previous" ] && [ -d "$NAS_ROOT/releases/$previous" ]; then
         phase="ripristino della release $previous"
         export NAS_RELEASE_REVISION="$previous"
+        if [ "$previous_has_gate" = true ]; then
+            compose "$NAS_ROOT/releases/$previous" up -d --build --wait --wait-timeout 120 gate
+        else
+            compose "$release" stop gate
+        fi
         compose "$NAS_ROOT/releases/$previous" up -d --build --wait --force-recreate --wait-timeout 120 app web
-        compose "$NAS_ROOT/releases/$previous" up -d --build --wait --wait-timeout 120 gate
         echo "Ripristinato il codice precedente: $previous"
     fi
     exit 1

@@ -4,6 +4,7 @@ COPY server/nas.cjs /app/server/nas.cjs
 COPY server/people.cjs /app/server/people.cjs
 COPY server/members.cjs /app/server/members.cjs
 COPY server/activities.cjs /app/server/activities.cjs
+COPY server/votes.cjs /app/server/votes.cjs
 COPY server/member-units.cjs /app/server/member-units.cjs
 COPY server/monitor.cjs /app/server/monitor.cjs
 COPY assets/js/documents-model.js /app/assets/js/documents-model.js

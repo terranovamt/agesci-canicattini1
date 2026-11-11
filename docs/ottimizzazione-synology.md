@@ -294,7 +294,11 @@ Se il sito non si aggiorna, aprire l'ultimo risultato dell'attivita' DSM:
 `NAS gia' aggiornato` significa che commit e configurazione non sono cambiati,
 non certifica la salute dei container. Un errore riporta la fase (fetch,
 configurazione, build o avvio); un avvio fallito mostra anche lo stato dei
-container e tenta il ripristino della release corrente precedente.
+container, le ultime 80 righe dei log di app/web/gate e tenta il ripristino
+della release corrente precedente. `unhealthy` e `Restarting (1)` indicano un
+errore di avvio, non necessariamente un timeout troppo breve: cercare nei log
+del backend la causa (per esempio `Cannot find module`). Una build riuscita
+non garantisce che l'immagine includa tutti i moduli richiesti dal server.
 Controllare che il commit sia su `NAS`, l'attivita' sia abilitata e lo spazio
 libero sia sufficiente. Confrontare il file `current-revision` con la release
 visibile nel monitor della regia. Per la diagnosi condividere solo il log
@@ -302,7 +306,7 @@ dell'attivita', dopo aver rimosso eventuali credenziali: non condividere `.env`,
 `nas.env`, `docker inspect` o l'output completo di `docker compose config`.
 
 1. Eseguire manualmente l'attivita' e aspettare il completamento della build.
-2. In Container Manager cercare il progetto/servizi `agesci-nas`: `app` e `web`
+2. In Container Manager cercare il progetto/servizi `agesci-nas`: `app`, `web` e `gate`
    devono essere healthy. Non e' richiesto un container `cloudflared`.
 3. Dal terminale NAS controllare `curl http://127.0.0.1:8080/healthz`:
    deve rispondere con `{"ok":true}`. Non e' un test completo del dominio pubblico.
@@ -754,6 +758,49 @@ commit tra due controlli producono il deployment dell'ultimo, non di ogni
 versione intermedia. Puo' esserci una breve interruzione. Il controllo del
 tunnel non certifica che il dominio esterno sia configurato correttamente.
 
+### Pagina di attesa e passaggio al proxy gate
+
+`gate` e' il proxy indipendente che pubblica `127.0.0.1:8080`; `web` e `app`
+restano sulla rete Docker. Durante la build il sito precedente resta disponibile.
+Prima di ricreare app/web l'updater avvia e verifica gate, senza forzarne la
+ricreazione a ogni deploy. Quando web o il backend non sono raggiungibili,
+gate risponde **503**, con `Retry-After: 30` e `Cache-Control: no-store`,
+servendo la pagina autonoma con la tenda di giorno o il bivacco di notte.
+Non occorrono asset del backend. La pagina controlla ogni cinque secondi
+`/agesci-canicattini1/healthz` e ricarica lo stesso URL solo quando torna sano.
+`/gate-healthz` controlla invece soltanto il proxy: un gate healthy non prova
+che il backend funzioni. La pagina non sostituisce retroattivamente le schede
+gia' aperte e non reinvia operazioni di salvataggio.
+
+Al primo passaggio da una release senza gate, l'updater ferma il vecchio web
+per liberare 8080, avvia gate e poi sostituisce app/web. Questa prima migrazione
+puo' avere una breve interruzione prima dell'avvio del proxy. Se il deploy
+fallisce, il rollback ferma gate prima di ripristinare il vecchio web sulla
+stessa porta; non tenta di avviare un servizio gate inesistente nella release
+precedente. I dati persistenti non vengono cancellati.
+
+**Installazioni con il vecchio updater:** il launcher si aggiorna solo dopo
+un deploy riuscito. Dopo aver pubblicato la correzione su `NAS`, per applicare
+anche la nuova gestione del primo passaggio e del rollback, sospendere
+l'attivita' DSM e attendere che l'aggiornamento in corso termini (non eliminare
+un lock attivo). Sul NAS aggiornare solo il launcher dalla sorgente Git:
+
+```sh
+export NAS_ROOT=/volume1/docker/agesci-nas
+(
+  set -e
+  umask 077
+  git --git-dir="$NAS_ROOT/repository.git" fetch --no-tags origin "+refs/heads/NAS:refs/heads/NAS"
+  git --git-dir="$NAS_ROOT/repository.git" show refs/heads/NAS:deploy/synology/update.sh > "$NAS_ROOT/update.sh.next"
+  bash -n "$NAS_ROOT/update.sh.next"
+  mv "$NAS_ROOT/update.sh.next" "$NAS_ROOT/update.sh"
+  /bin/bash "$NAS_ROOT/update.sh"
+)
+```
+
+Riabilitare poi l'attivita' DSM. Non creare un secondo progetto, non cambiare
+la destinazione del reverse proxy e non rimuovere `data` o la configurazione.
+
 ```text
 /volume1/docker/agesci-nas/
   nas.env, update.sh, sync-calendars.sh  Configurazione e attivita' stabili
@@ -801,10 +848,17 @@ dei mount Linux reali. La preview tradizionale resta una simulazione separata.
 Con Node 24 (Node 22 nei test segnala SQLite come sperimentale):
 
 ```sh
-node --test tests/nas-server.test.cjs tests/nas-monitor.test.cjs tests/nas-telemetry.test.cjs tests/nas-panel.test.cjs tests/nas-update.test.cjs tests/synology.test.cjs
+node --test tests/nas-server.test.cjs tests/nas-monitor.test.cjs tests/nas-telemetry.test.cjs tests/nas-panel.test.cjs tests/nas-update.test.cjs tests/nas-gate.test.cjs tests/synology.test.cjs
 docker compose --env-file deploy/synology/nas.env.example -f deploy/synology/compose.yaml --profile maintenance config --quiet
-docker compose --env-file deploy/synology/nas.env.example -f deploy/synology/compose.yaml --profile maintenance build app web calendar-sync
+docker compose --env-file deploy/synology/nas.env.example -f deploy/synology/compose.yaml --profile maintenance build app web gate calendar-sync
 ```
+
+Il test `synology.test.cjs` controlla anche che tutti i moduli runtime richiesti
+dal backend siano copiati nel Dockerfile e prova l'avvio con solo quei file.
+Con `NGINX_BINARY` impostato al
+percorso di un eseguibile Nginx 1.28, `nas-gate.test.cjs` avvia un proxy locale
+temporaneo e verifica HTTP 503 e recupero; altrimenti questa sola prova e'
+saltata. Non modifica servizi o configurazione Nginx di sistema.
 
 I test Node eseguono il backend via HTTP con dati temporanei e verificano
 persistenza, sessioni, conflitti e SSE. I test di configurazione non eseguono
