@@ -80,6 +80,7 @@
           <button id="open-macro" class="button button-primary" type="button">Proponi passaggio</button>
           <button id="open-documents" class="button button-secondary" type="button">Genera documenti</button>
         </div>
+        <p id="macro-error" class="members-note" role="alert" hidden></p>
       </div>
       <div class="members-table-wrap"><table class="members-table">
         <thead><tr><th scope="col">Seleziona</th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="name">Socio</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="branch">Branca</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="age">Età</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="census">Censimento AGESCI</button></th><th scope="col" aria-sort="none"><button type="button" class="members-sort" data-sort="contacts">Contatti</button></th></tr></thead>
@@ -257,15 +258,6 @@
     <div id="import-preview"></div>
     <button id="confirm-import" class="button button-primary" type="button" disabled>Conferma importazione</button>
     </section>
-  </dialog>
-  <dialog id="macro-dialog" class="members-dialog">
-    <form id="macro-form">
-      <div class="members-dialog-heading"><h2>Passaggio alla branca successiva</h2><button class="button button-secondary" type="button" data-close="macro-dialog">Chiudi</button></div>
-      <p id="macro-count"></p><p id="macro-error" role="alert"></p>
-      <p id="macro-route" class="member-assignment-summary"></p>
-      <p>Seleziona i soci per anno di nascita e decidi tu quando proporre L/C → E/G → R/S. Il passaggio viene applicato solo dopo la conferma della destinazione e conserva i percorsi precedenti.</p>
-      <button id="propose-transfer" class="button button-primary" type="submit">Proponi passaggio</button>
-    </form>
   </dialog>
   <dialog id="documents-dialog" class="members-dialog">
     <div class="members-dialog-heading"><h2>Documenti dai modelli</h2><button class="button button-secondary" type="button" data-close="documents-dialog">Chiudi</button></div>

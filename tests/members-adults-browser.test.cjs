@@ -177,7 +177,6 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
             !$('member-panel-guardians').hidden, 'new youth sections');
           document.querySelector('[data-close=member-dialog]').click();
           const macroCalls = () => calls.filter(call => call.route === 'members/macro').length;
-          const noRoute = 'Nessun passaggio proponibile con questa selezione.';
           const impossible = 'Non e previsto un passaggio alla branca successiva per R/S o Co.Ca.';
           const blockedFor = (branch, error) => {
             $('clear-selection').click();
@@ -185,14 +184,11 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
             $('select-results').click();
             const count = $('members-list').rows.length;
             $('open-macro').click();
-            const macro = $('macro-form');
-            assert(macro.querySelectorAll('select,input,textarea').length === 0, 'macro without dropdowns or values ' + branch);
-            assert($('macro-error').textContent === error && $('macro-route').textContent === noRoute && $('propose-transfer').disabled,
-              'passage blocked for ' + (branch || 'mixed selection'));
+            assert($('open-macro').textContent === 'Proponi passaggio', 'no route label for ' + (branch || 'mixed selection'));
             const before = calls.length;
-            macro.requestSubmit();
-            assert(calls.length === before && macroCalls() === 0 && $('macro-dialog').open, 'invalid passage must not call the API');
-            document.querySelector('[data-close=macro-dialog]').click();
+            $('open-macro').click();
+            assert($('macro-error').textContent === error && !$('macro-error').hidden, 'passage blocked for ' + (branch || 'mixed selection'));
+            assert(calls.length === before && macroCalls() === 0, 'invalid passage must not call the API');
             return count;
           };
           assert(blockedFor('R/S', impossible) === 1, 'R/S selection');

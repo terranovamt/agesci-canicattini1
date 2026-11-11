@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const M = window.SOCI_MODEL, A = window.ACCESSO, filters = $('members-filters');
-  const profileForm = $('member-form'), macroForm = $('macro-form');
+  const profileForm = $('member-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
   const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'guardians', 'censuses'];
@@ -151,6 +151,9 @@
     $('members-count').textContent = `${results().length} risultati · ${selected.size} selezionati`;
     $('open-macro').disabled = $('open-documents').disabled = !selected.size;
     $('members-selection').hidden = !selected.size;
+    const passage = passageSelection();
+    $('open-macro').textContent = passage.error ? 'Proponi passaggio' : `Proponi passaggio ${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)}`;
+    $('macro-error').hidden = true;
   }
   function render() {
     const visible = results(), rows = [];
@@ -304,7 +307,7 @@
         const button = node('button', label, 'button button-secondary');
         button.type = 'button';
         button.onclick = () => {
-          if (!confirm(`${label} per ${transfer.name}?`)) return;
+          if (action !== 'confirm' && !confirm(`${label} per ${transfer.name}?`)) return;
           run(async () => { await A.request('members/transfers/' + transfer.id, 'PATCH', { action, revision: transfer.revision }); await load(); });
         };
         card.append(button);
@@ -357,10 +360,7 @@
       document.querySelectorAll('dialog button').forEach(button => { button.disabled = false; });
       if ($('member-dialog').open) configureMemberSections();
       $('confirm-import').disabled = !preview;
-      if (data) {
-        updateSelection();
-        $('propose-transfer').disabled = !!passageSelection().error;
-      }
+      if (data) updateSelection();
     }
   }
   const excludedProfileKeys = ['guardianType', 'guardians', 'foca', 'coca', ...M.ignoredProfileFields];
@@ -781,20 +781,9 @@
   }
   $('open-macro').onclick = () => {
     const passage = passageSelection();
-    $('macro-error').textContent = passage.error;
-    $('macro-count').textContent = `${selected.size} soci selezionati (anche fuori dai filtri correnti).`;
-    $('macro-route').textContent = passage.error ? 'Nessun passaggio proponibile con questa selezione.' :
-      `${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)}`;
-    $('propose-transfer').disabled = !!passage.error;
-    $('macro-dialog').showModal();
-  };
-  macroForm.onsubmit = event => {
-    event.preventDefault();
-    const passage = passageSelection();
-    if (passage.error) { $('macro-error').textContent = passage.error; return; }
-    if (!confirm(`Proporre il passaggio ${M.branchLabel(passage.source)} → ${M.branchLabel(passage.target)} per ${passage.members.length} soci?`)) return;
+    if (passage.error) { $('macro-error').textContent = passage.error; $('macro-error').hidden = false; return; }
     const value = { action: 'passage', members: passage.members.map(member => ({ id: member.id, revision: member.revision })) };
-    run(async () => { await A.request('members/macro', 'POST', value); $('macro-dialog').close(); await load(); }, $('macro-error'));
+    run(async () => { await A.request('members/macro', 'POST', value); await load(); }, undefined, `Passaggio proposto per ${value.members.length} soci: in attesa nella scheda Passaggi.`);
   };
   const fieldForm = $('field-form');
   let suggestedKey = '';

@@ -132,16 +132,13 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           document.querySelector('[data-close=member-dialog]').click();
           [...$('members-list').querySelectorAll('input[type=checkbox]')]
             .find(input => input.getAttribute('aria-label') === 'Seleziona Example member').click();
-          result.selectionVisible = !$('members-selection').hidden && $('open-macro').textContent === 'Proponi passaggio';
-          $('open-macro').click();
-          const macro = $('macro-form');
-          result.route = $('macro-route').textContent;
-          result.noEducationalInput = macro.querySelectorAll('select,input,textarea').length === 0 &&
-            !$('macro-value') && !$('macro-field-label') && $('macro-error').textContent === '';
-          result.proposeEnabled = !$('propose-transfer').disabled;
-          macro.requestSubmit(); await wait();
+          result.selectionVisible = !$('members-selection').hidden && $('open-macro').textContent === 'Proponi passaggio E/G → R/S';
+          result.route = $('open-macro').textContent.slice('Proponi passaggio '.length);
+          result.noEducationalInput = !$('macro-value') && !$('macro-field-label') && $('macro-error').hidden;
+          result.proposeEnabled = !$('open-macro').disabled;
+          $('open-macro').click(); await wait();
           result.proposal = calls.find(call => call.route === 'members/macro').value;
-          result.macroClosed = !$('macro-dialog').open;
+          result.macroClosed = $('members-selection').hidden;
           result.outgoingPending = !$('transfers-tab').hidden && $('transfers-tab').textContent === 'Passaggi · 1' && $('members-incoming').hidden &&
             $('members-transfers').textContent.includes('E/G → R/S') && !transferButton('Conferma ingresso');
           result.fits = document.documentElement.scrollWidth <= innerWidth;

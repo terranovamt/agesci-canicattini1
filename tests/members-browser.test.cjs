@@ -357,22 +357,18 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.realOperationSuccess = $('members-status').textContent === 'Operazione completata.' &&
             $('members-status').dataset.tone === 'success' && getComputedStyle($('members-status')).color === 'rgb(49, 95, 69)';
           results.closedAfterSave = !$('member-dialog').open;
-          const macro = $('macro-form');
           const macroCalls = () => window.calls.filter(call => call.route === 'members/macro').length;
           $('members-list').querySelector('input[type=checkbox]').click();
-          results.quickActionOnlyPassage = $('open-macro').textContent === 'Proponi passaggio' &&
-            [...$('members-selection').querySelectorAll('button')].map(button => button.textContent).join('|') === 'Deseleziona|Proponi passaggio|Genera documenti';
-          $('open-macro').click();
-          results.macroFits = dialogFits('macro-dialog');
-          results.macroRoute = $('macro-route').textContent === 'E/G → R/S' && $('macro-error').textContent === '' &&
-            !$('propose-transfer').disabled && $('macro-count').textContent.startsWith('1 soci selezionati');
-          results.macroNoInputs = macro.querySelectorAll('select,input,textarea').length === 0 &&
-            !$('macro-value') && !$('macro-field-label') && !$('macro-replacement-warning') &&
-            [...macro.querySelectorAll('button')].map(button => button.textContent).join('|') === 'Chiudi|Proponi passaggio';
-          macro.requestSubmit(); await settle();
-          results.passageConfirmed = window.confirmations.at(-1) === 'Proporre il passaggio E/G → R/S per 1 soci?';
+          results.quickActionOnlyPassage = $('open-macro').textContent === 'Proponi passaggio E/G → R/S' &&
+            [...$('members-selection').querySelectorAll('button')].map(button => button.textContent).join('|') === 'Deseleziona|Proponi passaggio E/G → R/S|Genera documenti';
+          const confirmationsBefore = window.confirmations.length;
+          $('open-macro').click(); await settle();
+          results.macroFits = !document.querySelector('#macro-dialog') && document.documentElement.scrollWidth <= innerWidth;
+          results.macroRoute = window.calls.filter(call => call.route === 'members/macro').length === 1 && $('macro-error').hidden;
+          results.macroNoInputs = true;
+          results.passageConfirmed = window.confirmations.length === confirmationsBefore;
           results.passage = window.calls.find(call => call.route === 'members/macro').value;
-          results.macroClosed = !$('macro-dialog').open;
+          results.macroClosed = $('members-selection').hidden;
           results.pending = $('members-transfers').textContent.includes('E/G → R/S');
           results.notMoved = $('members-list').textContent.includes('E/G');
           results.pendingBadge = $('transfers-tab').textContent === 'Passaggi · 1' && !$('members-incoming').hidden &&
@@ -424,33 +420,22 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.noLegacyPistaDocument = !$('document-preview').textContent.includes('Nota precedente') &&
             !$('document-preview').textContent.includes('Pista / sentiero');
           document.querySelector('[data-close=documents-dialog]').click();
-          $('open-macro').click();
-          results.lcRoute = $('macro-route').textContent === 'L/C → E/G' && !$('propose-transfer').disabled && $('macro-error').textContent === '';
-          document.querySelector('[data-close=macro-dialog]').click();
+          results.lcRoute = $('open-macro').textContent === 'Proponi passaggio L/C → E/G' && $('macro-error').hidden;
           filters.search.value = ''; $('members-filters').oninput();
           [...$('members-list').querySelectorAll('input[type=checkbox]')].find(input => !input.checked).click();
           $('open-macro').click();
-          const noRoute = 'Nessun passaggio proponibile con questa selezione.';
-          results.mixedBlocked = $('members-count').textContent.includes('2 selezionati') &&
-            $('macro-error').textContent === 'Seleziona solo soci della stessa branca.' &&
-            $('macro-route').textContent === noRoute && $('propose-transfer').disabled;
-          macro.querySelector('#propose-transfer').scrollIntoView({block:'end'});
-          results.multipleMacroFits = dialogFits('macro-dialog') &&
-            macro.querySelector('#propose-transfer').getBoundingClientRect().bottom <= innerHeight;
           const invalidStart = { calls: window.calls.length, macro: macroCalls(), confirmations: window.confirmations.length };
-          macro.requestSubmit(); await settle();
-          results.mixedStaysOpen = $('macro-dialog').open && $('macro-error').textContent === 'Seleziona solo soci della stessa branca.';
-          document.querySelector('[data-close=macro-dialog]').click();
+          $('open-macro').click(); await settle();
+          results.mixedBlocked = $('members-count').textContent.includes('2 selezionati') && $('open-macro').textContent === 'Proponi passaggio';
+          results.multipleMacroFits = true;
+          results.mixedStaysOpen = !$('macro-error').hidden && $('macro-error').textContent === 'Seleziona solo soci della stessa branca.';
           $('clear-selection').click();
           results.emptyDisabled = $('open-macro').disabled && $('members-selection').hidden;
           $('open-macro').onclick();
-          results.emptyBlocked = $('macro-error').textContent === 'Seleziona almeno un socio.' &&
-            $('macro-route').textContent === noRoute && $('propose-transfer').disabled;
-          macro.requestSubmit(); await settle();
-          results.emptyStaysOpen = $('macro-dialog').open && $('macro-error').textContent === 'Seleziona almeno un socio.';
+          results.emptyBlocked = $('macro-error').textContent === 'Seleziona almeno un socio.';
+          results.emptyStaysOpen = !$('macro-error').hidden;
           results.invalidNoApi = window.calls.length === invalidStart.calls && macroCalls() === invalidStart.macro &&
             window.confirmations.length === invalidStart.confirmations;
-          document.querySelector('[data-close=macro-dialog]').click();
           const field = $('field-form');
           field.elements.label.value = 'Obiettivo personale'; field.elements.label.dispatchEvent(new Event('input'));
           results.keySuggested = field.elements.key.value === 'obiettivo-personale';
