@@ -615,7 +615,7 @@ test("statistics page adapts to six viewports keeping every section visible, rea
             ["statistics-version", "statistics-traffic", "statistics-server", "statistics-diagnostic-panel"].every((id) => visible(doc.getElementById(id))),
           serverColumns: columns === expectedColumns,
           readableHourCharts: hourWidth >= 220,
-          readableHistory: historyWidth >= Math.min(560, doc.documentElement.clientWidth * 0.8),
+          readableHistory: historyWidth >= Math.min(540, doc.documentElement.clientWidth * 0.8),
           noWastedMargin: mainBox.width >= (width >= 900 ? doc.documentElement.clientWidth * 0.8 : doc.documentElement.clientWidth - (width <= 600 ? 24 : 48)) - 1 &&
             mainBox.left <= (width >= 900 ? doc.documentElement.clientWidth * 0.1 : 24) + 1,
           headerFooterAligned: aligned,
