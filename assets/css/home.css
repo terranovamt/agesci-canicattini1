@@ -469,6 +469,18 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
   .dashboard-page .metrics-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 }
 
+/* Pagine documenti: elenco compatto come in home, 2 colonne su desktop */
+body.docs-page main#contenuto { padding-top: 20px }
+body.docs-page .documents-section { margin-bottom: 20px }
+body.docs-page .documents-section h1 { font-size: clamp(28px, 3.2vw, 38px) }
+body.docs-page .documents-section h1 br { display: none }
+body.docs-page .documents-section > p { margin: 0 0 8px }
+body.docs-page .section-heading { margin-bottom: 12px; align-items: center }
+body.docs-page .document-filters { gap: 12px; margin: 12px 0; padding: 12px 14px }
+body.docs-page .document-filters label { margin-bottom: 4px }
+body.docs-page .assembly-explainer { max-width: none; margin: 22px 0 0 }
+@media (max-width: 999px) { body.docs-page .section-description { display: none } }
+@media (max-width: 599px) { body.docs-page .document-filters > div { flex-basis: 100% } }
 /* Home: eventi e documenti subito visibili, due colonne su desktop */
 body.home main#contenuto { padding-top: 20px }
 body.home .hero { min-height: 0; gap: 24px; padding: clamp(22px, 3vw, 36px) clamp(24px, 4vw, 48px); grid-template-columns: minmax(0, 1fr) auto }
@@ -492,15 +504,16 @@ body.home .section-heading .eyebrow { margin-bottom: 4px }
 body.home .section-heading h2 { font-size: clamp(26px, 2.6vw, 32px) }
 body.home .calendar-card { padding: 14px }
 body.home .calendar-filter-set { margin: -52px 56px 10px 0 }
-body.home .documents-section > [role="status"] { margin-bottom: 8px }
-body.home .document-grid { grid-template-columns: 1fr; gap: 8px }
-body.home .document-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label actions" "title actions"; align-items: center; column-gap: 12px; min-height: 0; padding: 8px 14px }
-body.home .document-card:hover { transform: none }
-body.home .document-card-top, body.home .document-card p { display: none }
-body.home .document-label { grid-area: label; font-size: 10px }
-body.home .document-card h3 { grid-area: title; margin: 2px 0 0; font-size: 18px }
-body.home .document-actions { grid-area: actions; flex-direction: row; align-items: center; gap: 4px 14px; margin: 0; padding: 0; border: 0 }
-body.home .documents-more { margin: 8px 0 0 }
+body:is(.home, .docs-page) .documents-section > [role="status"] { margin-bottom: 8px }
+body:is(.home, .docs-page) .document-grid { grid-template-columns: 1fr; gap: 8px }
+body:is(.home, .docs-page) .document-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label actions" "title actions"; align-items: center; column-gap: 12px; min-height: 0; padding: 8px 14px }
+body:is(.home, .docs-page) .document-card:hover { transform: none }
+body:is(.home, .docs-page) .document-card-top, body:is(.home, .docs-page) .document-card p { display: none }
+body:is(.home, .docs-page) .document-label { grid-area: label; font-size: 10px }
+body:is(.home, .docs-page) .document-card h3 { grid-area: title; margin: 2px 0 0; font-size: 18px }
+body:is(.home, .docs-page) .document-actions { grid-area: actions; flex-direction: row; align-items: center; gap: 4px 14px; margin: 0; padding: 0; border: 0 }
+body:is(.home, .docs-page) .documents-more { margin: 8px 0 0 }
+@media (min-width: 1000px) { body.docs-page main .document-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) } body.docs-page .assembly-explainer-points { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
 @media (min-width: 760px) { .home-split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) } }
 @media (min-width: 1000px) {
   .home-split { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) }
@@ -508,8 +521,8 @@ body.home .documents-more { margin: 8px 0 0 }
   body.home #calendar-agenda { max-height: min(560px, calc(100vh - 220px)) }
 }
 @media (max-width: 999px) {
-  body.home .document-card { grid-template-columns: 1fr; grid-template-areas: "label" "title" "actions"; padding: 6px 12px }
-  body.home .document-card h3 { font-size: 16px }
+  body:is(.home, .docs-page) .document-card { grid-template-columns: 1fr; grid-template-areas: "label" "title" "actions"; padding: 6px 12px }
+  body:is(.home, .docs-page) .document-card h3 { font-size: 16px }
   body.home .document-actions { gap: 0 18px }
   body.home .hero-intro { display: none }
   body.home .calendar-month-details > summary { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--radius-lg); background: var(--bg); color: var(--v); font-size: 14px; font-weight: 800 }
