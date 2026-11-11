@@ -96,12 +96,12 @@
 .sec .vt-bar .vs { position: absolute; top: 0; height: 100%; transition: left .5s ease-out, width .5s ease-out, opacity .5s ease-out }
 .sec .vt-bar .vf { background: var(--vote-accent) }
 .sec .vt-bar .vc { background: #fff }
-.sec .vt-bar .va { border: 1.5px dashed rgba(255,255,255,0.75); border-radius: 16px; box-sizing: border-box }
-.sec .vt-nums { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end }
+.sec .vt-bar .va { border: 1.5px dashed rgba(255,255,255,0.75); border-radius: 0; box-sizing: border-box }
+.sec .vt-nums { display: flex; justify-content: space-between; align-items: flex-end; position: relative }
 .sec .vt-nums .vn b { display: block; font-size: 48px; line-height: 1.05; min-width: 1.5ch }
 .sec .vt-nums .vn span { font-size: 15px }
 .sec .vt-nums .vf b { color: var(--vote-accent) }
-.sec .vt-nums .va { text-align: center }.sec .vt-nums .va b { font-size: 30px }.sec .vt-nums .va span { color: var(--vote-muted) }
+.sec .vt-nums .va { position: absolute; bottom: 0; transform: translateX(-50%); text-align: center; transition: left .5s ease-out }.sec .vt-nums .va b { font-size: 30px }.sec .vt-nums .va span { color: var(--vote-muted) }
 .sec .vt-nums .vc { text-align: right }
 .sec .vt-status { font-size: 14px; color: var(--vote-accent); margin: 6px 0 14px }
 .sec .vt.nom, .sec .vt-h.nom { }
@@ -118,4 +118,4 @@
 .sec .vt-pb.dim { height: 4px }
 .sec .vt-hid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px }
 .sec .vt-hid span { background: var(--vote-track); border-radius: 12px; padding: 4px 12px; font-size: 15px }
-@media (prefers-reduced-motion: reduce) { .sec .vt-bar .vs, .sec .vt-pb i { transition: none } }
+@media (prefers-reduced-motion: reduce) { .sec .vt-bar .vs, .sec .vt-pb i, .sec .vt-nums .va { transition: none } }
