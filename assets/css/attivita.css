@@ -287,7 +287,8 @@
 #tournament-panel .tournament-current p, #tournament-panel .tournament-previous p { margin: 4px 0; font-size: .8rem; }
 #tournament-panel .tournament-previous { padding: 0 10px 6px; border-bottom: 1px solid #e6dfed; }
 #tournament-panel .tournament-previous summary { min-height: 44px; align-content: center; font-size: .85rem; cursor: pointer; }
-#event-tournament #tournament-presentations { display: flex; flex-wrap: wrap; gap: 8px; }
+#event-tournament .tournament-group-row td { background: #f0eaf5; padding: 2px 8px; }
+#event-tournament .tournament-presentation { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .85rem; color: #50336a; }
 #event-tournament .tournament-presentation { display: flex; flex-direction: row; align-items: center; gap: 8px; margin: 0; padding: 4px 8px; border: 1px solid #ddd3e7; border-radius: 8px; font-size: .85rem; }
 #event-tournament .tournament-presentation input { width: 76px; }
 #event-tournament .tournament-judging-table { min-width: 880px; }

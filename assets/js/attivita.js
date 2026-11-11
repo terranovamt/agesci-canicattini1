@@ -724,19 +724,15 @@
       groups.get(unit).push(person);
     }
     const presentationScores = new Map((item?.tournament?.presentations || []).map(value => [value.unit, value.score]));
-    $('tournament-presentations').replaceChildren(...[...groups.keys()].sort((a, b) => a.localeCompare(b, 'it')).map(unit => {
-      const row = node('label', undefined, 'tournament-presentation');
-      row.dataset.unit = unit;
-      row.append(node('strong', unit + ' · presentazione'));
+    const presentationInput = unit => {
       const score = node('input'); score.type = 'number'; score.min = '0'; score.max = '5'; score.step = '1';
       score.name = 'presentation-' + unit;
       score.inputMode = 'numeric'; score.placeholder = '0–5'; score.dataset.presentation = '';
       score.setAttribute('aria-label', 'Punteggio della presentazione per la sestiglia ' + unit);
       if (presentationScores.has(unit) && presentationScores.get(unit) !== null)
         score.value = String(presentationScores.get(unit));
-      row.append(score);
-      return row;
-    }));
+      return score;
+    };
     const table = node('table', undefined, 'tournament-judging-table');
     const head = node('thead'), header = node('tr');
     for (const text of ['Componente', 'Puntualità', ...tournamentFields.map(([, label]) => label)]) {
@@ -744,8 +740,12 @@
     }
     head.append(header); table.append(head);
     for (const [unit, group] of [...groups].sort(([a], [b]) => a.localeCompare(b, 'it'))) {
-      const body = node('tbody'), groupRow = node('tr'), groupCell = node('th', unit);
-      groupCell.colSpan = 2 + tournamentFields.length; groupCell.scope = 'rowgroup'; groupRow.append(groupCell); body.append(groupRow);
+      const body = node('tbody'), groupRow = node('tr', undefined, 'tournament-group-row'), groupCell = node('th', unit);
+      groupRow.dataset.unit = unit; groupCell.scope = 'rowgroup';
+      const presentationCell = node('td'); presentationCell.colSpan = 1 + tournamentFields.length;
+      const presentation = node('label', undefined, 'tournament-presentation');
+      presentation.append(node('span', 'Presentazione'), presentationInput(unit)); presentationCell.append(presentation);
+      groupRow.append(groupCell, presentationCell); body.append(groupRow);
       const records = group.map(person => {
         const row = node('tr', undefined, 'tournament-person');
         row.dataset.personId = person.personId; row.dataset.unit = person.unit || '';
@@ -795,7 +795,7 @@
       }));
       return { personId: Number(row.dataset.personId), unit: row.dataset.unit, ...values };
     });
-    const presentations = [...$('tournament-presentations').querySelectorAll('[data-presentation]')].map(control => ({
+    const presentations = [...$('event-tournament').querySelectorAll('[data-presentation]')].map(control => ({
       unit: control.closest('[data-unit]').dataset.unit, score: control.value === '' ? null : Number(control.value),
     }));
     return { members, presentations };
@@ -1148,7 +1148,7 @@
     updateAttendance();
     openDialog('event-dialog', eventForm);
     if (focusAttendance) queueMicrotask(() => $('event-attendance').querySelector('[data-person-action]')?.focus());
-    if (focusTournament) queueMicrotask(() => $('tournament-presentations').querySelector('input')?.focus());
+    if (focusTournament) queueMicrotask(() => $('event-tournament').querySelector('[data-presentation]')?.focus());
   }
   function guidance() {
     const kind = pathForm.elements.kind.value, hunt = kind === 'hunt';

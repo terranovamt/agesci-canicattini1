@@ -775,7 +775,7 @@ test("login autofill, education dates, activities and progression work on four s
         await expand("#event-attendance .activity-person:nth-of-type(2) .activity-presence-options");
         await fill("#event-attendance .activity-person:nth-of-type(2) select", "assente", "change");
         await click('[data-event-view="torneo"]');
-        await fill("#tournament-presentations input", "5");
+        await fill("#event-tournament [data-presentation]", "5");
         await fill("#tournament-members .tournament-person select", "true", "change");
         await page.evaluate(`{
           const scores = document.querySelector('.tournament-person').querySelectorAll('input');
@@ -802,7 +802,7 @@ test("login autofill, education dates, activities and progression work on four s
         await shot("desktop-16-classifica-torneo");
         await click("#tournament-events button");
         await wait("document.getElementById('event-dialog').open && document.getElementById('event-tournament').open");
-        assert.equal(await page.evaluate("document.querySelector('#tournament-presentations input').value"), "5");
+        assert.equal(await page.evaluate("document.querySelector('#event-tournament [data-presentation]').value"), "5");
         await page.evaluate("document.getElementById('event-dialog').close()");
       } else {
         await page.evaluate("document.getElementById('event-dialog').close()");
