@@ -80,11 +80,11 @@ body.pm .sec .vt-title b { font-weight: 300 }
 body.pm .sec .vt-m .vt-q { font-size: 19px; font-weight: 500; margin-top: 14px }
 body.pm .sec .vt-st { font-size: 15px; color: var(--vote-accent); margin-top: 6px }
 body.pm .sec .vt-pill { display: inline-block; font-size: 15px; color: var(--vote-accent); background: rgba(247,198,0,0.2); border-radius: 10px; padding: 2px 9px; margin: 10px 0 12px }
-body.pm .sec .vt-r { background: var(--vote-abs); color: #1f1f2b; border-radius: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; font-size: 18px }
+body.pm .sec .vt-r { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; font-size: 18px }
 body.pm .sec .vt-r b { font-size: 28px }
-body.pm .sec .vt-r.first { background: var(--vote-yes); color: #0b2a16; border-radius: 10px; padding: 12px 14px; font-size: 19px; font-weight: 500 }
+body.pm .sec .vt-r.first { background: var(--vote-accent); color: var(--vote-on-accent); border-radius: 10px; padding: 12px 14px; font-size: 19px; font-weight: 500 }
 body.pm .sec .vt-r.first b { font-size: 40px }
-body.pm .sec .vt-r.no { background: #c93036; color: #fff }
+body.pm .sec .vt-r.hl { border-top: .5px solid var(--vote-hairline) }
 body.pm .sec .vt-stamp { top: 330px; font-size: 26px; padding: 4px 16px; border-width: 4px }
 body.pm .sec .vt-m .vt-lab { font-size: 15px; margin-top: 14px }
 body.pm .sec .vt-lead { margin-top: 2px }

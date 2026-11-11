@@ -158,7 +158,14 @@
       [["scelta", "Scelta singola (favorevole / contrario / astenuto)"], ["nominativa", "Nominativa (candidati)"]].forEach(([v, t]) =>
         input.append(el("option", { value: v, textContent: t })));
       input.value = value;
-      input.onchange = () => commit(input.value);
+      input.onchange = () => {
+        commit(input.value);
+        const sib = getAt(edit, path.slice(0, -1)) || {};
+        const fisse = ["Favorevole", "Contrario", "Astenuto"];
+        if (input.value === "scelta") setAt(edit, path.slice(0, -1).concat("opzioni"), fisse);
+        else if (!Array.isArray(sib.opzioni) || same(sib.opzioni, fisse)) setAt(edit, path.slice(0, -1).concat("opzioni"), ["Candidato 1", "Candidato 2"]);
+        render();
+      };
     } else {
       const key = String(path.at(-1));
       const parentKey = String(path.at(-2) ?? "");
@@ -201,11 +208,11 @@
     anno_scout: "Anno scout",
     assemblea: "Assemblea",
     votazioni: "Votazioni dalle slide",
-    abilitate: "Votazioni abilitate",
+    abilitate: "Abilita il voto online",
     domanda: "Quesito",
     modalita: "Tipo (scelta o nominativa)",
     opzioni: "Opzioni / candidati",
-    mostra_live: "Mostra i conteggi in diretta",
+    mostra_live: "Mostra i conteggi in diretta (favorevoli, contrari, astenuti)",
     titolo: "Titolo",
     titolo_barra: "Titolo nella barra",
     sottotitolo: "Sottotitolo",
@@ -231,6 +238,8 @@
   const human = (k) => LABELS[k] || String(k).replace(/_/g, " ");
 
   function node(path, value, label) {
+    if (path.length === 1 && path[0] === "votazioni" && value && typeof value === "object")
+      return field(path.concat("abilitate"), !!value.abilitate, "Abilita il voto online");
     if (Array.isArray(value)) {
       if ((path.length === 1 && ["entrate", "uscite"].includes(path[0])) ||
           (path[0] === "patrimonio" && path[1] === "voci"))
@@ -513,7 +522,9 @@
         }),
       );
     else c.append(field(p.concat("nascosta"), !!x.nascosta, "Nascosta (salta questa slide)"));
-    const fields = Object.keys(x).filter((k) => k !== "tipo" && k !== "nascosta");
+    const nom = x.tipo === "slide_votazione" && x.modalita === "nominativa";
+    const fields = Object.keys(x).filter((k) => k !== "tipo" && k !== "nascosta" &&
+      !(x.tipo === "slide_votazione" && (nom ? k === "mostra_live" : k === "opzioni")));
     if (!fields.length)
       c.append(
         el("p", {

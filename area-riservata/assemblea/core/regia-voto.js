@@ -37,7 +37,7 @@
     firma = f;
     box.innerHTML = h;
     const apri = box.querySelector("#vt-apri");
-    apri.onclick = () => azione(aperta ? "close" : "open", aperta ? {} : { slide: slide.id, domanda: slide.domanda, modalita: slide.modalita, opzioni: slide.opzioni, live: slide.mostra_live !== false });
+    apri.onclick = () => azione(aperta ? "close" : "open", aperta ? {} : { slide: slide.id, domanda: slide.domanda, modalita: slide.modalita, opzioni: slide.modalita === "nominativa" ? slide.opzioni : ["Favorevole", "Contrario", "Astenuto"], live: slide.modalita !== "nominativa" && slide.mostra_live !== false });
     const rs = box.querySelector("#vt-reset");
     if (rs) rs.onclick = () => confirm("Azzerare la votazione? I voti già espressi verranno cancellati.") && azione("reset", { slide: slide.id });
   }
