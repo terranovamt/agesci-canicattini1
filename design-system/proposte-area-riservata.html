@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Proposte layout area riservata</title>
+<style>
+body{font:14px/1.4 Montserrat,Arial,sans-serif;margin:0;padding:16px;background:#f4f1f8;color:#211638}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 8px;color:#462678}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+figure{margin:0}figcaption{font-weight:700;margin-bottom:6px}
+.f{background:#fff;border:2px solid #462678;border-radius:8px;padding:6px;display:grid;gap:6px;position:relative}
+.b{background:#e8e0f3;border-radius:4px;padding:6px;font-size:11px;min-height:24px}
+.y{background:#FDC500}.p{background:#462678;color:#fff}.a{background:#fff1b8;border:1px solid #FDC500}
+.ph{width:195px;height:422px;grid-auto-rows:min-content}
+.tb{width:410px;height:590px;grid-auto-rows:min-content}
+.lp{width:456px;height:256px}.dk{width:480px;height:270px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+.side{grid-template-columns:70px 1fr}.side3{grid-template-columns:60px 1fr 1.3fr}
+.s2{grid-column:span 2}.bar{position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:4px}.bar .b{flex:1;text-align:center}
+.tall{min-height:60px}
+</style>
+</head>
+<body>
+<h1>Proposte layout area riservata</h1>
+<p>Schizzi statici (viola = azione primaria, giallo = avviso, grigio = contenuto). Scala ridotta. Consigliate: 1 telefono, 2 tablet, 1 portatile, 2 desktop.</p>
+
+<h2>Telefono 390×844</h2>
+<div class="row">
+<figure><figcaption>1 · Home a compiti</figcaption><div class="f ph"><div class="b a">Passaggi in attesa (2)</div><div class="b p">Scorciatoia 1</div><div class="b p">Scorciatoia 2</div><div class="b">Scorciatoia 3</div><div class="b">Scorciatoia 4</div><div class="b">Altro ▾</div><div class="bar"><div class="b">Home</div><div class="b">Soci</div><div class="b">Attività</div><div class="b">Altro</div></div></div></figure>
+<figure><figcaption>2 · Home a flusso</figcaption><div class="f ph"><div class="b p tall">ADESSO<br>Attività · ora<br>Presenze 12/18</div><div class="b a">Quote da riscuotere (3)</div><div class="b">Passaggi (2)</div><div class="b">Prossimi eventi</div><div class="b">Documenti</div></div></figure>
+<figure><figcaption>3 · Home a ricerca</figcaption><div class="f ph"><div class="b p">Cerca socio…</div><div class="b y">Presenze</div><div class="b y">Quote</div><div class="b y">Programma</div><div class="b">Avvisi (2)</div></div></figure>
+</div>
+
+<h2>Tablet 820×1180</h2>
+<div class="row">
+<figure><figcaption>1 · Telefono ampio</figcaption><div class="f tb"><div class="b a">Passaggi in attesa</div><div class="f g2" style="border:0;padding:0"><div class="b p tall">Scorciatoia 1</div><div class="b p tall">Scorciatoia 2</div><div class="b tall">Scorciatoia 3</div><div class="b tall">Scorciatoia 4</div></div><div class="b">Altro ▾</div></div></figure>
+<figure><figcaption>2 · Due colonne</figcaption><div class="f tb g2"><div class="b p tall">ADESSO<br>Attività, presenze</div><div class="b y tall">Scorciatoie</div><div class="b a">Avvisi</div><div class="b">Quote</div><div class="b s2">Eventi e documenti</div></div></figure>
+<figure><figcaption>3 · Rail laterale</figcaption><div class="f tb side"><div class="b p">Home<br>Soci<br>Attività<br>Altro</div><div class="f" style="border:0;padding:0;grid-auto-rows:min-content"><div class="b a">Avvisi</div><div class="b tall">Contenuto a tutta larghezza</div><div class="b">Elenco</div></div></div></figure>
+</div>
+
+<h2>Portatile 1366×768</h2>
+<div class="row">
+<figure><figcaption>1 · Menu laterale + 2 colonne</figcaption><div class="f lp side"><div class="b p">Menu</div><div class="f g2" style="border:0;padding:0"><div class="b a">Avvisi</div><div class="b p">Adesso</div><div class="b">Quote</div><div class="b">Eventi</div></div></div></figure>
+<figure><figcaption>2 · Barra alta + 3 colonne</figcaption><div class="f lp" style="grid-template-rows:26px 1fr"><div class="b p">Barra superiore</div><div class="f g3" style="border:0;padding:0"><div class="b a">Avvisi</div><div class="b p">Adesso</div><div class="b y">Scorciatoie</div></div></div></figure>
+<figure><figcaption>3 · Elenco + dettaglio</figcaption><div class="f lp side3"><div class="b p">Menu</div><div class="b">Elenco soci</div><div class="b y">Dettaglio selezionato</div></div></figure>
+</div>
+
+<h2>Desktop 1920×1080</h2>
+<div class="row">
+<figure><figcaption>1 · Cruscotto a 4 riquadri</figcaption><div class="f dk g4" style="grid-template-rows:26px 1fr 1fr"><div class="b p s2" style="grid-column:span 4">Barra superiore</div><div class="b p">Adesso</div><div class="b a">Passaggi</div><div class="b">Quote</div><div class="b">Soci</div><div class="b s2">Eventi</div><div class="b s2">Documenti</div></div></figure>
+<figure><figcaption>2 · Menu + elenco + dettaglio + riepilogo</figcaption><div class="f dk" style="grid-template-columns:50px 1fr 1.2fr 0.8fr"><div class="b p">Menu</div><div class="b">Elenco</div><div class="b y">Dettaglio</div><div class="b a">Riepilogo<br>Materiali<br>Avvisi</div></div></figure>
+<figure><figcaption>3 · Plancia della branca</figcaption><div class="f dk" style="grid-template-rows:26px 1fr 60px"><div class="b p">Barra superiore</div><div class="f" style="border:0;padding:0;grid-template-columns:repeat(6,1fr)"><div class="b">Sq. 1</div><div class="b">Sq. 2</div><div class="b">Sq. 3</div><div class="b">Sq. 4</div><div class="b">Sq. 5</div><div class="b">Sq. 6</div></div><div class="b a">Programma del giorno</div></div></figure>
+</div>
+</body>
+</html>
