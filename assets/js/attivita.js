@@ -637,6 +637,15 @@
     $('material-suggestions').replaceChildren(...[...suggestions.values()].map(title => {
       const option = node('option'); option.value = title; return option;
     }));
+    const buy = items.filter(item => item.shopping);
+    $('event-shopping').hidden = !buy.length;
+    $('event-shopping-list').replaceChildren(...buy.map(item => {
+      const quantity = item.quantity === null ? '?' :
+        new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 }).format(item.quantity) + (item.unit ? ' ' + item.unit : '');
+      const row = node('li');
+      row.append(node('span', item.title), node('b', quantity));
+      return row;
+    }));
     const visible = items.filter(item => materialFilter === 'all' ||
       materialFilter === 'shopping' && item.shopping || materialFilter === 'prepare' && !item.shopping);
     list.replaceChildren(...visible.map(item => {
@@ -889,8 +898,10 @@
       return;
     }
     totals($('event-totals'), { feeCents, attendance });
-    $('event-view-nav').querySelector('[data-event-view="quote"]').hidden =
-      !(feeCents > 0 || attendance.some(person => person.paidCents > 0));
+    const hasMoney = feeCents > 0 || attendance.some(person => person.paidCents > 0);
+    $('event-view-nav').querySelector('[data-event-view="quote"]').hidden = !hasMoney;
+    $('event-totals').hidden = !hasMoney;
+    for (const option of $('event-member-filter').options) if (option.value === 'unpaid' || option.value === 'paid') option.hidden = option.disabled = !hasMoney;
     const query = $('event-member-search').value.trim().toLocaleLowerCase('it');
     const filter = $('event-member-filter').value;
     let visible = 0;

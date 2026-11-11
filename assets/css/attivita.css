@@ -339,3 +339,7 @@
 .event-fixed-section > summary { cursor: default; list-style: none; font-weight: 700; }
 .event-fixed-section > summary::-webkit-details-marker { display: none }
 .event-fixed-section > summary::marker { content: '' }
+#event-shopping { margin: 8px 0 12px; padding: 10px 12px; border: 1px solid #e6dfed; border-radius: 8px; background: #fbf9fd; }
+#event-shopping h4 { margin: 0 0 6px; font-size: .9rem; }
+#event-shopping-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+#event-shopping-list li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dotted #d9d0e3; padding: 3px 0; }
