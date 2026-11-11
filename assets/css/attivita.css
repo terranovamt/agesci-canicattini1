@@ -286,3 +286,27 @@
 #event-tournament .tournament-person input:disabled, #event-tournament .tournament-person select:disabled { opacity: .6; }
 #event-tournament .tournament-presence-state { display: block; font-size: .7rem; font-weight: 400; color: #625269; }
 #event-tournament .tournament-judging-table a { display: inline-flex; min-height: 44px; align-items: center; }
+
+/* Densità: riepilogo nelle righe attività, quote in riga e totali sempre in vista. */
+.activity-event-summary { color: #50336a; font-size: .85rem; font-weight: 600; }
+.activity-event-money { display: none; }
+@media (min-width: 900px) {
+  .activity-event-money { display: inline; }
+  #events-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .activity-event-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
+  .activity-event-row > .eyebrow, .activity-event-row > h3, .activity-event-row > .activity-event-summary { grid-column: 1; }
+  .activity-event-row > .activity-event-actions { grid-column: 2; grid-row: 1 / span 3; margin: 0; grid-template-columns: repeat(3, minmax(88px, auto)); }
+  #event-people-view { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); column-gap: 16px; align-items: start; }
+  #event-people-view > * { grid-column: 1 / -1; }
+  #event-people-view > .event-people-totals { position: sticky; top: 0; z-index: 3; grid-column: 1; grid-row: 1 / span 2; }
+  #event-people-view > #event-search-label { grid-column: 2; grid-row: 1; margin: 0; }
+  #event-people-view > #event-filters { grid-column: 2; grid-row: 2; }
+  #event-people-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
+  #event-attendance-count { font-size: 1rem; }
+  #event-totals { max-width: 640px; }
+  #event-totals p { font-size: .75rem; }
+  #event-totals strong { font-size: .95rem; }
+  #event-form[data-view="quote"] .activity-payment[open]::details-content { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 0 16px; align-items: end; padding-bottom: 6px; }
+  #event-form[data-view="quote"] .activity-payment[open] > .members-note { display: none; }
+  #event-form[data-view="quote"] .activity-payment .activity-fee-balance { margin: 0 0 4px; }
+}

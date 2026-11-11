@@ -148,6 +148,13 @@
       const card = node('article', undefined, 'activity-card activity-event-row');
       card.style.setProperty('--branch-color', M.branchColors[branch()]);
       card.append(node('p', dateRange(item), 'eyebrow'), node('h3', item.title));
+      const present = item.attendance.filter(person => person.status === 'presente').length;
+      const summary = node('p', present + '/' + item.attendance.length + ' presenti', 'activity-event-summary');
+      if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0)) {
+        const sums = AM.totals(item);
+        summary.append(node('span', ' · incassato ' + AM.money(sums.paid) + ' · da ricevere ' + AM.money(sums.remaining), 'activity-event-money'));
+      }
+      card.append(summary);
       const actions = node('div', undefined, 'activity-event-actions');
       actions.append(button('Presenze', () => openEvent(item, true)),
         button('Programma', () => { openEvent(item); setEventView('programma'); }));

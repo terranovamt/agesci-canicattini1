@@ -315,3 +315,12 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     assert.equal(event.attendance[0].paidCents, 1500, "past participants keep their payments after transfer");
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
 });
+
+test("event rows summarise attendance and fees, with dense desktop layout", () => {
+  const js = require("node:fs").readFileSync(require("node:path").join(__dirname, "../assets/js/attivita.js"), "utf8");
+  const css = require("node:fs").readFileSync(require("node:path").join(__dirname, "../assets/css/attivita.css"), "utf8");
+  assert.match(js, /activity-event-summary/);
+  assert.match(js, /activity-event-money/);
+  assert.match(css, /\.activity-event-money \{ display: none; \}/);
+  assert.match(css, /@media \(min-width: 900px\)[\s\S]*#event-people-view > \.event-people-totals \{ position: sticky/);
+});
