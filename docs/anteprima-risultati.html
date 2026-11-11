@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>Anteprima risultati votazione</title>
+<style>body{margin:0;padding:20px;background:#ddd6e6;font:15px system-ui}h2{margin:28px 0 8px;color:#4a2a7c}p{margin:0 0 6px;color:#555;font-weight:600}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}iframe{border:0;display:block;background:#000}
+.L iframe{width:1280px;height:720px;zoom:.5}.M iframe{width:390px;height:844px;zoom:.62}</style></head><body>
+<h1>Anteprima risultati votazione (CSS e markup reali)</h1><div id="a"></div>
+<script src="../area-riservata/assemblea/slides/landscape/votazione.js"></script>
+<script>
+const R='../area-riservata/assemblea/';
+const xs={titolo:'Votazione<br>Bilancio',domanda:'Approvi il bilancio?',id:'s'};
+const xn={titolo:'Votazione<br>Organo Esecutivo',domanda:'Chi elegge l\'Organo Esecutivo?',id:'n'};
+const sc=(c,a=true,r)=>({slide:'s',modalita:'scelta',opzioni:['Favorevole','Contrario','Astenuto'],conteggi:c,aperta:a,ricevuti:r??c.reduce((x,y)=>x+y,0),totale:40});
+const nm=(c,a=true,names=['Rossi','Bianchi','Verdi','Neri'],r)=>({slide:'n',modalita:'nominativa',opzioni:names,conteggi:c,aperta:a,ricevuti:r??(c?c.reduce((x,y)=>x+y,0):0),totale:40});
+const cases=[
+['Scelta · aperta, voti in corso',xs,sc([14,6,3])],['Scelta · chiusa',xs,sc([27,9,4],false)],['Scelta · zero voti',xs,sc([0,0,0])],['Scelta · non ancora aperta',xs,null],
+['Nominativa · aperta (risultati nascosti)',xn,nm(null,true,undefined,32)],['Nominativa · chiusa',xn,nm([18,12,7,3],false)],['Nominativa · parità',xn,nm([15,15,6,4],false)],['Nominativa · zero voti',xn,nm([0,0,0,0])],
+['Nominativa · 6 candidati, nome lungo',xn,nm([12,9,8,5,3,1],true,['Candidato con un nome molto lungo che non deve rompere il layout','Bianchi','Verdi','Neri','Gialli','Blu'])]];
+function doc(x,p,pm){return `<!doctype html><html><head><link rel="stylesheet" href="${R}../../assets/css/theme.css"><link rel="stylesheet" href="${R}core/base.css"><link rel="stylesheet" href="${R}slides/landscape/titolo.css"><link rel="stylesheet" href="${R}slides/portrait/base.css"><link rel="stylesheet" href="${R}slides/portrait/titolo.css"><style>body{position:static!important;overflow:hidden}.slide{position:absolute;inset:0;opacity:1!important}</style></head><body class="${pm?'pm':''}"><div class="slide sec in"><div class="l"><img src="${R}../../assets/img/logo-grande.webp"><div>Associazione<br>Guide e Scouts<br>Cattolici Italiani</div></div><div class="rr${p?' vt-on':''}"><h1>${x.titolo}</h1><h2>Assemblea di Gruppo 2026</h2><div class="vt" aria-live="polite">${VOTO_RENDER.html(x,p)}</div><div class="d">20 Novembre 2026</div></div></div></body></html>`}
+const esc=s=>s.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+const q=new URLSearchParams(location.search).get('da');document.getElementById('a').innerHTML=cases.slice(q?+q:0,q?+q+3:undefined).map(([t,x,p])=>`<h2>${t}</h2><div class="row"><div class="L"><p>Orizzontale</p><iframe srcdoc="${esc(doc(x,p,false))}"></iframe></div><div class="M"><p>Mobile</p><iframe srcdoc="${esc(doc(x,p,true))}"></iframe></div></div>`).join('');
+</script></body></html>

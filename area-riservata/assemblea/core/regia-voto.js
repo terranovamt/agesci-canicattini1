@@ -25,7 +25,7 @@
     const mio = poll && poll.slide === slide.id ? poll : null;
     const aperta = !!(mio && mio.aperta);
     let h = `<h3>Votazione · ${esc(slide.domanda || "")}</h3>`;
-    h += `<p class="vt-st">${!mio ? "Non ancora aperta" : aperta ? "<b>APERTA</b>" : "Chiusa"}${mio ? ` · ${mio.ricevuti} ${mio.ricevuti === 1 ? "voto" : "voti"} su ${mio.totale}` : ""}${mio && aperta ? ` · mancano ${Math.max(0, mio.totale - mio.ricevuti)}` : ""}</p>`;
+    h += `<p class="vt-st">${!mio ? "Non ancora aperta" : aperta ? "<b>APERTA</b>" : "Chiusa"}${mio ? ` · ${mio.ricevuti} ${mio.ricevuti === 1 ? "voto" : "voti"} su ${mio.totale}` : ""}</p>`;
     if (mio && mio.conteggi) {
       const max = Math.max(...mio.conteggi);
       h += '<ul class="vt-ris">' + mio.opzioni.map((o, n) => `<li${!aperta && mio.modalita === "nominativa" && mio.conteggi[n] === max && max > 0 ? ' class="vinc"' : ""}><span>${esc(o)}</span><b>${mio.conteggi[n]}</b></li>`).join("") + "</ul>";

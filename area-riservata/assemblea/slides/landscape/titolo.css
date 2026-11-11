@@ -75,11 +75,47 @@
   top: calc(50% - 130px)
 }
 
-/* slide votazione: stato del voto sotto il titolo */
-.sec .vt { position: absolute; left: 70px; right: 70px; bottom: 80px; text-align: right }
-.sec .vt-q { font-size: 28px; font-weight: 600 }
-.sec .vt-s { font-size: 22px; margin-top: 8px; opacity: .85 }
-.sec .vt-s.on { opacity: 1; color: var(--y, #f5c400); font-weight: 700 }
-.sec .vt-c { display: flex; justify-content: flex-end; gap: 28px; margin-top: 16px }
-.sec .vt-c span { display: flex; flex-direction: column; align-items: center; font-size: 18px }
-.sec .vt-c b { font-size: 52px; font-weight: 800; line-height: 1 }
+/* slide votazione */
+.sec .vt { --vote-bg: #4a2a7c; --vote-accent: #f7c600; --vote-on-accent: #2a1650; --vote-text: #fff;
+  --vote-muted: rgba(255,255,255,0.7); --vote-track: rgba(255,255,255,0.15); --vote-hairline: rgba(255,255,255,0.2);
+  color: var(--vote-text); font-variant-numeric: tabular-nums; font-weight: 400; text-align: left }
+.sec .vt .vt-m, .sec .vt .vt-h.idle ~ .vt-m { display: none }
+.sec .rr.vt-on h1, .sec .rr.vt-on h2, .sec .rr.vt-on .d { display: none }
+.sec .rr.vt-on .vt { width: 100% }
+.sec .rr.vt-on { align-items: stretch; padding: 0 60px }
+.sec .rr.vt-on:after, .sec .rr.vt-on:before { display: none }
+.sec .vt b, .sec .vt i { font-style: normal; font-weight: 500 }
+.sec .vt-lab { font-size: 14px; color: var(--vote-muted) }
+.sec .vt-q { font-size: 28px; font-weight: 500; margin-top: 4px }
+.sec .vt-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px }
+.sec .vt-tot { text-align: right; flex: none }
+.sec .vt-tot b { font-size: 48px; color: var(--vote-accent); line-height: 1; min-width: 1.2ch; display: inline-block }
+.sec .vt-tot i { font-size: 24px; color: var(--vote-muted); font-weight: 400 }
+.sec .vt-tot small { display: block; font-size: 12px; color: var(--vote-muted) }
+.sec .vt-bar { position: relative; height: 32px; border-radius: 16px; background: rgba(255,255,255,0.12); overflow: hidden; margin: 28px 0 16px }
+.sec .vt-bar .vs { position: absolute; top: 0; height: 100%; transition: left .5s ease-out, width .5s ease-out, opacity .5s ease-out }
+.sec .vt-bar .vf { background: var(--vote-accent) }
+.sec .vt-bar .vc { background: #fff }
+.sec .vt-bar .va { border: 1.5px dashed rgba(255,255,255,0.75); border-radius: 16px; box-sizing: border-box }
+.sec .vt-nums { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end }
+.sec .vt-nums .vn b { display: block; font-size: 48px; line-height: 1.05; min-width: 1.5ch }
+.sec .vt-nums .vn span { font-size: 15px }
+.sec .vt-nums .vf b { color: var(--vote-accent) }
+.sec .vt-nums .va { text-align: center }.sec .vt-nums .va b { font-size: 30px }.sec .vt-nums .va span { color: var(--vote-muted) }
+.sec .vt-nums .vc { text-align: right }
+.sec .vt-status { font-size: 14px; color: var(--vote-accent); margin: 6px 0 14px }
+.sec .vt.nom, .sec .vt-h.nom { }
+.sec .vt-c { margin-bottom: 12px }.sec .vt-h.nom.dense .vt-c { margin-bottom: 6px }
+.sec .vt-cr { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px }
+.sec .vt-cr .nm { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
+.sec .vt-cr .v { flex: none; font-size: 16px; min-width: 5ch; text-align: right }
+.sec .vt-c.top .nm { font-size: 20px; font-weight: 500 }
+.sec .vt-c.top .v b { font-size: 28px; color: var(--vote-accent); margin-right: 8px }.sec .vt-c.top .v i { font-size: 15px; font-weight: 400 }
+.sec .vt-c.dim .nm, .sec .vt-c.dim .v { color: var(--vote-muted) }
+.sec .vt-pb { height: 6px; border-radius: 3px; background: var(--vote-track); overflow: hidden }
+.sec .vt-pb i { display: block; height: 100%; background: rgba(255,255,255,0.7); transition: width .3s ease-out }
+.sec .vt-pb.top { height: 12px; border-radius: 6px }.sec .vt-pb.top i { background: var(--vote-accent) }
+.sec .vt-pb.dim { height: 4px }
+.sec .vt-hid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px }
+.sec .vt-hid span { background: var(--vote-track); border-radius: 12px; padding: 4px 12px; font-size: 15px }
+@media (prefers-reduced-motion: reduce) { .sec .vt-bar .vs, .sec .vt-pb i { transition: none } }
