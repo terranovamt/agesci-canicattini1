@@ -262,6 +262,16 @@ async function startNasDemo() {
         });
       }
     }
+    // Libro soci simulato per provare le votazioni: censiti 2026 con codici di voto
+    const census = "\uFEFFsep=,\r\nANNO SCOUT,CODICE SOCIO,NOME,COGNOME,BRANCA,ORDINALE,DATA NASCITA,EMAIL,CELLULARE,RESP.GENITORIALE DATI,STATUS SOCIO,CODICE STATUS SOCIO,GRUPPO,CODICE AREA\r\n" +
+      Array.from({ length: 40 }, (_, n) => {
+        const cell = value => '="' + value + '"';
+        return [2026, 500001 + n, names[n], surnames[n % surnames.length], ["Branca L/C", "Branca E/G", "Branca R/S"][n % 3],
+          "R2053", "1/1/2010", `socio${n + 1}@example.invalid`, "000 000", "", "Attivo", "A", "Demo", "x"].map(cell).join(",") + ",";
+      }).join("\r\n");
+    const preview = await request("members/import", "POST", { csv: census });
+    await request("members/import", "POST", { csv: census, confirm: true, version: preview.version });
+    await request("vote/codes", "POST", { anno: "2026" });
     for (const code of ["7654321", "7654322", "7654323"]) {
       await request("auth/login", "POST", { code, password: app.password, confirmation: app.password, temporary: "Canicattini1" });
     }
@@ -278,6 +288,7 @@ if (require.main === module) {
     console.log("DEMO locale: " + app.origin + "/agesci-canicattini1/area-riservata/");
     console.log("Codici: 23816938 amministratore | 7654321 L/C | 7654322 E/G | 7654323 R/S");
     console.log("Password per tutti gli account demo: " + app.password);
+    console.log("Libro soci simulato: 40 censiti 2026 (codici 500001-500040); i codici di voto si scaricano dai Censiti.");
     console.log("Un anno di vita scout, 82 soci con identita inventate, attivita, quote, torneo e percorsi.");
     console.log("Dati inventati in SQLite temporaneo. Alla chiusura vengono eliminati.");
     console.log("Nessuna connessione al NAS. Premi Ctrl+C per terminare.");
