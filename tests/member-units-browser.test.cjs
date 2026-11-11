@@ -209,6 +209,13 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           document.querySelector('[data-member-id="3"] .unit-grip').click();
           $('members-units-panel').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
           check($('units-status').textContent.includes('annullato'), 'keyboardCancel');
+          document.querySelector('[data-member-id="3"] .unit-grip').click();
+          check(!$('unit-selection').hidden && $('unit-selection-text').textContent.startsWith('Persona 3') &&
+            document.querySelector('[data-member-id="3"]').classList.contains('unit-selected') &&
+            $('unit-selection-cancel').getBoundingClientRect().height >= 44, 'tapSelection');
+          document.querySelector('[data-unit-id="2"] [data-drop-role="Vice capo squadriglia"]').click(); await settle();
+          check($('unit-selection').hidden && !!document.querySelector('[data-unit-id="2"] [data-role="Vice capo squadriglia"] [data-member-id="3"]'), 'tapMove');
+          check(!!document.querySelector('[data-unit-id="1"] .unit-missing') && document.querySelectorAll('.unit-role-badge').length >= 8, 'badgesAndMissing');
           check(!errors.length, 'noErrors');
         } catch (error) { results.failure = error.message; results.errors = errors; }
         const output = document.createElement('pre'); output.id = 'unit-result';
@@ -246,7 +253,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
         "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove", "dropTargets",
         "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
         "egFits", "touchTargets", "noErrors", "unassignedAlwaysOpen", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
-        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "emptyAvailableHidden", "keyboardCancel", "highlightSubstring", "safeSearch"])
+        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "emptyAvailableHidden", "keyboardCancel", "tapSelection", "tapMove", "badgesAndMissing", "highlightSubstring", "safeSearch"])
         assert.equal(results[key], true, width + " " + key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
     }

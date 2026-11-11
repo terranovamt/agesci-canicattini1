@@ -46,6 +46,25 @@
     let data, editing = null, draftEmblem = '', imageBusy = false, editorSnapshot = '';
     const branchSelect = $('units-branch'), form = $('unit-form'), search = $('unit-available-search');
     let keyboardMember = null;
+    function select(member) {
+      keyboardMember = member;
+      document.querySelectorAll('.unit-member.unit-selected').forEach(card => card.classList.remove('unit-selected'));
+      document.querySelectorAll('.unit-grip[aria-pressed="true"]').forEach(grip => grip.setAttribute('aria-pressed', 'false'));
+      $('members-units-panel').toggleAttribute('data-selecting', !!member);
+      $('unit-selection').hidden = !member;
+      if (!member) return;
+      const card = document.querySelector(`.unit-member[data-member-id="${member.id}"]`);
+      card?.classList.add('unit-selected'); card?.querySelector('.unit-grip')?.setAttribute('aria-pressed', 'true');
+      const assigned = !!member.values[branch()]?.[M.unitField(branch())];
+      $('unit-selection-text').textContent = member.name + ': tocca la riga di destinazione' +
+        (assigned ? ' o «Soci disponibili» per toglierlo.' : '.');
+    }
+    $('unit-selection-cancel').onclick = () => {
+      const id = keyboardMember?.id;
+      select(null);
+      $('units-status').textContent = 'Spostamento annullato.';
+      document.querySelector(`.unit-member[data-member-id="${id}"] .unit-grip`)?.focus();
+    };
     const branch = () => branchSelect.value;
     const environment = () => data.lc.environment;
     const visibleUnits = () => data.units.filter(unit => unit.branch === branch() && !unit.hidden);
@@ -200,10 +219,7 @@
     search.oninput = highlightNames;
     $('members-units-panel').addEventListener('keydown', event => {
       if (event.key !== 'Escape' || !keyboardMember) return;
-      const id = keyboardMember.id;
-      keyboardMember = null;
-      $('units-status').textContent = 'Spostamento annullato.';
-      document.querySelector(`.unit-member[data-member-id="${id}"] .unit-grip`)?.focus();
+      $('unit-selection-cancel').click();
     });
     const sameAssignment = (member, unitId, role) => {
       const values = member.values[branch()] || {};
@@ -300,7 +316,7 @@
       card.classList.add('unit-draggable');
       card.addEventListener('pointerdown', event => {
         if (dragging || !event.isPrimary || event.button !== 0) return;
-        keyboardMember = null;
+        select(null);
         const handle = !!event.target.closest('.unit-grip');
         dragging = { card, member, pointerId: event.pointerId, x: event.clientX, y: event.clientY,
           active: false, hold: event.pointerType === 'touch' && !handle };
@@ -319,15 +335,19 @@
       card.dataset.memberId = member.id;
       const name = el('button', member.name, 'member-name');
       name.dataset.name = member.name;
-      name.type = 'button'; name.onclick = () => openMember(member);
+      name.type = 'button';
+      name.onclick = () => {
+        if (!keyboardMember) openMember(member);
+        else if (keyboardMember.id === member.id) $('unit-selection-cancel').click();
+      };
       if (member.revision) {
         const grip = el('button', '⋮⋮', 'unit-grip');
         grip.type = 'button';
         grip.title = 'Trascina ' + member.name + ' oppure premi Invio e scegli la riga con Tab';
         grip.setAttribute('aria-label', 'Trascina ' + member.name);
         grip.onclick = () => {
-          keyboardMember = member;
-          $('units-status').textContent = member.name + ': scegli una riga con Tab e premi Invio per spostare. Esc annulla.';
+          select(member);
+          $('units-status').textContent = member.name + ': scegli una riga con Tab e premi Invio, oppure toccala. Esc annulla.';
         };
         card.append(grip);
         draggableCard(card, member);
@@ -340,21 +360,26 @@
       node.dataset.dropUnit = unitId === null ? '' : unitId;
       node.dataset.dropRole = role;
       node.tabIndex = 0;
-      node.addEventListener('keydown', event => {
-        if (event.target !== node || !keyboardMember || !['Enter', ' '].includes(event.key)) return;
-        event.preventDefault();
+      const moveHere = () => {
         const member = keyboardMember;
-        keyboardMember = null;
+        select(null);
         if (sameAssignment(member, unitId, role)) {
           $('units-status').textContent = member.name + ' e gia in questa posizione.';
           return;
         }
         requestMove(member, unitId, role);
+      };
+      node.addEventListener('keydown', event => {
+        if (event.target !== node || !keyboardMember || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault(); moveHere();
+      });
+      node.addEventListener('click', event => {
+        if (keyboardMember && !event.target.closest('.unit-grip, .unit-selection')) moveHere();
       });
     }
     function render() {
       if (!data || !branch()) return;
-      keyboardMember = null;
+      select(null);
       const lc = branch() === 'L/C', roles = M.unitRoles(branch(), environment());
       $('units-tab').textContent = lc ? 'Sestiglie' : 'Squadriglie';
       $('members-units-panel').dataset.environment = lc ? environment() : 'Reparto';
@@ -402,6 +427,9 @@
           title.append(colors);
         }
         title.append(count);
+        const missing = roles.slice(0, 2).filter(role => !assigned.some(member => member.values[branch()]?.ruolo === role))
+          .map(role => ['capo', 'vice'][roles.indexOf(role)]);
+        if (missing.length) title.append(el('small', 'Manca: ' + missing.join(' · '), 'unit-missing'));
         heading.append(symbol(unit), title);
         const hide = el('button', '×', 'unit-hide');
         hide.type = 'button'; hide.onclick = () => {
@@ -424,7 +452,10 @@
             if (!occupants.length) row.append(el('span', 'Posto libero', 'unit-empty'));
             lane.append(row);
             occupants.slice(1).forEach(member => lane.append(memberCard(member)));
-          } else occupants.forEach(member => lane.append(memberCard(member)));
+          } else occupants.forEach(member => {
+            const row = memberCard(member), badge = el('abbr', index === 2 ? 'S' : lc ? (environment() === 'Cerchio' ? 'Co' : 'Cu') : 'PT', 'unit-role-badge');
+            badge.title = role; row.prepend(badge); lane.append(row);
+          });
           if (!occupants.length && index >= 2) {
             const empty = el('p', index === 3 ? role + ' · trascina qui' : 'Trascina qui', 'unit-empty');
             lane.append(empty);

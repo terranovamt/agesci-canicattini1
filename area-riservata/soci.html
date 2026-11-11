@@ -95,14 +95,14 @@
       <section id="members-units-panel" data-section-panel aria-labelledby="units-title">
         <div class="members-heading">
           <div><p id="units-environment-label" class="eyebrow"></p><h2 id="units-title">Sestiglie</h2></div>
+          <div class="members-toolbar">
+            <button id="new-unit" type="button" class="button button-primary">Aggiungi sestiglia</button>
+            <button id="units-new-member" type="button" class="button button-secondary">Nuovo socio</button>
+            <button id="reload-units" type="button" class="button button-secondary">Ricarica</button>
+          </div>
           <label>Branca<select id="units-branch"><option value="L/C">L/C</option><option value="E/G">E/G</option></select></label>
         </div>
         <p id="units-status" role="status" aria-live="polite"></p>
-        <div class="members-toolbar">
-          <button id="new-unit" type="button" class="button button-primary">Aggiungi sestiglia</button>
-          <button id="units-new-member" type="button" class="button button-secondary">Nuovo socio</button>
-          <button id="reload-units" type="button" class="button button-secondary">Ricarica</button>
-        </div>
         <details id="lc-environment-settings" class="units-environment-settings">
           <summary>Ambiente L/C</summary>
         <form id="lc-environment-form" class="units-environment">
@@ -111,7 +111,13 @@
           <p>La scelta vale per tutti i capi L/C. I momenti corrispondenti e i ruoli Cucciolo/Cocci vengono aggiornati senza spostare i soci.</p>
         </form>
         </details>
-        <p class="members-note">C · capo / VC · vice / righe chiare in fondo · nuovi ingressi. Trascina un nome o la maniglia ⋮⋮ per spostarlo (su touch tieni premuto il nome). Da tastiera: premi Invio sulla maniglia, raggiungi una riga con Tab e premi Invio; Esc annulla.</p>
+        <p class="members-note" id="units-legend">Tocca la maniglia ⋮⋮ di un socio e poi la riga di destinazione, oppure trascinalo. Da tastiera: Invio sulla maniglia, Tab fino alla riga, Invio; Esc annulla.</p>
+        <div class="units-layout">
+        <div class="units-side">
+        <div id="unit-selection" class="unit-selection" hidden>
+          <span id="unit-selection-text"></span>
+          <button id="unit-selection-cancel" type="button" class="button button-secondary">Annulla</button>
+        </div>
         <section id="unit-unassigned" class="unit-unassigned" aria-labelledby="unit-available-title" hidden>
           <div class="unit-available-heading">
             <label class="unit-available-search"><span class="members-sr-only">Cerca</span><input id="unit-available-search" type="search" autocomplete="off" placeholder="Cerca…"></label>
@@ -120,7 +126,9 @@
           <p id="unit-available-status" class="members-note" role="status" aria-live="polite"></p>
           <div id="unit-available-list" class="unit-unassigned-list"></div>
         </section>
+        </div>
         <div id="units-board" class="units-board"></div>
+        </div>
         <details id="units-hidden"><summary>Sestiglie nascoste</summary><div id="units-hidden-list"></div></details>
       </section>
       <section id="members-transfer-panel" class="members-settings" data-section-panel aria-labelledby="transfers-title">
