@@ -315,6 +315,12 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
   .units-layout > .units-board { grid-column: 2; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); }
   .units-layout:has(.unit-unassigned[hidden]) > .units-board { grid-column: 1; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
 }
+@media (min-width: 1500px) {
+  body.reserved-page > #reserved-content.members-page:has(#members-units-panel:not([hidden])) { width: calc(100% - 32px); max-width: none; }
+  #members-units-panel .units-layout:not(:has(.unit-unassigned[hidden])) { grid-template-columns: 200px minmax(0, 1fr); }
+  .units-layout > .units-board { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .units-board .unit-missing, .units-board .unit-member { overflow-wrap: anywhere; }
+}
 @media (max-height: 500px) {
   .units-side { position: static; }
 }
