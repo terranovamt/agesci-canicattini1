@@ -123,9 +123,10 @@
       }
     });
     const days = [...byDay.keys()].sort();
-    const visibleDays = chosenDay || showAllUpcoming ? days : days.slice(0, 5);
+    const limit = window.matchMedia("(max-width: 640px)").matches ? 2 : window.matchMedia("(max-width: 999px)").matches ? 3 : 5;
+    const visibleDays = chosenDay || showAllUpcoming ? days : days.slice(0, limit);
     const moreButton = $("calendar-more");
-    moreButton.hidden = Boolean(chosenDay) || days.length <= 5;
+    moreButton.hidden = Boolean(chosenDay) || days.length <= limit;
     moreButton.textContent = showAllUpcoming ? "Mostra meno" : "Mostra tutti gli appuntamenti";
     moreButton.setAttribute("aria-expanded", String(showAllUpcoming));
     if (!days.length) {
@@ -365,6 +366,12 @@
     chosenDay = null;
     refresh();
   };
+  const monthDetails = $("calendar-month-details");
+  const phone = window.matchMedia("(max-width: 999px)");
+  monthDetails.open = !phone.matches;
+  phone.addEventListener("change", () => {
+    monthDetails.open = !phone.matches;
+  });
   $("calendar-upcoming").onclick = () => {
     chosenDay = null;
     showAllUpcoming = false;
