@@ -111,7 +111,7 @@ Home** e avviarlo dall'icona (a schermo intero).
 
 - Si attivano dal setup, scheda **Generale** → «Votazioni abilitate». Se sono spente, le slide restano come prima.
 - Le slide «Votazione…» sono di tipo `slide_votazione`: stesso aspetto del divisore di sezione. In setup si definiscono quesito, tipo (scelta singola o nominativa), opzioni/candidati e se mostrare i conteggi in diretta.
-- Scheda **Censiti** → «Scarica PDF codici di voto»: genera (una sola volta) un codice di 6 cifre per ogni socio e scarica un PDF A4 orizzontale con griglia 4×4 di cartoncini ad angoli vivi (16 per pagina, da ritagliare) con nome, codice socio e codice di voto.
+- Scheda **Censiti** → «Scarica PDF codici di voto» (e «Rigenera codici», con conferma, per invalidare i vecchi codici e ristampare): genera (una sola volta) un codice di 6 cifre per ogni socio e scarica un PDF A4 orizzontale con griglia 4×4 di cartoncini ad angoli vivi (16 per pagina, da ritagliare) con nome, codice socio e codice di voto.
 - Il socio tocca «Vota» sul proprio telefono, inserisce il codice, vede il quesito e vota. Un codice vota una sola volta.
 - Dalla regia, sulla slide di votazione, si usano **Apri/Chiudi votazione** e **Azzera**. Scelta singola: conteggi in diretta (se abilitato); a chiusura la slide mostra il timbro APPROVATO / NON APPROVATO / PARITÀ (favorevoli contro contrari). Nominativa: solo i voti ricevuti; i risultati compaiono alla chiusura, visibili anche sulla slide.
 - Segretezza: il server salva separatamente chi ha votato e i totali per opzione, senza alcun legame tra i due. Il codice a 6 cifre ha pochi tentativi possibili (limite per IP).

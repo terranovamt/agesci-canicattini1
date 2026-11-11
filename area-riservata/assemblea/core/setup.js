@@ -779,24 +779,27 @@
     const search = el("input", { type: "search", placeholder: "Cerca nome, codice o email", value: sociQuery, ariaLabel: "Cerca socio" });
     search.oninput = () => { sociQuery = search.value; fill(); };
     const pdf = el("button", { type: "button", className: "btn", textContent: "Scarica PDF codici di voto" });
-    pdf.onclick = async () => {
-      pdf.disabled = true;
+    const rigenera = el("button", { type: "button", className: "btn sec", textContent: "Rigenera codici" });
+    const scarica = async (nuovi) => {
+      pdf.disabled = rigenera.disabled = true;
       try {
         const r = await fetch((window.LIVE.basePath || "") + "/api/vote/codes", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ anno: sociYear }),
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nuovi ? { anno: sociYear, rigenera: true } : { anno: sociYear }),
         });
         if (!r.ok) throw new Error((await r.text()) || "Errore " + r.status);
         const { righe } = await r.json();
         const a = el("a", { href: URL.createObjectURL(window.PDF_CODICI.crea("Codici di voto - Censiti " + sociYear, righe)), download: "codici-voto-" + sociYear + ".pdf" });
         a.click();
         URL.revokeObjectURL(a.href);
-        status("PDF dei codici di voto scaricato", "ok");
+        status(nuovi ? "Codici rigenerati: PDF scaricato, i vecchi codici non valgono più" : "PDF dei codici di voto scaricato", "ok");
       } catch (e) {
         status(e.message, "ko");
       }
-      pdf.disabled = false;
+      pdf.disabled = rigenera.disabled = false;
     };
-    c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count, pdf), list);
+    pdf.onclick = () => scarica(false);
+    rigenera.onclick = () => confirm("Rigenerare TUTTI i codici di voto? I codici già stampati o distribuiti non varranno più e dovrai ristampare il PDF.") && scarica(true);
+    c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count, pdf, rigenera), list);
     fill();
   }
 
