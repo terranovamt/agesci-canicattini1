@@ -344,14 +344,14 @@
     ordine:
       "Aggiungi, modifica, duplica o nascondi le slide. Collassa un divisore per spostare tutta la sezione: trascinala oppure usa i pulsanti Sposta su e Sposta giù.",
     bilancio: "Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.",
-    soci: "Soci iscritti all'anno precedente, letti dal Libro soci: possono votare in assemblea.",
+    soci: "Soci censiti nell'anno precedente, letti dal Libro soci.",
     json: "Modifica il testo e applicalo alla bozza. Solo «Salva dati base» salva sulla destinazione indicata.",
   };
   const TITOLI = {
     generale: "Informazioni generali",
     ordine: "Slide e sezioni",
     bilancio: "Bilancio del gruppo",
-    soci: "Soci aventi diritto di voto",
+    soci: "Soci censiti",
     json: "Editor JSON",
     guida: "Guida al setup",
     limiti: "Limiti e accorgimenti",
@@ -682,6 +682,12 @@
     }
     if (view === "soci") render();
   }
+  // per i ragazzi il contatto è il primo responsabile con telefono o email
+  const contactOf = (p) => {
+    if (p.phone || p.email) return p;
+    const g = (p.guardianContacts || []).find((x) => x.phone || x.email) || {};
+    return { ...p, phone: g.phone, email: g.email };
+  };
   function renderSoci(c) {
     if (!soci) {
       c.append(el("p", { className: "empty-state", textContent: "Caricamento del Libro soci…" }));
@@ -694,7 +700,7 @@
     // anno precedente a quello del censimento più recente, se presente
     if (!years.includes(sociYear)) sociYear = years.find((y) => y < String(soci.currentYear)) || years[0];
     const all = soci.members
-      .map((m) => ({ name: m.name, code: m.code, census: m.censuses.find((x) => String(x.year) === sociYear) }))
+      .map((m) => ({ name: m.name, code: m.code, profile: contactOf(m.profile || {}), census: m.censuses.find((x) => String(x.year) === sociYear) }))
       .filter((m) => m.census)
       .map((m) => ({ ...m, branch: m.census.branch || "Adulti" }))
       .sort((a, b) => a.name.localeCompare(b.name, "it"));
@@ -704,10 +710,10 @@
     const fill = () => {
       list.innerHTML = "";
       const q = sociQuery.trim().toLowerCase();
-      const shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code).toLowerCase().includes(q)));
+      const shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code + " " + (m.profile.email || "")).toLowerCase().includes(q)));
       count.textContent = shown.length + " di " + all.length + " soci";
-      const table = el("table", { className: "soci-table" }, el("thead", {}, el("tr", {}, ...["Socio", "Codice", "Branca"].map((h) => el("th", { textContent: h })))));
-      table.append(el("tbody", {}, ...shown.map((m) => el("tr", {}, el("td", { textContent: m.name }), el("td", { textContent: m.code }), el("td", { textContent: m.branch })))));
+      const table = el("table", { className: "soci-table" }, el("thead", {}, el("tr", {}, ...["Nome", "Cognome", "Codice", "Branca", "Contatto", "Email"].map((h) => el("th", { textContent: h })))));
+      table.append(el("tbody", {}, ...shown.map((m) => el("tr", {}, ...[m.profile.givenName || m.name, m.profile.surname || "", m.code, m.branch, m.profile.phone || "", m.profile.email || ""].map((v) => el("td", { textContent: v }))))));
       list.append(shown.length ? table : el("p", { className: "empty-state", textContent: "Nessun socio trovato." }));
     };
     const count = el("strong", { className: "soci-count" });
@@ -716,7 +722,7 @@
     const branchSel = el("select", { ariaLabel: "Branca" }, el("option", { value: "", textContent: "Tutte le branche" }),
       ...branches.map((b) => el("option", { value: b, textContent: b + " (" + all.filter((m) => m.branch === b).length + ")", selected: b === sociBranch })));
     branchSel.onchange = () => { sociBranch = branchSel.value; render(); };
-    const search = el("input", { type: "search", placeholder: "Cerca nome o codice", value: sociQuery, ariaLabel: "Cerca socio" });
+    const search = el("input", { type: "search", placeholder: "Cerca nome, codice o email", value: sociQuery, ariaLabel: "Cerca socio" });
     search.oninput = () => { sociQuery = search.value; fill(); };
     c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count), list);
     fill();

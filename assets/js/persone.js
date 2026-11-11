@@ -121,7 +121,7 @@
       reset.disabled = busy || expired;
       reset.onclick = () => {
         if (busy || expired) return;
-        if (!confirm(`Reimpostare la password di ${person.name} (codice ${person.code})?\n\nTutte le sue sessioni saranno revocate. Non verrà generata né inviata una password. Il capo dovrà sceglierne una al prossimo accesso: supervisiona questa inizializzazione, perché chi conosce il codice censimento potrebbe effettuarla.`)) return;
+        if (!confirm(`Reimpostare la password di ${person.name} (codice ${person.code})?\n\nTutte le sue sessioni saranno revocate. La password tornerà quella provvisoria (Canicattini1) e il capo dovrà sceglierne una nuova al prossimo accesso: comunicagliela di persona, perché chi conosce il codice censimento e la password provvisoria potrebbe effettuarlo.`)) return;
         mutate(person, 'password');
       };
       actions.append(reset);

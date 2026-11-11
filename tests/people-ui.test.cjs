@@ -112,8 +112,8 @@ test("reset confirms identity, revocation and supervised initialization without 
   await tick();
   assert.match(ui.confirmations[0], /Giulia Capo \(codice 012346\)/);
   assert.match(ui.confirmations[0], /sessioni saranno revocate/);
-  assert.match(ui.confirmations[0], /Non verrà generata né inviata/);
-  assert.match(ui.confirmations[0], /supervisiona/);
+  assert.match(ui.confirmations[0], /password provvisoria|provvisoria/);
+  assert.match(ui.confirmations[0], /comunicagliela/);
   assert.equal(ui.calls.find(call => call[1] === "DELETE")[0], "people/2/password");
   assert.match(ui.get("person-feedback-2").textContent, /Sessioni revocate.*Supervisiona/);
   assert.match(ui.cards().find(card => card.children[0].children[0].textContent === "Giulia Capo").children[2].children[0].textContent, /provvisoria/i);
@@ -288,7 +288,7 @@ test("six responsive layouts keep the table compact and reset/filter/guide/error
         document.getElementById('person-reset-2').click();
         await new Promise(resolve => setTimeout(resolve, 10));
         result.reset = measure();
-        result.resetConfirmed = /Giulia Capo/.test(window.resetConfirmation) && /supervisiona/.test(window.resetConfirmation);
+        result.resetConfirmed = /Giulia Capo/.test(window.resetConfirmation) && /comunicagliela/.test(window.resetConfirmation);
         result.resetFeedback = document.getElementById('person-feedback-2').textContent.startsWith('Password reimpostata.');
         const out = document.createElement('pre');
         out.id = 'layout-result'; out.textContent = JSON.stringify(result);
