@@ -15,8 +15,8 @@ window.VOTO_RENDER = (function () {
   const state = p => p ? (p.aperta ? 'Aperta' : 'Chiusa') : 'Non ancora aperta';
   const head = (x, p, tag) => `<div class="vt-lab">${esc(plain(x.titolo))} · ${state(p)}</div><${tag} class="vt-q">${esc(x.domanda || '')}</${tag}>`;
 
-  function scelta(x, p) {
-    const tot = p.totale, nd = !p.conteggi, [f, c, a] = p.conteggi || [0, 0, 0], [lf, lc, la] = p.opzioni;
+  function scelta(x, p, tot) {
+    const nd = !p.conteggi, [f, c, a] = p.conteggi || [0, 0, 0], [lf, lc, la] = p.opzioni;
     const sh = n => nd ? '–' : n;
     const ex = !p.aperta && !nd && f + c + a ? (f > c ? ['ok', 'APPROVATO'] : f < c ? ['ko', 'NON APPROVATO'] : ['eq', 'PARITÀ']) : null;
     const stamp = ex ? `<div class="vt-stamp ${ex[0]}" role="status">${ex[1]}</div>` : '';
@@ -39,35 +39,42 @@ window.VOTO_RENDER = (function () {
     return hor + mob;
   }
 
-  function nominativa(x, p) {
+  function nominativa(x, p, tot) {
     const hidden = !p.conteggi;
     const items = p.opzioni.map((n, i) => ({ n, v: hidden ? 0 : p.conteggi[i] })).sort((a, b) => b.v - a.v);
     const pc = percents(items.map(i => i.v)), max = items.length ? items[0].v : 0;
     items.forEach((it, i) => { it.p = pc[i]; it.top = max > 0 && it.v === max; });
     const ties = items.filter(i => i.top).length > 1, dense = items.length > 4 ? ' dense' : '';
-    const status = `${state(p)} · ${p.ricevuti} voti su ${p.totale}`;
+    const quorum = Math.ceil(tot / 2);
+    items.forEach(it => { it.ok = !hidden && tot > 0 && it.v >= quorum && it.v > 0; });
+    const eletti = items.filter(i => i.ok);
+    const ex = !p.aperta && !hidden && max > 0 ? (eletti.length ? ['ok', eletti.length > 1 ? 'ELETTI' : 'ELETTO'] : ['ko', 'NESSUN ELETTO']) : null;
+    const stamp = ex ? `<div class="vt-stamp ${ex[0]}" role="status">${ex[1]}</div>` : '';
+    const status = `${state(p)} · ${p.ricevuti} voti su ${tot} · quorum ${quorum} (50% dei presenti)`;
+    const tag = it => it.ok ? '<em class="vt-elt">Eletto</em>' : '';
     const bar = (it, cls) => `<div class="vt-pb ${cls}" role="progressbar" aria-label="${esc(it.n)}" aria-valuemin="0" aria-valuemax="${Math.max(1, items.reduce((a, b) => a + b.v, 0))}" aria-valuenow="${it.v}"><i style="width:${it.p}%"></i></div>`;
     const rows = hidden ? `<div class="vt-hid">${items.map(i => `<span>${esc(i.n)}</span>`).join('')}</div>` :
       items.map((it, i) => {
         const last = i === items.length - 1 && items.length > 3 && !it.top;
         const cls = it.top ? 'top' : last ? 'dim' : '';
-        return `<div class="vt-c ${cls}"><div class="vt-cr"><span class="nm">${esc(it.n)}</span>${it.top ? `<span class="v"><b>${it.v}</b><i>${it.p}%</i></span>` : `<span class="v">${it.v} · ${it.p}%</span>`}</div>${bar(it, cls)}</div>`;
+        return `<div class="vt-c ${cls}"><div class="vt-cr"><span class="nm">${esc(it.n)}${tag(it)}</span>${it.top ? `<span class="v"><b>${it.v}</b><i>${it.p}%</i></span>` : `<span class="v">${it.v} · ${it.p}%</span>`}</div>${bar(it, cls)}</div>`;
       }).join('');
-    const hor = `<div class="vt-h nom${dense}"><div class="vt-lab">${esc(plain(x.titolo))}</div><div class="vt-q">${esc(x.domanda || '')}</div><div class="vt-status">${status}</div>${rows}</div>`;
+    const hor = `<div class="vt-h nom${dense}">${stamp}<div class="vt-lab">${esc(plain(x.titolo))}</div><div class="vt-q">${esc(x.domanda || '')}</div><div class="vt-status">${status}</div>${rows}</div>`;
     const first = items[0], others = items.slice(max > 0 ? (ties ? items.filter(i => i.top).length : 1) : 0);
     const lead = hidden || !max ? '' : `<div class="vt-lab">${ties ? 'In parità' : 'In testa'}</div>` +
-      items.filter(i => i.top).map(i => `<div class="vt-lead"><div class="nm">${esc(i.n)}</div><div class="num"><b>${i.v}</b><i>${i.p}%</i></div></div>`).join('');
+      items.filter(i => i.top).map(i => `<div class="vt-lead"><div class="nm">${esc(i.n)}${tag(i)}</div><div class="num"><b>${i.v}</b><i>${i.p}%</i></div></div>`).join('');
     const rest = hidden ? `<div class="vt-hid">${items.map(i => `<span>${esc(i.n)}</span>`).join('')}</div>` :
-      (others.length ? `<div class="vt-rest">${others.map(i => `<div><span class="nm">${esc(i.n)}</span><span>${i.v} · ${i.p}%</span></div>`).join('')}</div>` : '');
+      (others.length ? `<div class="vt-rest">${others.map(i => `<div><span class="nm">${esc(i.n)}${tag(i)}</span><span>${i.v} · ${i.p}%</span></div>`).join('')}</div>` : '');
     void first;
-    const mob = `<div class="vt-m nom${dense}"><i class="vt-line"></i><div class="vt-title">${esc(plain(x.titolo))}</div>
+    const mob = `<div class="vt-m nom${dense}">${stamp}<i class="vt-line"></i><div class="vt-title">${esc(plain(x.titolo))}</div>
       <div class="vt-st">${status}</div><div class="vt-q">${esc(x.domanda || '')}</div>${lead}${rest}</div>`;
     return hor + mob;
   }
 
-  function html(x, p) {
+  function html(x, p, tot) {
+    tot = tot > 0 ? tot : p && p.totale;
     if (!p) return '';
-    return p.modalita === 'scelta' && p.opzioni.length === 3 ? scelta(x, p) : nominativa(x, p);
+    return p.modalita === 'scelta' && p.opzioni.length === 3 ? scelta(x, p, tot) : nominativa(x, p, tot);
   }
   return { html, percents };
 })();
@@ -84,7 +91,8 @@ if (typeof LANDSCAPE !== 'undefined') LANDSCAPE.slide_votazione = x => (r, D) =>
     if (off && !box.isConnected) return off();
     const mine = poll && poll.slide === x.id ? poll : null;
     rr.classList.toggle('vt-on', !!mine);
-    box.innerHTML = VOTO_RENDER.html(x, mine);
+    const pres = D.censimenti && D.censimenti.presenti_attuali;
+    box.innerHTML = VOTO_RENDER.html(x, mine, pres > 0 ? pres : mine && mine.totale);
   };
   off = window.VOTO.on(draw);
   return base;

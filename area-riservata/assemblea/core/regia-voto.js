@@ -4,7 +4,7 @@
   if (!box) return;
   const API = ((window.LIVE || {}).basePath || "") + "/api/vote";
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let slide = null, poll = null, busy = false, firma = "";
+  let pres = 0, slide = null, poll = null, busy = false, firma = "";
   async function chiama(path, data) {
     const r = await fetch(API + "/" + path, data ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) } : { cache: "no-store" });
     const t = await r.text();
@@ -16,6 +16,7 @@
     try {
       const s = w && w.VISTA && w.VISTA.stato();
       const x = s && s.n && w.VISTA.slide(s.i);
+      pres = (w.DATI.censimenti && w.DATI.censimenti.presenti_attuali) || 0;
       return x && x.tipo === "slide_votazione" && w.DATI.votazioni && w.DATI.votazioni.abilitate ? x.x || null : null;
     } catch (e) { return null; }
   }
@@ -25,7 +26,7 @@
     const mio = poll && poll.slide === slide.id ? poll : null;
     const aperta = !!(mio && mio.aperta);
     let h = `<h3>Votazione · ${esc(slide.domanda || "")}</h3>`;
-    h += `<p class="vt-st">${!mio ? "Non ancora aperta" : aperta ? "<b>APERTA</b>" : "Chiusa"}${mio ? ` · ${mio.ricevuti} ${mio.ricevuti === 1 ? "voto" : "voti"} su ${mio.totale}` : ""}</p>`;
+    h += `<p class="vt-st">${!mio ? "Non ancora aperta" : aperta ? "<b>APERTA</b>" : "Chiusa"}${mio ? ` · ${mio.ricevuti} ${mio.ricevuti === 1 ? "voto" : "voti"} su ${pres > 0 ? pres : mio.totale}` : ""}</p>`;
     if (mio && mio.conteggi) {
       const max = Math.max(...mio.conteggi);
       h += '<ul class="vt-ris">' + mio.opzioni.map((o, n) => `<li${!aperta && mio.modalita === "nominativa" && mio.conteggi[n] === max && max > 0 ? ' class="vinc"' : ""}><span>${esc(o)}</span><b>${mio.conteggi[n]}</b></li>`).join("") + "</ul>";
