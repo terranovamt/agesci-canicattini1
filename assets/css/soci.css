@@ -10,10 +10,6 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
 #members-search-panel > .members-summary button { min-height: 44px; padding: 10px 12px; border-radius: 12px; }
 #members-search-panel > .members-summary strong { font-size: 1.5rem; }
 #members-filters { padding: 10px 12px; gap: 8px; margin: 8px 0; }
-#members-filters .members-main-search { display: none; }
-.members-page:has(#members-list > tr:nth-child(13)) #members-filters .members-main-search,
-#members-filters .members-main-search:focus-within,
-#members-filters .members-main-search:has(input:not(:placeholder-shown)) { display: flex; }
 .members-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
 .members-summary button { min-width: 0; border: 1px solid #e6dfed; border-top: 4px solid var(--branch-color, #745098); border-radius: 16px; padding: 1.2rem; background: #fff; color: #39234c; font: inherit; text-align: left; cursor: pointer; }
 .members-summary button:hover { box-shadow: 0 2px 8px #39234c18; }
@@ -422,6 +418,11 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
   #members-search-panel > .members-summary { grid-column: 1 / -1; }
   .members-primary-actions { margin: 4px 0; }
   .members-filters { margin: 4px 0; padding: 8px 10px; }
+  #members-filters .members-quick-quality { display: none; }
+  #members-filters .members-main-search { display: none; }
+  .members-page:has(#members-list > tr:nth-child(13)) #members-filters .members-main-search,
+  #members-filters .members-main-search:focus-within,
+  #members-filters .members-main-search:has(input:not(:placeholder-shown)) { display: flex; }
   #member-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding: 8px 16px max(8px, env(safe-area-inset-bottom)); }
   #member-form .members-dialog-heading { flex-wrap: nowrap; gap: 8px; }
   #member-form .members-dialog-heading .eyebrow { display: none; }
@@ -443,4 +444,12 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
   body > #members-print { display: block !important; }
   .member-document { break-after: page; border: 0; padding: 0; }
   .member-document:last-child { break-after: auto; }
+}
+
+.members-filters .members-quick-quality { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.members-quick-quality .members-filter-chip[aria-pressed="true"] { border-color: #462678; background: #f1eafa; font-weight: 700; }
+.members-table tbody tr:has(.member-name) { cursor: pointer; }
+@media (min-width: 901px) {
+  .members-table td { padding: .5rem .75rem; }
+  .members-table th { padding: .6rem .75rem; }
 }
