@@ -468,11 +468,13 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
 #member-dialog .member-glance:empty { display: none; }
 #member-dialog .member-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 2px .65rem; border: 1px solid #d9cde6; border-radius: 999px; background: #f7f3fa; color: #30263a; font: inherit; font-size: .82rem; font-weight: 700; }
 #member-dialog button.member-chip { cursor: pointer; transition: background-color .2s; }
+#member-dialog button.member-chip { min-height: 44px; }
 #member-dialog .member-chip[data-warn="yes"] { border-color: #b4486f; background: #fbeef3; color: #7c2949; }
 .members-table .member-missing { color: #7c2949; font-weight: 700; }
 @media (max-width: 700px) {
   #member-dialog .member-glance { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   #member-dialog .member-chip { white-space: nowrap; min-height: 32px; }
+  #member-dialog button.member-chip { min-height: 44px; }
 }
 @media (min-width: 1100px) {
   #member-dialog.members-dialog { width: min(1100px, calc(100% - 2rem)); }
