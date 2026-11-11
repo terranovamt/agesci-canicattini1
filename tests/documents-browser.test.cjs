@@ -762,7 +762,7 @@ test("public documents and management work in a browser at all required widths",
       assert.equal(item.valid, true);
     }
     for (const item of results.filter((item) => "review" in item)) {
-      assert.equal(item.review, "Riepilogo");
+      assert.equal(item.review, "Testi e riepilogo");
       assert.equal(item.error, "");
       assert.equal(item.reviewFits, true);
       assert.equal(item.unchanged, true, "data must stay unchanged before confirmation");
