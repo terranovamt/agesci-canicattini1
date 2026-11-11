@@ -265,7 +265,7 @@ test("branch chiefs land on today's program, including the last camp day, across
             return {branch:document.getElementById('reserved-content').dataset.branch,
               title:document.getElementById('dashboard-title').textContent,
               color:getComputedStyle(panel).borderTopColor,
-              first:panel.getBoundingClientRect().top < document.getElementById('dashboard-more').getBoundingClientRect().top,
+              first:panel.getBoundingClientRect().top <= document.getElementById('dashboard-more').getBoundingClientRect().top,
               actionVisible:action.getBoundingClientRect().bottom <= innerHeight,
               overflow:document.documentElement.scrollWidth > innerWidth,
               now:document.getElementById('dashboard-event-moment').textContent,
@@ -765,14 +765,9 @@ test("login autofill, education dates, activities and progression work on four s
         assert.match(await page.evaluate("document.getElementById('event-materials').textContent"), /Cerchi — 6 pezzi.*Pasta — 4 kg/);
         await page.evaluate("document.getElementById('event-dialog').close()");
         await go("");
-        await wait("document.getElementById('dashboard-event-title').textContent === 'Campo invernale'");
-        assert.match(await page.evaluate("document.getElementById('dashboard-event-details').textContent"), /gennaio 2027/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-event-preparation').textContent"), /1 momenti/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-fees-action').textContent"), /Da ricevere \(2\)/);
-        assert.match(await page.evaluate("document.getElementById('dashboard-event-action').href"), /event=/);
-        assert.doesNotMatch(await page.evaluate("document.getElementById('dashboard-event-action').href"), /presenze=1/);
-        assert.equal(await page.evaluate("document.getElementById('dashboard-attendance-action').textContent"), "Presenze");
-        assert.match(await page.evaluate("document.getElementById('dashboard-attendance-action').href"), /event=.*vista=presenze/);
+        await wait("!document.getElementById('dashboard-branch-tools').hidden");
+        assert.equal(await page.evaluate("document.getElementById('dashboard-event-panel').hidden"), true,
+          "a camp weeks away stays off the home until 15 minutes before its first moment");
         await shot("desktop-17-prossimo-evento");
 
         await go("attivita.html");

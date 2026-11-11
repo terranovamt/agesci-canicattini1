@@ -649,7 +649,7 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
       document.getElementById("login").hidden = true;
       {
         const more = document.getElementById("dashboard-more");
-        const initiallyCollapsed = !more.open && !visible(document.getElementById("documents-tool"));
+        const initiallyCollapsed = !more.open && (innerWidth >= 1100 || !visible(document.getElementById("documents-tool")));
         more.open = true;
         const measured = measure("unified");
         measured.secondaryCollapsed = initiallyCollapsed;
@@ -743,7 +743,8 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
         assert.equal(panel.noTabs, true);
         assert.equal(panel.columnsPositioned, true, width + ": " + JSON.stringify(panel));
         assert.equal(panel.keyboardFocus, true);
-        assert.equal(panel.contentWidth, Math.min(panel.availableWidth - 32, 1120));
+        const cap = width >= 1700 ? [48, 1800] : width >= 1100 ? [32, 1400] : width >= 820 ? [32, 1280] : [32, 1120];
+        assert.equal(panel.contentWidth, Math.min(panel.availableWidth - cap[0], cap[1]));
       }
       const [tools] = measured.panels;
       assert.equal(tools.separated, true);

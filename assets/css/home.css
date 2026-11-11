@@ -569,3 +569,50 @@ body:is(.home, .docs-page) .documents-more { margin: 8px 0 0 }
   body.home .event-source { padding: 1px 6px; font-size: 10px }
   body.home .calendar-agenda-panel button { min-height: 44px }
 }
+
+/* Home area riservata: telefono = "adesso" in cima; da tablet menu laterale; portatile 2 colonne; desktop 3 colonne */
+.dashboard-page #riservata:not([hidden]) { display: grid; gap: 0 12px; align-items: start }
+.dashboard-page #riservata > #dashboard-session-status { order: 0 }
+.dashboard-page #riservata > #dashboard-event-panel { order: 1 }
+.dashboard-page #riservata > #dashboard-transfers-alert { order: 2 }
+.dashboard-page #riservata > #dashboard-branch-tools { order: 3 }
+.dashboard-page #riservata > #dashboard-more { order: 4 }
+@media (min-width: 820px) {
+  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: min(calc(100% - 32px), 1280px) }
+  .dashboard-page #riservata:not([hidden]) { grid-template-columns: 150px minmax(0, 1fr) }
+  .dashboard-page #riservata > * { grid-column: 2; order: 0 }
+  .dashboard-page #riservata > #dashboard-branch-tools:not([hidden]) {
+    grid-column: 1; grid-row: 1 / span 6; position: sticky; top: 12px; align-content: start;
+    grid-template-columns: 1fr; padding: 8px; gap: 6px; border-radius: var(--radius-md); background: var(--vd)
+  }
+  .dashboard-page #riservata #dashboard-branch-tools .button { background: transparent !important; color: #fff !important; border-color: transparent !important }
+  .dashboard-page #riservata #dashboard-branch-tools .button:is(:hover, :focus-visible) { background: var(--v) !important; color: var(--y) !important }
+  .dashboard-page #riservata #dashboard-branch-tools .button:focus-visible { outline-color: var(--y) }
+}
+@media (min-width: 1100px) {
+  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: min(calc(100% - 32px), 1400px) }
+  .dashboard-page #riservata:not([hidden]) { grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr) }
+  .dashboard-page #riservata > #dashboard-more { grid-column: 3; grid-row: 1 / span 6 }
+  .dashboard-page #riservata > :is(#dashboard-session-status, #dashboard-event-panel, #dashboard-transfers-alert) { grid-column: 2 }
+  .dashboard-page .dashboard-upcoming-event:not([hidden]) { grid-template-columns: minmax(0, 1fr) }
+  .dashboard-page .dashboard-event-summary { flex-direction: row; padding: 8px 0 0; border-left: 0 }
+}
+/* Dove il browser lo permette, "Altro" è sempre aperto su schermi larghi */
+@supports selector(::details-content) {
+  @media (min-width: 1100px) {
+    .dashboard-page #dashboard-more:not([open])::details-content { content-visibility: visible; display: block }
+    .dashboard-page #dashboard-more > summary { display: none }
+    .dashboard-page #dashboard-more { border: 0; background: transparent }
+    .dashboard-page #dashboard-more .dashboard-more-content { padding: 0 }
+  }
+}
+@media (min-width: 1700px) {
+  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: min(calc(100% - 48px), 1800px) }
+  .dashboard-page #riservata:not([hidden]) { grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1.7fr) }
+}
+@media (min-width: 820px) {
+  body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: max(16px, calc((100% - 1280px) / 2)) }
+  .dashboard-page #riservata #dashboard-branch-tools .button { font-size: 14px }
+}
+@media (min-width: 1100px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: max(16px, calc((100% - 1400px) / 2)) } }
+@media (min-width: 1700px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: max(24px, calc((100% - 1800px) / 2)) } }

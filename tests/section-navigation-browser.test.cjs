@@ -120,7 +120,7 @@ test('all screens fit real responsive viewports and section navigation preserves
               for (const id of ['people-tool', 'dashboard-group-overview', 'dashboard-metrics'])
                 doc.getElementById(id).hidden = false;
               const more = doc.getElementById('dashboard-more');
-              record({ moreClosed: !more.open, secondaryHidden: !visible(doc.getElementById('documents-tool')) });
+              record({ moreClosed: !more.open, secondaryHidden: doc.defaultView.innerWidth >= 1100 || !visible(doc.getElementById('documents-tool')) });
               more.open = true;
               record({ unifiedDashboard: !navs.length && !doc.querySelector('[role="tab"], [role="tablist"]') &&
                 ['people-tool', 'documents-tool', 'dashboard-assembly-panel', 'dashboard-documents-title',
