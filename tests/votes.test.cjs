@@ -107,4 +107,6 @@ test("secret votes: codes, one vote per member, tallies without links, results a
   assert.equal((await (await app.request("vote/results?slide=nom")).json()).poll.conteggi, null);
   await app.request("vote/close", "POST", {});
   assert.deepEqual((await (await app.request("vote/results?slide=nom")).json()).poll.conteggi, [0, 1]);
+  const report = (await (await app.request("vote/report")).json()).polls;
+  assert.equal(report.length, 2); assert.deepEqual(report[0].conteggi, [2, 0, 0]); assert.deepEqual(report[1].conteggi, [0, 1]);
 });

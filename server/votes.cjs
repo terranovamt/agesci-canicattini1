@@ -198,6 +198,12 @@ function createVotes(db, people) {
         send(response, 200, { poll: base && { ...base, conteggi: hide ? null : tallies(poll) } });
         return true;
       }
+      if (route === "/api/vote/report" && method === "GET") {
+        staff(sessionId, request);
+        const polls = db.prepare("SELECT * FROM vote_polls ORDER BY id").all().map(poll => ({ ...publicPoll(poll), conteggi: tallies(poll) }));
+        send(response, 200, { polls });
+        return true;
+      }
       fail(404, "Risorsa non disponibile");
     },
   };

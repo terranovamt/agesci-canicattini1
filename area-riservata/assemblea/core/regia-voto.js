@@ -11,6 +11,25 @@
     if (!r.ok) throw new Error(t || "Errore " + r.status);
     return t ? JSON.parse(t) : {};
   }
+  const rep = document.getElementById("report-voti");
+  function abilitate() {
+    try { const w = document.getElementById("principale").contentWindow; return !!(w.DATI.votazioni && w.DATI.votazioni.abilitate); } catch (e) { return false; }
+  }
+  if (rep) rep.onclick = async () => {
+    rep.disabled = true;
+    try {
+      const { polls } = await chiama("report");
+      const w = document.getElementById("principale").contentWindow;
+      const d = w.DATI || {}, titolo = (d.assemblea && (d.assemblea.titolo || d.assemblea.data)) || "";
+      const blob = window.PDF_REPORT.crea("Report votazioni", "Assemblea di Gruppo" + (titolo ? " - " + String(titolo).replace(/<[^>]+>/g, " ") : "") + " - generato il " + new Date().toLocaleString("it-IT"), polls, pres || 0);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "report-votazioni.pdf";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) { alert(e.message); }
+    rep.disabled = false;
+  };
   function corrente() {
     const w = document.getElementById("principale").contentWindow;
     try {
@@ -52,6 +71,7 @@
     disegna();
   }
   async function leggi() {
+    if (rep) rep.hidden = !abilitate();
     slide = corrente();
     if (window.REGIA_DATI && window.REGIA_DATI.slide) window.REGIA_DATI.slide(tipo);
     if (!slide) return disegna();

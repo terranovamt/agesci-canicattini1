@@ -118,10 +118,11 @@
 .sec .vt-pb.dim { height: 6px }
 .sec .vt-hid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px }
 .sec .vt-hid span { background: var(--vote-track); border-radius: 12px; padding: 6px 16px; font-size: 24px }
-/* timbro dell'esito */
-.sec .vt-stamp { position: absolute; z-index: 2; left: 50%; top: 64px; padding: 6px 28px; border: 5px double #fff; border-radius: 6px; font-size: 52px; font-weight: 500; letter-spacing: .08em; white-space: nowrap; color: #fff; transform: translate(-50%, -50%) rotate(-7deg); box-shadow: 0 6px 24px rgba(0,0,0,.35); animation: vt-stamp .45s cubic-bezier(.2,1.4,.4,1) both; opacity: 1 }
+/* timbro dell'esito: l'animazione parte da scala 1.5 per non uscire dalla slide */
+.sec .vt-on { overflow: hidden }
+.sec .vt-stamp { position: absolute; z-index: 2; left: 50%; top: 88px; max-width: 90%; padding: 6px 28px; border: 5px double #fff; border-radius: 6px; font-size: 52px; font-weight: 500; letter-spacing: .08em; white-space: nowrap; color: #fff; transform: translate(-50%, -50%) rotate(-7deg); box-shadow: 0 6px 24px rgba(0,0,0,.35); animation: vt-stamp .45s cubic-bezier(.2,1.4,.4,1) both; opacity: 1 }
 .sec .vt-stamp.ok { background: #14803f }.sec .vt-stamp.ko { background: #d12c33 }.sec .vt-stamp.eq { background: #6f6f80 }
-@keyframes vt-stamp { from { opacity: 0; transform: translate(-50%, -50%) rotate(-7deg) scale(2.6) } to { opacity: 1; transform: translate(-50%, -50%) rotate(-7deg) scale(1) } }
+@keyframes vt-stamp { from { opacity: 0; transform: translate(-50%, -50%) rotate(-7deg) scale(1.5) } to { opacity: 1; transform: translate(-50%, -50%) rotate(-7deg) scale(1) } }
 @media (prefers-reduced-motion: reduce) { .sec .vt-stamp { animation: none } }
 @media (prefers-reduced-motion: reduce) { .sec .vt-bar .vs, .sec .vt-pb i, .sec .vt-nums .va { transition: none } }
 
