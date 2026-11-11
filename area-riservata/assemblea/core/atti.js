@@ -33,9 +33,9 @@
     const v = {
       data: m ? `${m[1]} ${m[2].toLowerCase()} ${m[3]}` : txt(a.data), dataBreve: m ? `${m[1].padStart(2, "0")}/${String(mese).padStart(2, "0")}/${m[3]}` : "",
       oraInizio: a.seconda_convocazione || "", oraFine, presenti: pres || "", genitori: "", presidente: per("presidente")[0] || "",
-      scrutatori: per("scrutator").join(" e "), segretario: per("segretari")[0] || "", capoGruppo: "", quota: "10", quotaNaz: "40", scadenza: "15 dicembre",
+      scrutatori: per("scrutator").join(" e "), segretario: per("segretari")[0] || "", capoGruppo: txt(a.capo_gruppo), quota: "10", quotaNaz: "40", scadenza: "15 dicembre",
       regolamento: "anno 24-25 delibera n°1 del 14 novembre 24", staff: "", comunicazioni: "Informative campi invernali",
-      capi: eletti.join("\n") || "Bertuna Vito\nGazzara Gianna\nGermano Gabriele\nGionfriddo Davide\nGuzzardo Gaia\nGuzzardo Oliviero\nMangiafico Maria\nPetrolito Elisabetta\nRamondetta Marco\nRandazzo Clarissa\nTerranova Matteo\nUrso Cannarella Antonino",
+      capi: [].concat(a.capi || []).join("\n") || eletti.join("\n"),
       si1: v1[0], no1: v1[1], ast1: v1[2], si2: v2[0], no2: v2[1], ast2: v2[2], si3: v3[0], no3: v3[1], ast3: v3[2],
     };
     v.anno = anno;
