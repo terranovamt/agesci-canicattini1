@@ -27,7 +27,7 @@ window.VOTO_RENDER = (function () {
         <span class="vs vc" style="right:0;width:${w(c)}%"></span>
         <span class="vs va" style="left:${left}%;width:${w(a)}%;opacity:${a ? 1 : 0}"></span></div>
       <div class="vt-nums"><div class="vn vf"><b>${f}</b><span>${esc(lf)}</span></div>
-        <div class="vn va" style="left:${left + w(a) / 2}%"><b>${a}</b><span>${esc(la)}</span></div><div class="vn vc"><b>${c}</b><span>${esc(lc)}</span></div></div></div>`;
+        <div class="vn va" style="left:${f && c ? left + w(a) / 2 : 50}%"><b>${a}</b><span>${esc(la)}</span></div><div class="vn vc"><b>${c}</b><span>${esc(lc)}</span></div></div></div>`;
     const mob = `<div class="vt-m"><i class="vt-line"></i><div class="vt-title">${esc(plain(x.titolo))}</div>
       <div class="vt-st">${state(p)}</div><div class="vt-q">${esc(x.domanda || '')}</div>
       <span class="vt-pill">${p.ricevuti} su ${tot}</span>
