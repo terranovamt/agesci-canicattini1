@@ -78,3 +78,10 @@ test("QR slide uses the compact image for defaults and existing saved defaults, 
     assert.ok(root.innerHTML.includes('width="990" height="990"'));
   }
 });
+
+test("setup heading summarises date, convocations, agenda points and slides", () => {
+  const setup = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/setup.js"), "utf8");
+  assert.match(setup, /function riepilogo\(\)/);
+  assert.match(setup, /view === "generale" \|\| view === "ordine"\) \$\("#intro"\)\.textContent = riepilogo\(\)/);
+  assert.match(setup, /punti all'ordine del giorno/);
+});

@@ -3,7 +3,7 @@
   if (!L?.url || L.vista === 'principale' || L.vista === 'anteprima') return;
   const errore = document.createElement('p');
   errore.setAttribute('role', 'alert');
-  errore.style.cssText = 'position:fixed;top:20px;left:5%;right:5%;z-index:100;background:#fff0e8;color:#8b2400;padding:14px;border-radius:12px;font:14px system-ui';
+  errore.style.cssText = 'position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:5%;right:5%;z-index:100;background:#fff0e8;color:#8b2400;padding:10px 14px;border-radius:12px;font:13px system-ui';
   errore.hidden = true;
   document.body.append(errore);
   A.osserva(s => {

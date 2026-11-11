@@ -678,10 +678,28 @@
       });
   }
 
+  /* riepilogo sempre in vista: data, convocazioni, punti all'odg e slide */
+  function riepilogo() {
+    const a = edit.assemblea || {},
+      slide = Array.isArray(edit.slide) ? edit.slide : [],
+      punti = slide.filter((x) => x.tipo === "slide_ordine_del_giorno").reduce((n, x) => n + (x.punti || []).length, 0),
+      nascoste = slide.filter((x) => x.nascosta).length;
+    return [
+      a.data,
+      a.prima_convocazione && "1ª conv. " + a.prima_convocazione,
+      a.seconda_convocazione && "2ª conv. " + a.seconda_convocazione,
+      punti + (punti === 1 ? " punto" : " punti") + " all'ordine del giorno",
+      slide.length + " slide" + (nascoste ? " (" + nascoste + " nascoste)" : ""),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
   function render() {
     const y = scrollY,
       c = $("#campi");
     c.innerHTML = "";
+    if (view === "generale" || view === "ordine") $("#intro").textContent = riepilogo();
     if (view === "generale") renderSezioni(c, GENERALE);
     else if (view === "bilancio") {
       const groups = {
