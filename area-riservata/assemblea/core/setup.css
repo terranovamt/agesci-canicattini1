@@ -251,3 +251,8 @@ dialog a { color: var(--v); font-weight: 700 }
   #gh .row { position: sticky; bottom: -12px; background: var(--w); padding: 8px 0 }
 }
 #app[data-view="bilancio"] .form-section + .form-section { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--vl) }
+
+@media (min-width: 900px) {
+  main { padding-inline: 10% }
+  .setup-header, footer { padding-inline: 10% }
+}
