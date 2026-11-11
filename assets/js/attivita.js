@@ -1002,7 +1002,7 @@
     }
     $('event-heading').textContent = item ? item.title : 'Nuova attività';
     $('event-draft-banner').hidden = !!item;
-    $('event-settings').open = !item;
+    $('event-settings').open = true;
     $('event-filters').open = false;
     $('event-program-section').open = true;
     $('event-materials-section').open = matchMedia('(min-width: 1100px)').matches;
@@ -1282,6 +1282,10 @@
   };
   pathForm.elements.personId.onchange = guidance;
   pathForm.elements.closed.onchange = closure;
+  for (const section of [$('event-settings'), $('event-tasks').closest('details')]) {
+    section.open = true; section.classList.add('event-fixed-section');
+    section.querySelector(':scope > summary').addEventListener('click', event => event.preventDefault());
+  }
   $('activities-branch').onchange = () => { pathFilter.state = ''; pathFilter.kind = ''; render(); };
   $('activities-search').oninput = render;
   eventForm.addEventListener('invalid', event => {

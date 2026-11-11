@@ -336,3 +336,6 @@
 .activity-event-row[data-when="past"] h3 { color: #50336a; font-size: .98rem; font-weight: 600; }
 
 .activities-dialog input[data-time24] { font-variant-numeric: tabular-nums; text-align: center; }
+.event-fixed-section > summary { cursor: default; list-style: none; font-weight: 700; }
+.event-fixed-section > summary::-webkit-details-marker { display: none }
+.event-fixed-section > summary::marker { content: '' }

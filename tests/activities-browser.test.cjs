@@ -512,7 +512,6 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#new-event");
         assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /Bozza non registrata/);
         assert.equal(await page.evaluate("document.querySelector('#event-form button[type=submit]').textContent.trim()"), "Salva attività");
-        await expand('#event-program-view > details:last-child');
         await click('#event-tasks + button');
         assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /modifiche non salvate/);
         const options = await page.evaluate("[...document.querySelector('#event-form [name=kind]').options].map(option => option.value)");
@@ -569,7 +568,6 @@ test("login autofill, education dates, activities and progression work on four s
         assert.equal(await page.evaluate("document.getElementById('event-totals').textContent.includes('20,50')"), true);
         await fill("#event-member-filter", "", "change");
         await click('[data-event-view="programma"]');
-        await expand('#event-program-view > details:last-child');
         await click("#event-tasks input[type=checkbox]");
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
