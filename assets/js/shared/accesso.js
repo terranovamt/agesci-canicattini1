@@ -16,10 +16,11 @@
       }
       return r.json();
     }
-    async function entra(password, code, confirmation) {
+    async function entra(password, code, confirmation, temporary) {
       const result = password === 'nas-session' && code === undefined
         ? await request('auth/me')
-        : await request('auth/login', 'POST', { code, password, confirmation });
+        : await request('auth/login', 'POST', { code, password, confirmation, temporary });
+      if (result.mustChange) return result;
       window.NAS.user = result.user;
       if (result.user && !result.user.viewAs) window.NAS.viewAs = null;
       if (typeof document !== 'undefined') viewAsControl();

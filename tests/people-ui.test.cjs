@@ -116,7 +116,7 @@ test("reset confirms identity, revocation and supervised initialization without 
   assert.match(ui.confirmations[0], /supervisiona/);
   assert.equal(ui.calls.find(call => call[1] === "DELETE")[0], "people/2/password");
   assert.match(ui.get("person-feedback-2").textContent, /Sessioni revocate.*Supervisiona/);
-  assert.match(ui.cards().find(card => card.children[0].children[0].textContent === "Giulia Capo").children[2].children[0].textContent, /da inizializzare/i);
+  assert.match(ui.cards().find(card => card.children[0].children[0].textContent === "Giulia Capo").children[2].children[0].textContent, /provvisoria/i);
 });
 
 test("pending and write errors stay on the row; duplicate writes blocked; shown value reverts", async () => {

@@ -18,7 +18,10 @@ Solo i capi abilitati possono accedere; solo `23816938` gestisce persone
 e reset delle password. La navbar pubblica resta bianca e quella riservata viola.
 Il precedente codice amministratore `1238005` diventa un capo normale:
 per abilitarlo aggiungilo a `NAS_CAPO_CODES` e imposta la sua password personale
-al primo accesso. L'account amministratore usa sempre `NAS_ADMIN_PASSWORD`.
+al primo accesso. I capi senza password personale (nuovi o resettati dall'admin)
+accedono solo con la password provvisoria `Canicattini1` e devono sceglierne subito
+una nuova; senza questo passaggio non ottengono nessuna sessione. L'account
+amministratore usa sempre `NAS_ADMIN_PASSWORD`.
 
 Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
 diretta, contenuti o PDF. Setup e gestione documenti salvano direttamente sul

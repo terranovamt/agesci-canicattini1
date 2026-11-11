@@ -24,6 +24,7 @@
     const repeat = document.getElementById('confirmation-field');
     const button = form.querySelector('button[type="submit"]');
     let checkedCode = '';
+    let temporary;
     function visibilityLabel(input, visible) {
       return (visible ? 'Nascondi ' : 'Mostra ') +
         (input === confirmation ? 'conferma password' : 'password');
@@ -47,6 +48,9 @@
     form.hidden = false;
     function resetFields() {
       checkedCode = '';
+      temporary = undefined;
+      password.removeAttribute('pattern');
+      password.minLength = 1;
       fields.hidden = repeat.hidden = true;
       password.disabled = confirmation.disabled = togglePassword.disabled = toggleConfirmation.disabled = true;
       password.value = confirmation.value = '';
@@ -101,11 +105,27 @@
           loginFeedback(form, '', '');
           password.focus();
         } else {
-          await A.entra(password.value, checkedCode, confirmation.disabled ? undefined : confirmation.value);
+          const changing = !confirmation.disabled;
+          const typed = password.value;
+          const result = await A.entra(password.value, checkedCode, changing ? confirmation.value : undefined, changing ? temporary : undefined);
           password.value = confirmation.value = '';
           conceal(password, togglePassword);
           conceal(confirmation, toggleConfirmation);
-          showTools();
+          if (result && result.mustChange) {
+            // Password provvisoria corretta: nessuna sessione finché non ne viene scelta una personale.
+            temporary = typed;
+            repeat.hidden = false;
+            confirmation.disabled = toggleConfirmation.disabled = false;
+            confirmation.required = true;
+            password.minLength = 8;
+            password.pattern = '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,128}';
+            password.title = 'Almeno 8 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale, come @';
+            password.autocomplete = 'new-password';
+            button.textContent = 'Imposta password e accedi';
+            form.querySelector('label[for="nas-password"]').textContent = 'Scegli una nuova password';
+            loginFeedback(form, '', '');
+            password.focus();
+          } else showTools();
         }
       } catch (error) {
         const mismatch = !confirmation.disabled && password.value !== confirmation.value;

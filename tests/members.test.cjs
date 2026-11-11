@@ -39,7 +39,7 @@ async function start(directory, censusCodes = "7654321") {
       });
     },
     async login(code = "23816938") {
-      const r = await this.request("auth/login", "POST", { code, password, confirmation: password });
+      const r = await this.request("auth/login", "POST", { code, password, confirmation: password, temporary: "Canicattini1" });
       assert.equal(r.status, 200, await r.text());
       cookie = r.headers.get("set-cookie").split(";")[0];
     },

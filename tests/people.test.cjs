@@ -26,9 +26,9 @@ async function start(directory, censusCodes = "7654321,7654322", adminPassword =
         body: data === undefined ? undefined : JSON.stringify(data),
       });
     },
-    async login(code = "23816938", suppliedPassword = password, confirmation) {
-      const response = await this.request("auth/login", "POST", { code, password: suppliedPassword, confirmation });
-      if (response.ok) cookie = response.headers.get("set-cookie").split(";")[0];
+    async login(code = "23816938", suppliedPassword = password, confirmation, temporary = "Canicattini1") {
+      const response = await this.request("auth/login", "POST", { code, password: suppliedPassword, confirmation, temporary: confirmation === undefined ? undefined : temporary });
+      if (response.ok && response.headers.get("set-cookie")) cookie = response.headers.get("set-cookie").split(";")[0];
       return response;
     },
     cookie: () => cookie,
@@ -53,7 +53,7 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
     const id = list.people.find(person => person.code === "7654321").id;
     assert.equal((await app.request("people/" + id, "PATCH", { serviceBranch: "E/G" }, admin)).status, 200);
     assert.equal((await app.request("people/" + id, "PATCH", { name: "Changed", serviceBranch: "R/S" }, admin)).status, 400);
-    assert.deepEqual(await (await app.request("auth/status", "POST", { code: "7654321" })).json(), { firstAccess: true });
+    assert.deepEqual(await (await app.request("auth/status", "POST", { code: "7654321" })).json(), { firstAccess: false });
     assert.equal((await app.login("7654321", password, "wrong")).status, 400);
     assert.equal((await app.login("7654321", "short", "short")).status, 400);
     assert.equal((await app.login("7654321", password, password)).status, 200);
@@ -73,7 +73,10 @@ test("NAS personal accounts bootstrap from env and first access hashes passwords
     assert.equal((await app.request("people/" + id + "/password", "DELETE", undefined, capo)).status, 403);
     assert.equal((await app.request("people/" + id + "/password", "DELETE", undefined, admin)).status, 200);
     assert.equal((await app.request("auth/me", "GET", undefined, capo)).status, 401);
-    assert.equal((await app.login("7654321")).status, 400);
+    assert.equal((await app.login("7654321")).status, 401);
+    assert.equal((await app.login("7654321", "Canicattini1")).status, 200);
+    assert.equal((await app.login("7654321", password, password, "wrong")).status, 401);
+    assert.equal((await app.login("7654321", "Canicattini1", "Canicattini1")).status, 400);
     assert.equal((await app.login("7654321", password, password)).status, 200);
     assert.equal((await app.request("logout", "POST")).status, 200);
     assert.equal((await app.request("auth/me")).status, 401);
@@ -129,7 +132,7 @@ test("census codes accept five through nine digits including leading zeros", asy
   const app = await start(directory, codes.join(","));
   try {
     for (const code of codes) {
-      assert.deepEqual(await (await app.request("auth/status", "POST", { code })).json(), { firstAccess: true });
+      assert.deepEqual(await (await app.request("auth/status", "POST", { code })).json(), { firstAccess: false });
       assert.equal((await app.login(code, password, password)).status, 200);
     }
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
@@ -237,7 +240,7 @@ test("concurrent first accesses do not overwrite the winning password", async ()
   const app = await start(directory);
   try {
     const responses = await Promise.all(["First-password1!", "Second-password1!"].map(value =>
-      app.request("auth/login", "POST", { code: "7654321", password: value, confirmation: value })));
+      app.request("auth/login", "POST", { code: "7654321", password: value, confirmation: value, temporary: "Canicattini1" })));
     assert.deepEqual(responses.map(r => r.status).sort(), [200, 401]);
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }
 });

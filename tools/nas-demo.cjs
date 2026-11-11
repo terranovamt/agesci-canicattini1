@@ -263,7 +263,7 @@ async function startNasDemo() {
       }
     }
     for (const code of ["7654321", "7654322", "7654323"]) {
-      await request("auth/login", "POST", { code, password: app.password, confirmation: app.password });
+      await request("auth/login", "POST", { code, password: app.password, confirmation: app.password, temporary: "Canicattini1" });
     }
     return app;
   } catch (error) {

@@ -65,7 +65,7 @@
     tr.setAttribute('aria-busy', String(state?.pending === true));
     cell('Capo', name, message);
     cell('Codice', document.createTextNode(person.code));
-    cell('Password', document.createTextNode(person.hasPassword ? 'Impostata' : 'Da inizializzare'));
+    cell('Password', document.createTextNode(person.hasPassword ? 'Impostata' : 'Provvisoria (da cambiare)'));
     const service = document.createElement('select');
     service.id = 'person-branch-' + person.id;
     service.setAttribute('aria-label', 'Branca di servizio di ' + person.name);

@@ -194,7 +194,7 @@ test("all chiefs can upload PDFs even without a service branch", async () => {
   const app = await start(directory, { censusCodes: "7654321" });
   try {
     const login = await app.request("/api/auth/login", "POST", {
-      code: "7654321", password, confirmation: password,
+      code: "7654321", password, confirmation: password, temporary: "Canicattini1",
     });
     assert.equal(login.status, 200);
     const { user: me } = await (await app.request("/api/auth/me")).json();

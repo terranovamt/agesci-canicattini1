@@ -107,7 +107,7 @@ test('NAS first access shows password and required confirmation only after code 
   assert.equal(t.get('nas-password').autocomplete, 'new-password');
   t.get('nas-password').value = t.get('nas-confirmation').value = 'A-long-password!';
   await t.get('nas-login-form').onsubmit({ preventDefault() {} });
-  assert.deepEqual(t.calls[1], ['login', 'A-long-password!', '7654321', 'A-long-password!']);
+  assert.deepEqual(t.calls[1], ['login', 'A-long-password!', '7654321', 'A-long-password!', undefined]);
   assert.equal(t.get('riservata').hidden, false);
   assert.equal(t.get('people-tool').hidden, true);
   assert.equal(t.get('nas-password').value, '');
@@ -147,7 +147,7 @@ for (const firstAccess of [false, true]) {
     assert.equal(t.get('nas-password').value, 'Autofill-password1!');
     await t.get('nas-login-form').onsubmit({ preventDefault() {} });
     assert.deepEqual(t.calls[1], ['login', 'Autofill-password1!', '7654321',
-      firstAccess ? 'Autofill-password1!' : undefined]);
+      firstAccess ? 'Autofill-password1!' : undefined, undefined]);
     assert.equal(t.get('riservata').hidden, false);
   });
 }

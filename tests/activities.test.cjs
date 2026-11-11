@@ -283,7 +283,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/paths/" + badge.id, "PATCH", badge, 403);
     await r("auth/view-as", "DELETE");
     await r("people/" + chief.id, "PATCH", { serviceBranch: "" });
-    await r("auth/login", "POST", { code: "7654321", password, confirmation: password });
+    await r("auth/login", "POST", { code: "7654321", password, confirmation: password, temporary: "Canicattini1" });
     await r("activities", "GET", undefined, 403);
     await app.close();
     app = await start(directory);

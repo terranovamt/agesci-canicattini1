@@ -18,6 +18,9 @@ function code(value) {
   return value;
 }
 
+// Capi senza password personale accedono solo con questa e devono sceglierne subito una nuova.
+const DEFAULT_PASSWORD = "Canicattini1";
+
 function validatePassword(password) {
   if (typeof password !== "string" || password.length < 8 || password.length > 128 ||
       !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) ||
@@ -186,7 +189,7 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
       if (route === "/api/auth/status" && method === "POST") {
         rateLimit("status:" + ip, 30, 60000);
         const current = enabled(code((await body(request, 4096))?.code));
-        send(response, 200, { firstAccess: current.census_code !== ADMIN_CODE && !current.password_hash });
+        send(response, 200, { firstAccess: false });
         return true;
       }
       if (route === "/api/auth/login" && method === "POST") {
@@ -195,7 +198,16 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
         const censusCode = code(value?.code);
         rateLimit("login-code:" + censusCode, 5, 900000);
         let current = enabled(censusCode);
+        const isDefault = (candidate) => typeof candidate === "string" && candidate.length <= 128 &&
+          crypto.timingSafeEqual(Buffer.from(hash(candidate), "hex"), Buffer.from(hash(DEFAULT_PASSWORD), "hex"));
         if (censusCode !== ADMIN_CODE && !current.password_hash) {
+          if (value.confirmation === undefined) {
+            if (!isDefault(value.password)) fail(401, "Codice censimento o password non validi");
+            send(response, 200, { mustChange: true });
+            return true;
+          }
+          if (!isDefault(value.temporary)) fail(401, "Codice censimento o password non validi");
+          if (value.password === DEFAULT_PASSWORD) fail(400, "Scegli una password diversa da quella provvisoria");
           if (value.password !== value.confirmation) fail(400, "Le password non coincidono");
           const encoded = await encode(value.password);
           database.prepare("UPDATE people SET password_hash=? WHERE id=? AND kind='capo' AND password_hash IS NULL")
@@ -248,4 +260,4 @@ async function createPeople(database, adminPassword, configuredCodes = "") {
   };
 }
 
-module.exports = { createPeople, validatePassword, ADMIN_CODE };
+module.exports = { createPeople, validatePassword, ADMIN_CODE, DEFAULT_PASSWORD };
