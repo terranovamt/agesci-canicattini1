@@ -616,3 +616,20 @@ body:is(.home, .docs-page) .documents-more { margin: 8px 0 0 }
 }
 @media (min-width: 1100px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: max(16px, calc((100% - 1400px) / 2)) } }
 @media (min-width: 1700px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: max(24px, calc((100% - 1800px) / 2)) } }
+/* Sezione "Altro": usa tutto lo spazio quando non c'è un'attività da mostrare, una colonna se è stretta */
+@media (min-width: 1100px) {
+  .dashboard-page #riservata:has(#dashboard-event-panel[hidden]) > #dashboard-more { grid-column: 2 / -1 }
+  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1fr) }
+  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-work-tools:not(:has(#people-tool[hidden])) { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+}
+@media (min-width: 1700px) {
+  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) }
+}
+@media (min-width: 820px) {
+  .dashboard-page .group-census-overview { padding: 10px 14px }
+  .dashboard-page .group-census-overview .metrics-heading { margin: 0 }
+  .dashboard-page .group-census-counts { margin-top: 6px }
+  .dashboard-page .group-census-counts > div { padding: 6px 10px }
+  .dashboard-page .group-census-counts dd { font-size: 20px }
+  .dashboard-page .dashboard-more-content { overflow-x: clip }
+}
