@@ -61,38 +61,44 @@ function setup({ data = chiefs(), admin = true, request } = {}) {
   };
   vm.runInNewContext(read("assets/js/persone.js"), {
     window, document, confirm: text => { confirmations.push(text); return confirmed; },
+    location: { assign(url) { window.assigned = url; } },
   });
-  const cards = () => get("people-list").children.filter(node => node.className === "person-card");
-  const submit = id => get("person-save-" + id) && cards().find(node =>
-    node.children[2].children[0].children[1].id === "person-save-" + id).children[2].onsubmit({ preventDefault() {} });
+  const cards = () => get("people-list").children[0]?.tag === "table" ? get("people-list").children[0].children[1].children : [];
   const change = (id, value) => { const select = get("person-branch-" + id); select.value = value; select.onchange(); };
-  return { get, cards, calls, confirmations, listeners, window, document, submit, change,
+  return { get, cards, calls, confirmations, listeners, window, document, change,
     handle(fn) { handler = fn; }, confirm(value) { confirmed = value; } };
 }
 
-test("only configured non-admin chiefs, compact cards, branch drafts and restricted mutations", async () => {
+test("only configured non-admin chiefs in a table, branch saved on change, restricted mutations", async () => {
   const ui = setup();
   await tick();
-  assert.deepEqual(ui.cards().map(card => card.children[0].textContent), ["Andrea Capo", "Giulia Capo"]);
+  assert.deepEqual(ui.cards().map(row => row.children[0].children[0].textContent), ["Andrea Capo", "Giulia Capo"]);
   assert.equal(ui.get("people-count").textContent, "2 capi abilitati");
-  assert.equal(ui.get("person-save-2").disabled, true);
   assert.equal(ui.get("person-feedback-2").hidden, true);
   ui.change(2, "R/S");
-  ui.get("people-filter-L-C").click();
-  ui.get("people-filter-ALL").click();
-  assert.equal(ui.get("person-branch-2").value, "R/S");
-  assert.equal(ui.get("person-save-2").disabled, false);
-  ui.submit(2);
   await tick();
   const patch = ui.calls.find(call => call[1] === "PATCH");
   assert.equal(patch[0], "people/2");
   assert.equal(JSON.stringify(patch[2]), '{"serviceBranch":"R/S"}');
   assert.equal(ui.get("person-feedback-2").textContent, "Branca salvata.");
-  assert.equal(ui.get("person-save-2").disabled, true);
+  assert.equal(ui.get("person-branch-2").value, "R/S");
   const html = read("area-riservata/persone.html");
   assert.doesNotMatch(html, /person-form|Aggiungi capo|name="name"|name="kind"/);
   assert.match(html, /<details class="people-help"><summary>/);
-  assert.doesNotMatch(read("assets/js/persone.js"), /Nessuna modifica/);
+});
+
+test("Visualizza come is one tap from the row and only for chiefs with a branch", async () => {
+  const ui = setup();
+  await tick();
+  ui.change(5, "");
+  await tick();
+  assert.equal(ui.cards().find(row => row.children[0].children[0].textContent === "Andrea Capo").children[4].children.length, 0, "no branch and no password: no actions");
+  let viewed;
+  ui.window.ACCESSO.vista = async id => { viewed = id; return {}; };
+  ui.get("person-view-2").click();
+  await tick();
+  assert.equal(viewed, 2);
+  assert.equal(ui.window.assigned, "/area-riservata/");
 });
 
 test("reset confirms identity, revocation and supervised initialization without generating passwords", async () => {
@@ -110,58 +116,46 @@ test("reset confirms identity, revocation and supervised initialization without 
   assert.match(ui.confirmations[0], /supervisiona/);
   assert.equal(ui.calls.find(call => call[1] === "DELETE")[0], "people/2/password");
   assert.match(ui.get("person-feedback-2").textContent, /Sessioni revocate.*Supervisiona/);
-  assert.match(ui.cards().find(card => card.children[0].textContent === "Giulia Capo").children[1].textContent, /da inizializzare/);
+  assert.match(ui.cards().find(card => card.children[0].children[0].textContent === "Giulia Capo").children[2].children[0].textContent, /da inizializzare/i);
 });
 
-test("pending and write errors stay on the card; duplicate writes blocked; drafts retained", async () => {
+test("pending and write errors stay on the row; duplicate writes blocked; shown value reverts", async () => {
   const ui = setup();
   await tick();
   let reject;
   ui.handle(() => new Promise((resolve, fail) => { reject = fail; }));
   ui.change(2, "R/S");
-  ui.submit(2);
   assert.match(ui.get("person-feedback-2").textContent, /Salvataggio/);
   assert.equal(ui.get("person-feedback-2").attributes["aria-live"], "polite");
-  assert.equal(ui.get("person-save-2").disabled, true);
   assert.equal(ui.get("person-branch-5").disabled, true);
-  ui.submit(2);
+  ui.change(5, "R/S");
   assert.equal(ui.calls.filter(call => call[1] === "PATCH").length, 1);
   reject(new Error("Rete non disponibile"));
   await tick();
   assert.match(ui.get("person-feedback-2").textContent, /Operazione non confermata.*Ricarica/);
   assert.equal(ui.get("person-branch-2").attributes["aria-invalid"], "true");
-  assert.equal(ui.get("person-branch-2").value, "R/S");
+  assert.equal(ui.get("person-branch-2").value, "E/G");
   assert.equal(ui.document.activeElement.id, "person-feedback-2");
 });
 
 test("successful write with failed refresh remains successful, and retry performs only GET", async () => {
   const ui = setup();
   await tick();
-  ui.change(5, "R/S");
   ui.get("people-filter-E-G").click();
-  ui.change(2, "L/C");
   ui.handle(async (route, method) => {
     if (!method) throw new Error("Lettura non disponibile");
     return { ok: true };
   });
-  ui.submit(2);
+  ui.change(2, "L/C");
   await tick();
   assert.match(ui.get("person-feedback-2").textContent, /^Branca salvata\. Elenco non aggiornato/);
-  assert.equal(ui.get("person-save-2").disabled, true);
   assert.equal(ui.get("people-filter-E-G").attributes["aria-pressed"], "true");
-  assert.equal(ui.cards().length, 1, "keep acted-on card and its feedback reachable");
-  ui.confirm(false);
-  ui.get("reload-people").click();
-  await tick();
-  assert.equal(ui.confirmations.length, 1, "other card draft still needs discard confirmation");
-  ui.confirm(true);
+  assert.equal(ui.cards().length, 1, "keep acted-on row and its feedback reachable");
   ui.get("reload-people").click();
   await tick();
   assert.equal(ui.calls.filter(call => call[1] === "PATCH").length, 1);
   assert.equal(ui.calls.at(-1)[1], undefined);
-  ui.get("people-filter-ALL").click();
-  assert.equal(ui.get("person-branch-5").value, "R/S", "failed reload must preserve drafts");
-  assert.match(ui.get("people-status").textContent, /dati e bozze conservati/);
+  assert.match(ui.get("people-status").textContent, /dati conservati/);
 });
 
 test("confirmed reset followed by expired read is not reported as failed and never repeated", async () => {
@@ -201,45 +195,25 @@ test("empty, initial loading/error and session expiry remain distinct from actua
   assert.equal(unavailable.cards().length, 2);
   const ui = setup();
   await tick();
-  ui.change(2, "R/S");
   ui.handle(async () => { ui.window.NAS.user = null; throw new Error("Sessione scaduta: accedi di nuovo"); });
-  ui.submit(2);
+  ui.change(2, "R/S");
   await tick();
   assert.match(ui.get("people-status").textContent, /Sessione scaduta/);
   assert.equal(ui.get("people-login").hidden, false);
-  assert.equal(ui.get("person-save-2").disabled, true);
-  assert.equal(ui.get("person-branch-2").value, "R/S");
+  assert.equal(ui.get("person-branch-2").disabled, true);
+  assert.equal(ui.get("person-branch-2").value, "E/G");
   const denied = setup({ admin: false });
   await tick();
   assert.equal(denied.calls.length, 0);
   assert.match(denied.get("people-status").textContent, /riservata all’amministratore/);
 });
 
-test("reload cancellation and navigation guard preserve drafts; successful reload clears them", async () => {
-  const ui = setup();
-  await tick();
-  ui.change(2, "R/S");
-  let guarded = false;
-  ui.listeners.beforeunload({ preventDefault() { guarded = true; } });
-  assert.equal(guarded, true);
-  ui.confirm(false);
-  ui.get("reload-people").click();
-  await tick();
-  assert.equal(ui.calls.length, 1);
-  ui.confirm(true);
-  ui.get("reload-people").click();
-  await tick();
-  assert.equal(ui.get("person-branch-2").value, "E/G");
-  assert.equal(ui.get("person-save-2").disabled, true);
-});
-
 test("a successful reload reconciles errors without losing the selected empty branch filter", async () => {
   const ui = setup();
   await tick();
   ui.get("people-filter-E-G").click();
-  ui.change(2, "L/C");
   ui.handle(async () => { throw new Error("Risposta interrotta"); });
-  ui.submit(2);
+  ui.change(2, "L/C");
   await tick();
   assert.match(ui.get("person-feedback-2").textContent, /Operazione non confermata/);
   ui.handle(async () => ({ people: chiefs().map(person => person.id === 2 ? { ...person, serviceBranch: "L/C" } : person) }));
@@ -248,11 +222,10 @@ test("a successful reload reconciles errors without losing the selected empty br
   assert.equal(ui.get("people-filter-E-G").attributes["aria-pressed"], "true");
   assert.match(ui.get("people-list").children[0].textContent, /Nessun capo in questa branca/);
   ui.get("people-filter-ALL").click();
-  assert.equal(ui.get("person-feedback-2").hidden, true);
   assert.equal(ui.get("person-branch-2").value, "L/C");
 });
 
-test("six responsive layouts keep cards compact and draft/reset/filter/guide/error controls reachable", { skip: !chrome }, t => {
+test("six responsive layouts keep the table compact and reset/filter/guide/error controls reachable", { skip: !chrome }, t => {
   const directory = fs.mkdtempSync(".people-ui-browser-");
   const css = ["assets/css/theme.css", "assets/css/home.css", "assets/css/nas.css"].map(read).join("\n");
   const people = [...chiefs(),
@@ -289,27 +262,25 @@ test("six responsive layouts keep cards compact and draft/reset/filter/guide/err
           };
         };
         const firstCard = document.querySelector('.person-card').getBoundingClientRect();
-        const fields = document.querySelector('.person-fields');
-        const fieldBoxes = [...fields.children].map(node => node.getBoundingClientRect());
         const result = { width: innerWidth, height: innerHeight, closed: measure(),
           firstCardTop: firstCard.top, cardWidth: firstCard.width,
           contentWidth: document.getElementById('reserved-content').getBoundingClientRect().width,
-          columns: getComputedStyle(document.getElementById('people-list')).gridTemplateColumns.split(' ').length,
-          branchSaveGap: fieldBoxes[1].left - fieldBoxes[0].right,
-          branchSaveAligned: Math.abs(fieldBoxes[0].bottom - fieldBoxes[1].bottom) < 1 };
+          rows: document.querySelectorAll('.person-card').length };
         document.querySelector('.people-help').open = true;
         result.open = measure();
         const select = document.getElementById('person-branch-2');
         select.value = 'R/S'; select.onchange();
-        document.getElementById('person-save-2').focus();
+        await new Promise(resolve => setTimeout(resolve, 10));
+        document.getElementById('person-branch-2').focus();
         result.draft = measure();
         result.focusVisible = document.activeElement.matches(':focus-visible') &&
           getComputedStyle(document.activeElement).outlineStyle !== 'none';
-        document.getElementById('people-filter-E-G').click();
+        document.getElementById('people-filter-L-C').click();
         result.filtered = measure();
         result.filteredWidth = document.querySelector('.person-card').getBoundingClientRect().width;
         document.getElementById('people-filter-ALL').click();
         result.draftRestored = document.getElementById('person-branch-2').value === 'R/S';
+        result.viewVisible = !!document.getElementById('person-view-2')?.getBoundingClientRect().width;
         const feedback = document.getElementById('person-feedback-2');
         feedback.textContent = 'Operazione non confermata: connessione interrotta. Ricarica per verificare lo stato prima di riprovare.';
         feedback.hidden = false;
@@ -319,7 +290,6 @@ test("six responsive layouts keep cards compact and draft/reset/filter/guide/err
         result.reset = measure();
         result.resetConfirmed = /Giulia Capo/.test(window.resetConfirmation) && /supervisiona/.test(window.resetConfirmation);
         result.resetFeedback = document.getElementById('person-feedback-2').textContent.startsWith('Password reimpostata.');
-        result.draftAfterReset = document.getElementById('person-branch-2').value === 'R/S';
         const out = document.createElement('pre');
         out.id = 'layout-result'; out.textContent = JSON.stringify(result);
         document.body.append(out);
@@ -327,8 +297,8 @@ test("six responsive layouts keep cards compact and draft/reset/filter/guide/err
     </script></body>`);
   try {
     const file = path.resolve(directory, "fixture.html");
-    for (const [width, height, columns] of [[1920, 1080, 3], [1366, 768, 3], [820, 1180, 2],
-      [390, 844, 1], [1180, 820, 3], [844, 390, 2]]) {
+    for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180],
+      [390, 844], [1180, 820], [844, 390]]) {
       fs.writeFileSync(file, `<!doctype html><body><script>
         const frame = document.createElement('iframe');
         frame.style.cssText = 'border:0;width:${width}px;height:${height}px';
@@ -358,19 +328,15 @@ test("six responsive layouts keep cards compact and draft/reset/filter/guide/err
         assert.equal(measured[state].controlsFit, true, `${state}: 44px controls fit ${width}x${height}`);
         assert.equal(measured[state].actionsSeparate, true, `${state}: no overlap ${width}x${height}`);
       }
-      assert.ok(measured.firstCardTop < Math.min(350, height - 90), `first card reachable early: ${JSON.stringify(measured)}`);
+      assert.ok(measured.firstCardTop < Math.min(350, height - 90), `first row reachable early: ${JSON.stringify(measured)}`);
       assert.equal(measured.focusVisible, true);
-      assert.equal(measured.columns, columns, `appropriate column count at ${width}x${height}`);
       assert.ok(measured.contentWidth <= 1100, "content width bounded on wide screens");
-      assert.ok(measured.cardWidth <= 400, "cards never stretch across unused columns");
-      assert.ok(Math.abs(measured.filteredWidth - measured.cardWidth) < 1, "filtering one card preserves compact width");
-      assert.equal(measured.branchSaveAligned, true);
-      assert.ok(measured.branchSaveGap >= 0 && measured.branchSaveGap <= 10, "branch/save remain adjacent");
+      assert.equal(measured.rows, 4);
+      assert.equal(measured.viewVisible, true);
       assert.equal(measured.draftRestored, true);
       assert.equal(measured.resetConfirmed, true);
       assert.equal(measured.resetFeedback, true);
-      assert.equal(measured.draftAfterReset, true);
-      t.diagnostic(`${width}x${height}: ${columns} columns; content ${measured.contentWidth}px; card ${measured.cardWidth}px; first card y=${Math.round(measured.firstCardTop)}px; controls >=${measured.closed.minControlHeight}px; branch/save gap ${measured.branchSaveGap}px.`);
+      t.diagnostic(`${width}x${height}: content ${measured.contentWidth}px; first row y=${Math.round(measured.firstCardTop)}px; controls >=${measured.closed.minControlHeight}px.`);
     }
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
