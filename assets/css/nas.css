@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px max(24px, calc((100vw - 1200px) / 2));
+  padding: 12px 24px;
   background: var(--v, #462678);
   color: #fff;
   border-bottom: 0;
@@ -35,7 +35,7 @@ body.reserved-page .reserved-header .brand,
 @media print { .reserved-location { display: none; } }
 body.reserved-page:has(> .members-page) > .reserved-header {
   gap: 8px 16px;
-  padding: 8px max(16px, calc((100vw - 1200px) / 2));
+  padding: 8px 24px;
 }
 body.reserved-page:has(> .members-page) > .reserved-header .brand { min-height: 44px; padding: 4px 8px }
 body.reserved-page:has(> .members-page) > .reserved-header img { width: 36px; height: 36px }
@@ -162,11 +162,11 @@ body.viewing-as > .reserved-header, body.viewing-as > .nas-navbar { position: st
 
 /* Stessa larghezza e stessi margini in tutte le pagine dell'area riservata */
 body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) {
-  box-sizing: border-box !important; width: min(calc(100% - 32px), 1800px) !important; max-width: none !important;
+  box-sizing: border-box !important; width: calc(100% - 48px) !important; max-width: none !important;
   margin: 24px auto !important; padding-inline: 0 !important;
 }
-.reserved-location { width: min(calc(100% - 32px), 1800px); max-width: none }
-body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: max(16px, calc((100% - 1800px) / 2)) !important }
+.reserved-location { width: calc(100% - 48px); max-width: none }
+body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: 24px !important }
 @media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: 12px !important } }
 @media (max-width: 600px) {
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { width: calc(100% - 24px) !important }

@@ -1,4 +1,4 @@
-.members-page { max-width: 1440px; margin: auto; padding: 2rem clamp(1rem, 3vw, 3rem); }
+.members-page { max-width: none; margin: auto; padding: 2rem clamp(1rem, 3vw, 3rem); }
 .members-page [hidden], .members-dialog [hidden] { display: none !important; }
 .members-heading, .members-dialog-heading, .members-result-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; min-width: 0; }
 .members-heading > *, .members-dialog-heading > *, .members-result-bar > * { min-width: 0; }

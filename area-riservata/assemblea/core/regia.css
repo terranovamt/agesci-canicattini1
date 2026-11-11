@@ -958,7 +958,7 @@ header h1 { font-size: 17px; margin-right: 0; }
 .avviso p { margin: 6px 0; font-size: 12px; }
 .avviso .btn { padding: 10px 12px; margin-bottom: 8px; }
 main {
-  flex: 1; min-height: 0; width: 100%; max-width: 1600px; padding: 8px 12px; gap: 8px;
+  flex: 1; min-height: 0; width: 100%; max-width: none; padding: 8px 12px; gap: 8px;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(90px, 1fr) auto 44px minmax(110px, .8fr);
   grid-template-areas: "avvio avvio" "onda lato" "comandi comandi" "tools tools" "panel panel";

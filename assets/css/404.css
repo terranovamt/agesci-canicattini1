@@ -28,7 +28,7 @@ body {
   align-items: center;
   justify-content: space-between;
   min-height: 78px;
-  padding: 10px max(24px, calc((100vw - 1200px) / 2));
+  padding: 10px 24px;
   border-bottom: 1px solid color-mix(in srgb, var(--vl) 35%, var(--w));
   background: var(--w);
 }
@@ -73,7 +73,7 @@ body {
 }
 
 main {
-  width: min(100% - 48px, 1200px);
+  width: calc(100% - 48px);
   margin: auto;
   padding: 44px 0;
 }
@@ -226,7 +226,7 @@ footer {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  width: min(100% - 48px, 1200px);
+  width: calc(100% - 48px);
   margin: 0 auto;
   padding: 0 0 24px;
   color: var(--v2);
@@ -241,7 +241,7 @@ footer {
   }
 
   main {
-    width: min(100% - 32px, 1200px);
+    width: calc(100% - 32px);
     padding: 24px 0;
   }
 
@@ -258,7 +258,7 @@ footer {
   }
 
   footer {
-    width: min(100% - 32px, 1200px);
+    width: calc(100% - 32px);
   }
 }
 
