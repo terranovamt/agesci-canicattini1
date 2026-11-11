@@ -245,7 +245,7 @@
       <button type="button" data-section-target="import-review-panel">2 · Controlla</button>
     </nav>
     <section id="import-source-panel" data-section-panel>
-    <p>Carica RicercaSoci.csv oppure incolla il contenuto. Il file non viene pubblicato. Prima del salvataggio controlla il riepilogo.</p>
+    <p>Scegliendo RicercaSoci.csv il file viene analizzato subito, senza salvare. In alternativa incolla il contenuto e analizza.</p>
     <label>File CSV<input id="import-file" type="file" accept=".csv,text/csv"></label>
     <label>Contenuto CSV<textarea id="import-csv" rows="5" placeholder="sep=, ..." spellcheck="false"></textarea></label>
     <details><summary>Come vengono aggiornati i dati</summary><p>Il codice socio identifica la persona; socio + anno identificano il censimento. Un nuovo import aggiorna l'anagrafica ma conserva campi educativi, branca locale, password e permessi. Le colonne assenti sono conservate; i campi vuoti nelle colonne presenti sostituiscono quelli precedenti.</p></details>
@@ -253,7 +253,7 @@
     </section>
     <p id="import-error" role="alert"></p>
     <section id="import-review-panel" data-section-panel>
-    <p>Verifica il riepilogo dopo aver analizzato il CSV. Il salvataggio richiede una conferma.</p>
+    <p>L'analisi non salva nulla. Confermando, i dati anagrafici importati sostituiscono quelli precedenti sul NAS.</p>
     <div id="import-preview"></div>
     <button id="confirm-import" class="button button-primary" type="button" disabled>Conferma importazione</button>
     </section>
