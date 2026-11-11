@@ -463,3 +463,21 @@ body.reserved-page .members-page-heading h1 { font-size: clamp(24px, 4vw, 32px);
   .members-table td { padding: .5rem .75rem; }
   .members-table th { padding: .6rem .75rem; }
 }
+
+#member-dialog .member-glance { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+#member-dialog .member-glance:empty { display: none; }
+#member-dialog .member-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 2px .65rem; border: 1px solid #d9cde6; border-radius: 999px; background: #f7f3fa; color: #30263a; font: inherit; font-size: .82rem; font-weight: 700; }
+#member-dialog button.member-chip { cursor: pointer; transition: background-color .2s; }
+#member-dialog .member-chip[data-warn="yes"] { border-color: #b4486f; background: #fbeef3; color: #7c2949; }
+.members-table .member-missing { color: #7c2949; font-weight: 700; }
+@media (max-width: 700px) {
+  #member-dialog .member-glance { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #member-dialog .member-chip { white-space: nowrap; min-height: 32px; }
+}
+@media (min-width: 1100px) {
+  #member-dialog.members-dialog { width: min(1100px, calc(100% - 2rem)); }
+  #member-dialog #member-panel-profile > .members-form-grid,
+  #member-dialog #member-panel-contacts > .members-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #member-dialog #member-guardians { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+}
+@media (prefers-reduced-motion: reduce) { #member-dialog button.member-chip { transition: none; } }
