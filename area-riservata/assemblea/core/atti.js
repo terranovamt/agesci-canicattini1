@@ -24,15 +24,18 @@
     const D = w.DATI || {}, a = D.assemblea || {}, org = ((D.slide || []).find(s => s.tipo === "slide_composizione_organo" || s.tipo === "organo") || {}).persone || [];
     const per = r => org.filter(p => txt(p.ruolo).toLowerCase().startsWith(r)).map(p => nome(p.nome)).filter(Boolean);
     const m = /(\d{1,2})\s+(\p{L}+)\s+(\d{4})/u.exec(txt(a.data)), mese = m ? MESI.indexOf(m[2].toLowerCase()) + 1 : 0;
-    const anno = D.anno_esercizio || new Date().getFullYear(), pres = (D.censimenti && D.censimenti.presenti_attuali) || 0;
+    const anno = D.anno_esercizio || new Date().getFullYear(), sc = polls.find(x => x.modalita === "scelta" && x.conteggi), votanti = sc ? sc.conteggi.reduce((t, n) => t + n, 0) : 0;
+    const pres = (D.censimenti && D.censimenti.presenti_attuali) || votanti || 0, adesso = new Date(), oraFine = String(adesso.getHours()).padStart(2, "0") + ":" + String(adesso.getMinutes()).padStart(2, "0");
+    const nom = polls.find(x => x.slide === "votazione-organo" && x.modalita === "nominativa" && x.conteggi), quorum = Math.floor(pres / 2) + 1;
+    const eletti = nom ? nom.opzioni.filter((o, i) => nom.conteggi[i] >= quorum && pres) : [];
     const voti = (id, def) => { const p = polls.find(x => x.slide === id && x.modalita === "scelta"); return p ? p.conteggi : def; };
     const v1 = voti("votazione-bilancio", [pres, 0, 0]), v2 = voti("votazione-contributo", [pres, 0, 0]), v3 = voti("votazione-organo", [pres, 0, 0]);
     const v = {
       data: m ? `${m[1]} ${m[2].toLowerCase()} ${m[3]}` : txt(a.data), dataBreve: m ? `${m[1].padStart(2, "0")}/${String(mese).padStart(2, "0")}/${m[3]}` : "",
-      oraInizio: a.seconda_convocazione || "", oraFine: "", presenti: pres || "", genitori: "", presidente: per("presidente")[0] || "",
+      oraInizio: a.seconda_convocazione || "", oraFine, presenti: pres || "", genitori: "", presidente: per("presidente")[0] || "",
       scrutatori: per("scrutator").join(" e "), segretario: per("segretari")[0] || "", capoGruppo: "", quota: "10", quotaNaz: "40", scadenza: "15 dicembre",
       regolamento: "anno 24-25 delibera n°1 del 14 novembre 24", staff: "", comunicazioni: "Informative campi invernali",
-      capi: "Bertuna Vito\nGazzara Gianna\nGermano Gabriele\nGionfriddo Davide\nGuzzardo Gaia\nGuzzardo Oliviero\nMangiafico Maria\nPetrolito Elisabetta\nRamondetta Marco\nRandazzo Clarissa\nTerranova Matteo\nUrso Cannarella Antonino",
+      capi: eletti.join("\n") || "Bertuna Vito\nGazzara Gianna\nGermano Gabriele\nGionfriddo Davide\nGuzzardo Gaia\nGuzzardo Oliviero\nMangiafico Maria\nPetrolito Elisabetta\nRamondetta Marco\nRandazzo Clarissa\nTerranova Matteo\nUrso Cannarella Antonino",
       si1: v1[0], no1: v1[1], ast1: v1[2], si2: v2[0], no2: v2[1], ast2: v2[2], si3: v3[0], no3: v3[1], ast3: v3[2],
     };
     v.anno = anno;
