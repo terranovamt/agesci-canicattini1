@@ -750,8 +750,9 @@
     if (!file) return;
     if (file.size > 4 * 1024 * 1024) throw new Error('CSV troppo grande (massimo 4 MiB)');
     $('import-csv').value = await file.text();
+    await analyzeImport();
   }, $('import-error'));
-  $('analyze-import').onclick = () => run(async () => {
+  async function analyzeImport() {
     invalidateImport();
     const csv = $('import-csv').value;
     const result = await A.request('members/import', 'POST', { csv });
@@ -762,9 +763,10 @@
     $('import-preview').append(node('h3', `${result.rows} censimenti · ${result.newCount} nuovi soci · ${result.updatedCount} soci aggiornati`),
       node('p', 'Colonne escluse: ' + (result.ignoredColumns.join(', ') || 'nessuna')), list);
     $('import-section-nav').dispatchEvent(new CustomEvent('section-select', { detail: 'import-review-panel' }));
-  }, $('import-error'));
+  }
+  $('analyze-import').onclick = () => run(analyzeImport, $('import-error'));
   $('confirm-import').onclick = () => {
-    if (!preview || !confirm('Salvare i dati analizzati sul NAS? I dati anagrafici importati sostituiranno quelli precedenti.')) return;
+    if (!preview) return;
     run(async () => {
       await A.request('members/import', 'POST', { ...preview, confirm: true });
       invalidateImport(); $('import-csv').value = ''; $('import-file').value = '';

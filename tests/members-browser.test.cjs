@@ -391,13 +391,15 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           document.querySelector('[data-section-target="members-search-panel"]').click();
           $('open-import').click();
           results.importSourceFits = dialogFits('import-dialog');
-          $('import-csv').value = 'synthetic csv';
-          $('analyze-import').click(); await settle();
+          const dt = new DataTransfer(); dt.items.add(new File(['synthetic csv'], 'RicercaSoci.csv', { type: 'text/csv' }));
+          $('import-file').files = dt.files; $('import-file').dispatchEvent(new Event('change')); await settle();
+          results.autoAnalyzed = $('import-csv').value === 'synthetic csv' && window.calls.filter(call => call.route === 'members/import' && !call.value.confirm).length === 1;
           results.preview = !$('confirm-import').disabled && $('import-preview').textContent.includes('Da verificare');
           $('import-dialog').scrollTop = $('import-dialog').scrollHeight;
           results.importReviewFits = dialogFits('import-dialog') &&
             $('confirm-import').getBoundingClientRect().bottom <= innerHeight;
           $('confirm-import').click(); await settle();
+          results.noNativeConfirm = !window.confirmations.some(text => /NAS/.test(text));
           results.confirm = window.calls.find(call => call.route === 'members/import' && call.value.confirm).value;
           results.clearedCsv = $('import-csv').value === '';
           $('new-member').click();
@@ -497,7 +499,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
-        "printed", "preview", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
+        "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
