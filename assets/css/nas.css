@@ -69,8 +69,6 @@ body.reserved-page:has(> .members-page) > .reserved-header :is(.view-as-form, .v
 .people-branch-group { min-width: 0 }
 .people-branch-group > h3 { padding-bottom: 8px; border-bottom: 1px solid var(--vl); color: var(--v); font-size: 16px }
 .people-branch-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; padding-top: 10px }
-.person-card { min-width: 0; padding: 16px; background: #fff; border: 1px solid var(--vl); border-radius: 16px }
-.person-card-dirty { border-color: var(--v); box-shadow: 0 0 0 2px color-mix(in srgb, var(--v) 12%, transparent) }
 .person-card h3 { margin: 0 0 8px }
 .person-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px }
 .person-fields label { display: grid; gap: 6px; font-size: 14px; font-weight: 700 }
@@ -94,7 +92,6 @@ body.reserved-page:has(> .members-page) > .reserved-header :is(.view-as-form, .v
   .people-list { gap: 16px; }
   .people-branch-cards { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .person-fields { gap: 10px; }
-  .person-card { min-width: 0; padding: 14px; }
   .person-card h3 { overflow-wrap: anywhere; font-size: 1rem; }
   .person-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .person-actions .button { width: 100%; margin: 0; padding: 8px; font-size: 13px; }
@@ -110,25 +107,20 @@ body.people-page > #reserved-content { width: min(1100px, calc(100% - 28px)); ma
 .people-page [hidden] { display: none !important; }
 .people-page .people-branches { flex-wrap: wrap; overflow: visible; margin: 8px 0 12px; padding: 2px; gap: 6px; }
 .people-page .people-branch-filter { padding: 8px 12px; }
-.people-page .people-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; align-items: start; }
-.people-page .person-card { padding: 12px; }
-.people-page .person-card h2 { margin: 0 0 4px; font-size: 1.05rem; line-height: 1.35; overflow-wrap: anywhere; }
-.people-page .person-identity { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--v2); overflow-wrap: anywhere; }
-.people-page .person-fields { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; margin: 0; }
-.people-page .person-fields label { min-width: 0; font-size: 13px; gap: 4px; }
-.people-page select { min-height: 44px; font: inherit; }
-.people-page .person-actions { display: flex; margin-top: 8px; }
-.people-page .person-actions:empty { display: none; }
-.people-page .button { min-height: 44px; margin: 0; padding: 8px 12px; font-size: 13px; }
-.people-page .person-actions .button { width: auto; }
+.people-page .people-list { display: block }
+.people-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--vl); border-radius: 12px }
+.people-table th { padding: 6px 10px; text-align: left; font-size: 12px; color: var(--v2); border-bottom: 1px solid var(--vl) }
+.people-table td { padding: 6px 10px; border-bottom: 1px solid var(--vl); font-size: 13px; vertical-align: middle; overflow-wrap: anywhere }
+.people-table tr:last-child td { border-bottom: 0 }
+.people-page .people-table select { width: auto; min-width: 130px }
+.people-page .person-actions { display: flex; flex-wrap: wrap; gap: 6px }
+.people-page .person-actions:empty { display: none }
+.people-page .button { min-height: 44px; margin: 0; padding: 8px 12px; font-size: 13px }
 .people-page .person-feedback { margin: 8px 0 0; color: var(--v); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .people-page .person-feedback-error { color: #982b22; font-weight: 700; }
 .people-page :is(button, select, summary, a, [tabindex]):focus-visible { outline: 3px solid #6d4514; outline-offset: 3px; }
 .people-page .people-help { margin-top: 14px; padding: 8px 12px; }
 .people-page .people-help code { overflow-wrap: anywhere; }
-@media (max-width: 350px) {
-  .people-page .person-fields { grid-template-columns: minmax(0, 1fr); }
-}
 /* Visualizza come: controllo admin compatto nell'header, ritorno sempre visibile durante la vista capo. */
 .view-as { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: inherit; font-size: 13px }
 :is(.reserved-header, .nas-navbar):has(> .view-as) > :is(.brand, .nas-brand) { margin-right: auto }
@@ -153,3 +145,17 @@ body.people-page > #reserved-content { width: min(1100px, calc(100% - 28px)); ma
   .view-as-active { justify-content: space-between; border-radius: 12px }
   .view-as-form { right: 0 }
 }
+
+@media (max-width: 700px) {
+  .people-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%) }
+  .people-table, .people-table tbody, .people-table tr, .people-table td { display: block }
+  .people-table { border: 0; background: none }
+  .people-table tr { margin-bottom: 8px; padding: 6px 12px; background: #fff; border: 1px solid var(--vl); border-radius: 12px }
+  .people-table td { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0; border: 0 }
+  .people-table td::before { content: attr(data-label); color: var(--v2); font-size: 12px }
+  .people-table td:first-child { display: block }
+  .people-table td:first-child::before, .people-page .person-actions::before { content: none }
+  .people-page .person-actions { justify-content: stretch }
+  .people-page .person-actions .button { flex: 1 1 140px }
+}
+body.viewing-as > .reserved-header, body.viewing-as > .nas-navbar { position: sticky; top: 0; z-index: 40 }

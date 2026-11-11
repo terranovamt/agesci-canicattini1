@@ -25,7 +25,6 @@
   let branchFilter = 'ALL';
   let peopleData = [];
   let visibleIds = [];
-  const branchDrafts = new Map();
   const feedback = new Map();
   const branches = ['L/C', 'E/G', 'R/S', ''];
   const isExpired = error => !window.NAS.user || /sessione.*scadut/i.test(error.message);
@@ -40,35 +39,18 @@
       .sort((a, b) => branches.indexOf(a.serviceBranch || '') - branches.indexOf(b.serviceBranch || ''))
       .map(person => person.id);
   }
-  function card(person) {
-    const article = document.createElement('article');
-    article.className = 'person-card';
-    const title = document.createElement('h2');
-    title.textContent = person.name;
-    const identity = document.createElement('p');
-    identity.className = 'person-identity';
-    identity.textContent = `Codice ${person.code} · ${person.hasPassword ? 'Password impostata' : 'Password da inizializzare'}`;
-    const edit = document.createElement('form');
-    const fields = document.createElement('div');
-    fields.className = 'person-fields';
-    const service = document.createElement('select');
-    service.id = 'person-branch-' + person.id;
-    service.disabled = busy || expired;
-    for (const [value, text] of [['', 'Nessuna branca'], ['L/C', 'L/C'], ['E/G', 'E/G'], ['R/S', 'R/S']]) {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = text;
-      service.append(option);
-    }
-    service.value = branchDrafts.get(person.id) ?? (person.serviceBranch || '');
-    const label = document.createElement('label');
-    label.append(document.createTextNode('Branca di servizio'), service);
-    const save = document.createElement('button');
-    save.id = 'person-save-' + person.id;
-    save.className = 'button button-secondary';
-    save.type = 'submit';
-    save.textContent = 'Salva branca';
-    save.disabled = busy || expired || !branchDrafts.has(person.id);
+  function row(person) {
+    const tr = document.createElement('tr');
+    tr.className = 'person-card';
+    const cell = (label, ...nodes) => {
+      const td = document.createElement('td');
+      td.setAttribute('data-label', label);
+      td.append(...nodes);
+      tr.append(td);
+      return td;
+    };
+    const name = document.createElement('strong');
+    name.textContent = person.name;
     const message = document.createElement('p');
     message.id = 'person-feedback-' + person.id;
     message.className = 'person-feedback';
@@ -77,38 +59,65 @@
     message.setAttribute('aria-atomic', 'true');
     message.tabIndex = -1;
     const state = feedback.get(person.id);
-    message.textContent = state?.text || (branchDrafts.has(person.id) ? 'Branca da salvare.' : '');
+    message.textContent = state?.text || '';
     message.hidden = !message.textContent;
     message.classList.toggle('person-feedback-error', state?.error === true);
+    tr.setAttribute('aria-busy', String(state?.pending === true));
+    cell('Capo', name, message);
+    cell('Codice', document.createTextNode(person.code));
+    cell('Password', document.createTextNode(person.hasPassword ? 'Impostata' : 'Da inizializzare'));
+    const service = document.createElement('select');
+    service.id = 'person-branch-' + person.id;
+    service.setAttribute('aria-label', 'Branca di servizio di ' + person.name);
+    service.disabled = busy || expired;
+    for (const [value, text] of [['', 'Nessuna branca'], ['L/C', 'L/C'], ['E/G', 'E/G'], ['R/S', 'R/S']]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = text;
+      service.append(option);
+    }
+    service.value = person.serviceBranch || '';
     service.setAttribute('aria-describedby', message.id);
     service.setAttribute('aria-invalid', String(state?.error === true && state?.action === 'branch'));
-    article.classList.toggle('person-card-dirty', branchDrafts.has(person.id));
-    article.setAttribute('aria-busy', String(state?.pending === true));
     service.onchange = () => {
-      if (service.value === (person.serviceBranch || '')) branchDrafts.delete(person.id);
-      else branchDrafts.set(person.id, service.value);
-      feedback.delete(person.id);
-      service.setAttribute('aria-invalid', 'false');
-      save.disabled = !branchDrafts.has(person.id);
-      message.textContent = save.disabled ? '' : 'Branca da salvare.';
-      message.hidden = !message.textContent;
-      message.classList.toggle('person-feedback-error', false);
-      article.classList.toggle('person-card-dirty', !save.disabled);
+      if (service.value !== (person.serviceBranch || '')) mutate(person, 'branch', service.value);
     };
-    edit.onsubmit = e => {
-      e.preventDefault();
-      if (!branchDrafts.has(person.id)) return;
-      mutate(person, 'branch', service.value);
-    };
-    fields.append(label, save);
-    const actions = document.createElement('div');
+    cell('Branca', service);
+    const actions = cell('Azioni');
     actions.className = 'person-actions';
+    if (person.serviceBranch) {
+      const view = document.createElement('button');
+      view.id = 'person-view-' + person.id;
+      view.type = 'button';
+      view.className = 'button';
+      view.textContent = 'Visualizza come';
+      view.setAttribute('aria-label', 'Visualizza come ' + person.name);
+      view.disabled = busy || expired;
+      view.onclick = async () => {
+        if (busy || expired) return;
+        busy = true;
+        feedback.set(person.id, { pending: true, text: 'Apertura vista…' });
+        render(view.id);
+        try {
+          await A.vista(person.id);
+          location.assign((window.NAS.basePath || '') + '/area-riservata/');
+          return;
+        } catch (error) {
+          feedback.set(person.id, { error: true, action: 'view', text: error.message || 'Vista non disponibile' });
+          if (isExpired(error)) expire();
+        }
+        busy = false;
+        render(view.id);
+      };
+      actions.append(view);
+    }
     if (person.hasPassword) {
       const reset = document.createElement('button');
       reset.id = 'person-reset-' + person.id;
       reset.type = 'button';
       reset.className = 'button button-secondary';
       reset.textContent = 'Reimposta password';
+      reset.setAttribute('aria-label', 'Reimposta password di ' + person.name);
       reset.disabled = busy || expired;
       reset.onclick = () => {
         if (busy || expired) return;
@@ -117,9 +126,7 @@
       };
       actions.append(reset);
     }
-    edit.append(fields, actions, message);
-    article.append(title, identity, edit);
-    return article;
+    return tr;
   }
   function render(focusId) {
     reload.disabled = busy || expired;
@@ -143,10 +150,28 @@
     }));
     count.textContent = `${peopleData.length} ${peopleData.length === 1 ? 'capo abilitato' : 'capi abilitati'}`;
     const visible = visibleIds.map(id => peopleData.find(person => person.id === id)).filter(Boolean);
-    list.replaceChildren(...(visible.length ? visible.map(card) : [Object.assign(document.createElement('p'), {
-      textContent: peopleData.length ? 'Nessun capo in questa branca. Scegli un altro filtro.'
-        : 'Nessun capo configurato in NAS_CAPO_CODES.'
-    })]));
+    if (visible.length) {
+      const table = document.createElement('table');
+      table.className = 'people-table';
+      const head = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      for (const label of ['Capo', 'Codice', 'Password', 'Branca', 'Azioni']) {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = label;
+        headRow.append(th);
+      }
+      head.append(headRow);
+      const body = document.createElement('tbody');
+      body.append(...visible.map(row));
+      table.append(head, body);
+      list.replaceChildren(table);
+    } else {
+      list.replaceChildren(Object.assign(document.createElement('p'), {
+        textContent: peopleData.length ? 'Nessun capo in questa branca. Scegli un altro filtro.'
+          : 'Nessun capo configurato in NAS_CAPO_CODES.'
+      }));
+    }
     if (focusId) document.getElementById(focusId)?.focus();
   }
   async function fetchPeople() {
@@ -158,7 +183,6 @@
   }
   async function load() {
     if (busy || expired) return;
-    if (branchDrafts.size && !confirm('Scartare le branche non salvate e ricaricare?')) return;
     busy = true;
     reload.disabled = true;
     announce('Caricamento dei capi…');
@@ -166,7 +190,6 @@
     if (loaded) render();
     try {
       await fetchPeople();
-      branchDrafts.clear();
       feedback.clear();
       chooseVisible();
       announce('');
@@ -174,7 +197,7 @@
       if (isExpired(error)) expire();
       else {
         if (!loaded) count.textContent = 'Elenco non disponibile';
-        announce(`${loaded ? 'Elenco non aggiornato; dati e bozze conservati.' : 'Impossibile caricare i capi.'} ${error.message} Premi Ricarica per riprovare.`);
+        announce(`${loaded ? 'Elenco non aggiornato; dati conservati.' : 'Impossibile caricare i capi.'} ${error.message} Premi Ricarica per riprovare.`);
       }
     } finally {
       busy = false;
@@ -195,7 +218,6 @@
         action === 'branch' ? 'PATCH' : 'DELETE', action === 'branch' ? { serviceBranch: value } : undefined);
       if (action === 'branch') {
         person.serviceBranch = value;
-        branchDrafts.delete(person.id);
       } else person.hasPassword = false;
       feedback.set(person.id, { text: success });
       render('person-feedback-' + person.id);
@@ -207,7 +229,7 @@
         if (isExpired(error)) expire();
       }
     } catch (error) {
-      feedback.set(person.id, { error: true, action, text: `Operazione non confermata: ${error.message} Le bozze sono conservate. Ricarica l’elenco per verificare lo stato prima di riprovare.` });
+      feedback.set(person.id, { error: true, action, text: `Operazione non confermata: ${error.message} Il valore mostrato è l’ultimo confermato. Ricarica l’elenco per verificare lo stato prima di riprovare.` });
       if (isExpired(error)) expire();
     } finally {
       busy = false;
@@ -216,10 +238,5 @@
     }
   }
   reload.onclick = load;
-  window.addEventListener('beforeunload', event => {
-    if (!branchDrafts.size && !busy) return;
-    event.preventDefault();
-    event.returnValue = '';
-  });
   load();
 })();
