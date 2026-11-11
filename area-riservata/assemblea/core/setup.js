@@ -123,6 +123,8 @@
   function sync(newBase, snapshot) {
     const pending = snapshot ? M.diffPatch(snapshot, edit) : undefined;
     base = newBase;
+    // dati.js sul NAS creati prima del voto online non hanno la sezione
+    if (!base.votazioni) base.votazioni = { abilitate: false };
     published = clone(base);
     edit = M.applyPatch(clone(base), pending);
     arraySchemas.clear();
@@ -753,7 +755,13 @@
     if (!years.length) return c.append(el("p", { className: "empty-state", textContent: "Nessun censimento nel Libro soci." }));
     // anno precedente a quello del censimento più recente, se presente
     if (!years.includes(sociYear)) sociYear = years.find((y) => y < String(soci.currentYear)) || years[0];
+    // stessa regola del Libro soci (soci-model.js longSuspended): codice D, o S in un anno precedente
+    const sospeso = (m) => {
+      const last = m.censuses[0];
+      return !!last && (last.statusCode === "D" || (last.statusCode === "S" && Number(last.year) < Number(soci.currentYear)));
+    };
     const all = soci.members
+      .filter((m) => !sospeso(m))
       .map((m) => ({ name: m.name, code: m.code, profile: contactOf(m.profile || {}), census: m.censuses.find((x) => String(x.year) === sociYear) }))
       .filter((m) => m.census)
       .map((m) => ({ ...m, branch: m.census.branch || "Adulti" }))
