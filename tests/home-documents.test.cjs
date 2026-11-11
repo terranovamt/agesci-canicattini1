@@ -125,11 +125,11 @@ test("home renders only current assembly preparatory PDFs in addition to the com
   assert.equal(errors.length, 1);
 });
 
-test("archive and assembly pages use the compact document list, documents before the explainer", () => {
+test("archive and assembly pages use a responsive card grid, documents before the explainer", () => {
   const read = (file) => fs.readFileSync(require.resolve("../" + file), "utf8");
   for (const page of ["documenti/index.html", "assemblea/index.html"]) assert.match(read(page), /<body class="docs-page">/);
   const assembly = read("assemblea/index.html");
   assert.ok(assembly.indexOf('id="documents-list"') < assembly.indexOf('class="assembly-explainer"'));
-  assert.match(read("assets/css/home.css"), /body:is\(\.home, \.docs-page\) \.document-card/);
+  assert.match(read("assets/css/home.css"), /body\.docs-page \.document-grid \{ grid-template-columns: repeat\(auto-fill/);
   assert.match(source, /pubblicato il/);
 });

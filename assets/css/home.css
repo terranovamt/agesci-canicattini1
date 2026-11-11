@@ -488,20 +488,10 @@ body.docs-page .document-filters label { margin-bottom: 4px }
 body.docs-page .assembly-explainer { max-width: none; margin: 22px 0 0 }
 @media (max-width: 999px) { body.docs-page .section-description { display: none } }
 @media (max-width: 599px) { body.docs-page .document-filters > div { flex-basis: 100% } }
-body:is(.home, .docs-page) .documents-section > [role="status"] { margin-bottom: 8px }
-body:is(.home, .docs-page) .document-grid { grid-template-columns: 1fr; gap: 8px }
-body:is(.home, .docs-page) .document-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label actions" "title actions"; align-items: center; column-gap: 12px; min-height: 0; padding: 8px 14px }
-body:is(.home, .docs-page) .document-card:hover { transform: none }
-body:is(.home, .docs-page) .document-card-top, body:is(.home, .docs-page) .document-card p { display: none }
-body:is(.home, .docs-page) .document-label { grid-area: label; font-size: 10px }
-body:is(.home, .docs-page) .document-card h3 { grid-area: title; margin: 2px 0 0; font-size: 18px }
-body:is(.home, .docs-page) .document-actions { grid-area: actions; flex-direction: row; align-items: center; gap: 4px 14px; margin: 0; padding: 0; border: 0 }
-body:is(.home, .docs-page) .documents-more { margin: 8px 0 0 }
-@media (min-width: 1000px) { body.docs-page main .document-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) } body.docs-page .assembly-explainer-points { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
-@media (max-width: 999px) {
-  body:is(.home, .docs-page) .document-card { grid-template-columns: 1fr; grid-template-areas: "label" "title" "actions"; padding: 6px 12px }
-  body:is(.home, .docs-page) .document-card h3 { font-size: 16px }
-}
+body.docs-page .documents-section > [role="status"] { margin-bottom: 8px }
+body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 18px }
+@media (min-width: 1000px) { body.docs-page .assembly-explainer-points { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
+@media (min-width: 1500px) { body.docs-page main#contenuto { width: min(100% - 48px, 1800px); max-width: none } }
 /* Home area riservata: telefono = "adesso" in cima; da tablet menu laterale; portatile 2 colonne; desktop 3 colonne */
 .dashboard-page #riservata:not([hidden]) { display: grid; gap: 0 12px; align-items: start }
 .dashboard-page #riservata > #dashboard-session-status { order: 0 }
