@@ -161,12 +161,29 @@
     const events = data.events.filter(item => item.branch === branch() &&
       matches(item.title + ' ' + item.attendance.map(person => person.name).join(' ')));
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
-    const eventOrder = item => (item.endDate || item.date) >= today ? 0 : 1;
-    $('events-list').replaceChildren(...events.sort((a, b) => eventOrder(a) - eventOrder(b) ||
-      (eventOrder(a) ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date))).map(item => {
+    const when = item => (item.endDate || item.date) < today ? 'past' : item.date <= today ? 'now' : 'next';
+    const dayCount = item => Math.round((Date.parse(item.date) - Date.parse(today)) / 86400000);
+    const rank = { now: 0, next: 1, past: 2 };
+    const labels = { now: 'In corso', next: 'Prossime', past: 'Passate' };
+    events.sort((a, b) => rank[when(a)] - rank[when(b)] ||
+      (when(a) === 'past' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
+    const eventNodes = [];
+    let lastGroup = '';
+    events.forEach(item => {
+      const group = when(item);
+      if (group !== lastGroup) {
+        const heading = node('h3', labels[group], 'activity-group-heading'); heading.dataset.when = group;
+        eventNodes.push(heading); lastGroup = group;
+      }
       const card = node('article', undefined, 'activity-card activity-event-row');
+      card.dataset.when = group;
       card.style.setProperty('--branch-color', M.branchColors[branch()]);
-      card.append(node('p', dateRange(item), 'eyebrow'), node('h3', item.title));
+      const days = dayCount(item);
+      const badge = group === 'now' ? 'In corso oggi' : group === 'next'
+        ? (days === 1 ? 'Domani' : days <= 7 ? `Tra ${days} giorni` : '') : '';
+      const eyebrow = node('p', dateRange(item), 'eyebrow');
+      if (badge) eyebrow.append(node('b', badge, 'activity-when'));
+      card.append(eyebrow, node('h3', item.title));
       const present = item.attendance.filter(person => person.status === 'presente').length;
       const summary = node('p', present + '/' + item.attendance.length + ' presenti', 'activity-event-summary');
       if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0)) {
@@ -180,8 +197,9 @@
       if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0))
         actions.append(button('Quote', () => { openEvent(item); setEventView('quote'); }));
       card.append(actions);
-      return card;
-    }));
+      eventNodes.push(card);
+    });
+    $('events-list').replaceChildren(...eventNodes);
     if (!events.length) $('events-list').append(node('p', 'Nessuna attività trovata. Crea il primo incontro di branca.', 'members-note'));
     $('paths-members').hidden = !!selectedMember;
     if (!selectedMember) {

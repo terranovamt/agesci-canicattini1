@@ -325,3 +325,12 @@
   #event-form[data-view="quote"] .activity-payment[open] > .members-note { display: none; }
   #event-form[data-view="quote"] .activity-payment .activity-fee-balance { margin: 0 0 4px; }
 }
+
+.activity-group-heading { grid-column: 1 / -1; margin: 10px 0 0; padding-bottom: 4px; border-bottom: 2px solid #d6ccdf; color: #46305a; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+.activity-group-heading:first-child { margin-top: 0; }
+.activity-when { display: inline-block; width: auto; height: auto; font-size: .75rem; margin-left: 8px; padding: 2px 8px; border-radius: 99px; background: #fff0c4; color: #674b10; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.activity-event-row[data-when="now"] { border-color: #462678; border-left-width: 8px; background: #f1eafa; box-shadow: 0 2px 8px rgba(70, 38, 120, .18); }
+.activity-event-row[data-when="now"] h3 { font-size: 1.25rem; }
+.activity-event-row[data-when="now"] .activity-when { background: #462678; color: #fff; }
+.activity-event-row[data-when="past"] { background: #f7f5f9; border-color: #e1dae9; }
+.activity-event-row[data-when="past"] h3 { color: #50336a; font-size: .98rem; font-weight: 600; }
