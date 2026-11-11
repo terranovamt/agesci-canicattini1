@@ -1107,16 +1107,27 @@ h2#titolo, h3#titolo-next {
 @media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
   main {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1.5fr) auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
     grid-template-areas: "avvio avvio" "onda lato" "onda comandi" "live live";
   }
   #app > .regia-section-nav { display: none; }
-  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-height: 0; }
+  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: 12px; min-height: 0; }
   #app .regia-live > [data-section-panel] { grid-area: auto; overflow: auto; }
   #regia-slides-panel { overflow: hidden; }
-  #regia-slides-panel ol { overflow: auto; }
+  #regia-slides-panel ol { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 6px; align-content: start; }
+  #regia-slides-panel li { padding: 0 6px; }
+  #regia-slides-panel li > button { min-height: 32px; padding: 2px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #regia-slides-panel li::before { min-width: 22px; }
+  #regia-slides-panel .salto-note { display: none; }
   .comandi { flex-direction: column; gap: 8px; }
   .big-btn { height: clamp(52px, 8vh, 80px); font-size: 30px; }
   .comandi .mini button { flex: 1 1 30%; }
   #dati-live-campi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
+  #regia-server-panel .nas-kpi div { padding-block: 2px; }
+  #regia-server-panel .nas-kpi { gap: 2px 12px; }
+  #regia-server-panel .monitor-details dt, #regia-server-panel .monitor-details dd { margin: 0; padding: 1px 0; }
+  #regia-server-panel .monitor-heading { margin-bottom: 0; }
+  #regia-server-panel .monitor-heading button { min-height: 36px; padding-block: 4px; }
 }

@@ -151,7 +151,7 @@
           const li = document.createElement("li");
           const button = document.createElement("button");
           button.type = "button";
-          button.textContent = cap(t);
+          button.textContent = button.title = cap(t);
           button.setAttribute("aria-label", `Salto diretto alla slide ${i + 1}: ${cap(t)}. In diretta cambia subito la presentazione.`);
           button.onclick = () => V.vai(i, 0);
           li.append(button);
