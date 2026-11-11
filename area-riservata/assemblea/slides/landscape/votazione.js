@@ -45,12 +45,12 @@ window.VOTO_RENDER = (function () {
     const pc = percents(items.map(i => i.v)), max = items.length ? items[0].v : 0;
     items.forEach((it, i) => { it.p = pc[i]; it.top = max > 0 && it.v === max; });
     const ties = items.filter(i => i.top).length > 1, dense = items.length > 4 ? ' dense' : '';
-    const quorum = Math.ceil(tot / 2);
+    const quorum = Math.floor(tot / 2) + 1;
     items.forEach(it => { it.ok = !hidden && tot > 0 && it.v >= quorum && it.v > 0; });
     const eletti = items.filter(i => i.ok);
     const ex = !p.aperta && !hidden && max > 0 ? (eletti.length ? ['ok', eletti.length > 1 ? 'ELETTI' : 'ELETTO'] : ['ko', 'NESSUN ELETTO']) : null;
     const stamp = ex ? `<div class="vt-stamp ${ex[0]}" role="status">${ex[1]}</div>` : '';
-    const status = `${state(p)} · ${p.ricevuti} voti su ${tot} · quorum ${quorum} (50% dei presenti)`;
+    const status = `${state(p)} · ${p.ricevuti} voti su ${tot} · quorum ${quorum} (50% + 1 dei presenti)`;
     const tag = it => it.ok ? '<em class="vt-elt">Eletto</em>' : '';
     const bar = (it, cls) => `<div class="vt-pb ${cls}" role="progressbar" aria-label="${esc(it.n)}" aria-valuemin="0" aria-valuemax="${Math.max(1, items.reduce((a, b) => a + b.v, 0))}" aria-valuenow="${it.v}"><i style="width:${it.p}%"></i></div>`;
     const rows = hidden ? `<div class="vt-hid">${items.map(i => `<span>${esc(i.n)}</span>`).join('')}</div>` :

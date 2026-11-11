@@ -9,7 +9,7 @@
   const testo = s => String(s ?? '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim();
   const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  let vista, chiave, campi = [], occupato = false;
+  let tipoCorrente = '', vista, chiave, campi = [], occupato = false;
   const modificati = () => campi.filter(c => c.input.value !== c.iniziale);
   function pending() {
     const n = modificati().length;
@@ -40,7 +40,7 @@
   function definizioni(data) {
     const out = [];
     if (data.censimenti)
-      out.push({ path: ['censimenti', 'presenti_attuali'], label: 'Presenti attuali', numero: true });
+      out.push({ path: ['censimenti', 'presenti_attuali'], label: 'Presenti attuali', numero: true, tipo: 'slide_quorum_convocazioni' });
     (data.slide || []).forEach((s, i) => {
       if (!['slide_composizione_organo', 'organo'].includes(s.tipo)) return;
       let scrutatori = 0;
@@ -48,7 +48,7 @@
         const ruolo = testo(p.ruolo).toLowerCase();
         if (ruolo !== 'presidente' && !/^scrutator[ei]$/.test(ruolo)) return;
         const label = ruolo === 'presidente' ? 'Nome presidente' : 'Nome scrutatore ' + (++scrutatori);
-        out.push({ path: ['slide', i, 'persone', j, 'nome'], label: label + ' (slide ' + (i + 1) + ')',
+        out.push({ path: ['slide', i, 'persone', j, 'nome'], tipo: 'organo', label: label + ' (slide ' + (i + 1) + ')',
           identita: JSON.stringify([s.tipo, s.persone.map(p => p.ruolo)]) });
       });
     });
@@ -60,6 +60,7 @@
       c.originale = at(data, c.path);
       const label = document.createElement('label');
       label.textContent = c.label;
+      c.label_el = label;
       const input = document.createElement('input');
       input.id = 'dato-live-' + i;
       input.type = c.numero ? 'number' : 'text';
@@ -79,6 +80,14 @@
     }));
     pending();
   }
+  const ORGANO = ['slide_composizione_organo', 'organo'];
+  function mostra(tipo) {
+    const pertinenti = campi.filter(c => !tipo || (c.tipo === 'organo' ? ORGANO.includes(tipo) : c.tipo === tipo));
+    campi.forEach(c => { if (c.label_el) c.label_el.hidden = !pertinenti.includes(c) });
+    const voto = tipo === 'slide_votazione';
+    $('#dati-live-form').hidden = voto;
+    const v = $('#dati-live-vuoto'); if (v) v.hidden = voto || !tipo || pertinenti.length > 0;
+  }
   async function ricarica() {
     if (occupato) return;
     blocca(true);
@@ -86,6 +95,7 @@
       const patch = await leggiPatch();
       if (!vista.DATI_BASE) throw new Error('Dati della presentazione non ancora disponibili');
       render(M.applyPatch(vista.DATI_BASE, patch));
+      mostra(tipoCorrente);
       stato(campi.length ? 'Valori caricati. Le modifiche saranno visibili dopo Pubblica live.' : 'Nessun campo presenti, presidente o scrutatori disponibile nelle slide.');
     } catch (e) { stato(e.message, true) }
     finally { blocca(false) }
@@ -146,5 +156,5 @@
     if (modificati().length && !confirm('Scartare le modifiche non pubblicate e ricaricare i valori?')) return;
     ricarica();
   };
-  window.REGIA_DATI = { avvia(w, k) { vista = w; chiave = k; ricarica() } };
+  window.REGIA_DATI = { slide(t) { if (t !== tipoCorrente) { tipoCorrente = t; mostra(t) } }, avvia(w, k) { vista = w; chiave = k; ricarica() } };
 })();

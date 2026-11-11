@@ -94,7 +94,6 @@
           <button id="pdf" class="sec" hidden>PDF</button>
           <button id="termina" class="ko" hidden disabled>Termina assemblea</button>
         </div>
-        <div id="regia-voto" class="card" hidden></div>
         <p class="tasti">
           Tastiera o clicker: <kbd>→</kbd> <kbd>PagGiù</kbd> <kbd>Spazio</kbd> avanti · <kbd>←</kbd>
           <kbd>PagSu</kbd> indietro
@@ -108,13 +107,16 @@
       </nav>
       <div class="regia-live">
       <section id="regia-data-panel" class="dati-live card" data-section-panel>
-        <h3>Presenti e ufficio di presidenza</h3>
+        <h3>Live Data <small id="live-data-slide"></small></h3>
         <details class="note">
           <summary>Come funziona</summary>
-          Modifica i dati delle slide quorum e composizione. Pubblica live per aggiornare gli schermi; i telefoni si
+          Il pannello segue la slide mostrata: presenti sulla slide quorum, nomi sulla composizione dell’organo,
+          avvia/ferma/azzera sulle votazioni. Pubblica live per aggiornare gli schermi; i telefoni si
           aggiornano entro circa 10 secondi. Questi dati sono pubblici e salvati nella patch live, non nel file dati.js.
           Per i dati statici usa il setup.
         </details>
+        <div id="regia-voto" hidden></div>
+        <p id="dati-live-vuoto" class="note" hidden>Nessun dato live per questa slide.</p>
         <form id="dati-live-form">
           <p id="dati-live-pending" role="status" aria-live="polite">Nessuna modifica in attesa</p>
           <fieldset id="dati-live-campi" disabled></fieldset>
