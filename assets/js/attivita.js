@@ -196,7 +196,7 @@
       card.append(eyebrow, node('h3', item.title));
       const present = item.attendance.filter(person => person.status === 'presente').length;
       const summary = node('p', present + '/' + item.attendance.length + ' presenti', 'activity-event-summary');
-      if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0)) {
+      if (item.feeCents > 0) {
         const sums = AM.totals(item);
         summary.append(node('span', ' · incassato ' + AM.money(sums.paid) + ' · da ricevere ' + AM.money(sums.remaining), 'activity-event-money'));
       }
@@ -204,7 +204,7 @@
       const actions = node('div', undefined, 'activity-event-actions');
       actions.append(button('Presenze', () => openEvent(item, true)),
         button('Programma', () => { openEvent(item); setEventView('programma'); }));
-      if (item.feeCents > 0 || item.attendance.some(person => person.paidCents > 0))
+      if (item.feeCents > 0)
         actions.append(button('Quote', () => { openEvent(item); setEventView('quote'); }));
       card.append(actions);
       eventNodes.push(card);
@@ -899,9 +899,10 @@
       return;
     }
     totals($('event-totals'), { feeCents, attendance });
-    const hasMoney = feeCents > 0 || attendance.some(person => person.paidCents > 0);
+    const hasMoney = feeCents > 0;
     $('event-view-nav').querySelector('[data-event-view="quote"]').hidden = !hasMoney;
-    $('event-totals').hidden = !hasMoney;
+    $('event-totals').hidden = !hasMoney || eventView !== 'quote';
+    if (!hasMoney && eventView === 'quote') { setEventView('presenze'); return; }
     for (const option of $('event-member-filter').options) if (option.value === 'unpaid' || option.value === 'paid') option.hidden = option.disabled = !hasMoney;
     const query = $('event-member-search').value.trim().toLocaleLowerCase('it');
     const filter = $('event-member-filter').value;
@@ -1305,7 +1306,7 @@
     else if (event.target.closest('#event-tournament')) setEventView('torneo');
     else if (event.target.closest('#event-people-view')) {
       $('event-member-search').value = $('event-member-filter').value = '';
-      setEventView('quote');
+      setEventView(eventForm.elements.fee.valueAsNumber > 0 ? 'quote' : 'presenze');
     }
     let parent = event.target.parentElement;
     while (parent && parent !== eventForm) {
