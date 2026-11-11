@@ -1145,3 +1145,83 @@ h2#titolo, h3#titolo-next {
 #regia-voto .vt-az button { flex: 1; min-height: 38px; }
 #regia-voto .vt-er { color: #b00020; margin: 6px 0 0; }
 
+/* Telefono in verticale: la pagina scorre e Indietro/Avanti restano fissi in basso.
+   La navbar sta su due righe sottili; Menu apre connessione, schermo, setup ed esci. */
+#menu-regia { display: none; }
+@media (max-width: 699px) and (orientation: portrait) {
+  html, body { height: auto; }
+  body { height: auto; min-height: 100dvh; overflow: visible; }
+
+  body > header.reserved-header { flex-wrap: wrap; gap: 4px 8px; padding: 4px 10px; }
+  body > header.reserved-header:not(.menu-aperto) { flex-wrap: nowrap; }
+  body > header.reserved-header img { height: 28px; }
+  body > header.reserved-header .pill {
+    min-width: 0; padding: 4px 8px; font-size: 11px; overflow: hidden; text-overflow: ellipsis;
+  }
+  #menu-regia { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 8px 14px; font-size: 14px; }
+  #menu-regia::after { content: "▾"; }
+  #menu-regia[aria-expanded="true"]::after { content: "▴"; }
+  body > header.reserved-header:not(.menu-aperto) :is(.header-status, #schermo, #setup, #esci, .view-as) { display: none; }
+  body > header.reserved-header > :is(.header-status, #schermo, #setup, #esci, .view-as) { order: 2; }
+  body > header.reserved-header.menu-aperto::after { content: ""; order: 1; flex-basis: 100%; }
+  body > header.reserved-header .header-status { margin-left: 0; }
+  body > header.reserved-header .header-status > div { left: 0; right: auto; }
+
+  body > .reserved-location {
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 6px;
+    margin: 0; padding: 4px 10px; overflow-x: auto; scrollbar-width: none;
+  }
+  body > .reserved-location > * { flex: none; margin: 0; }
+  body > .reserved-location > a {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; white-space: nowrap;
+  }
+  /* il nome della pagina è già nella navbar: resta solo per i lettori di schermo */
+  body > .reserved-location > [aria-current="page"] {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  body > .reserved-location > [aria-current="page"] + a { margin-left: auto; }
+
+  main {
+    flex: none; display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start;
+    gap: 8px; min-height: 0; padding: 8px 10px calc(88px + env(safe-area-inset-bottom));
+  }
+  main > *, #app [data-section-panel] { flex: 1 1 100%; min-width: 0; }
+  .onda { flex: 1.4 1 0; }
+  .lato { flex: 1 1 0; }
+  .fit { flex: none; container-type: normal; display: block; }
+  .fit .frame { width: 100%; }
+  /* altezze fisse: cambiando slide le anteprime non cambiano altezza e la pagina non salta */
+  .lbl { flex-wrap: wrap; align-content: flex-start; gap: 0 6px; height: 2.8em; line-height: 1.4; overflow: hidden; }
+  .lbl span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #onda-label { flex: 1 1 0; }
+  #pos, #pos-next { flex: 0 0 100%; }
+  h2#titolo, h3#titolo-next {
+    height: 2.6em; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+
+  #app > .regia-section-nav {
+    position: sticky; top: 0; z-index: 5; padding: 4px; box-shadow: 0 0 0 6px var(--bg);
+  }
+  #app [data-section-panel] { min-height: 0; padding: 10px 12px; }
+  #regia-slides-panel ol { max-height: min(55dvh, 420px); }
+
+  /* dopo schede (order 3) e pannelli (order 4) impostati sotto i 760px */
+  .comandi { order: 5; display: block; }
+  .cmd {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+    grid-template-columns: 1fr 1.4fr; gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg); box-shadow: 0 -6px 18px rgba(33, 22, 56, .16);
+  }
+  .big-btn { height: 58px; }
+  .big-btn small { font-size: 14px; }
+  .comandi .mini { flex-wrap: wrap; gap: 8px; margin: 0; }
+  .comandi .mini button {
+    flex: 1 1 40%; min-height: 44px; padding: 8px 10px; font-size: 14px; white-space: normal;
+  }
+
+  #regia-voto h3 { white-space: normal; font-size: 16px; line-height: 1.3; margin-bottom: 4px; }
+  #regia-voto .vt-st { font-size: 14px; }
+  #regia-voto .vt-az button { min-height: 52px; font-size: 16px; }
+}
+

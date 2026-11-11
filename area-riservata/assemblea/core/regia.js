@@ -82,6 +82,13 @@
     try { await A.esci(); location.replace("../"); }
     catch (e) { alert(e.message); }
   };
+  /* telefono: la navbar resta su una riga, Menu mostra connessione e comandi secondari */
+  const menu = $("#menu-regia");
+  menu.onclick = () => {
+    const aperto = menu.getAttribute("aria-expanded") !== "true";
+    menu.setAttribute("aria-expanded", aperto);
+    $("header").classList.toggle("menu-aperto", aperto);
+  };
 
   /* ---------- presentazione ---------- */
   async function avvia() {

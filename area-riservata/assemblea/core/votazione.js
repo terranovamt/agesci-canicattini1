@@ -5,11 +5,29 @@
   let attiva = false;
   const API = (L.basePath || "") + "/api/vote";
   const subs = new Set();
+  const slug = t => String(t == null ? "" : t).replace(/<[^>]*>/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").slice(0, 60).replace(/-+$/, "");
+  // Il server registra i voti per id della slide: alle votazioni senza id ne serve uno ricavato
+  // dal quesito, uguale su regia, schermo e telefoni perché calcolato dagli stessi dati.
+  function chiavi(slide) {
+    if (!Array.isArray(slide)) return;
+    const usati = new Set(slide.map(x => x && x.id));
+    for (const x of slide) {
+      if (!x || x.tipo !== "slide_votazione" || (typeof x.id === "string" && x.id.trim())) continue;
+      const s = slug(x.domanda) || slug(x.titolo);
+      const base = /^votazione(-|$)/.test(s) ? s : "votazione" + (s ? "-" + s : "");
+      let id = base;
+      for (let n = 2; usati.has(id); n++) id = base + "-" + n;
+      usati.add(id);
+      x.id = id;
+    }
+  }
   const VOTO = (window.VOTO = {
     poll: null,
     api: API,
     // chiamato dal motore a ogni caricamento dei dati: senza "votazioni.abilitate" non parte nulla
     config(dati) {
+      chiavi(dati && dati.slide);
       attiva = !!(dati && dati.votazioni && dati.votazioni.abilitate);
       if (attiva) VOTO.aggiorna();
       else if (VOTO.poll) { VOTO.poll = null; subs.forEach(fn => fn(null)); }
