@@ -263,3 +263,19 @@ dialog a { color: var(--v); font-weight: 700 }
 .soci-count { margin-left: auto }
 .soci-table { width: 100%; border-collapse: collapse; background: var(--w); border-radius: var(--radius-md) }
 .soci-table th, .soci-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--vl) }
+
+/* interruttore del voto online */
+.voto-sw { border: 2px solid #0002; border-radius: 14px; background: #fff; transition: background .2s, border-color .2s }
+.voto-sw.on { border-color: #1f8a4a; background: #eaf7ef }
+.voto-sw input { position: absolute; opacity: 0; width: 1px; height: 1px }
+.voto-sw label { display: flex; align-items: center; gap: 14px; padding: 12px 14px; min-height: 56px; cursor: pointer }
+.voto-sw .tr { flex: none; position: relative; width: 56px; height: 32px; border-radius: 16px; background: #9a9aab; transition: background .2s }
+.voto-sw .tr:after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s }
+.voto-sw.on .tr { background: #1f8a4a }
+.voto-sw.on .tr:after { transform: translateX(24px) }
+.voto-sw input:focus-visible + label { outline: 3px solid #f7c600; outline-offset: 2px }
+.voto-sw .tx b { display: block; font-size: 17px }
+.voto-sw .tx small { display: block; font-size: 13px; color: #555; margin-top: 2px }
+.voto-sw.on .tx b:after { content: " \00b7  ATTIVO"; color: #1f8a4a }
+.voto-sw:not(.on) .tx b:after { content: " \00b7  DISATTIVATO"; color: #777; font-weight: 500 }
+@media (prefers-reduced-motion: reduce) { .voto-sw, .voto-sw .tr, .voto-sw .tr:after { transition: none } }

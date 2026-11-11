@@ -237,9 +237,32 @@
   };
   const human = (k) => LABELS[k] || String(k).replace(/_/g, " ");
 
+  function votoSwitch(path, value) {
+    const b = getAt(base, path);
+    const box = el("div", { className: "voto-sw" });
+    const input = el("input", { type: "checkbox", checked: value, id: "voto-online" });
+    const lab = el("label", { htmlFor: "voto-online" }, el("span", { className: "tr" }),
+      el("span", { className: "tx" }, el("b", { textContent: "Abilita voto online" }), el("small", {})));
+    const state = () => {
+      const on = input.checked;
+      box.classList.toggle("on", on);
+      lab.querySelector("small").textContent = on
+        ? "Attivo: le slide Votazione permettono ai soci di votare con il codice personale."
+        : "Disattivato: le slide Votazione restano normali divisori di sezione.";
+      box.classList.toggle("mod", on !== !!b);
+    };
+    input.onchange = () => {
+      setAt(edit, path, !input.checked && b === undefined ? undefined : input.checked);
+      state();
+      updateDirty();
+    };
+    box.append(input, lab);
+    state();
+    return box;
+  }
   function node(path, value, label) {
     if (path.length === 1 && path[0] === "votazioni" && value && typeof value === "object")
-      return field(path.concat("abilitate"), !!value.abilitate, "Abilita il voto online");
+      return votoSwitch(path.concat("abilitate"), !!value.abilitate);
     if (Array.isArray(value)) {
       if ((path.length === 1 && ["entrate", "uscite"].includes(path[0])) ||
           (path[0] === "patrimonio" && path[1] === "voci"))
