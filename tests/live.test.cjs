@@ -180,7 +180,7 @@ test("public controls explain review, reconnection, automatic updates, and retur
   v.streams.open();
   assert.match(status.textContent, /Stai rivedendo/);
   v.context.go(2, 0);
-  assert.match(status.textContent, /sei alla diretta/);
+  assert.equal(status.textContent, "");
   assert.equal(liveButton["aria-hidden"], "true");
   assert.equal(liveButton.tabIndex, -1);
 });

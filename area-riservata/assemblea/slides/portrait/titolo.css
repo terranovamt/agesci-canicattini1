@@ -75,24 +75,24 @@ body.pm .sec .rr.vt-on { height: auto; min-height: 66%; padding: 22px 16px 26px;
 body.pm .sec .vt .vt-h { display: none }
 body.pm .sec .vt .vt-m { display: block }
 body.pm .sec .vt-line { display: block; width: 28px; height: 3px; background: var(--vote-accent) }
-body.pm .sec .vt-title { font-size: 20px; font-weight: 300; line-height: 1.1; margin: 8px 0 0; text-align: left; letter-spacing: 0 }
+body.pm .sec .vt-title { font-size: 26px; font-weight: 300; line-height: 1.1; margin: 8px 0 0; text-align: left; letter-spacing: 0 }
 body.pm .sec .vt-title b { font-weight: 300 }
-body.pm .sec .vt-m .vt-q { font-size: 14px; font-weight: 500; margin-top: 14px }
-body.pm .sec .vt-st { font-size: 11px; color: var(--vote-accent); margin-top: 6px }
-body.pm .sec .vt-pill { display: inline-block; font-size: 11px; color: var(--vote-accent); background: rgba(247,198,0,0.2); border-radius: 10px; padding: 2px 9px; margin: 10px 0 12px }
-body.pm .sec .vt-r { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px; font-size: 13px }
-body.pm .sec .vt-r b { font-size: 20px }
-body.pm .sec .vt-r.first { background: var(--vote-accent); color: var(--vote-on-accent); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 500 }
-body.pm .sec .vt-r.first b { font-size: 30px }
+body.pm .sec .vt-m .vt-q { font-size: 19px; font-weight: 500; margin-top: 14px }
+body.pm .sec .vt-st { font-size: 15px; color: var(--vote-accent); margin-top: 6px }
+body.pm .sec .vt-pill { display: inline-block; font-size: 15px; color: var(--vote-accent); background: rgba(247,198,0,0.2); border-radius: 10px; padding: 2px 9px; margin: 10px 0 12px }
+body.pm .sec .vt-r { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; font-size: 18px }
+body.pm .sec .vt-r b { font-size: 28px }
+body.pm .sec .vt-r.first { background: var(--vote-accent); color: var(--vote-on-accent); border-radius: 10px; padding: 12px 14px; font-size: 19px; font-weight: 500 }
+body.pm .sec .vt-r.first b { font-size: 40px }
 body.pm .sec .vt-r.hl { border-top: .5px solid var(--vote-hairline) }
-body.pm .sec .vt-m .vt-lab { font-size: 11px; margin-top: 14px }
+body.pm .sec .vt-m .vt-lab { font-size: 15px; margin-top: 14px }
 body.pm .sec .vt-lead { margin-top: 2px }
-body.pm .sec .vt-lead .nm { font-size: 22px; font-weight: 500; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+body.pm .sec .vt-lead .nm { font-size: 30px; font-weight: 500; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 body.pm .sec .vt-lead .num { display: flex; align-items: baseline; gap: 8px; color: var(--vote-accent); margin-bottom: 12px }
-body.pm .sec .vt-lead .num b { font-size: 56px; line-height: 1 }body.pm .sec .vt-lead .num i { font-size: 14px }
-body.pm .sec .vt-m.nom .vt-title { font-size: 18px }
+body.pm .sec .vt-lead .num b { font-size: 72px; line-height: 1 }body.pm .sec .vt-lead .num i { font-size: 18px }
+body.pm .sec .vt-m.nom .vt-title { font-size: 24px }
 body.pm .sec .vt-rest { border-top: .5px solid var(--vote-hairline); padding-top: 8px }
-body.pm .sec .vt-rest div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--vote-muted); padding: 4px 0 }
+body.pm .sec .vt-rest div { display: flex; justify-content: space-between; gap: 10px; font-size: 17px; color: var(--vote-muted); padding: 6px 0 }
 body.pm .sec .vt-m.nom.dense .vt-rest div { padding: 2px 0 }
 body.pm .sec .vt-rest .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
 body.pm .sec .rr.vt-on:after, body.pm .sec .rr.vt-on:before { display: none }

@@ -179,7 +179,7 @@
           : "Connessione interrotta · nuovo tentativo automatico"
         : behind
           ? "Stai rivedendo · tocca LIVE per tornare"
-          : "Collegato · sei alla diretta";
+          : "";
     if (status.textContent !== message) status.textContent = message;
     $("lv-m").disabled = enc(odgIdx(), 0) > lim;
     document.querySelectorAll("[data-slide-link]").forEach((el) => {

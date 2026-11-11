@@ -39,7 +39,7 @@
   if (L.ruolo !== "pubblico") return;
 
   const css = document.createElement("style");
-  css.textContent = `#vt-btn{position:fixed;right:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:60;min-height:48px;padding:0 20px;border:0;border-radius:24px;background:#f5c400;color:#1d2a1d;font:700 16px system-ui,sans-serif;box-shadow:0 4px 14px #0006}
+  css.textContent = `#vt-btn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:60;min-height:52px;min-width:180px;padding:0 32px;border:0;border-radius:24px;background:#f5c400;color:#1d2a1d;font:700 16px system-ui,sans-serif;box-shadow:0 4px 14px #0006}
 #vt-btn[hidden],#vt-box[hidden]{display:none}
 #vt-box{position:fixed;inset:0;z-index:70;background:#000b;display:flex;align-items:flex-end;justify-content:center;font-family:system-ui,sans-serif}
 #vt-box .m{box-sizing:border-box;width:min(520px,100%);max-height:92%;overflow:auto;background:#fff;color:#1d2a1d;border-radius:18px 18px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px))}
