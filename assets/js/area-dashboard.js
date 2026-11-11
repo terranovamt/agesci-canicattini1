@@ -233,6 +233,7 @@
           ? "Crea la prossima attività di gruppo o di branca."
           : "Crea la prossima riunione, uscita o campo.";
         $("dashboard-event-preparation").textContent = "";
+        $("dashboard-event-presence").textContent = "";
         $("dashboard-event-finances").textContent = "";
         action.href = "attivita.html";
         action.textContent = "Crea un’attività →";
@@ -258,6 +259,11 @@
         .filter(item => !item.done).length;
       $("dashboard-event-preparation").textContent =
         `${preparation} momenti · ${outstanding} da preparare`;
+      const marks = event.attendance || [];
+      const here = marks.filter(person => person.status === "presente").length;
+      const away = marks.filter(person => person.status === "assente" || person.status === "giustificato").length;
+      $("dashboard-event-presence").textContent = marks.length
+        ? `Presenze: ${here} presenti · ${away} assenti · ${marks.length - here - away} da segnare` : "";
       const missing = (event.attendance || []).filter(person =>
         Math.max(0, (event.feeCents || 0) - (person.paidCents || 0)) > 0).length;
       const money = cents => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(cents / 100);
@@ -298,6 +304,15 @@
         action.href = eventUrl + "&vista=programma&ora=1";
         action.textContent = "Attività in corso";
       }
+  }
+  async function transfersAlert() {
+    const alert = $("dashboard-transfers-alert");
+    try {
+      const data = await window.ACCESSO.request("members");
+      const waiting = (data?.transfers || []).filter(transfer => transfer.canConfirm).length;
+      alert.hidden = !waiting;
+      alert.textContent = waiting === 1 ? "1 passaggio da confermare →" : `${waiting} passaggi da confermare →`;
+    } catch { alert.hidden = true; }
   }
   async function upcomingEvent() {
     const panel = $("dashboard-event-panel"), retry = $("dashboard-event-retry");
@@ -341,6 +356,7 @@
       documents();
       groupOverview();
       upcomingEvent();
+      transfersAlert();
       metrics();
       window.setInterval?.(() => { if (agenda) renderEvent(); }, 30000);
       window.addEventListener?.("focus", () => { if (agenda) renderEvent(); });

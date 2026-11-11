@@ -449,6 +449,13 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
 .dashboard-page .library-overview li:last-child { border-bottom: 0 }
 .dashboard-page .library-overview li a { width: 100% }
 .dashboard-page :is(a[href], button, summary):focus-visible { outline: 3px solid var(--v); outline-offset: 3px }
+.dashboard-page .dashboard-alert { display: flex; align-items: center; margin-bottom: 12px; padding: 8px 14px; border-radius: var(--radius-md); background: var(--y); color: var(--vd); font-size: 15px; font-weight: 800; text-decoration: none }
+.dashboard-page .dashboard-alert[hidden] { display: none }
+.dashboard-page .dashboard-event-summary .dashboard-hint { font-size: 13px }
+@media (min-width: 900px) {
+  .dashboard-page .dashboard-upcoming-event:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 0 24px }
+  .dashboard-page .dashboard-event-summary { flex-direction: column; align-items: flex-start; align-content: start; gap: 8px; padding: 0 0 0 20px; border-left: 1px solid var(--vl) }
+}
 @media (min-width: 800px) {
   .dashboard-page .dashboard-layout { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) }
   .dashboard-page .dashboard-work-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) }

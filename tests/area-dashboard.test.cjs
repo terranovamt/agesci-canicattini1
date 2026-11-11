@@ -714,3 +714,12 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("dashboard shows confirmable transfers and attendance counts at first glance", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
+  const source = fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8");
+  assert.ok(html.indexOf('id="dashboard-transfers-alert"') < html.indexOf('id="dashboard-event-panel"'));
+  assert.match(html, /id="dashboard-event-presence"/);
+  assert.match(source, /transfer\.canConfirm/);
+  assert.match(source, /da segnare/);
+});
