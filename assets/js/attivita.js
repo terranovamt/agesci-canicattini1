@@ -63,7 +63,8 @@
   function roster() { return data.members.filter(member => member.branch === branch()); }
   function pathFilterMatch(item) {
     const selectedState = pathFilter.state, kind = pathFilter.kind;
-    return (!selectedState || state(item) === selectedState || (selectedState === 'Conquistato' && state(item) === 'Conclusa')) &&
+    const hidden = !selectedState && !pathMember() && ['Conquistato', 'Conclusa'].includes(state(item));
+    return !hidden && (!selectedState || state(item) === selectedState || (selectedState === 'Conquistato' && state(item) === 'Conclusa')) &&
       (!kind || item.kind === kind);
   }
   function pathFiltersActive() { return !!(pathFilter.state || pathFilter.kind); }
@@ -211,7 +212,8 @@
           if (!memberPaths.length && pathFiltersActive()) return [];
           if (!memberPaths.length) {
             const row = node('div', undefined, 'path-row path-row-none');
-            row.append(link(), node('span', 'Nessun percorso', 'path-row-empty'));
+            const finished = data.paths.some(item => item.branch === branch() && item.personId === member.id);
+            row.append(link(), node('span', finished ? 'Nessun percorso in corso' : 'Nessun percorso', 'path-row-empty'));
             return [row];
           }
           return memberPaths.map(item => {
