@@ -19,6 +19,8 @@ const PAGES = new Set([
   "statistiche",
 ]);
 const EVENTS = new Set(["offline", "network-error", "http-error", "resource-error", "js-error", "stream-reconnect"]);
+const ACTION = /^[a-z0-9]{2,20}\.[a-z0-9-]{2,40}$/;
+const MAX_ACTIONS = 300;
 const dayOf = (time) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(time);
 const number = (value) => (Number.isFinite(value) ? value : null);
 
@@ -126,7 +128,7 @@ function createResources({ hostProc = "", cgroupRoot = "/sys/fs/cgroup", dataDir
 
 function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = true, release = "manual" } = {}) {
   database.exec(
-    "CREATE TABLE IF NOT EXISTS monitor_totals (id INTEGER PRIMARY KEY, visits INTEGER NOT NULL, views INTEGER NOT NULL, started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_days (day TEXT PRIMARY KEY, visits INTEGER NOT NULL DEFAULT 0, views INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS monitor_pages (day TEXT NOT NULL, page TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,page)); CREATE TABLE IF NOT EXISTS monitor_sessions (id TEXT PRIMARY KEY, seen INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS monitor_events (time INTEGER NOT NULL, kind TEXT NOT NULL, page TEXT NOT NULL, status INTEGER); CREATE INDEX IF NOT EXISTS monitor_event_time ON monitor_events(time);",
+    "CREATE TABLE IF NOT EXISTS monitor_totals (id INTEGER PRIMARY KEY, visits INTEGER NOT NULL, views INTEGER NOT NULL, started TEXT NOT NULL); CREATE TABLE IF NOT EXISTS monitor_days (day TEXT PRIMARY KEY, visits INTEGER NOT NULL DEFAULT 0, views INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS monitor_pages (day TEXT NOT NULL, page TEXT NOT NULL, views INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,page)); CREATE TABLE IF NOT EXISTS monitor_sessions (id TEXT PRIMARY KEY, seen INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS monitor_actions (day TEXT NOT NULL, action TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,action)); CREATE TABLE IF NOT EXISTS monitor_events (time INTEGER NOT NULL, kind TEXT NOT NULL, page TEXT NOT NULL, status INTEGER); CREATE INDEX IF NOT EXISTS monitor_event_time ON monitor_events(time);",
   );
   database.prepare("INSERT OR IGNORE INTO monitor_totals VALUES (1,0,0,?)").run(dayOf(new Date()));
   database.exec("CREATE TABLE IF NOT EXISTS monitor_views (id TEXT PRIMARY KEY, seen INTEGER NOT NULL);");
@@ -165,6 +167,18 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       .prepare("INSERT INTO monitor_days(day,errors) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET errors=errors+1")
       .run(dayOf(new Date(now)));
   };
+  // Anonymous usage counters: only a fixed-format action name per day, never who did it.
+  const recordActions = (actions = [], now) => {
+    const day = dayOf(new Date(now));
+    for (const action of actions) {
+      const known = database.prepare("SELECT 1 FROM monitor_actions WHERE action=? LIMIT 1").get(action);
+      if (!known && database.prepare("SELECT COUNT(DISTINCT action) AS n FROM monitor_actions").get().n >= MAX_ACTIONS)
+        continue;
+      database
+        .prepare("INSERT INTO monitor_actions VALUES (?,?,1) ON CONFLICT(day,action) DO UPDATE SET count=count+1")
+        .run(day, action);
+    }
+  };
   function telemetry(value) {
     if (!telemetryEnabled) return;
     if (
@@ -177,6 +191,10 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       typeof value.visible !== "boolean" ||
       !Array.isArray(value.events) ||
       value.events.length > 8 ||
+      (value.actions !== undefined &&
+        (!Array.isArray(value.actions) ||
+          value.actions.length > 8 ||
+          value.actions.some((action) => typeof action !== "string" || !ACTION.test(action)))) ||
       value.events.some(
         (event) =>
           !event ||
@@ -201,6 +219,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
       day = dayOf(new Date(now));
     if (value.type === "leave") {
       for (const event of value.events) recordEvent(event.kind, event.page, event.status, now);
+      recordActions(value.actions, now);
       clients.delete(tab);
       return;
     }
@@ -227,6 +246,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
           .run(day, value.page);
       if (view && value.tab) database.prepare("INSERT OR REPLACE INTO monitor_views VALUES (?,?)").run(tab, now);
       for (const event of value.events) recordEvent(event.kind, event.page, event.status, now);
+      recordActions(value.actions, now);
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
@@ -380,6 +400,12 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
         liveUnique: date < trackingSince ? null : liveVisitorsByDay.get(date) || 0,
       };
     });
+    const since = (days) => dayOf(new Date(now - (days - 1) * 86400000));
+    result.actions = database
+      .prepare(
+        "SELECT action, SUM(CASE WHEN day>=? THEN count ELSE 0 END) AS week, SUM(count) AS month FROM monitor_actions WHERE day>=? GROUP BY action ORDER BY month DESC, action LIMIT 40",
+      )
+      .all(since(7), since(30));
     const minute = Math.floor(now / 60000);
     const performanceRows = database
       .prepare("SELECT minute,online,p95_ms,cpu_percent,memory_percent FROM monitor_performance WHERE minute>=? ORDER BY minute")
@@ -438,6 +464,7 @@ function createMonitor(database, { dataDir, hostProc = "", telemetryEnabled = tr
     const oldest = dayOf(new Date(now - 365 * 86400000));
     database.prepare("DELETE FROM monitor_days WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_pages WHERE day<?").run(oldest);
+    database.prepare("DELETE FROM monitor_actions WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_connections WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_live_visitors WHERE day<?").run(oldest);
     database.prepare("DELETE FROM monitor_site_visitors WHERE day<?").run(oldest);

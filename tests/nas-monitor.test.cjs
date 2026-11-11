@@ -103,3 +103,25 @@ test("missing host metrics and unlimited container quotas are not reported as ze
     await fs.rm(directory, { recursive: true, force: true });
   }
 });
+
+test("anonymous action counters aggregate per day, reject free text and appear only in the full snapshot", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-actions-"));
+  const monitor = createMonitor(new DatabaseSync(":memory:"), { dataDir: directory });
+  const id = "11111111-1234-1234-1234-123456789abc";
+  const send = (actions, type = "heartbeat") =>
+    monitor.telemetry({ id, tab: id, type, page: "area", visible: true, events: [], actions });
+  try {
+    send(["soci.apri-scheda", "soci.apri-scheda", "attivita.presenze"], "view");
+    send(["soci.apri-scheda"], "leave");
+    for (const bad of [["Mario Rossi"], ["soci.apri scheda"], ["x".repeat(80)], ["soci.a-b", "a.bc", "soci.a-b", "soci.a-b", "soci.a-b", "soci.a-b", "soci.a-b", "soci.a-b", "soci.a-b"], "soci.apri-scheda"])
+      assert.throws(() => send(bad));
+    const actions = monitor.snapshot(0, 0, "full").actions.map((value) => ({ ...value }));
+    assert.deepEqual(actions, [
+      { action: "soci.apri-scheda", week: 3, month: 3 },
+      { action: "attivita.presenze", week: 1, month: 1 },
+    ]);
+    assert.equal(monitor.snapshot(0, 0, "summary").actions, undefined);
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});

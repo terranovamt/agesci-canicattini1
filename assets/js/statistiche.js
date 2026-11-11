@@ -322,6 +322,33 @@
       body.append(row);
     }
   }
+  function renderActions(actions) {
+    const body = $("stats-actions");
+    body.replaceChildren();
+    if (!actions.length) {
+      $("stats-actions-note").textContent = "Nessuna azione registrata finora: i conteggi compaiono man mano che si usa l’area riservata.";
+      return;
+    }
+    $("stats-actions-note").textContent = "Solo conteggi anonimi per giorno, senza nomi, dati dei soci o contenuti. Tra parentesi gli ultimi 7 giorni.";
+    for (const action of actions.slice(0, 12)) {
+      const item = document.createElement("div");
+      item.className = "statistics-page-bar";
+      const heading = document.createElement("div");
+      heading.className = "statistics-page-bar-heading";
+      const name = document.createElement("span");
+      name.textContent = action.action.replace(".", " · ").replace(/-/g, " ");
+      const value = document.createElement("strong");
+      value.textContent = format(action.month) + " (" + format(action.week) + ")";
+      heading.append(name, value);
+      const track = document.createElement("div");
+      track.className = "statistics-page-bar-track";
+      const bar = document.createElement("span");
+      bar.style.width = Math.max(2, Math.min(100, (action.month / Math.max(1, actions[0].month)) * 100)) + "%";
+      track.append(bar);
+      item.append(heading, track);
+      body.append(item);
+    }
+  }
   function renderDistribution(pages, pageViews) {
     const body = $("stats-pages");
     body.replaceChildren();
@@ -610,6 +637,7 @@
         renderHistory(nextDaily);
       }
       renderDistribution(Array.isArray(traffic.pages) ? traffic.pages : [], today.views);
+      renderActions(Array.isArray(data.actions) ? data.actions : []);
       renderPerformance(data.performance?.hourly);
       const sessions = (Array.isArray(traffic.sessions) ? traffic.sessions : []).map((session) => [
         labels[session.page] || session.page,
@@ -650,6 +678,7 @@
       dailyHistory = [];
       renderHistory([]);
       renderDistribution([], null);
+      renderActions([]);
       renderPerformance([]);
       renderEvents([]);
       $("stats-no-events").hidden = false;

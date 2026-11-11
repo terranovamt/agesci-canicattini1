@@ -58,13 +58,37 @@
     if ((!enabled && !initializing) || !kinds.has(kind) || pending.length >= 8) return;
     pending.push({ kind, page, ...(Number.isInteger(status) && status >= 400 && status <= 599 ? { status } : {}) });
   }
-  window.NAS_TELEMETRY = { event };
+  // Anonymous usage counters: fixed action names only, no content and no member data.
+  const tracked = {
+    "#open-macro": "soci.proponi-passaggio", "#open-documents": "soci.genera-documenti", "#print-documents": "soci.stampa-documenti",
+    "#select-results": "soci.seleziona-risultati", "#new-member": "soci.nuovo-socio", "#member-save": "soci.salva-scheda",
+    "#import-csv": "soci.importa-csv", "#new-unit": "soci.nuova-squadriglia", ".unit-grip": "soci.sposta-socio",
+    ".member-name": "soci.apri-scheda", "#new-event": "attivita.nuova-attivita", "#new-winter-camp": "attivita.nuovo-campo",
+    "#new-path": "attivita.nuovo-percorso", "#save-paths": "attivita.salva-percorsi", "#event-live-attendance": "attivita.presenze",
+    "#new-document": "documenti.nuovo", "#save-document": "documenti.pubblica", "#nuovo-anno": "assemblea.nuovo-anno",
+    "#inizia": "regia.avvia-live", "#next": "regia.avanti", "#prev": "regia.indietro", "#termina": "regia.termina",
+    "#pdf": "regia.pdf", "[data-row-toggle]": "attivita.dettagli-momento", ".program-day-select": "attivita.cambia-giorno",
+  };
+  const actions = [];
+  function action(name) {
+    if ((!enabled && !initializing) || !/^[a-z0-9]{2,20}\.[a-z0-9-]{2,40}$/.test(name) || actions.length >= 16) return;
+    actions.push(name);
+  }
+  addEventListener("click", (click) => {
+    const target = click.target?.closest ? click.target : click.target?.parentElement;
+    if (!target) return;
+    for (const [selector, name] of Object.entries(tracked)) if (target.closest(selector)) return action(name);
+    const section = target.closest("[data-section-target]")?.dataset.sectionTarget;
+    if (section) action("sezione." + section.replace(/-panel$/, "").replace(/[^a-z0-9-]/gi, "").toLowerCase().slice(0, 40));
+  }, true);
+  window.NAS_TELEMETRY = { event, action };
   addEventListener("error", (error) => event(error.target?.tagName ? "resource-error" : "js-error"), true);
   addEventListener("unhandledrejection", () => event("js-error"));
   addEventListener("offline", () => event("offline"));
   async function send(type, urgent = type === "leave") {
     if (!enabled || (sending && !urgent)) return;
     const events = pending.splice(0, 8);
+    const used = actions.splice(0, 8);
     try {
       localStorage.setItem("nas-visit-time", String(Date.now()));
     } catch {}
@@ -77,6 +101,7 @@
       type,
       visible: document.visibilityState !== "hidden",
       events,
+      ...(used.length ? { actions: used } : {}),
       ...(Number.isFinite(latencyMs) ? { latencyMs: Math.min(120000, latencyMs) } : {}),
     };
     const started = performance.now();
@@ -96,6 +121,7 @@
       if (type === "view") viewSent = true;
     } catch {
       pending.unshift(...events.slice(0, Math.max(0, 8 - pending.length)));
+      actions.unshift(...used.slice(0, Math.max(0, 16 - actions.length)));
     } finally {
       clearTimeout(timeout);
       sending = false;

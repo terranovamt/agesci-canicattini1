@@ -18,7 +18,10 @@ procedura.
 - **API e persistenza NAS:** `server/nas.cjs` implementa HTTP, autenticazione,
   stato dell'assemblea, endpoint dei contenuti e dei PDF; riusa il modello di
   validazione documenti `assets/js/documents-model.js`. `server/monitor.cjs`
-  registra telemetria, statistiche e campioni risorse. Le letture pubbliche di
+  registra telemetria, statistiche e campioni risorse, più contatori anonimi
+  di utilizzo (`monitor_actions`: solo nome azione `area.azione` e conteggio
+  giornaliero, mai chi/cosa); le azioni tracciate sono nella mappa `tracked` di
+  `assets/js/nas-telemetry.js` e si leggono in Statistiche. Le letture pubbliche di
   configurazione, dati delle slide, calendari e documenti passano dal backend
   quando richiesto da `deploy/synology/nginx.conf`; il resto delle pagine è
   servito staticamente.

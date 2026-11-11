@@ -137,3 +137,22 @@ test("live visitor ID remains anonymous and stable across tabs", () => {
   const anotherTab = browser(false, false, storage);
   assert.equal(anotherTab.window.NAS_VISITOR.id(), visitor);
 });
+
+test("clicks on known controls are sent as anonymous action names, never text or ids of members", async () => {
+  const app = browser();
+  await flush();
+  const control = (matches, dataset = {}) => ({ closest: (selector) => (matches.includes(selector) ? { dataset } : null) });
+  const click = app.events.get("click");
+  click({ target: control(["#open-documents"]) });
+  click({ target: control([".member-name"]) });
+  click({ target: control(["[data-section-target]"], { sectionTarget: "members-units-panel" }) });
+  click({ target: control([]) });
+  app.intervals[0]();
+  await flush();
+  const payload = JSON.parse(app.calls.at(-1).options.body);
+  assert.deepEqual(payload.actions, ["soci.genera-documenti", "soci.apri-scheda", "sezione.members-units"]);
+  const off = browser(false);
+  await flush();
+  off.events.get("click")?.({ target: control(["#open-documents"]) });
+  assert.ok(!off.calls.some((call) => String(call.options.body || "").includes("actions")));
+});
