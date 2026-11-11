@@ -57,10 +57,7 @@ window.DATI = {
     "data": "20 Novembre 2026",
     "titolo": "Assemblea di Gruppo 2026",
     "prima_convocazione": "20:30",
-    "seconda_convocazione": "21:00",
-    // Usati dagli "Atti assemblea" (regia): elenco Comunità Capi e capo gruppo
-    "capi": [],
-    "capo_gruppo": ""
+    "seconda_convocazione": "21:00"
   },
 
   // 2. SLIDE: l'ordine di questa lista determina l'ordine della presentazione.

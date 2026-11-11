@@ -1145,12 +1145,3 @@ h2#titolo, h3#titolo-next {
 #regia-voto .vt-az button { flex: 1; min-height: 38px; }
 #regia-voto .vt-er { color: #b00020; margin: 6px 0 0; }
 
-#atti-dlg { max-width: 640px; width: 92vw; max-height: 90vh; overflow: auto; border: 0; border-radius: 12px; padding: 16px; }
-#atti-dlg .atti-campi { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 12px; margin: 10px 0; }
-#atti-dlg label { display: grid; gap: 2px; font-size: 13px; }
-#atti-dlg label:has(textarea) { grid-column: 1 / -1; }
-#atti-dlg .atti-er { color: #b00020; min-height: 1.2em; }
-
-@media (max-width: 640px) {
-  #atti-btn { display: none; }
-}
