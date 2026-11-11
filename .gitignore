@@ -10,3 +10,4 @@ deploy/synology/data/
 *.sqlite-wal
 *.sqlite-shm
 .env
+.preview-browser-*/

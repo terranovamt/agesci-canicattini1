@@ -1102,19 +1102,21 @@ h2#titolo, h3#titolo-next {
   .card h3 { font-size: 13px; }
 }
 
-/* Desktop: comandi sotto le anteprime; sotto, Dati live + Server a sinistra e Slide a destra, tutto visibile e a scorrimento interno */
+/* Desktop: a sinistra la slide live, a destra la prossima con i comandi sotto; in basso Dati live, Server e Slide */
 .regia-live { display: contents; }
 @media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
   main {
-    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(220px, .6fr);
-    grid-template-rows: auto minmax(0, 1.5fr) minmax(0, 1fr);
-    grid-template-areas: "avvio avvio avvio" "onda lato comandi" "live live lista";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1.5fr) auto minmax(0, 1fr);
+    grid-template-areas: "avvio avvio" "onda lato" "onda comandi" "live live";
   }
   #app > .regia-section-nav { display: none; }
-  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-height: 0; }
-  .regia-live > [data-section-panel] { grid-area: auto; overflow: auto; }
-  #app > #regia-slides-panel { grid-area: lista; overflow: hidden; }
+  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-height: 0; }
+  #app .regia-live > [data-section-panel] { grid-area: auto; overflow: auto; }
+  #regia-slides-panel { overflow: hidden; }
   #regia-slides-panel ol { overflow: auto; }
-  .comandi { justify-content: center; }
+  .comandi { flex-direction: column; gap: 8px; }
+  .big-btn { height: clamp(52px, 8vh, 80px); font-size: 30px; }
+  .comandi .mini button { flex: 1 1 30%; }
   #dati-live-campi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
