@@ -344,12 +344,14 @@
     ordine:
       "Aggiungi, modifica, duplica o nascondi le slide. Collassa un divisore per spostare tutta la sezione: trascinala oppure usa i pulsanti Sposta su e Sposta giù.",
     bilancio: "Numeri del rendiconto e del patrimonio: censimenti, entrate, uscite, avanzi e beni.",
+    soci: "Soci iscritti all'anno precedente, letti dal Libro soci: possono votare in assemblea.",
     json: "Modifica il testo e applicalo alla bozza. Solo «Salva dati base» salva sulla destinazione indicata.",
   };
   const TITOLI = {
     generale: "Informazioni generali",
     ordine: "Slide e sezioni",
     bilancio: "Bilancio del gruppo",
+    soci: "Soci aventi diritto di voto",
     json: "Editor JSON",
     guida: "Guida al setup",
     limiti: "Limiti e accorgimenti",
@@ -662,6 +664,64 @@
     c.append(ol);
   }
 
+  /* aventi diritto di voto: soci censiti nell'anno precedente, dal Libro soci (sola lettura) */
+  let soci = null,
+    sociError = "",
+    sociYear = "",
+    sociQuery = "",
+    sociBranch = "";
+  async function loadSoci() {
+    try {
+      if (!nas) throw new Error("Il Libro soci è disponibile solo sul NAS.");
+      const r = await fetch((window.LIVE.basePath || "") + "/api/members", { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Accedi come amministratore per leggere il Libro soci." : "Libro soci non disponibile.");
+      soci = await r.json();
+    } catch (e) {
+      sociError = e.message;
+      soci = { members: [] };
+    }
+    if (view === "soci") render();
+  }
+  function renderSoci(c) {
+    if (!soci) {
+      c.append(el("p", { className: "empty-state", textContent: "Caricamento del Libro soci…" }));
+      loadSoci();
+      return;
+    }
+    if (sociError) return c.append(el("p", { className: "empty-state", textContent: sociError }));
+    const years = [...new Set(soci.members.flatMap((m) => m.censuses.map((x) => String(x.year))))].sort().reverse();
+    if (!years.length) return c.append(el("p", { className: "empty-state", textContent: "Nessun censimento nel Libro soci." }));
+    // anno precedente a quello del censimento più recente, se presente
+    if (!years.includes(sociYear)) sociYear = years.find((y) => y < String(soci.currentYear)) || years[0];
+    const all = soci.members
+      .map((m) => ({ name: m.name, code: m.code, census: m.censuses.find((x) => String(x.year) === sociYear) }))
+      .filter((m) => m.census)
+      .map((m) => ({ ...m, branch: m.census.branch || "Adulti" }))
+      .sort((a, b) => a.name.localeCompare(b.name, "it"));
+    const branches = [...new Set(all.map((m) => m.branch))].sort();
+    if (!branches.includes(sociBranch)) sociBranch = "";
+    const list = el("div", { className: "soci-list" });
+    const fill = () => {
+      list.innerHTML = "";
+      const q = sociQuery.trim().toLowerCase();
+      const shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code).toLowerCase().includes(q)));
+      count.textContent = shown.length + " di " + all.length + " soci";
+      const table = el("table", { className: "soci-table" }, el("thead", {}, el("tr", {}, ...["Socio", "Codice", "Branca"].map((h) => el("th", { textContent: h })))));
+      table.append(el("tbody", {}, ...shown.map((m) => el("tr", {}, el("td", { textContent: m.name }), el("td", { textContent: m.code }), el("td", { textContent: m.branch })))));
+      list.append(shown.length ? table : el("p", { className: "empty-state", textContent: "Nessun socio trovato." }));
+    };
+    const count = el("strong", { className: "soci-count" });
+    const yearSel = el("select", { ariaLabel: "Anno di iscrizione" }, ...years.map((y) => el("option", { value: y, textContent: "Iscritti " + y, selected: y === sociYear })));
+    yearSel.onchange = () => { sociYear = yearSel.value; render(); };
+    const branchSel = el("select", { ariaLabel: "Branca" }, el("option", { value: "", textContent: "Tutte le branche" }),
+      ...branches.map((b) => el("option", { value: b, textContent: b + " (" + all.filter((m) => m.branch === b).length + ")", selected: b === sociBranch })));
+    branchSel.onchange = () => { sociBranch = branchSel.value; render(); };
+    const search = el("input", { type: "search", placeholder: "Cerca nome o codice", value: sociQuery, ariaLabel: "Cerca socio" });
+    search.oninput = () => { sociQuery = search.value; fill(); };
+    c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count), list);
+    fill();
+  }
+
   function renderSezioni(c, keys) {
     keys
       .filter((k) => k in edit)
@@ -708,6 +768,7 @@
       if (![...known, ...altri].some(key => key in edit))
         c.append(el("p", { className: "empty-state", textContent: "Nessun dato presente nel bilancio." }));
     }
+    else if (view === "soci") renderSoci(c);
     else if (view === "ordine" && Array.isArray(edit.slide)) renderOrdine(c);
     if (view === "json") refreshJson();
     scrollTo(0, y);
@@ -732,7 +793,7 @@
     $("#json").hidden = tab !== "json";
     $("#doc").hidden = !doc;
     $("#doc-link").hidden = !doc;
-    $(".workflow-note").hidden = doc || tab === "generale";
+    $(".workflow-note").hidden = doc || tab === "generale" || tab === "soci";
     $("#intro").hidden = doc;
     $("#intro").textContent = INTRO[tab] || "";
     if (doc) {

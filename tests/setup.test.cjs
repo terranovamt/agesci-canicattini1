@@ -783,8 +783,8 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
           const assembly = $('.form-section[data-id="assemblea"]').getBoundingClientRect();
           check(assembly.width >= workspaceWidth * .6, width + ': assembly form uses workspace');
         }
-        check(d.querySelectorAll('.primary-tabs button').length === 3, 'three primary tabs');
-        for (const selector of ['[data-tab="generale"]','[data-tab="ordine"]','[data-tab="bilancio"]','#salva-gh','#annulla']) {
+        check(d.querySelectorAll('.primary-tabs button').length === 4, 'four primary tabs');
+        for (const selector of ['[data-tab="generale"]','[data-tab="ordine"]','[data-tab="bilancio"]','[data-tab="soci"]','#salva-gh','#annulla']) {
           const r = $(selector).getBoundingClientRect();
           check(r.width >= 44 && r.height >= 44, selector + ' touch target ' + r.width + '×' + r.height + ' errors=' + w.errors.join(','));
         }

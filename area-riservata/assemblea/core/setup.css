@@ -28,7 +28,7 @@ input:not([type=checkbox]), select { min-height: 44px }
 input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 #login form { display: flex; gap: 8px }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: start; min-width: 0 }
-.primary-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; flex: 1; min-width: 280px }
+.primary-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: 1; min-width: 280px }
 .tabs button { text-align: center; background: var(--w); color: var(--v); padding: 10px 16px }
 .tabs button.on { background: var(--v); color: var(--w) }
 .setup-tools { flex: 1; min-width: 280px; border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w) }
@@ -256,3 +256,10 @@ dialog a { color: var(--v); font-weight: 700 }
   main { padding-inline: 10% }
   .setup-header, footer { padding-inline: 10% }
 }
+
+.soci-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px }
+.soci-tools select, .soci-tools input { width: auto; min-height: 44px; font: inherit; padding: 8px; border: 1px solid var(--vl); border-radius: 8px }
+.soci-tools input { flex: 1 1 200px; min-width: 0; width: auto }
+.soci-count { margin-left: auto }
+.soci-table { width: 100%; border-collapse: collapse; background: var(--w); border-radius: var(--radius-md) }
+.soci-table th, .soci-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--vl) }
