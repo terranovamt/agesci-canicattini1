@@ -811,7 +811,7 @@
         c.append(
           box(k, human(k), "", same(v, base[k]) ? [] : [badge("modificata")], (body) => {
             if (numericGroup(v)) body.classList.add("numeric-fields");
-            if (plain(v)) Object.entries(v).forEach(([kk, x]) => body.append(node([k, kk], x, human(kk))));
+            if (plain(v) && k !== "votazioni") Object.entries(v).forEach(([kk, x]) => body.append(node([k, kk], x, human(kk))));
             else body.append(node([k], v, human(k)));
           }),
         );
