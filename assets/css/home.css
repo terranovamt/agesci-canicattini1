@@ -642,8 +642,8 @@ body:is(.home, .docs-page) .documents-more { margin: 8px 0 0 }
   content: ""; position: absolute; left: 14px; top: 50%; width: 48px; height: 48px; transform: translateY(-50%);
   border-radius: 50%; background: var(--branch-accent) center / 30px no-repeat
 }
-.dashboard-page #reserved-content[data-branch] .dashboard-intro::before { width: 56px; height: 56px; left: 12px; border-radius: 12px; background-color: color-mix(in srgb, var(--branch-accent) 30%, #fff); background-position: center; background-repeat: no-repeat; background-size: 46px; border: 2px solid var(--branch-accent) }
-.dashboard-page #reserved-content[data-branch="L/C"] .dashboard-intro::before { background-image: url("../img/branca-lc-berretto.svg") }
+.dashboard-page #reserved-content[data-branch] .dashboard-intro::before { width: 56px; height: 56px; left: 12px; border-radius: 12px; background-color: #fff; background-position: center; background-repeat: no-repeat; background-size: 46px; border: 2px solid var(--branch-accent) }
+.dashboard-page #reserved-content[data-branch="L/C"] .dashboard-intro::before { background-image: url("../img/branca-lc-cappellino.svg") }
 .dashboard-page #reserved-content[data-branch="E/G"] .dashboard-intro::before { background-image: url("../img/branca-eg-tenda.svg") }
 .dashboard-page #reserved-content[data-branch="R/S"] .dashboard-intro::before { background-image: url("../img/branca-rs-forcola.svg"); background-size: 34px }
 .dashboard-page .branch-motto { flex-basis: 100%; order: 2; margin: 0; color: var(--branch-ink); font-size: 13px; font-weight: 700 }
