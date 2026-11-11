@@ -30,13 +30,13 @@
     const user = window.NAS?.user;
     $("reserved-content").dataset.view = user?.admin ? "admin" : "branch";
     const profiles = {
-      "L/C": { title: "Area capi L/C",
+      "L/C": { title: "Area capi L/C", motto: "Lupetti e Coccinelle · Cerchio · Giungla e Bosco",
         tools: [["Attività", "attivita.html"], ["Torneo sestiglie", "attivita.html#tournament-panel"],
           ["Percorsi dei lupetti", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
-      "E/G": { title: "Area capi E/G",
+      "E/G": { title: "Area capi E/G", motto: "Esploratori e Guide · Reparto · Squadriglie",
         tools: [["Attività", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
           ["Esploratori e guide", "soci.html"]] },
-      "R/S": { title: "Area capi R/S",
+      "R/S": { title: "Area capi R/S", motto: "Rover e Scolte · Clan · Strada",
         tools: [["Attività e route", "attivita.html"], ["Rover e scolte", "soci.html"], ["Documenti", "documenti.html"]] },
     };
     const profile = user?.admin
@@ -45,6 +45,15 @@
     if (!profile) return;
     if (!user.admin) $("reserved-content").setAttribute("data-branch", user.serviceBranch);
     $("dashboard-title").textContent = profile.title;
+    $("dashboard-title").parentElement?.querySelector?.(".branch-motto")?.remove();
+    const who = String(user.name || "").trim().slice(0, 60);
+    const greeting = who ? "Bentornato, " + who + "! " : "";
+    if (profile.motto || greeting) {
+      const motto = document.createElement("p");
+      motto.className = "branch-motto";
+      motto.textContent = greeting + (profile.motto || "");
+      $("dashboard-title").after?.(motto);
+    }
     const tools = $("dashboard-branch-tools");
     tools.setAttribute("aria-label", user.admin ? "Scorciatoie di gruppo" : "Scorciatoie di branca");
     tools.replaceChildren(...profile.tools.map(([label, href]) => {
