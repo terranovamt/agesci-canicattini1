@@ -1193,7 +1193,7 @@
     } catch (error) {
       $(errorId).textContent = error.message;
       if (!window.NAS?.user) {
-        $(dialogId).close(); $('activities-app').hidden = true; $('activities-login').hidden = false;
+        $(dialogId).close(); $('activities-app').hidden = $('activities-search-label').hidden = true; $('activities-login').hidden = false;
         $('activities-status').textContent = error.message; data = null;
         $('events-list').replaceChildren(); $('paths-list').replaceChildren();
       }
@@ -1371,7 +1371,7 @@
         data.branches.includes(member.branch));
       if (linkedMember) $('activities-branch').value = linkedMember.branch;
       $('activities-branch').closest('label').hidden = data.branches.length === 1;
-      $('activities-app').hidden = false; render(); $('activities-status').textContent = '';
+      $('activities-app').hidden = $('activities-search-label').hidden = false; render(); $('activities-status').textContent = '';
       const params = new URLSearchParams(location.search), eventId = params.get('event');
       selectLinkedSection();
       if (eventId) {

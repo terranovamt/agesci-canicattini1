@@ -343,3 +343,12 @@
 #event-shopping h4, #event-prepare h4 { margin: 0 0 6px; font-size: .9rem; }
 #event-shopping-list, #event-prepare-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 #event-shopping-list li, #event-prepare-list li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dotted #d9d0e3; padding: 3px 0; }
+
+.activities-search { display: grid; gap: 2px; min-width: 0; font-weight: 700; font-size: .85rem; }
+.activities-search input { min-width: 0; width: 100%; }
+@media (min-width: 900px) {
+  .activities-page > .members-heading { display: flex; flex-wrap: nowrap; align-items: center; gap: 24px; }
+  .activities-page > .members-heading .activities-search { flex: 1; display: block; }
+  .activities-page > .members-heading .activities-search span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+@media (max-width: 899px) { .activities-page > .members-heading .activities-search { grid-column: 1 / -1; grid-row: 2; } .activities-page > .members-heading > a { grid-column: 2; grid-row: 1; } }

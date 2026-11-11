@@ -21,6 +21,7 @@
   <main id="reserved-content" class="members-page activities-page">
     <div class="members-heading">
       <div><h1>Attività</h1></div>
+      <label id="activities-search-label" class="activities-search" hidden><span>Cerca</span><input id="activities-search" type="search" placeholder="Titolo o nome del socio"></label>
       <a class="button button-secondary" href="soci.html">Libro soci →</a>
     </div>
     <p id="activities-status" role="status" aria-live="polite"></p>
@@ -29,7 +30,6 @@
     <section id="activities-app" hidden>
       <div class="activities-context">
         <label>Branca<select id="activities-branch"></select></label>
-        <label>Cerca<input id="activities-search" type="search" placeholder="Titolo o nome del socio"></label>
       </div>
       <nav class="section-nav" data-section-nav aria-label="Gestione attività" hidden>
         <button type="button" data-section-target="events-panel">Attività</button>
