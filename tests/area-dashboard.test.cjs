@@ -124,8 +124,12 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
     timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
   const today = `${parts.year}-${parts.month}-${parts.day}`;
+  const model = require("../assets/js/activities-model.js");
   const window = {
-    ACTIVITIES_MODEL: require("../assets/js/activities-model.js"),
+    ACTIVITIES_MODEL: {
+      ...model,
+      liveProgram: () => ({ active: true, time: "09:00", current: { time: "09:00", title: "Lancio" }, next: null }),
+    },
     NAS: { user: { admin: false, serviceBranch: "E/G" } },
     ACCESSO: { verificata: () => true, request: async route => {
       if (route === "activities") return { events: [{
@@ -175,8 +179,12 @@ test("free activities hide fees even when attendance marks a member as due", asy
     return elements.get(id);
   };
   let paidCents = 0;
+  const model = require("../assets/js/activities-model.js");
   const window = {
-    ACTIVITIES_MODEL: require("../assets/js/activities-model.js"),
+    ACTIVITIES_MODEL: {
+      ...model,
+      liveProgram: () => ({ active: true, time: "09:00", current: { time: "09:00", title: "Riunione" }, next: null }),
+    },
     NAS: { user: { serviceBranch: "L/C" } },
     ACCESSO: { verificata: () => true, request: async () => ({ events: [{
       id: 1, branch: "L/C", title: "Riunione gratuita", date: "2099-01-01",
@@ -253,7 +261,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
             { id: 10, date: "2027-01-02", endDate: "2027-01-05", branch, title: "Ultimo giorno di campo", program: [
               { date: "2027-01-04", time: "22:00", title: "Ieri sera" },
               { date: "2027-01-05", time: "09:00", title: "Gioco", place: "Prato", description: "Preparare le squadre", materials: "Corde" },
-              { date: "2027-01-05", time: "10:00", title: "Cerchio" },
+              { date: "2027-01-05", time: "10:00", endTime: "10:15", title: "Cerchio" },
             ] },
           ] };
         } },
@@ -274,7 +282,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.match(get("dashboard-event-place").textContent, /Prato/);
       assert.match(get("dashboard-event-description").textContent, /Preparare le squadre/);
       assert.match(get("dashboard-event-materials").textContent, /Corde/);
-      assert.match(get("dashboard-event-next").textContent, /10:00 · Cerchio/);
+      assert.match(get("dashboard-event-next").textContent, /10:00–10:15 · Cerchio/);
       assert.equal(get("dashboard-event-action").textContent, "Attività in corso");
       assert.equal(get("dashboard-attendance-action").textContent, "Presenze");
       assert.equal(get("dashboard-event-action").href, "attivita.html?event=10&vista=programma&ora=1");
@@ -283,21 +291,62 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.equal(get("dashboard-branch-tools").children[0].href, "attivita.html?event=10&vista=programma");
       now = new Date("2027-01-05T09:00:00Z");
       tick();
-      assert.equal(get("dashboard-event-moment").textContent, "10:00 · Cerchio");
+      assert.equal(get("dashboard-event-moment").textContent, "10:00–10:15 · Cerchio");
       now = new Date("2027-01-05T23:00:00Z");
       focus();
-      assert.equal(get("dashboard-event-title").textContent, "Prossima riunione");
-      assert.equal(get("dashboard-event-panel").attributes["data-active"], "true", "next meeting is today in Rome");
-      assert.match(get("dashboard-event-moment").textContent, /da definire/);
+      assert.equal(get("dashboard-event-panel").hidden, true, "hide once the day's last scheduled moment has ended");
       now = new Date("2027-01-06T23:00:00Z");
       tick();
       assert.equal(get("dashboard-event-panel").attributes["data-active"], "false");
-      assert.equal(get("dashboard-event-now").hidden, true);
-      assert.equal(get("dashboard-attendance-action").hidden, true);
-      assert.equal(get("dashboard-event-title").textContent, "Nessuna attività in programma");
+      assert.equal(get("dashboard-event-panel").hidden, true, "a future activity without a timed moment stays hidden");
       assert.equal(requests, 1, "clock updates must not reload the dashboard");
     });
   }
+test("dashboard hides a future activity until its next moment is within 15 minutes", async () => {
+  const elements = new Map();
+  const element = () => ({
+    hidden: true, textContent: "", children: [], attributes: {}, dataset: {},
+    setAttribute(key, value) { this.attributes[key] = value; },
+    removeAttribute(key) { delete this.attributes[key]; },
+    replaceChildren(...children) { this.children = children; },
+    append(...children) { this.children.push(...children); },
+  });
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, element());
+    return elements.get(id);
+  };
+  let now = new Date("2027-01-05T06:22:00Z"), tick;
+  const model = require("../assets/js/activities-model.js");
+  const window = {
+    NAS: { user: { admin: false, serviceBranch: "L/C" } },
+    ACTIVITIES_MODEL: {
+      nextEvent: events => model.nextEvent(events, now),
+      liveProgram: event => model.liveProgram(event, now),
+    },
+    setInterval(callback) { tick = callback; },
+    addEventListener() {},
+    ACCESSO: { verificata: () => true, request: async route => route === "activities" ? {
+      events: [{
+        id: 8, date: "2027-01-06", branch: "L/C", title: "Riunione",
+        program: [{ date: "2027-01-06", time: "15:30", title: "Accoglienza" }],
+      }],
+    } : { transfers: [] } },
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8"), {
+    window, document: { getElementById: get, createElement: element, head: { append() {} } },
+    fetch: async () => ({ ok: true, json: async () => [] }), Date,
+  });
+  window.AREA_DASHBOARD.load();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get("dashboard-event-panel").hidden, true, "at 07:22 the 15:30 activity is not useful");
+  now = new Date("2027-01-06T14:14:00Z");
+  tick();
+  assert.equal(get("dashboard-event-panel").hidden, true, "keep it hidden 16 minutes before the start");
+  now = new Date("2027-01-06T14:15:00Z");
+  tick();
+  assert.equal(get("dashboard-event-panel").hidden, false, "show it at the 15-minute threshold");
+  assert.equal(get("dashboard-event-clock").textContent, "Inizia tra 15 min · ora di Roma");
+});
 test("admin census errors expose retry and recover without losing tools", async () => {
   const elements = new Map();
   const element = () => ({

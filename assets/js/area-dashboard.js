@@ -227,6 +227,7 @@
       panel.setAttribute("data-active", "false");
       $("dashboard-event-heading").textContent = "La prossima attività";
       if (!event) {
+        panel.hidden = true;
         panel.removeAttribute("data-event-branch");
         $("dashboard-event-title").textContent = "Nessuna attività in programma";
         $("dashboard-event-details").textContent = user?.admin
@@ -242,8 +243,34 @@
       panel.dataset.eventBranch = event.branch;
       const endDate = event.endDate || event.date;
       const live = AM.liveProgram(event), active = live.active;
+      const minuteOf = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+      const dayNumber = date => {
+        const [year, month, day] = date.split("-").map(Number);
+        return Date.UTC(year, month - 1, day) / 86400000;
+      };
+      const upcoming = (event.program || [])
+        .filter(moment => moment.date && moment.time)
+        .map(moment => ({
+          ...moment,
+          minutesUntil: (dayNumber(moment.date) - dayNumber(live.date)) * 1440 +
+            minuteOf(moment.time) - minuteOf(live.time),
+        }))
+        .filter(moment => moment.minutesUntil >= 0)
+        .sort((a, b) => a.minutesUntil - b.minutesUntil)[0] || null;
+      const upcomingMoment = live.next || upcoming;
+      const minutesUntilNext = live.next
+        ? minuteOf(live.next.time) - minuteOf(live.time)
+        : upcoming?.minutesUntil ?? Infinity;
+      const imminent = !!live.current || (!!upcomingMoment && minutesUntilNext >= 0 && minutesUntilNext <= 15);
+      if (!imminent) {
+        panel.hidden = true;
+        panel.removeAttribute("data-event-branch");
+        return;
+      }
+      panel.hidden = false;
       panel.setAttribute("data-active", String(active));
-      $("dashboard-event-heading").textContent = active ? "Oggi · " + event.branch : "La prossima attività";
+      $("dashboard-event-heading").textContent = active && live.current
+        ? "Oggi · " + event.branch : "Tra poco · " + event.branch;
       const dateText = start => {
         const [year, month, day] = start.split("-").map(Number);
         return new Date(Date.UTC(year, month - 1, day, 12)).toLocaleDateString("it-IT", {
@@ -286,21 +313,25 @@
       attendance.hidden = false;
       attendance.href = eventUrl + "&vista=presenze";
       attendance.textContent = "Presenze";
-      if (active) {
+      if (active || imminent) {
         $("dashboard-event-now").hidden = false;
-        $("dashboard-event-clock").textContent = "Adesso · " + live.time + " · ora di Roma";
-        const moment = live.current || live.next;
+        $("dashboard-event-clock").textContent = live.current
+          ? "Adesso · " + live.time + " · ora di Roma"
+          : `Inizia tra ${minutesUntilNext} min · ora di Roma`;
+        const moment = live.current || upcomingMoment;
         const timeRange = moment ? `${moment.time}${moment.endTime ? "–" + moment.endTime : ""}` : "";
         $("dashboard-event-moment").textContent = live.current
           ? `${timeRange} · ${moment.title}`
-          : live.next ? `Si comincia alle ${timeRange} · ${moment.title}` : "Programma di oggi da definire";
+          : upcomingMoment ? `Si comincia alle ${timeRange} · ${moment.title}` : "Programma di oggi da definire";
         $("dashboard-event-place").textContent = moment?.place ? "Dove: " + moment.place : "";
         $("dashboard-event-description").textContent = moment?.description ||
           (!moment ? "Aggiungi i momenti con giorno e ora per vedere qui cosa fare adesso." : "");
         $("dashboard-event-materials").textContent = moment?.materials ? "Materiali: " + moment.materials : "";
-        $("dashboard-event-next").textContent = live.current && live.next
-          ? `A seguire · ${live.next.time}${live.next.endTime ? "–" + live.next.endTime : ""} · ${live.next.title}`
+        $("dashboard-event-next").textContent = live.current && upcomingMoment
+          ? `A seguire · ${upcomingMoment.time}${upcomingMoment.endTime ? "–" + upcomingMoment.endTime : ""} · ${upcomingMoment.title}`
           : live.current ? "Ultimo momento con orario previsto per oggi." : "";
+      }
+      if (active && live.current) {
         action.href = eventUrl + "&vista=programma&ora=1";
         action.textContent = "Attività in corso";
       }
@@ -317,7 +348,7 @@
   async function upcomingEvent() {
     const panel = $("dashboard-event-panel"), retry = $("dashboard-event-retry");
     if (!window.NAS?.user?.admin && !window.NAS?.user?.serviceBranch) return;
-    panel.hidden = false;
+    panel.hidden = true;
     retry.hidden = true;
     agenda = null;
     panel.setAttribute("data-active", "false");
@@ -338,6 +369,7 @@
       renderEvent();
       $("dashboard-event-action").hidden = false;
     } catch (error) {
+      panel.hidden = false;
       $("dashboard-event-title").textContent = "Agenda non disponibile";
       $("dashboard-event-details").textContent = error.message;
       retry.hidden = false;
