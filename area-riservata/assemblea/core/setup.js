@@ -701,7 +701,7 @@
     if (view === "generale" || view === "ordine") $("#intro").textContent = riepilogo();
     if (view === "generale") renderSezioni(c, GENERALE);
     else if (view === "bilancio") {
-      const known = ["entrate", "uscite", "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti",
+      const known = ["censimenti", "entrate", "uscite", "soglie_percentuali_esito", "storico_avanzo_per_anno",
         "patrimonio", "nota_beni_durevoli"];
       const altri = Object.keys(edit).filter(key => !["slide", ...GENERALE, ...known].includes(key));
       renderSezioni(c, [...known, ...altri]);
