@@ -187,6 +187,10 @@
       e.preventDefault();
       V.next();
     }
+    if (e.key === "Home") {
+      e.preventDefault();
+      V.home();
+    }
     if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
       e.preventDefault();
       V.prev();

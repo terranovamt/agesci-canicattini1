@@ -311,3 +311,10 @@ test("failed or cancelled starts do not reload the presentation", async () => {
     if (options.confirm !== false) assert.match(t.alerts[0], /Avvio non riuscito/);
   }
 });
+
+test("Termina sits in the header, apart from the Avanti/Indietro controls, and Home key goes to start", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/regia.html"), "utf8");
+  assert.match(html, /<header[\s\S]*id="termina"[\s\S]*<\/header>/);
+  assert.doesNotMatch(html.match(/<section class="comandi"[\s\S]*?<\/section>/)[0], /id="termina"/);
+  assert.match(fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/regia.js"), "utf8"), /e\.key === "Home"/);
+});
