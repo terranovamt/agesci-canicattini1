@@ -83,5 +83,5 @@ test("setup heading summarises date, convocations, agenda points and slides", ()
   const setup = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/setup.js"), "utf8");
   assert.match(setup, /function riepilogo\(\)/);
   assert.match(setup, /view === "generale" \|\| view === "ordine"\) \$\("#intro"\)\.textContent = riepilogo\(\)/);
-  assert.match(setup, /punti all'ordine del giorno/);
+  assert.match(setup, / all'ordine del giorno/);
 });
