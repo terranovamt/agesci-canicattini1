@@ -44,7 +44,7 @@
 #vt-box{position:fixed;inset:0;z-index:70;background:#000b;display:flex;align-items:flex-end;justify-content:center;font-family:system-ui,sans-serif}
 #vt-box .m{box-sizing:border-box;width:min(520px,100%);max-height:92%;overflow:auto;background:#fff;color:#1d2a1d;border-radius:18px 18px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px))}
 #vt-box h2{margin:0 0 6px;font-size:20px}#vt-box p{margin:6px 0 14px;font-size:16px}
-#vt-box input{box-sizing:border-box;width:100%;height:56px;font:700 28px/1 monospace;letter-spacing:.4em;text-align:center;border:2px solid #888;border-radius:12px}
+#vt-box input{box-sizing:border-box;width:100%;height:56px;font:700 28px/1 monospace;letter-spacing:.3em;text-align:center;border:2px solid #888;border-radius:12px}
 #vt-box button{box-sizing:border-box;width:100%;min-height:52px;margin-top:10px;border:2px solid #1d6b3a;border-radius:12px;background:#fff;color:#1d6b3a;font:700 17px system-ui,sans-serif}
 #vt-box button.go{background:#1d6b3a;color:#fff}#vt-box button.sel{background:#1d6b3a;color:#fff}
 #vt-box .er{color:#b00020;min-height:1.2em;font-size:15px}`;
@@ -62,19 +62,19 @@
   function mostra(...nodes) { const m = h("div", { className: "m" }); m.append(...nodes); box.replaceChildren(m); box.hidden = false; return m; }
   const annulla = (t = "Chiudi") => Object.assign(h("button", { type: "button", textContent: t }), { onclick: chiudi });
   function schermataCodice(err) {
-    const i = h("input", { type: "text", inputMode: "numeric", maxLength: 5, autocomplete: "off", placeholder: "•••••" });
-    i.setAttribute("aria-label", "Codice di voto di 5 cifre");
+    const i = h("input", { type: "text", inputMode: "numeric", maxLength: 6, autocomplete: "off", placeholder: "••••••" });
+    i.setAttribute("aria-label", "Codice di voto di 6 cifre");
     const e = h("div", { className: "er", textContent: err || "", role: "alert" });
     const ok = h("button", { type: "button", className: "go", textContent: "Continua" });
     const vai = async () => {
-      if (!/^\d{5}$/.test(i.value)) { e.textContent = "Inserisci le 5 cifre del tuo codice"; return; }
+      if (!/^\d{6}$/.test(i.value)) { e.textContent = "Inserisci le 6 cifre del tuo codice"; return; }
       ok.disabled = true;
       try { const r = await VOTO.post("identify", { code: i.value }); code = i.value; who = r; schermataVoto(); }
       catch (x) { e.textContent = x.message; ok.disabled = false; }
     };
     ok.onclick = vai;
     i.onkeydown = ev => { if (ev.key === "Enter") vai(); };
-    mostra(h("h2", { textContent: "Vota" }), h("p", { textContent: "Inserisci il codice di voto personale di 5 cifre." }), i, e, ok, annulla("Annulla"));
+    mostra(h("h2", { textContent: "Vota" }), h("p", { textContent: "Inserisci il codice di voto personale di 6 cifre." }), i, e, ok, annulla("Annulla"));
     i.focus();
   }
   function schermataVoto() {

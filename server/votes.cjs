@@ -5,7 +5,7 @@ const crypto = require("node:crypto");
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const object = value => value && typeof value === "object" && !Array.isArray(value);
 const MODES = ["scelta", "nominativa"];
-const CODE = /^\d{5}$/;
+const CODE = /^\d{6}$/;
 
 // Votazioni segrete: chi ha votato (vote_cast) e cosa è stato votato (vote_tally) sono tabelle
 // separate e senza data, così nessun dato collega una persona alla sua scelta.
@@ -22,6 +22,7 @@ function createVotes(db, people) {
     );
     CREATE TABLE IF NOT EXISTS vote_cast (poll_id INTEGER NOT NULL, person_id INTEGER NOT NULL, PRIMARY KEY(poll_id,person_id));
   `);
+  db.exec("DELETE FROM vote_codes WHERE length(code)!=6");
   const failures = new Map();
   const blocked = ip => {
     const item = failures.get(ip);
@@ -62,7 +63,7 @@ function createVotes(db, people) {
   };
   const freshCode = () => {
     for (let attempt = 0; attempt < 200; attempt++) {
-      const code = String(crypto.randomInt(0, 100000)).padStart(5, "0");
+      const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
       if (!db.prepare("SELECT 1 FROM vote_codes WHERE code=?").get(code)) return code;
     }
     fail(500, "Impossibile generare codici di voto univoci");

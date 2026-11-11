@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proposte grafica risultati votazione</title>
+<style>
+:root{--v:#4b2a7b;--vd:#2d1850;--y:#f5c400;--g:#1d6b3a;--r:#b3261e;--m:#6b6480}
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#eee9f3;font:16px system-ui,sans-serif;color:#1d1530}
+h1{margin:0 0 4px}h2{margin:36px 0 4px;color:var(--v)}p.n{margin:0 0 14px;color:var(--m)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+figure{margin:0}figcaption{font-weight:700;margin:6px 0 0}figcaption small{display:block;font-weight:400;color:var(--m)}
+.L{width:560px;height:315px;background:var(--v);color:#fff;border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.M{width:260px;height:520px;background:var(--v);color:#fff;border-radius:22px;padding:16px;overflow:hidden}
+.D{width:560px;height:340px;background:#fff;border:1px solid #d9d2e3;border-radius:10px;padding:16px;overflow:hidden}
+.q{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.t3{font-size:10px;opacity:.65}.D .t3{color:var(--m);opacity:1}
+.bar{height:8px;border-radius:4px;background:#ffffff30;overflow:hidden}.D .bar{background:#eee9f3}.bar i{display:block;height:100%;background:var(--y)}.D .bar i{background:var(--v)}
+/* L1 numero gigante + riga di secondari */
+.L1 .big{font-size:96px;font-weight:800;line-height:1;color:var(--y)}.L1 .bl{font-size:26px;font-weight:700}
+.L1 .sec{display:flex;gap:30px;margin-top:22px}.L1 .sec div{font-size:30px;font-weight:600}.L1 .sec small{display:block;font-size:11px;opacity:.65;font-weight:400}
+/* L2 barra divisa */
+.L2 .esito{display:inline-block;background:var(--y);color:var(--vd);font-weight:800;font-size:22px;padding:4px 16px;border-radius:20px;margin:10px 0}
+.L2 .split{display:flex;height:46px;border-radius:8px;overflow:hidden;margin-top:14px;font-weight:700}
+.L2 .split span{display:flex;align-items:center;padding-left:10px}
+.L2 .lg{display:flex;justify-content:space-between;margin-top:8px}.L2 .lg b{font-size:20px}
+/* L3 a due colonne */
+.L3{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:center}
+.L3 .w{background:#ffffff18;border-radius:12px;padding:16px;text-align:center}.L3 .w b{font-size:80px;display:block;line-height:1;color:var(--y)}.L3 .w span{font-size:22px;font-weight:700}
+.L3 ul{list-style:none;margin:0;padding:0}.L3 li{margin-bottom:12px}.L3 li div{display:flex;justify-content:space-between;font-size:19px;margin-bottom:4px}
+/* M1 */
+.M1 .big{font-size:84px;font-weight:800;color:var(--y);line-height:1;margin-top:20px}.M1 .nm{font-size:22px;font-weight:700;margin-bottom:22px}
+.M1 .it{display:flex;justify-content:space-between;font-size:18px;padding:9px 0;border-top:1px solid #ffffff30}.M1 .it small{display:block}
+/* M2 card vincitore */
+.M2 .card{background:var(--y);color:var(--vd);border-radius:16px;padding:16px;margin:14px 0}.M2 .card b{font-size:56px;display:block;line-height:1}.M2 .card span{font-size:20px;font-weight:800}
+.M2 .it{display:flex;justify-content:space-between;background:#ffffff18;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:16px}
+/* M3 barre */
+.M3 .it{margin-bottom:12px}.M3 .h{display:flex;justify-content:space-between;margin-bottom:4px}
+.M3 .it.w .h{font-size:22px;font-weight:800;color:var(--y)}.M3 .it.w .bar{height:16px}.M3 .it .h{font-size:15px}
+/* tabelle desktop */
+.D h3{margin:0 0 10px;font-size:15px;color:var(--m);font-weight:600}
+.D1 .big{font-size:64px;font-weight:800;color:var(--v);line-height:1}.D1 .nm{font-size:24px;font-weight:700;margin-bottom:14px}
+.D1 table{width:100%;border-collapse:collapse}.D1 td{padding:7px 0;border-top:1px solid #eee9f3;font-size:17px}.D1 td:last-child{text-align:right;font-weight:600}
+.D2{display:grid;grid-template-columns:1fr 1.5fr;gap:18px}
+.D2 .w{background:var(--v);color:#fff;border-radius:12px;padding:18px;display:flex;flex-direction:column;justify-content:center}.D2 .w b{font-size:72px;color:var(--y);line-height:1}.D2 .w span{font-size:22px;font-weight:700}
+.D2 .it{margin-bottom:10px}.D2 .h{display:flex;justify-content:space-between;font-size:16px;margin-bottom:3px}
+.D3 .it{display:grid;grid-template-columns:28px 1fr 60px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid #eee9f3;font-size:16px}
+.D3 .it:first-of-type{border:0;padding:14px;background:#f3eefa;border-radius:10px;font-size:26px;font-weight:800;color:var(--v);grid-template-columns:40px 1fr 90px}
+.D3 .it b{text-align:right}.D3 .it span:first-child{color:var(--m);font-weight:700}
+</style></head><body>
+<h1>Proposte grafica risultati</h1>
+<p class="n">Gerarchia in tre livelli: 1° dato principale (grande, in giallo/viola forte) · 2° altri risultati (medi) · 3° percentuali, conteggi, etichette (piccoli e attenuati). Dati di esempio.</p>
+
+<h2>A. Scelta singola · slide orizzontale e mobile (favorevole / contrario / astenuto)</h2>
+<div class="row">
+<figure><div class="L L1"><div class="q">Approvi il bilancio?</div><div class="big">42</div><div class="bl">Favorevoli · APPROVATO</div>
+<div class="sec"><div>9<small>Contrari · 17%</small></div><div>3<small>Astenuti · 6%</small></div></div><div class="t3" style="position:absolute;bottom:14px;right:18px">54 votanti su 58 · 4 non hanno votato · 78% favorevoli</div></div>
+<figcaption>A1 · Numero gigante<small>Esito e voto principale enormi; contrari/astenuti in riga sotto.</small></figcaption></figure>
+<figure><div class="L L2"><div class="q">Approvi il bilancio?</div><span class="esito">APPROVATO</span>
+<div class="split"><span style="width:78%;background:var(--y);color:var(--vd);font-size:28px">42</span><span style="width:17%;background:#ffffff40;font-size:18px">9</span><span style="width:5%;background:#ffffff20"></span></div>
+<div class="lg"><div><b>Favorevoli</b><div class="t3">78%</div></div><div><b style="font-weight:500">Contrari</b><div class="t3">17%</div></div><div><b style="font-weight:500">Astenuti</b><div class="t3">6%</div></div></div>
+<div class="t3" style="margin-top:20px">54 votanti su 58</div></div>
+<figcaption>A2 · Barra proporzionale<small>Etichetta esito + barra unica: si legge la proporzione a colpo d'occhio.</small></figcaption></figure>
+<figure><div class="L L3"><div class="w"><b>42</b><span>Favorevoli</span><div class="t3" style="margin-top:6px">78% · APPROVATO</div></div>
+<ul><li><div><span>Contrari</span><b>9</b></div><div class="bar"><i style="width:17%"></i></div><div class="t3">17%</div></li><li><div><span>Astenuti</span><b>3</b></div><div class="bar"><i style="width:6%"></i></div><div class="t3">6%</div></li><li class="t3">54 votanti su 58</li></ul></div>
+<figcaption>A3 · Due colonne<small>Riquadro dominante a sinistra, risultati secondari con barre a destra.</small></figcaption></figure>
+</div>
+
+<h2>B. Nominativa · mobile (smartphone)</h2>
+<div class="row">
+<figure><div class="M M1"><div class="q">Organo esecutivo</div><div class="big">31</div><div class="nm">Candidato 2 · eletto</div>
+<div class="it"><span>Candidato 1</span><span>18<small class="t3">35%</small></span></div><div class="it"><span>Candidato 3</span><span>5<small class="t3">9%</small></span></div><div class="it"><span>Schede bianche</span><span>0<small class="t3">0%</small></span></div><div class="t3" style="margin-top:10px">54 votanti su 58</div></div>
+<figcaption>B1 · Numero gigante + elenco<small>Un dato dominante, elenco sotto.</small></figcaption></figure>
+<figure><div class="M M2"><div class="q">Organo esecutivo</div><div class="card"><span>🏆 Candidato 2</span><b>31</b><div class="t3" style="color:var(--vd)">57% dei voti</div></div>
+<div class="it"><span>Candidato 1</span><b>18</b></div><div class="it"><span>Candidato 3</span><b>5</b></div><div class="t3" style="margin-top:10px">54 votanti su 58 · percentuali: 35% · 9%</div></div>
+<figcaption>B2 · Card vincitore<small>Il vincitore è una card evidenziata; gli altri sono righe compatte.</small></figcaption></figure>
+<figure><div class="M M3"><div class="q" style="margin-bottom:12px">Organo esecutivo</div>
+<div class="it w"><div class="h"><span>Candidato 2</span><span>31</span></div><div class="bar"><i style="width:57%"></i></div><div class="t3">57%</div></div>
+<div class="it"><div class="h"><span>Candidato 1</span><span>18</span></div><div class="bar"><i style="width:33%"></i></div><div class="t3">33%</div></div>
+<div class="it"><div class="h"><span>Candidato 3</span><span>5</span></div><div class="bar"><i style="width:9%"></i></div><div class="t3">9%</div></div>
+<div class="t3" style="margin-top:14px">54 votanti su 58</div></div>
+<figcaption>B3 · Classifica con barre<small>Tutti in barra, ordine per voti; il primo più grande e giallo.</small></figcaption></figure>
+</div>
+
+<h2>C. Nominativa · desktop (regia / schermo largo)</h2>
+<div class="row">
+<figure><div class="D D1"><h3>Organo esecutivo · risultato finale</h3><div class="big">31</div><div class="nm">Candidato 2 · eletto (57%)</div>
+<table><tr><td>Candidato 1</td><td>18 <span class="t3">· 33%</span></td></tr><tr><td>Candidato 3</td><td>5 <span class="t3">· 9%</span></td></tr><tr><td>Schede bianche</td><td>0 <span class="t3">· 0%</span></td></tr></table><div class="t3" style="margin-top:8px">54 votanti su 58</div></div>
+<figcaption>C1 · Titolo + tabella<small>Dato grande in alto, tabella compatta sotto.</small></figcaption></figure>
+<figure><div class="D D2"><div class="w"><div class="t3" style="color:#fff">Eletto</div><span>Candidato 2</span><b>31</b><div class="t3" style="color:#fff">57% · 54 votanti su 58</div></div>
+<div><h3>Altri candidati</h3><div class="it"><div class="h"><span>Candidato 1</span><b>18</b></div><div class="bar"><i style="width:33%"></i></div></div><div class="it"><div class="h"><span>Candidato 3</span><b>5</b></div><div class="bar"><i style="width:9%"></i></div></div></div></div>
+<figcaption>C2 · Pannello + barre<small>Vincitore in pannello scuro a sinistra, gli altri a barre a destra.</small></figcaption></figure>
+<figure><div class="D D3"><h3>Classifica</h3>
+<div class="it"><span>1</span><span>Candidato 2</span><b>31</b></div><div class="it"><span>2</span><span>Candidato 1</span><b>18</b></div><div class="it"><span>3</span><span>Candidato 3</span><b>5</b></div><div class="it"><span>–</span><span>Schede bianche</span><b>0</b></div><div class="t3" style="margin-top:8px">54 votanti su 58 · 57% · 33% · 9%</div></div>
+<figcaption>C3 · Classifica<small>Prima riga enorme su fondo evidenziato, poi righe via via più leggere.</small></figcaption></figure>
+</div>
+</body></html>
