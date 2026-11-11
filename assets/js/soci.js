@@ -251,6 +251,10 @@
       if (current) censusCell.append(node('span', M.branchLabel(current.branch), 'member-code'));
       row.append(checkCell, nameCell, branchCell, node('td', `${age(member) ?? '—'}${birthYear ? ' · ' + birthYear : ''}`), censusCell,
         node('td', [member.profile.email, member.profile.phone].filter(Boolean).join(' · ') || 'Non indicati'));
+      if (member.kind === 'ragazzo' && !(member.profile.guardianContacts || M.parseGuardians(member.profile.guardians).contacts).some(guardian => guardian.phone || guardian.email))
+        row.lastElementChild.append(node('span', 'Genitori senza contatti', 'member-code member-missing'));
+      else if (member.kind !== 'ragazzo' && (!member.profile.email || !member.profile.phone) && (member.profile.email || member.profile.phone))
+        row.lastElementChild.append(node('span', 'Manca ' + (member.profile.email ? 'telefono' : 'email'), 'member-code member-missing'));
       rows.push(row);
     }
     if (!rows.length) {
@@ -639,6 +643,32 @@
     $('member-panel-' + memberSections[memberSection]).scrollTop = 0;
     $('member-tab-' + memberSections[memberSection]).scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
+  function renderGlance(member) {
+    const list = $('member-glance');
+    list.replaceChildren();
+    if (!member) return;
+    const profile = member.profile || {}, adult = M.isAdult(member);
+    const add = (text, section, warn) => {
+      const item = node('li'), chip = node(section ? 'button' : 'span', text, 'member-chip');
+      if (warn) chip.dataset.warn = 'yes';
+      if (section) { chip.type = 'button'; chip.onclick = () => showMemberSection(memberSections.indexOf(section), true); }
+      item.append(chip); list.append(item);
+    };
+    add(M.branchLabel(member.branch) || 'Da assegnare');
+    const years = age(member);
+    if (years !== null && years !== undefined) add(years + ' anni');
+    const current = census(member);
+    add(current ? `Censimento ${current.year} · ${current.status || 'status n.i.'}` : 'Nessun censimento', 'censuses', !current);
+    if (adult) {
+      const missing = [profile.email ? '' : 'email', profile.phone ? '' : 'telefono'].filter(Boolean);
+      add(missing.length ? 'Manca ' + missing.join(' e ') : 'Contatti completi', 'contacts', !!missing.length);
+    } else {
+      const guardians = profile.guardianContacts || M.parseGuardians(profile.guardians).contacts;
+      const reachable = guardians.some(guardian => guardian.phone || guardian.email);
+      add(!guardians.length ? 'Nessun genitore indicato' : reachable ? `Genitori: ${guardians.length}` : 'Genitori senza contatti', 'guardians', !reachable);
+      if (!profile.email && !profile.phone && !reachable) add('Nessun contatto', 'contacts', true);
+    }
+  }
   function openMember(member, initialSection = 'activities') {
     editing = member;
     window.MEMBER_ACTIVITIES?.load(member);
@@ -691,6 +721,7 @@
     if (!member?.censuses.length) $('member-censuses').append(node('p', 'Nessun censimento importato.'));
     renderEducation();
     configureMemberSections();
+    renderGlance(member);
     formSnapshot = JSON.stringify([...new FormData(profileForm)]);
     $('member-dialog').showModal();
   }

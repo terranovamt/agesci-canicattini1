@@ -245,6 +245,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           document.querySelector('.member-name').click();
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
+          results.glance = $('member-glance').children.length >= 3 && $('member-glance').getBoundingClientRect().top < innerHeight / 2;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
           results.sectionNavigation = memberTabs.map(tab => tab.textContent.trim()).join('|') === 'Attività|Percorso|Anagrafica|Contatti|Genitori|Censimenti' &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 &&
@@ -512,7 +513,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.buttonLayout, true, JSON.stringify(results));
       assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
-      for (const key of ["loaded", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
+      for (const key of ["loaded", "glance", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
