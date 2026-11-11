@@ -17,8 +17,8 @@ window.VOTO_RENDER = (function () {
 
   function scelta(x, p) {
     const tot = p.totale, [f, c, a] = p.conteggi || [0, 0, 0], [lf, lc, la] = p.opzioni;
-    const w = n => tot ? n / tot * 100 : 0;
-    const free = tot - f - c, left = tot ? (f + (free - a) / 2) / tot * 100 : 0;
+    const base = f + c + a, w = n => base ? n / base * 100 : 0;
+    const left = base ? (f + (base - f - c - a) / 2) / base * 100 : 0;
     const label = `${lf} ${f}, ${la} ${a}, ${lc} ${c} su ${tot}`;
     const hor = `<div class="vt-h"><div class="vt-top"><div>${head(x, p, 'div')}</div>
       <div class="vt-tot"><span><b>${p.ricevuti}</b><i>/${tot}</i></span><small>voti ricevuti</small></div></div>
