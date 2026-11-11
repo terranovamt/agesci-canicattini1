@@ -362,3 +362,20 @@
   .activity-event-row > .activity-event-actions { grid-column: 1; grid-row: auto; margin-top: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 1700px) { #events-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+#tournament-panel .tournament-meeting { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 12px; margin: 6px 0; border: 1px solid #e6dfed; border-left: 5px solid #b8aac6; border-radius: 10px; background: #fff; }
+#tournament-panel .tournament-meeting[data-state="done"] { border-left-color: #2f8f4e; }
+#tournament-panel .tournament-meeting[data-state="partial"] { border-left-color: #f0b400; }
+#tournament-panel .tournament-meeting[data-state="todo"] { border-left-color: #c0392b; }
+#tournament-panel .tournament-meeting.tournament-current { background: #faf7fc; border-color: #cdbdd9; border-left-width: 5px; }
+#tournament-panel .tournament-meeting-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+#tournament-panel .tournament-meeting-head h4, #tournament-panel .tournament-meeting-head h5 { margin: 0; font-size: .95rem; }
+#tournament-panel .tournament-meeting-date { font-size: .8rem; color: #5b5166; }
+#tournament-panel .tournament-state { margin-left: auto; font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: #eee8f3; }
+#tournament-panel [data-state="done"] .tournament-state { background: #dff3e5; color: #1d5e33; }
+#tournament-panel [data-state="partial"] .tournament-state { background: #fff1c2; color: #6b4e00; }
+#tournament-panel [data-state="todo"] .tournament-state { background: #fbdcd8; color: #8a2217; }
+#tournament-panel .tournament-progress { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: #eee8f3; overflow: hidden; }
+#tournament-panel .tournament-progress i { display: block; height: 100%; background: #2f8f4e; }
+#tournament-panel .tournament-detail { margin: 0; font-size: .82rem; }
+@media (min-width: 900px) { #tournament-events { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0 12px; } }

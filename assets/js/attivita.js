@@ -869,15 +869,32 @@
     const current = events.find(event => event.date <= today && (event.endDate || event.date) >= today) ||
       events.filter(event => event.date > today).at(-1) || events[0];
     const meeting = (event, primary) => {
-      const card = node(primary ? 'article' : 'details', undefined, primary ? 'tournament-current' : 'tournament-previous');
-      const hasScores = !!event.tournament && event.tournament.members.some(person =>
-        person.punctuality !== null || tournamentFields.some(([key]) => person[key] !== null)) ||
-        !!event.tournament?.presentations.some(item => item.score !== null);
-      card.append(node(primary ? 'h4' : 'summary', event.title + ' · ' + dateRange(event)),
-        node('p', hasScores ? 'Punteggi registrati' : 'Da valutare'));
-      const action = button(primary ? 'Valuta riunione' : 'Apri valutazioni', () => openEvent(event, false, true));
-      if (primary) action.className = 'button button-primary';
-      card.append(action);
+      const card = node('article', undefined, 'tournament-meeting' + (primary ? ' tournament-current' : ''));
+      const tournament = event.tournament;
+      const scored = new Set((tournament?.members || []).filter(person =>
+        person.punctuality !== null || tournamentFields.some(([key]) => person[key] !== null)).map(person => person.personId));
+      const present = event.attendance.filter(person => person.status === 'presente');
+      const done = present.filter(person => scored.has(person.personId)).length;
+      const unitOf = new Map((tournament?.members || []).map(person => [person.personId, person.unit || 'Senza sestiglia']));
+      const units = new Set(present.map(person => unitOf.get(person.personId) || roster().find(member => member.id === person.personId)?.unit || 'Senza sestiglia'));
+      const presented = (tournament?.presentations || []).filter(item => item.score !== null).length;
+      const total = present.length, complete = total > 0 && done >= total && presented >= units.size;
+      const state = !total ? 'empty' : complete ? 'done' : done || presented ? 'partial' : 'todo';
+      const label = { empty: 'Presenze da registrare', done: 'Completa', partial: 'Incompleta', todo: 'Da valutare' }[state];
+      card.dataset.state = state;
+      const head = node('div', undefined, 'tournament-meeting-head');
+      head.append(node(primary ? 'h4' : 'h5', event.title), node('span', dateRange(event), 'tournament-meeting-date'),
+        node('b', label, 'tournament-state'));
+      const bar = node('div', undefined, 'tournament-progress'); bar.setAttribute('aria-hidden', 'true');
+      const fill = node('i'); fill.style.width = (total ? Math.round(done / total * 100) : 0) + '%'; bar.append(fill);
+      const detail = !total ? 'Nessun presente: segna prima le presenze.' :
+        `Schede ${done}/${total}` + (done < total ? ` · mancano ${total - done}` : '') +
+        ` · Presentazioni ${Math.min(presented, units.size)}/${units.size}` +
+        (presented < units.size ? ` · mancano ${units.size - presented}` : '');
+      const action = button(complete ? 'Rivedi' : done || presented ? 'Completa valutazione' : 'Valuta riunione',
+        () => openEvent(event, false, true));
+      if (primary && !complete) action.className = 'button button-primary';
+      card.append(head, bar, node('p', detail, 'tournament-detail'), action);
       return card;
     };
     $('tournament-events').replaceChildren(...(current ? [meeting(current, true),
