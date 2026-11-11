@@ -11,3 +11,4 @@ deploy/synology/data/
 *.sqlite-shm
 .env
 .preview-browser-*/
+tools/atti-assemblea/pdf/
