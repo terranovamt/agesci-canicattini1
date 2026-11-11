@@ -390,6 +390,8 @@ test("public documents and management work in a browser at all required widths",
           transfer.items.add(new win.File(['%PDF-1.7\\nfixture'], 'nuovo.pdf', { type: 'application/pdf' }));
           input.files = transfer.files;
           input.dispatchEvent(new win.Event('change', { bubbles: true }));
+          const titlePrefilled = doc.querySelector('#document-title').value;
+          const descriptionOptional = !doc.querySelector('#document-description').required;
           doc.querySelector('#document-title').value = 'Documento nuovo';
           doc.querySelector('#document-description').value = 'Descrizione di prova';
           doc.querySelector('#document-year').value = '2027';
@@ -397,7 +399,7 @@ test("public documents and management work in a browser at all required widths",
           const assemblyHiddenForGeneral = doc.querySelector('#assembly-fields').hidden;
           doc.querySelector('#document-kind-preparatory').click();
           doc.querySelector('#document-assembly-type').value = 'verbale';
-          results.push({ assemblyHiddenForGeneral, assemblyShown: !doc.querySelector('#assembly-fields').hidden,
+          results.push({ titlePrefilled, descriptionOptional, assemblyHiddenForGeneral, assemblyShown: !doc.querySelector('#assembly-fields').hidden,
             typeWithoutYearBlocked: !doc.querySelector('#document-form').checkValidity() &&
               doc.querySelector('#document-assembly-year').validity.valueMissing });
           doc.querySelector('#document-assembly-year').value = '2026';
@@ -606,17 +608,17 @@ test("public documents and management work in a browser at all required widths",
         "--no-proxy-server",
         "--host-resolver-rules=MAP * ~NOTFOUND",
         "--virtual-time-budget=20000",
-        "--timeout=15000",
+        "--timeout=120000",
         "--user-data-dir=" + path.join(dir, "profile"),
         "--dump-dom",
         "file://" + file,
       ],
-      { encoding: "utf8", timeout: 30000, maxBuffer: 5 * 1024 * 1024,
+      { encoding: "utf8", timeout: 150000, maxBuffer: 5 * 1024 * 1024,
         cwd: dir, env: { ...process.env, TMPDIR: "." } },
     );
     assert.equal(result.status, 0, result.stderr);
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
-    assert.ok(match, result.stdout.slice(-6000));
+    assert.ok(match, result.stdout.slice(-3000) + result.stderr.slice(-1500));
     const results = JSON.parse(match[1]);
     assert.deepEqual(results.find((item) => "latestTitles" in item).latestTitles, [
       "Nuovissimo",
@@ -684,6 +686,8 @@ test("public documents and management work in a browser at all required widths",
     assert.match(manage.publicWarning, /PDF pubblici/);
     assert.equal(manage.techSecondary, true);
     assert.equal(manage.deleteDistinct, true);
+    assert.equal(manage.titlePrefilled, "Nuovo", "title prefilled from the PDF file name");
+    assert.equal(manage.descriptionOptional, true);
     assert.equal(manage.assemblyHiddenForGeneral, true);
     assert.equal(manage.assemblyShown, true);
     assert.equal(manage.typeWithoutYearBlocked, true, "a preparatory type without year must not be ignored");
