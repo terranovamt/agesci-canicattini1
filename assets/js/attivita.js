@@ -637,15 +637,16 @@
     $('material-suggestions').replaceChildren(...[...suggestions.values()].map(title => {
       const option = node('option'); option.value = title; return option;
     }));
-    const buy = items.filter(item => item.shopping);
-    $('event-shopping').hidden = !buy.length;
-    $('event-shopping-list').replaceChildren(...buy.map(item => {
-      const quantity = item.quantity === null ? '?' :
-        new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 }).format(item.quantity) + (item.unit ? ' ' + item.unit : '');
-      const row = node('li');
-      row.append(node('span', item.title), node('b', quantity));
-      return row;
-    }));
+    for (const [id, list] of [['shopping', items.filter(item => item.shopping)], ['prepare', items.filter(item => !item.shopping)]]) {
+      $('event-' + id).hidden = !list.length;
+      $('event-' + id + '-list').replaceChildren(...list.map(item => {
+        const quantity = item.quantity === null ? '?' :
+          new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 }).format(item.quantity) + (item.unit ? ' ' + item.unit : '');
+        const row = node('li');
+        row.append(node('span', item.title), node('b', quantity));
+        return row;
+      }));
+    }
     const visible = items.filter(item => materialFilter === 'all' ||
       materialFilter === 'shopping' && item.shopping || materialFilter === 'prepare' && !item.shopping);
     list.replaceChildren(...visible.map(item => {
