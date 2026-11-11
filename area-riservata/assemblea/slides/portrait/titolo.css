@@ -85,7 +85,8 @@ body.pm .sec .vt-r b { font-size: 36px }
 body.pm .sec .vt-r.first { background: var(--vote-accent); color: var(--vote-on-accent); border-radius: 10px; padding: 16px 16px; font-size: 24px; font-weight: 500 }
 body.pm .sec .vt-r.first b { font-size: 60px; line-height: 1 }
 body.pm .sec .vt-r.hl { border-top: .5px solid var(--vote-hairline) }
-body.pm .sec .vt-stamp { top: auto; bottom: 20px; font-size: 30px; padding: 4px 18px; border-width: 4px }
+body.pm .sec .vt-stamp { position: relative; left: auto; top: auto; transform: rotate(-4deg); display: inline-block; margin: 8px 0 18px; font-size: 32px; padding: 4px 18px; border-width: 4px; animation: vt-stamp-m .45s cubic-bezier(.2,1.4,.4,1) both }
+@keyframes vt-stamp-m { from { opacity: 0; transform: rotate(-4deg) scale(2.2) } to { opacity: 1; transform: rotate(-4deg) scale(1) } }
 body.pm .sec .vt-m .vt-lab { font-size: 18px; margin-top: 14px }
 body.pm .sec .vt-lead { margin-top: 2px }
 body.pm .sec .vt-lead .nm { font-size: 34px; font-weight: 500; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
