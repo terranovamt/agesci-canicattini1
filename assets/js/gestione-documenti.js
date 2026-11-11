@@ -122,6 +122,7 @@
     $("file-hint").textContent = "(obbligatorio)";
     $("current-file").hidden = true;
     $("document-title").value = "";
+    delete $("document-title").dataset.auto;
     $("document-description").value = "";
     $("document-year").value = currentYear;
     $("document-published-at").value = new Date().toLocaleDateString("sv-SE");
@@ -381,15 +382,23 @@
   $("document-form").onchange = (event) => {
     formDirty = true;
     if (event.target.name === "document-kind") setKind(event.target.value);
+    if (event.target.id === "document-file" && !editing) {
+      const title = $("document-title");
+      const name = (event.target.files[0]?.name || "").replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+      if (name && (!title.value.trim() || title.dataset.auto === title.value)) {
+        title.value = name.charAt(0).toUpperCase() + name.slice(1);
+        title.dataset.auto = title.value;
+      }
+    }
   };
   $("document-form").onsubmit = async (event) => {
     event.preventDefault();
     if (busy || loadState !== "ready") return;
     const file = $("document-file").files[0];
     const title = $("document-title").value.trim();
-    const description = $("document-description").value.trim();
-    if (!title || !description) {
-      message("Inserisci un titolo e una descrizione.", "error");
+    const description = $("document-description").value.trim() || title;
+    if (!title) {
+      message("Inserisci un titolo.", "error");
       return;
     }
     lock(true);
