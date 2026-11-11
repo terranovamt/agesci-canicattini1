@@ -60,6 +60,16 @@
     const element = node('button', label, 'button button-secondary');
     element.type = 'button'; element.onclick = action; return element;
   }
+  function time24(input, value) {
+    input.type = 'text'; input.inputMode = 'numeric'; input.maxLength = 5; input.placeholder = 'HH:MM';
+    input.pattern = '([01][0-9]|2[0-3]):[0-5][0-9]'; input.title = 'Orario in formato 24 ore, es. 15:30';
+    input.dataset.time24 = ''; input.autocomplete = 'off'; input.value = value || '';
+    input.addEventListener('input', event => {
+      if (event.inputType?.startsWith('delete')) return;
+      const digits = input.value.replace(/\D/g, '').slice(0, 4);
+      input.value = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits.length === 2 ? digits + ':' : digits;
+    });
+  }
   function roster() { return data.members.filter(member => member.branch === branch()); }
   function pathFilterMatch(item) {
     const selectedState = pathFilter.state, kind = pathFilter.kind;
@@ -502,9 +512,9 @@
     const day = node('input'); day.type = 'hidden';
     day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
-    const time = node('input'); time.type = 'time'; time.value = item.time || '';
+    const time = node('input'); time24(time, item.time);
     time.name = `program-time-${index}`;
-    const endTime = node('input'); endTime.type = 'time'; endTime.value = item.endTime || '';
+    const endTime = node('input'); time24(endTime, item.endTime);
     endTime.name = `program-end-time-${index}`;
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;

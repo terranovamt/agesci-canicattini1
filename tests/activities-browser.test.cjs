@@ -711,7 +711,7 @@ test("login autofill, education dates, activities and progression work on four s
       assert.equal(await page.evaluate(`(() => {
         const start = document.querySelector('#event-program [name="program-time-1"]');
         const end = document.querySelector('#event-program [name="program-end-time-1"]');
-        return start.type === 'time' && !start.required && end.type === 'time' && !end.required &&
+        return start.pattern && start.inputMode === 'numeric' && !start.required && end.pattern && !end.required &&
           document.activeElement === document.querySelector('#event-program [name="program-title-1"]');
       })()`), true, "new moments have separate optional times and open with the title focused");
       await fill('#event-program [name="program-time-1"]', "08:00", "change");
