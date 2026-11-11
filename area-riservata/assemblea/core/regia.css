@@ -1111,10 +1111,10 @@ h2#titolo, h3#titolo-next {
     grid-template-areas: "avvio avvio" "onda lato" "onda comandi" "live live";
   }
   #app > .regia-section-nav { display: none; }
-  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: 12px; min-height: 0; }
+  .regia-live { display: grid; grid-area: live; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-height: 0; }
   #app .regia-live > [data-section-panel] { grid-area: auto; overflow: auto; }
-  #regia-slides-panel { overflow: hidden; }
-  #regia-slides-panel ol { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 6px; align-content: start; }
+  #regia-slides-panel { overflow: auto; }
+  #regia-slides-panel ol { display: block; }
   #regia-slides-panel li { padding: 0 6px; }
   #regia-slides-panel li > button { min-height: 32px; padding: 2px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #regia-slides-panel li::before { min-width: 22px; }
