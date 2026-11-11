@@ -64,7 +64,6 @@
     published,
     edit,
     view = "generale",
-    balanceSection = "entrate",
     saving = false,
     jsonPending = false,
     jsonBase;
@@ -702,22 +701,12 @@
     if (view === "generale" || view === "ordine") $("#intro").textContent = riepilogo();
     if (view === "generale") renderSezioni(c, GENERALE);
     else if (view === "bilancio") {
-      const groups = {
-        entrate: ["entrate"],
-        uscite: ["uscite"],
-        soglie_percentuali_esito: ["soglie_percentuali_esito"],
-        storico_avanzo_per_anno: ["storico_avanzo_per_anno"],
-        censimenti: ["censimenti"],
-        patrimonio: ["patrimonio", "nota_beni_durevoli"],
-        altri: Object.keys(edit).filter(key => !["slide", ...GENERALE, "entrate", "uscite",
-          "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti", "patrimonio", "nota_beni_durevoli"].includes(key)),
-      };
-      const keys = groups[balanceSection] || groups.entrate;
-      renderSezioni(c, keys);
-      if (!keys.some(key => key in edit))
-        c.append(el("p", { className: "empty-state", textContent: balanceSection === "altri"
-          ? "Nessun altro dato presente. Tutti i dati del bilancio sono nelle altre sezioni."
-          : "Nessun dato presente in questa sezione." }));
+      const known = ["entrate", "uscite", "soglie_percentuali_esito", "storico_avanzo_per_anno", "censimenti",
+        "patrimonio", "nota_beni_durevoli"];
+      const altri = Object.keys(edit).filter(key => !["slide", ...GENERALE, ...known].includes(key));
+      renderSezioni(c, [...known, ...altri]);
+      if (![...known, ...altri].some(key => key in edit))
+        c.append(el("p", { className: "empty-state", textContent: "Nessun dato presente nel bilancio." }));
     }
     else if (view === "ordine" && Array.isArray(edit.slide)) renderOrdine(c);
     if (view === "json") refreshJson();
@@ -744,7 +733,6 @@
     $("#doc").hidden = !doc;
     $("#doc-link").hidden = !doc;
     $(".workflow-note").hidden = doc || tab === "generale";
-    $("#balance-nav").hidden = tab !== "bilancio";
     $("#intro").hidden = doc;
     $("#intro").textContent = INTRO[tab] || "";
     if (doc) {
@@ -758,23 +746,6 @@
       render();
     }
   }
-  document.querySelectorAll("[data-balance]").forEach((button) => {
-    button.onclick = () => {
-      balanceSection = button.dataset.balance;
-      $("#balance-select").value = balanceSection;
-      document.querySelectorAll("[data-balance]").forEach((item) =>
-        item.setAttribute("aria-pressed", String(item === button)),
-      );
-      render();
-      scrollTo(0, 0);
-    };
-  });
-  $("#balance-select").onchange = () => {
-    const button = [...document.querySelectorAll("[data-balance]")]
-      .find(item => item.dataset.balance === $("#balance-select").value);
-    if (button) button.onclick();
-  };
-
   function updateDirty() {
     const d = dirty();
     $("#dirty").textContent = jsonPending

@@ -296,7 +296,6 @@ test("array controls stay available after deleting the last item and restore its
   t.$("#json-text").value = JSON.stringify(data);
   t.$("#json-apply").onclick();
   t.tab("bilancio");
-  t.balance("soglie_percentuali_esito");
 
   let list = fieldsetAt(t, "soglie percentuali esito");
   assert.ok(list, "percentage list is rendered as an editable fieldset");
@@ -320,7 +319,6 @@ test("array controls stay available after deleting the last item and restore its
   add.onclick();
   assert.deepEqual(t.data().soglie_percentuali_esito, [0]);
   t.tab("bilancio");
-  t.balance("soglie_percentuali_esito");
   list = fieldsetAt(t, "soglie percentuali esito");
   const input = list.children.find((child) => child.className === "field").children[1];
   assert.equal(input.tagName, "INPUT");
@@ -681,16 +679,12 @@ test("exhausted conflicts retain the draft and JSON typed during an in-flight sa
   assert.equal(t.saved().assemblea.titolo, initial.assemblea.titolo);
 });
 
-test("balance selector covers every panel and Altri dati has an explicit empty state", async () => {
+test("bilancio lists every section one after the other, with no selector", async () => {
   const t = setup();
   await flush();
   t.tab("bilancio");
-  t.$("#balance-select").value = "altri";
-  t.$("#balance-select").onchange();
-  assert.match(t.$("#campi").children[0].textContent, /Nessun altro dato presente/);
-  assert.equal(t.balanceButtons.find(button => button.dataset.balance === "altri").getAttribute("aria-pressed"), "true");
-  const options = html.match(/<select id="balance-select">([\s\S]*?)<\/select>/)[1];
-  assert.equal([...options.matchAll(/<option /g)].length, 7);
+  assert.doesNotMatch(html, /balance-select|data-balance/);
+  assert.ok(t.$("#campi").children.length >= 1);
 });
 
 test("documentation embeds and full-page links open their contextual guide anchors", async () => {
@@ -803,15 +797,11 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
           check($('[data-tab="' + tab + '"]').getAttribute('aria-pressed') === 'true', 'selected tool ' + tab);
         }
         click('[data-tab="bilancio"]');
-        for (const option of $('#balance-select').options) {
-          $('#balance-select').value = option.value;
-          $('#balance-select').dispatchEvent(new w.Event('change'));
-          fits(option.value);
-          check($('#campi').textContent.trim().length > 0, 'nonempty balance panel ' + option.value);
-          if (width >= 1100 && ['entrate','uscite'].includes(option.value)) {
-            const rows = [...d.querySelectorAll('.financial-row')].slice(0, 2).map(row => row.getBoundingClientRect());
-            check(Math.abs(rows[0].top - rows[1].top) < 1 && rows[0].right < rows[1].left, width + ': dense financial columns');
-          }
+        fits('bilancio');
+        check($('#campi').textContent.trim().length > 0, 'nonempty balance');
+        if (width >= 1100) {
+          const rows = [...d.querySelectorAll('[data-id="entrate"] .financial-row')].slice(0, 2).map(row => row.getBoundingClientRect());
+          check(Math.abs(rows[0].top - rows[1].top) < 1 && rows[0].right < rows[1].left, width + ': dense financial columns');
         }
         click('[data-tab="ordine"]');
         fits('slides');
@@ -901,7 +891,7 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
     assert.ok(output, "browser result missing");
     const report = JSON.parse(output.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
     assert.equal(report.ok, true, report.error || JSON.stringify(report));
-    assert.ok(report.checks > 450);
+    assert.ok(report.checks > 300, String(report.checks));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

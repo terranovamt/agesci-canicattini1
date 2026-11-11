@@ -120,33 +120,28 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('[data-tab="json"]').click();
             const financialOriginal = doc.querySelector('#json-text').value;
             doc.querySelector('[data-tab="bilancio"]').click();
-            doc.querySelector('[data-balance="entrate"]').click();
             const amount = doc.querySelector('.financial-amounts input');
             amount.value = '123.45';
             amount.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
-            doc.querySelector('[data-balance="uscite"]').click();
-            doc.querySelector('[data-balance="entrate"]').click();
             const amountBoxes = [...doc.querySelector('.financial-amounts').querySelectorAll('input')].map(input => input.getBoundingClientRect());
             results.push({ financialDraft: doc.querySelector('.financial-amounts input').value === '123.45',
               financialPairs: amountBoxes.length === 2 && Math.abs(amountBoxes[0].top - amountBoxes[1].top) <= 1 &&
                 amountBoxes[0].right <= amountBoxes[1].left && amountBoxes.every(box => box.width >= 100),
               financialFits: doc.documentElement.scrollWidth <= doc.documentElement.clientWidth });
-            const entryCount = doc.querySelectorAll('.financial-row').length;
-            doc.querySelector('.financial-list > .add').click();
-            results.push({ financialAdd: doc.querySelectorAll('.financial-row').length === entryCount + 1 });
-            doc.querySelectorAll('.financial-remove')[entryCount].click();
-            results.push({ financialRemove: doc.querySelectorAll('.financial-row').length === entryCount });
-            doc.querySelector('[data-balance="patrimonio"]').click();
-            results.push({ fixedAssets: doc.querySelectorAll('.financial-row').length === 6 &&
-              !doc.querySelector('.financial-list .add, .financial-remove') });
+            const entrate = () => doc.querySelector('[data-id="entrate"]');
+            const entryCount = entrate().querySelectorAll('.financial-row').length;
+            entrate().querySelector('.financial-list > .add').click();
+            results.push({ financialAdd: entrate().querySelectorAll('.financial-row').length === entryCount + 1 });
+            entrate().querySelectorAll('.financial-remove')[entryCount].click();
+            results.push({ financialRemove: entrate().querySelectorAll('.financial-row').length === entryCount });
+            results.push({ fixedAssets: doc.querySelectorAll('[data-id="patrimonio"] .financial-row').length === 6 &&
+              !doc.querySelector('[data-id="patrimonio"] .financial-list .add, [data-id="patrimonio"] .financial-remove') });
             doc.querySelector('[data-tab="json"]').click();
             doc.querySelector('#json-text').value = financialOriginal;
             doc.querySelector('#json-apply').click();
             doc.querySelector('[data-tab="bilancio"]').click();
-            const balanceNav = doc.querySelector('#balance-nav');
-            doc.querySelector('[data-balance="censimenti"]').click();
             const censusBox = doc.querySelector('[data-id="censimenti"]');
-            if (!balanceNav || balanceNav.hidden || !censusBox) throw new Error('Navigazione bilancio non disponibile');
+            if (!censusBox) throw new Error('Sezione censimenti non disponibile');
             censusBox.open = true;
             const currentCensus = doc.getElementById('fcensimenti_censiti_attuali');
             const currentPresent = doc.getElementById('fcensimenti_presenti_attuali');
@@ -168,7 +163,7 @@ test("public documents and management work in a browser at all required widths",
               pairedHistory: width > 520 || pairFits(historyCensus, historyPresent),
               noInputZoom: width > 520 || parseFloat(frame.contentWindow.getComputedStyle(historyCensus).fontSize) >= 16,
               compactHistory: width > 520 || historyCensus.closest('fieldset').getBoundingClientRect().height <= 150,
-              balanceNavWorks: balanceNav.querySelector('[aria-pressed="true"]').dataset.balance === 'censimenti',
+              balanceListed: doc.querySelectorAll('#campi > .form-section').length > 3,
               barActionsFit: [...doc.querySelectorAll('#bar > button, #bar .more > summary')].every(button => {
                 const rect = button.getBoundingClientRect();
                 return rect.height >= 44 && rect.width >= 44 && rect.left >= 0 && rect.right <= width;

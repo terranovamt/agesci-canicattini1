@@ -41,12 +41,6 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .tabs .links { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 4px 12px }
 .tabs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--v); font-weight: 700; font-size: 13px }
 .hint { font-size: 13px; color: var(--v2); margin: 6px 0; line-height: 1.6 }
-.balance-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px }
-.balance-nav label { font-size: 13px; font-weight: 700 }
-.balance-nav select { flex: 1; max-width: 420px; min-height: 44px }
-.balance-nav[hidden] { display: none }
-.balance-nav button { display: none }
-.balance-nav button[aria-pressed="true"] { background: var(--v); color: var(--w); box-shadow: none }
 .financial-list { display: grid; gap: 12px; }
 .financial-row { min-width: 0; border-bottom: 1px solid var(--vl); padding: 12px 0; }
 .financial-row-heading h3 { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
@@ -209,8 +203,7 @@ dialog a { color: var(--v); font-weight: 700 }
   .tabs button { min-height: 44px; padding: 8px 10px }
   .primary-tabs, .setup-tools { min-width: 0; flex-basis: 100% }
   .tools-actions { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .balance-nav { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px }
-  .slide-add { grid-template-columns: minmax(0, 1fr) }
+    .slide-add { grid-template-columns: minmax(0, 1fr) }
   .slide-add button { width: 100% }
   footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; gap: 6px 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) }
   #dirty { grid-column: 1 / -1; font-size: 11px; line-height: 1.3 }
@@ -257,3 +250,4 @@ dialog a { color: var(--v); font-weight: 700 }
   #gh { max-width: 850px; max-height: calc(100dvh - 16px); margin: 8px auto; padding: 12px 16px }
   #gh .row { position: sticky; bottom: -12px; background: var(--w); padding: 8px 0 }
 }
+#app[data-view="bilancio"] .form-section + .form-section { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--vl) }
