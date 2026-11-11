@@ -176,6 +176,8 @@
       return card;
     }));
     renderQuickFilters();
+    for (const chip of document.querySelectorAll('[data-quality]'))
+      chip.setAttribute('aria-pressed', String(filters.elements.quality.value === chip.dataset.quality));
     const visibilityNotes = [];
     const visibilities = window.NAS.user.admin ? M.branches.map(branch => {
       const scoped = data.members.filter(member => member.branch === branch);
@@ -239,6 +241,7 @@
       checkLabel.append(checkbox); checkCell.append(checkLabel);
       const nameCell = node('td'), name = node('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
+      row.onclick = event => { if (!event.target.closest('button, label, input, a')) openMember(member); };
       nameCell.append(name, node('span', member.code, 'member-code'));
       const branchCell = node('td'), branchBadge = node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge');
       if (M.branchColors[member.branch]) branchBadge.style.setProperty('--branch-color', M.branchColors[member.branch]);
@@ -329,9 +332,11 @@
     for (const [key, value] of [['year', oldYear], ['status', oldStatus], ['field', oldField]])
       if ([...filters.elements[key].options].some(o => o.value === value)) filters.elements[key].value = value;
     options($('document-template'), data.templates.map(template => [String(template.id), template.title]));
+    const firstShow = $('members-app').hidden;
     $('members-app').hidden = false;
     renderTransfers();
     render();
+    if (firstShow && innerHeight > 500) filters.elements.search.focus({ preventScroll: true });
     unitBoard.update(data);
   }
   async function run(action, errorTarget = $('members-status'), successMessage = 'Operazione completata.') {
@@ -861,6 +866,10 @@
     const url = URL.createObjectURL(new Blob([M.exportCsv(rows)], { type: 'text/csv;charset=utf-8' }));
     const link = node('a'); link.href = url; link.download = 'soci-gruppo.csv'; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  for (const chip of document.querySelectorAll('[data-quality]')) chip.onclick = () => {
+    filters.elements.quality.value = filters.elements.quality.value === chip.dataset.quality ? '' : chip.dataset.quality;
+    render();
   };
   filters.onsubmit = event => event.preventDefault();
   filters.oninput = () => { if (data) render(); };

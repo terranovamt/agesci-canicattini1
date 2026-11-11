@@ -122,7 +122,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
                   });
               });
             });
-          results.quickFilterTargets = [...document.querySelectorAll('.members-filter-chip')]
+          results.quickFilterTargets = [...document.querySelectorAll('.members-filter-chip')].filter(b => b.checkVisibility())
               .every(button => {
                   const rect = button.getBoundingClientRect();
                   return rect.height >= 44 && rect.left >= 0 && rect.right <= innerWidth + 1;
@@ -175,7 +175,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
             ['year', 'status', 'showSuspended'].every(name => $('members-advanced-search').contains(filters[name])) &&
             !$('members-advanced-search').open;
           results.resetHiddenWithoutFilters = $('members-active-filters').hidden && !resetFilters.getClientRects().length &&
-            !$('members-filters').contains(resetFilters) && !filters.search.checkVisibility();
+            !$('members-filters').contains(resetFilters) && (innerHeight <= 500 || filters.search.checkVisibility());
+          results.searchVisible = innerHeight <= 500 || filters.search.checkVisibility() && filters.search.getBoundingClientRect().height >= 40;
           filters.search.value = 'Esempio'; $('members-filters').oninput();
           const chipRect = document.querySelector('[data-filter-key="search"]').getBoundingClientRect();
           const resetRect = resetFilters.getBoundingClientRect();
@@ -230,7 +231,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           filters.missing.checked = true; $('members-filters').oninput();
           results.emptyText = $('members-list').textContent.includes('Nessun socio');
           $('members-filters').reset(); await settle();
-          filters.quality.value = 'contacts'; $('members-filters').oninput();
+          const qChip = document.querySelector('[data-quality="contacts"]'); qChip.click();
+          results.qualityChip = qChip.getAttribute('aria-pressed') === 'true' && filters.quality.value === 'contacts' && (innerHeight <= 500 || qChip.offsetHeight >= 44);
           results.missingContact = $('members-list').textContent.includes('Persona Locale') && !$('members-list').textContent.includes('012345');
           $('members-filters').reset(); await settle();
           filters.birthYear.value = '2012'; $('members-filters').oninput();
@@ -238,6 +240,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           filters.groupBirthYear.checked = true; $('members-filters').oninput();
           results.birthGroup = $('members-list').textContent.includes('Nati nel 2012');
           $('members-filters').reset(); await settle();
+          document.querySelector('#members-list tr td:nth-child(3)').click();
+          results.rowOpens = $('member-dialog').open; $('member-dialog').close();
           document.querySelector('.member-name').click();
           const form = $('member-form');
           results.dialog = $('member-dialog').open;
@@ -516,7 +520,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
         "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
         "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogUsesSpace", "pickerFits", "macroFits", "documentsFit",
         "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",
-        "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
+        "qualityChip", "searchVisible", "rowOpens", "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
       assert.equal(results.rows, 2);

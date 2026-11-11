@@ -47,6 +47,10 @@
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
         <label class="members-search members-main-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
+        <div id="members-quick-quality" class="members-quick-quality" role="group" aria-label="Verifiche rapide">
+          <button type="button" class="members-filter-chip" data-quality="contacts" aria-pressed="false">Senza email e cellulare</button>
+          <button type="button" class="members-filter-chip" data-quality="incomplete" aria-pressed="false">Anagrafica da completare</button>
+        </div>
         <details id="members-advanced-search" class="members-advanced-search">
           <summary>Altri filtri</summary>
           <div class="members-filters-advanced">
