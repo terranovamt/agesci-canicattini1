@@ -153,6 +153,12 @@
       input.oninput = () => {
         if (input.value !== "" && !isNaN(+input.value)) commit(+input.value);
       };
+    } else if (String(path.at(-1)) === "modalita") {
+      input = el("select", {});
+      [["scelta", "Scelta singola (favorevole / contrario / astenuto)"], ["nominativa", "Nominativa (candidati)"]].forEach(([v, t]) =>
+        input.append(el("option", { value: v, textContent: t })));
+      input.value = value;
+      input.onchange = () => commit(input.value);
     } else {
       const key = String(path.at(-1));
       const parentKey = String(path.at(-2) ?? "");
@@ -194,6 +200,12 @@
     anno_esercizio: "Anno di esercizio",
     anno_scout: "Anno scout",
     assemblea: "Assemblea",
+    votazioni: "Votazioni dalle slide",
+    abilitate: "Votazioni abilitate",
+    domanda: "Quesito",
+    modalita: "Tipo (scelta o nominativa)",
+    opzioni: "Opzioni / candidati",
+    mostra_live: "Mostra i conteggi in diretta",
     titolo: "Titolo",
     titolo_barra: "Titolo nella barra",
     sottotitolo: "Sottotitolo",
@@ -338,7 +350,7 @@
   }
   const badge = (t, c) => el("span", { className: "badge " + (c || ""), textContent: t });
 
-  const GENERALE = ["anno_esercizio", "anno_scout", "assemblea"];
+  const GENERALE = ["anno_esercizio", "anno_scout", "assemblea", "votazioni"];
   const INTRO = {
     generale: "Data, luogo e orari dell'assemblea.",
     ordine:
@@ -361,7 +373,7 @@
       ? "gruppo invisibile (solo setup)"
       : String(x.tipo || "").replace(/^slide_/, "");
   const titleOf = (x) => strip(x.titolo || x.titolo_barra) || human(tipoOf(x));
-  const sezione = (x) => ["slide_divisore_sezione", "sezione", "slide_gruppo_invisibile"].includes(x.tipo);
+  const sezione = (x) => ["slide_divisore_sezione", "slide_votazione", "sezione", "slide_gruppo_invisibile"].includes(x.tipo);
   const modelli = [
     { tipo: "slide_titolo", titolo: "Nuova slide", sottotitolo: "" },
     { tipo: "slide_divisore_sezione", titolo: "Nuova sezione", sottotitolo: "" },
@@ -443,6 +455,14 @@
     ].map((t) => ({ tipo: "slide_" + t })),
     { tipo: "slide_chiusura", titolo: "Assemblea conclusa", sottotitolo: "" },
     { tipo: "slide_grazie", testo: "Grazie" },
+    {
+      tipo: "slide_votazione",
+      titolo: "Votazione",
+      domanda: "Quesito",
+      modalita: "scelta",
+      opzioni: ["Favorevole", "Contrario", "Astenuto"],
+      mostra_live: true,
+    },
   ];
   const modelliDisponibili = () => {
     const out = modelli.map(clone);
@@ -724,7 +744,25 @@
     branchSel.onchange = () => { sociBranch = branchSel.value; render(); };
     const search = el("input", { type: "search", placeholder: "Cerca nome, codice o email", value: sociQuery, ariaLabel: "Cerca socio" });
     search.oninput = () => { sociQuery = search.value; fill(); };
-    c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count), list);
+    const pdf = el("button", { type: "button", className: "btn", textContent: "Scarica PDF codici di voto" });
+    pdf.onclick = async () => {
+      pdf.disabled = true;
+      try {
+        const r = await fetch((window.LIVE.basePath || "") + "/api/vote/codes", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ anno: sociYear }),
+        });
+        if (!r.ok) throw new Error((await r.text()) || "Errore " + r.status);
+        const { righe } = await r.json();
+        const a = el("a", { href: URL.createObjectURL(window.PDF_CODICI.crea("Codici di voto - Censiti " + sociYear, righe)), download: "codici-voto-" + sociYear + ".pdf" });
+        a.click();
+        URL.revokeObjectURL(a.href);
+        status("PDF dei codici di voto scaricato", "ok");
+      } catch (e) {
+        status(e.message, "ko");
+      }
+      pdf.disabled = false;
+    };
+    c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count, pdf), list);
     fill();
   }
 

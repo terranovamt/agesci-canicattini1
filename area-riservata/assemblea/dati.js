@@ -50,6 +50,9 @@ window.DATI = {
   // 1. DATI GENERALI
   "anno_esercizio": 2026,
 
+  // Votazioni segrete dalle slide: se false tutto resta come prima
+  "votazioni": { "abilitate": false },
+
   "assemblea": {
     "data": "20 Novembre 2026",
     "titolo": "Assemblea di Gruppo 2026",
@@ -258,8 +261,13 @@ window.DATI = {
     { "tipo": "slide_grazie" },
     { "tipo": "slide_foto_gruppo" },
     {
-      "tipo": "slide_divisore_sezione",
-      "titolo": "Votazione<br>Bilancio"
+      "tipo": "slide_votazione",
+      "id": "votazione-bilancio",
+      "titolo": "Votazione<br>Bilancio",
+      "domanda": "Approvi il bilancio?",
+      "modalita": "scelta",
+      "opzioni": ["Favorevole", "Contrario", "Astenuto"],
+      "mostra_live": true
     },
     { "tipo": "slide_avanzamento_odg", "completati": 3 }, // Punto 3 fatto
 
@@ -426,8 +434,13 @@ window.DATI = {
       ]
     },
     {
-      "tipo": "slide_divisore_sezione",
-      "titolo": "Votazione<br>Organo Esecutivo"
+      "tipo": "slide_votazione",
+      "id": "votazione-organo",
+      "titolo": "Votazione<br>Organo Esecutivo",
+      "domanda": "Chi elegge l'Organo Esecutivo?",
+      "modalita": "nominativa",
+      "opzioni": ["Candidato 1", "Candidato 2"],
+      "mostra_live": true
     },
     { "tipo": "slide_avanzamento_odg", "completati": 4 }, // Punto 4 fatto
 
@@ -437,7 +450,15 @@ window.DATI = {
       "id": "contributo",
       "titolo": "Contributo Economico<br>Integrativo di Gruppo"
     },
-    { "tipo": "slide_divisore_sezione", "titolo": "Votazione<br>Contributo Economico" },
+    {
+      "tipo": "slide_votazione",
+      "id": "votazione-contributo",
+      "titolo": "Votazione<br>Contributo Economico",
+      "domanda": "Approvi il contributo economico integrativo?",
+      "modalita": "scelta",
+      "opzioni": ["Favorevole", "Contrario", "Astenuto"],
+      "mostra_live": true
+    },
     { "tipo": "slide_avanzamento_odg", "completati": 5 }, // Punto 5 fatto: tutto completato
 
     // Chiusura

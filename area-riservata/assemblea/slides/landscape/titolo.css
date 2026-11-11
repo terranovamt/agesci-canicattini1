@@ -74,3 +74,12 @@
   right: 70px;
   top: calc(50% - 130px)
 }
+
+/* slide votazione: stato del voto sotto il titolo */
+.sec .vt { position: absolute; left: 70px; right: 70px; bottom: 80px; text-align: right }
+.sec .vt-q { font-size: 28px; font-weight: 600 }
+.sec .vt-s { font-size: 22px; margin-top: 8px; opacity: .85 }
+.sec .vt-s.on { opacity: 1; color: var(--y, #f5c400); font-weight: 700 }
+.sec .vt-c { display: flex; justify-content: flex-end; gap: 28px; margin-top: 16px }
+.sec .vt-c span { display: flex; flex-direction: column; align-items: center; font-size: 18px }
+.sec .vt-c b { font-size: 52px; font-weight: 800; line-height: 1 }

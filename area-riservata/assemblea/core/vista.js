@@ -60,7 +60,7 @@
       return String(t).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
     })
   });
-  const API = { stato, vai, onchange: null };
+  const API = { stato, vai, onchange: null, slide: i => scenes[i] && { tipo: scenes[i].tipo, id: scenes[i].id, x: scenes[i].x } };
 
   if (V === 'principale') {
     const __go = go;
