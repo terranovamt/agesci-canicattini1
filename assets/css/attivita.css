@@ -354,3 +354,11 @@
 @media (max-width: 899px) { .activities-page > .members-heading .activities-search { grid-column: 1 / -1; grid-row: 2; } .activities-page > .members-heading > a { grid-column: 2; grid-row: 1; } }
 .path-member-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .path-member-nav[hidden], .path-member-nav > [hidden] { display: none; }
+
+/* Più attività per riga sugli schermi larghi: dalla terza colonna i pulsanti vanno sotto */
+@media (min-width: 1300px) {
+  #events-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .activity-event-row { grid-template-columns: minmax(0, 1fr); }
+  .activity-event-row > .activity-event-actions { grid-column: 1; grid-row: auto; margin-top: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1700px) { #events-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
