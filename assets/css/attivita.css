@@ -235,8 +235,24 @@
 .activity-path-unit { min-width: 0; padding: 8px 12px; border: 1px solid #cfc4d9; border-top: 5px solid var(--unit-color, #795699); border-radius: 12px; background: color-mix(in srgb, var(--unit-color, #795699) 8%, white); }
 .activity-path-unit > summary { display: flex; align-items: center; min-height: 44px; font-weight: 700; cursor: pointer; }
 .activity-path-unit > summary::after { content: ""; width: 28px; height: 10px; margin-left: 8px; border: 1px solid #625269; border-radius: 3px; background: linear-gradient(90deg, var(--unit-color) 50%, var(--unit-color-secondary) 50%); }
-.activity-path-unit-members { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 4px 12px; }
-.activity-path-unit .path-member-link { padding: 4px 8px; border-top: 1px solid #cfc4d955; }
+#paths-members.activities-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 620px), 1fr)); align-items: start; gap: 12px; }
+.activity-path-unit-members { display: grid; gap: 0; }
+.path-row { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1.6fr) 124px minmax(60px, .6fr) 36px; align-items: center; gap: 4px 12px; min-height: 44px; padding: 2px 8px; border-top: 1px solid #cfc4d955; }
+.path-row .path-member-link { padding: 0; border: 0; }
+.path-row-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; min-width: 0; overflow-wrap: anywhere; }
+.path-row-title small, .path-row-empty { color: #5b4a7a; font-size: .8rem; }
+.path-row-amount { font-size: .85rem; font-weight: 700; text-align: right; }
+.path-row progress { width: 100%; height: 6px; accent-color: #398258; }
+.path-row-none { grid-template-columns: minmax(110px, .8fr) 1fr; }
+@media (max-width: 700px) {
+  .path-row { grid-template-columns: 1fr auto; padding: 6px 4px; }
+  .path-row .path-member-link { grid-column: 1; grid-row: 1; }
+  .path-row .activity-state { grid-column: 2; grid-row: 1; justify-self: end; }
+  .path-row-title { grid-column: 1 / -1; grid-row: 2; }
+  .path-row progress { grid-column: 1; grid-row: 3; }
+  .path-row-amount { grid-column: 2; grid-row: 3; }
+  .path-row-none { grid-template-columns: 1fr; }
+}
 #paths-panel .path-card h3 { margin: 4px 0; font-size: 1rem; }
 #paths-panel .path-card p { margin: 4px 0; font-size: .85rem; }
 #paths-panel .path-card progress { margin: 6px 0; height: 6px; }

@@ -181,10 +181,31 @@
         group.open = true;
         group.append(node('summary', `${unit} · ${members.length}`));
         const list = node('div', undefined, 'activity-path-unit-members');
-        list.append(...members.map(member => {
-          const link = node('a', member.name, 'path-member-link');
-          link.href = `soci.html?member=${member.id}&section=education`;
-          return link;
+        list.append(...members.flatMap(member => {
+          const link = () => {
+            const anchor = node('a', member.name, 'path-member-link');
+            anchor.href = `soci.html?member=${member.id}&section=education`;
+            return anchor;
+          };
+          const memberPaths = data.paths.filter(item => item.branch === branch() && item.personId === member.id);
+          if (!memberPaths.length) {
+            const row = node('div', undefined, 'path-row path-row-none');
+            row.append(link(), node('span', 'Nessun percorso', 'path-row-empty'));
+            return [row];
+          }
+          return memberPaths.map(item => {
+            const row = node('div', undefined, 'path-row'), status = state(item);
+            const done = item.steps.filter(step => step.done).length;
+            const badge = node('span', status, 'activity-state'); badge.dataset.state = status;
+            const progress = node('progress'); progress.max = item.steps.length || 1; progress.value = done;
+            progress.setAttribute('aria-label', `${done} di ${item.steps.length}`);
+            const amount = node('span', `${done}/${item.steps.length}`, 'path-row-amount');
+            const title = node('span', undefined, 'path-row-title');
+            title.append(node('strong', item.title));
+            if (item.title !== pathLabels[item.kind]) title.append(node('small', pathLabels[item.kind]));
+            row.append(link(), title, badge, progress, amount);
+            return row;
+          });
         }));
         group.append(list);
         return group;
