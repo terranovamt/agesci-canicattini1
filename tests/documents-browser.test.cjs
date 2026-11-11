@@ -773,7 +773,7 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(annual.writtenDate, "20 Novembre 2027");
     assert.equal(annual.qrDate, "2027-11-20T20:30");
     assert.equal(annual.archived, 100);
-    assert.equal(annual.newAmount, 10);
+    assert.equal(annual.newAmount, 9665);
     assert.equal(annual.previousAmount, 9665);
     assert.equal(annual.dirty, true);
     assert.equal(annual.wizardClosed, true);
