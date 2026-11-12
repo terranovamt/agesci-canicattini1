@@ -3,10 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
+const { pathToFileURL } = require("node:url");
 const { renderHtml } = require("../tools/site-layout.cjs");
 const root = path.join(__dirname, "..");
-const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
-  spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
+const chrome = require("./helpers/chrome.cjs");
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const people = [
   { id: 2, name: "Giulia Capo", code: "7654321", kind: "capo", admin: false, loginEnabled: true, serviceBranch: "E/G" },
@@ -23,6 +23,7 @@ const scenarios = {
 function run(directory, scenario, width, height) {
   const mock = `
     window.NAS = ${JSON.stringify(scenarios[scenario])};
+    window.LIVE = { nas: true, basePath: '' };
     window.calls = [];
     window.fetch = (url, options = {}) => {
       calls.push({ url, method: options.method || 'GET', body: options.body || null });
@@ -39,7 +40,12 @@ function run(directory, scenario, width, height) {
         const header = document.querySelector('.reserved-header');
         const control = header.querySelector('.view-as');
         result.controls = document.querySelectorAll('.view-as').length;
-        result.afterAreaLink = !!control && control.previousElementSibling?.textContent === 'Area riservata';
+        const toggle = document.getElementById('reserved-menu-toggle');
+        if (innerWidth <= 1024 && control?.matches('details')) {
+          result.hiddenInMenu = !control.checkVisibility();
+          toggle.click();
+        }
+        result.inMenu = !!control?.closest('.reserved-actions');
         if (control?.matches('details')) {
           const summary = control.querySelector('summary');
           result.summary = summary.textContent;
@@ -53,8 +59,9 @@ function run(directory, scenario, width, height) {
           select.value = '2';
           control.querySelector('form').requestSubmit(); await wait();
           result.post = calls.find(call => call.method === 'POST');
-          control.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          control.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
           result.closedOnEscape = !control.open;
+          result.menuStillOpen = innerWidth > 1024 || toggle.getAttribute('aria-expanded') === 'true';
         } else if (control) {
           result.text = control.querySelector('.view-as-label').textContent;
           const back = control.querySelector('button');
@@ -62,6 +69,8 @@ function run(directory, scenario, width, height) {
           result.backHeight = back.getBoundingClientRect().height;
           result.backFits = fits(back);
           result.bodyFlag = document.body.classList.contains('viewing-as');
+          result.returnAlwaysVisible = back.checkVisibility() && !control.closest('#reserved-menu');
+          result.returnParent = control.parentElement.className;
           back.click(); await wait();
           result.del = calls.find(call => call.method === 'DELETE');
           result.backDisabled = back.disabled;
@@ -73,9 +82,11 @@ function run(directory, scenario, width, height) {
       output.textContent = btoa(JSON.stringify(result)); document.body.append(output);
     })();`;
   const page = renderHtml(read("area-riservata/persone.html"), "area-riservata/persone.html")
+    .replace('<head>', '<head><base href="http://127.0.0.1/area-riservata/persone.html">')
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
-      src.includes("shared/accesso.js") ? `<script>${read("assets/js/shared/accesso.js")}</script>` : "")
+      src.includes("shared/accesso.js") ? `<script>${read("assets/js/shared/accesso.js")}</script>` :
+        src.includes("nas-nav.js") ? `<script>${read("assets/js/nas-nav.js")}</script>` : "")
     .replace("</head>", `<style>${["theme", "home", "nas"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`)
     .replace("</body>", `<script>${exercise}</script></body>`);
   const file = path.join(directory, `${scenario}-${width}.html`);
@@ -90,7 +101,7 @@ function run(directory, scenario, width, height) {
   </script>`);
   const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
     "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, `profile-${scenario}-${width}`),
-    "--window-size=" + width + ",1200", "--virtual-time-budget=6000", "--dump-dom", "file://" + file],
+    "--window-size=" + width + ",1200", "--virtual-time-budget=6000", "--dump-dom", pathToFileURL(file).href],
   { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: root } });
   assert.equal(browser.status, 0, browser.stderr);
   const encoded = /<pre id="view-as-result">([^<]+)<\/pre>/.exec(browser.stdout)?.[1];
@@ -108,7 +119,8 @@ test("view-as header control is admin-only, compact, accessible and keeps an exp
     for (const [width, height] of [[1366, 768], [820, 1180], [390, 844], [844, 390]]) {
       const admin = run(directory, "admin", width, height);
       assert.equal(admin.controls, 1);
-      assert.equal(admin.afterAreaLink, true);
+      assert.equal(admin.inMenu, true);
+      if (width <= 1024) assert.equal(admin.hiddenInMenu, true);
       assert.equal(admin.summary, "Visualizza come");
       assert.ok(admin.summaryHeight >= 44, JSON.stringify(admin));
       assert.equal(admin.label, "Capo");
@@ -117,6 +129,7 @@ test("view-as header control is admin-only, compact, accessible and keeps an exp
       assert.equal(admin.formFits, true, JSON.stringify(admin));
       assert.deepEqual(admin.post, { url: "/api/auth/view-as", method: "POST", body: '{"personId":2}' });
       assert.equal(admin.closedOnEscape, true);
+      assert.equal(admin.menuStillOpen, true);
 
       const viewing = run(directory, "viewing", width, height);
       assert.equal(viewing.controls, 1);
@@ -125,6 +138,7 @@ test("view-as header control is admin-only, compact, accessible and keeps an exp
       assert.ok(viewing.backHeight >= 40, JSON.stringify(viewing));
       assert.equal(viewing.backFits, true, JSON.stringify(viewing));
       assert.equal(viewing.bodyFlag, true);
+      assert.equal(viewing.returnAlwaysVisible, true, JSON.stringify(viewing));
       assert.deepEqual(viewing.del, { url: "/api/auth/view-as", method: "DELETE", body: null });
       assert.equal(viewing.backDisabled, true);
       assert.equal(viewing.calls, 1);

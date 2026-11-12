@@ -336,10 +336,6 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 }
 
 /* Dashboard only: keep the shared reserved and public layouts unchanged. */
-body.reserved-page.dashboard-page > .reserved-header { gap: 8px; padding: 8px 24px }
-body.reserved-page.dashboard-page > .reserved-header .brand { min-height: 44px; padding: 4px 8px; gap: 8px }
-body.reserved-page.dashboard-page > .reserved-header img { width: 32px; height: 36px }
-body.reserved-page.dashboard-page > .reserved-header > a:not(.brand) { font-size: 12px }
 .dashboard-page > .reserved-header :is(a, button, summary, select):focus-visible { outline: 3px solid var(--y); outline-offset: 3px }
 .dashboard-page > .reserved-header .brand:focus-visible { outline-color: var(--v) }
 body.reserved-page.dashboard-page > #reserved-content { width: min(calc(100% - 32px), 1120px); margin: 24px auto }
@@ -533,11 +529,8 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
   .dashboard-page #riservata:not([hidden]) { grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1.7fr) }
 }
 @media (min-width: 820px) {
-  body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: 24px }
   .dashboard-page #riservata #dashboard-branch-tools .button { font-size: 14px }
 }
-@media (min-width: 1100px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: 24px } }
-@media (min-width: 1700px) { body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: 24px } }
 /* Sezione "Altro": usa tutto lo spazio quando non c'è un'attività da mostrare, una colonna se è stretta */
 @media (min-width: 1100px) {
   .dashboard-page #riservata:has(#dashboard-event-panel[hidden]) > #dashboard-more { grid-column: 2 / -1 }

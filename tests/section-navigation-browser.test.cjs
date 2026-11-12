@@ -1,20 +1,20 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawn, spawnSync } = require('node:child_process');
+const { spawn } = require('node:child_process');
+const { pathToFileURL } = require('node:url');
 const { test } = require('node:test');
 const { renderHtml } = require('../tools/site-layout.cjs');
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
-  spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
+const chrome = require('./helpers/chrome.cjs');
 const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'peg/edizioni/2026-2028.html',
   '404.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'area-riservata/persone.html',
   'area-riservata/soci.html', 'area-riservata/attivita.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
   'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html', 'area-riservata/assemblea/index.html'];
 const viewports = [
   [1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390],
-  [375, 900], [768, 900], [1024, 900], [1440, 900],
+  [320, 568], [375, 900], [768, 900], [1024, 900], [1025, 900], [1440, 900],
 ];
 const statisticsSections = ['statistics-version', 'statistics-traffic', 'statistics-server', 'statistics-diagnostic-panel'];
 const applicationRoots = {
@@ -42,6 +42,7 @@ test('statistics displays all sections together without tabs', () => {
 function fixture(file) {
   const css = [];
   return renderHtml(read(file), file)
+    .replace('<head>', '<head><base href="http://127.0.0.1/' + file + '">')
     .replace(/<link\b[^>]*href="([^"]+)"[^>]*>/g, (tag, href) => {
       if (tag.includes('stylesheet') && !/^https?:/.test(href))
         css.push(read(path.normalize(path.join(path.dirname(file), href.split('?')[0]))));
@@ -61,6 +62,7 @@ function fixture(file) {
       ${file === 'area-riservata/assemblea/index.html' ? read('area-riservata/assemblea/core/base.js') : ''}
       const allowed = ['riservata', 'documents-app', 'members-app', 'activities-app', 'people-app', 'statistics-data', 'app'];
       allowed.forEach(id => { const node = document.getElementById(id); if (node) node.hidden = false; });
+      document.querySelectorAll('header [hidden], #esci').forEach(node => { node.hidden = false; });
       for (const id of ['login', 'accesso', 'avviso']) {
         const node = document.getElementById(id); if (node) node.hidden = true;
       }
@@ -104,15 +106,56 @@ test('all screens fit real responsive viewports and section navigation preserves
             record({ dimensions: win.innerWidth === width && win.innerHeight === height });
             const applicationRoot = ${JSON.stringify(applicationRoots)}[names[page]];
             if (applicationRoot) record({ applicationVisible: visible(doc.querySelector(applicationRoot)) });
-            if (names[page].startsWith('area-riservata/') &&
-                !['area-riservata/index.html', 'area-riservata/assemblea/index.html'].includes(names[page])) {
-              const location = doc.querySelector('.reserved-location');
-              const home = location?.querySelector('a');
-              const current = location?.querySelector('[aria-current="page"]');
-              record({ wayfinding: visible(location) && !!current?.textContent &&
-                home?.getAttribute('href') === '/area-riservata/' &&
-                home.textContent.includes('Home capi') &&
-                home.getBoundingClientRect().height >= 44 });
+            if (names[page].startsWith('area-riservata/') && !names[page].endsWith('assemblea/index.html')) {
+              const header = doc.querySelector('.reserved-navbar');
+              const brand = header?.querySelector('.reserved-brand');
+              const toggle = doc.getElementById('reserved-menu-toggle');
+              const menu = doc.getElementById('reserved-menu');
+              const compact = width <= 1024;
+              record({ wayfinding: visible(brand) && !!header.querySelector('.reserved-title')?.textContent &&
+                brand.getAttribute('href') === '/area-riservata/' &&
+                brand.getBoundingClientRect().height >= 44,
+                commonLinks: header.querySelector('.reserved-links').textContent === 'Home capiAttivitàSoci',
+                compactHeader: !compact || header.getBoundingClientRect().height <= 76,
+                menuBreakpoint: visible(toggle) === compact && visible(menu) === !compact,
+                menuAria: toggle.getAttribute('aria-controls') === menu.id && toggle.getAttribute('aria-expanded') === 'false' });
+              if (compact) {
+                record({ hiddenCommands: ![...menu.querySelectorAll('a, button, summary')].some(visible) });
+                toggle.click();
+                record({ openedMenu: visible(menu) && toggle.getAttribute('aria-expanded') === 'true' });
+              }
+              const menuBox = menu.getBoundingClientRect();
+              record({ menuFits: menuBox.left >= 0 && menuBox.right <= width + 1 &&
+                (!compact || menuBox.bottom <= height + 1),
+                menuTouchTargets: [...menu.querySelectorAll('a, button, summary')].filter(visible)
+                  .every(node => node.getBoundingClientRect().height >= 44) });
+              if (compact) {
+                const home = menu.querySelector('a');
+                home.focus();
+                home.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                record({ escapeCloses: !visible(menu) && doc.activeElement === toggle });
+                toggle.click();
+                doc.body.click();
+                record({ outsideCloses: !visible(menu) });
+                toggle.click();
+                home.addEventListener('click', event => event.preventDefault(), { once: true });
+                home.click();
+                record({ linkCloses: !visible(menu) });
+                toggle.click();
+                // Leaving the navigation by keyboard must not leave an overlay over the page.
+                const next = doc.createElement('button');
+                doc.body.append(next);
+                home.focus(); next.focus();
+                record({ tabAwayCloses: !visible(menu) && doc.activeElement === next });
+                next.remove();
+                toggle.click();
+                frame.style.width = '1366px';
+                await new Promise(resolve => setTimeout(resolve, 40));
+                record({ resizeDesktop: visible(menu) && !visible(toggle) && toggle.getAttribute('aria-expanded') === 'false' });
+                frame.style.width = width + 'px';
+                await new Promise(resolve => setTimeout(resolve, 40));
+                record({ resizeMobile: !visible(menu) && visible(toggle) && toggle.getAttribute('aria-expanded') === 'false' });
+              }
             }
             const navs = [...doc.querySelectorAll('[data-section-nav]')];
             if (names[page] === 'area-riservata/index.html') {
@@ -194,7 +237,7 @@ test('all screens fit real responsive viewports and section navigation preserves
     browser = spawn(chrome, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
       '--no-proxy-server', '--user-data-dir=' + profile, '--remote-debugging-port=0',
       '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
-      '--window-size=2100,1400', 'file://' + file], { stdio: 'ignore', cwd: dir, env: { ...process.env, TMPDIR: "." } });
+      '--window-size=2100,1400', pathToFileURL(file).href], { stdio: 'ignore', cwd: dir, env: { ...process.env, TMPDIR: "." } });
     const deadline = Date.now() + 20000;
     const portFile = path.join(profile, 'DevToolsActivePort');
     while (!fs.existsSync(portFile) && Date.now() < deadline)

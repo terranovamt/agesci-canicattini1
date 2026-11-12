@@ -119,13 +119,22 @@
           }
         });
         details.addEventListener('keydown', event => {
-          if (event.key === 'Escape' && details.open) { details.open = false; details.querySelector('summary').focus(); }
+          if (event.key === 'Escape' && details.open) {
+            event.preventDefault();
+            details.open = false;
+            details.querySelector('summary').focus();
+          }
         });
         control = details;
       } else return;
-      const anchor = [...header.querySelectorAll('a')].find(link => /area riservata/i.test(link.textContent));
-      if (anchor) (anchor.closest('nav') || anchor).after(control);
-      else header.append(control);
+      const actions = header.querySelector('.reserved-actions');
+      if (nas.viewAs) header.append(control);
+      else if (actions) actions.append(control);
+      else {
+        const anchor = [...header.querySelectorAll('a')].find(link => /area riservata/i.test(link.textContent));
+        if (anchor) (anchor.closest('nav') || anchor).after(control);
+        else header.append(control);
+      }
     }
     if (typeof document !== 'undefined') {
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', viewAsControl);

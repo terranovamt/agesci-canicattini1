@@ -2,13 +2,12 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawn } = require("node:child_process");
 const { test } = require("node:test");
 const { startNasDev } = require("../tools/nas-dev.cjs");
 const { startNasDemo } = require("../tools/nas-demo.cjs");
 
-const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
-  spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0);
+const chrome = require("./helpers/chrome.cjs");
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 test("demo screens expose navigation, individual paths, clear attendance and compact program controls",
@@ -71,8 +70,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await wait("!document.getElementById('activities-app').hidden");
         assert.equal(await page.evaluate("document.getElementById('activities-search').closest('label').hidden"), false,
           "the 30-member branch exposes search");
-        assert.equal(await page.evaluate("document.querySelector('.reserved-location a').textContent.includes('Home capi')"), true);
-        assert.equal(await page.evaluate("document.querySelector('.reserved-location [aria-current=page]').textContent"), "Attività");
+        assert.equal(await page.evaluate("document.querySelector('.reserved-brand').getAttribute('aria-label').includes('Home capi')"), true);
+        assert.equal(await page.evaluate("document.querySelector('.reserved-links [aria-current=page]').textContent"), "Attività");
         assert.equal(await page.evaluate("!!document.querySelector('#events-list .activity-event-extra, #events-list .activity-participants, .event-help')"), false);
         assert.equal(await page.evaluate(`(() => {
           const free = [...document.querySelectorAll('#events-list article')].find(row=>row.textContent.includes('DEMO - Gratis'));
@@ -190,7 +189,7 @@ test("demo screens expose navigation, individual paths, clear attendance and com
     } finally {
       if (page) await page.stop();
       await app.stop();
-      await fs.rm(directory, { recursive:true, force:true });
+      await fs.rm(directory, { recursive:true, force:true, maxRetries:10, retryDelay:100 });
     }
   });
 
@@ -335,7 +334,7 @@ test("branch chiefs land on today's program, including the last camp day, across
     } finally {
       if (page) await page.stop();
       await app.stop();
-      await fs.rm(directory, { recursive:true, force:true });
+      await fs.rm(directory, { recursive:true, force:true, maxRetries:10, retryDelay:100 });
     }
   });
 
@@ -378,7 +377,14 @@ async function browser(directory) {
       if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
       return result.result.value;
     },
-    async stop() { socket.close(); child.kill(); await new Promise(resolve => child.once("exit", resolve)); },
+    async stop() {
+      if (child.exitCode === null) {
+        const closed = new Promise(resolve => child.once("exit", resolve));
+        await send("Browser.close");
+        await closed;
+      }
+      socket.close();
+    },
   };
 }
 
@@ -822,6 +828,6 @@ test("login autofill, education dates, activities and progression work on four s
   } finally {
     if (page) await page.stop();
     await app.stop();
-    await fs.rm(directory, { recursive: true, force: true });
+    await fs.rm(directory, { recursive: true, force: true, maxRetries:10, retryDelay:100 });
   }
 });

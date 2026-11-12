@@ -1145,41 +1145,10 @@ h2#titolo, h3#titolo-next {
 #regia-voto .vt-az button { flex: 1; min-height: 38px; }
 #regia-voto .vt-er { color: #b00020; margin: 6px 0 0; }
 
-/* Telefono in verticale: la pagina scorre e Indietro/Avanti restano fissi in basso.
-   La navbar sta su due righe sottili; Menu apre connessione, schermo, setup ed esci. */
-#menu-regia { display: none; }
+/* Telefono in verticale: la pagina scorre e Indietro/Avanti restano fissi in basso. */
 @media (max-width: 699px) and (orientation: portrait) {
   html, body { height: auto; }
   body { height: auto; min-height: 100dvh; overflow: visible; }
-
-  body > header.reserved-header { flex-wrap: wrap; gap: 4px 8px; padding: 4px 10px; }
-  body > header.reserved-header:not(.menu-aperto) { flex-wrap: nowrap; }
-  body > header.reserved-header img { height: 28px; }
-  body > header.reserved-header .pill {
-    min-width: 0; padding: 4px 8px; font-size: 11px; overflow: hidden; text-overflow: ellipsis;
-  }
-  #menu-regia { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 8px 14px; font-size: 14px; }
-  #menu-regia::after { content: "▾"; }
-  #menu-regia[aria-expanded="true"]::after { content: "▴"; }
-  body > header.reserved-header:not(.menu-aperto) :is(.header-status, #schermo, #setup, #esci, .view-as) { display: none; }
-  body > header.reserved-header > :is(.header-status, #schermo, #setup, #esci, .view-as) { order: 2; }
-  body > header.reserved-header.menu-aperto::after { content: ""; order: 1; flex-basis: 100%; }
-  body > header.reserved-header .header-status { margin-left: 0; }
-  body > header.reserved-header .header-status > div { left: 0; right: auto; }
-
-  body > .reserved-location {
-    display: flex; flex-wrap: nowrap; align-items: center; gap: 6px;
-    margin: 0; padding: 4px 10px; overflow-x: auto; scrollbar-width: none;
-  }
-  body > .reserved-location > * { flex: none; margin: 0; }
-  body > .reserved-location > a {
-    display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; white-space: nowrap;
-  }
-  /* il nome della pagina è già nella navbar: resta solo per i lettori di schermo */
-  body > .reserved-location > [aria-current="page"] {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-  }
-  body > .reserved-location > [aria-current="page"] + a { margin-left: auto; }
 
   main {
     flex: none; display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start;
@@ -1224,4 +1193,3 @@ h2#titolo, h3#titolo-next {
   #regia-voto .vt-st { font-size: 14px; }
   #regia-voto .vt-az button { min-height: 52px; font-size: 16px; }
 }
-

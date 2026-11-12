@@ -128,6 +128,23 @@ questa guida, nei test o nella memoria dell'assistente.
 
 ### Navigazione per sezioni delle interfacce
 
+- Tutte le navbar riservate sono normalizzate da `assets/js/nas-nav.js`,
+  con stile condiviso in `assets/css/nas.css`: logo, titolo della pagina,
+  Home capi, Attività, Soci e comandi specifici. Non aggiungere menu mobile
+  separati nelle singole pagine. Fino a 1024 px, anche in orizzontale, i
+  collegamenti e i comandi sono nel menu hamburger; chiusura con Escape,
+  clic esterno, navigazione o uscita del focus. Il cambio di larghezza azzera
+  lo stato del menu. Senza JavaScript restano disponibili gli header originali.
+- Il componente sposta i controlli esistenti senza ricrearli: ID, stato
+  `hidden`, eventi e permessi restano invariati. Anche il controllo
+  amministrativo «Visualizza come», aggiunto dopo il login, entra nel menu.
+  La vista capo attiva e «Torna admin» rimangono invece sempre visibili,
+  per non nascondere l'identità effettiva. Slide e guida incorporata (`embed`)
+  non ricevono la navbar.
+- Verifica navbar e layout con `node --test tests/section-navigation-browser.test.cjs
+  tests/regia-layout.test.cjs tests/view-as-browser.test.cjs`. Questi test usano
+  viewport iframe reali e trovano Chrome anche su Windows; `CHROME_PATH`
+  permette di specificare un eseguibile alternativo.
 - Il setup del bilancio in `area-riservata/assemblea/setup.html` separa entrate,
   uscite, soglie, avanzi, censimenti e patrimonio tramite `data-balance`; la
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano

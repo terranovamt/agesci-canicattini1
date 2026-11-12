@@ -3,15 +3,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
+const { pathToFileURL } = require('node:url');
 
 const root = path.join(__dirname, '..');
 const assemblea = path.join(root, 'area-riservata/assemblea');
-const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
-  spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
+const chrome = require('./helpers/chrome.cjs');
 
 test('regia adapts desktop, laptop, tablet and mobile without obscuring controls or tools', { skip: !chrome }, () => {
   const dir = fs.mkdtempSync(path.join(root, '.regia-layout-'));
-  const css = ['assets/css/theme.css', 'area-riservata/assemblea/core/regia.css', 'assets/css/section-nav.css']
+  const css = ['assets/css/nas.css', 'assets/css/theme.css', 'area-riservata/assemblea/core/regia.css', 'assets/css/section-nav.css']
     .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
   const logo = fs.readFileSync(path.join(root, 'assets/img/logo-grande.webp')).toString('base64');
   const source = fs.readFileSync(path.join(assemblea, 'core/regia.js'), 'utf8').replace(
@@ -26,6 +26,8 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
     .replace('</body>', `<script>
       window.LIVE = { url: 'https://firebase.test' };
       window.ACCESSO = { chiave: () => '' };
+      ${fs.readFileSync(path.join(root, 'assets/js/nas-nav.js'), 'utf8')}
+      document.dispatchEvent(new Event('DOMContentLoaded'));
       ${source}
       const state = { i: 0, k: 0, n: 40, steps: 2,
         titoli: Array.from({ length: 40 }, (_, i) => 'Slide ' + (i + 1)) };
@@ -37,17 +39,18 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       });
       document.querySelector('#anteprima').contentWindow.VISTA = { vai() {} };
       document.querySelector('#app').hidden = false;
-      document.querySelectorAll('header [hidden]').forEach(el => el.hidden = false);
+      document.querySelectorAll('header [hidden]:not(#reserved-menu)').forEach(el => el.hidden = false);
       ${fs.readFileSync(path.join(root, 'assets/js/shared/section-nav.js'), 'utf8')}
       TEST.mostraStato(true);
       draw();
       const phone = matchMedia('(max-width: 699px) and (orientation: portrait)').matches;
-      const menu = document.querySelector('#menu-regia');
+      const compact = matchMedia('(max-width: 1024px)').matches;
+      const menu = document.querySelector('#reserved-menu-toggle');
       const extras = ['.header-status', '#schermo', '#setup', '#esci'].map(s => document.querySelector(s));
       const shown = el => el.checkVisibility();
       const navbar = { height: document.querySelector('header').getBoundingClientRect().height,
         menu: shown(menu), allShown: extras.every(shown), noneShown: !extras.some(shown) };
-      if (phone) {
+      if (compact) {
         menu.click();
         navbar.opened = menu.getAttribute('aria-expanded') === 'true' && extras.every(el => {
           const box = el.getBoundingClientRect();
@@ -195,7 +198,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
         '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-zygote', '--allow-file-access-from-files',
         '--no-first-run', '--no-default-browser-check', '--no-proxy-server',
         '--user-data-dir=' + path.join(dir, 'profile'), '--window-size=' + viewport,
-        '--dump-dom', 'file://' + wrapper
+        '--dump-dom', pathToFileURL(wrapper).href
       ], { encoding: 'utf8', timeout: 30000, maxBuffer: 5 * 1024 * 1024 });
       assert.equal(result.status, 0, result.stderr);
       const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
@@ -204,12 +207,12 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       const { results, measurements, modal, phone, navbar, viewport: measured, focusRestored } = JSON.parse(match[1]);
       assert.deepEqual(measured, [width, height], 'fixture uses the exact viewport');
       assert.equal(phone, width < 700 && height >= width, 'phone layout only in portrait below 700px at ' + viewport);
-      if (phone) {
-        assert.ok(navbar.height <= 56, 'phone navbar stays on one slim row at ' + viewport + ': ' + navbar.height);
+      if (width <= 1024) {
+        assert.ok(navbar.height <= 64, 'compact navbar stays on one slim row at ' + viewport + ': ' + navbar.height);
         for (const key of ['menu', 'noneShown', 'opened', 'closed'])
           assert.equal(navbar[key], true, 'phone menu ' + key + ' at ' + viewport);
       } else {
-        assert.equal(navbar.menu, false, 'menu button only on phones at ' + viewport);
+        assert.equal(navbar.menu, false, 'menu button hidden on desktop at ' + viewport);
         assert.equal(navbar.allShown, true, 'header commands stay visible at ' + viewport);
       }
       if (height < 800 || width < 1000) assert.ok(results.some(row => row.listTop > 0), 'the slide list must follow the active slide');

@@ -24,29 +24,6 @@ body.reserved-page .reserved-header .brand,
 .nas-navbar img { width: 48px; height: 48px; object-fit: contain }
 .nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
 .nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
-.reserved-location { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; box-sizing: border-box; width: calc(100% - 32px); max-width: 1360px; margin: 0 auto; padding: 6px 0; border-bottom: 1px solid #d6ccdf; color: #39234c; font: 600 14px/1.4 system-ui, sans-serif; }
-.reserved-location a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: #50336a; text-underline-offset: 3px; }
-.reserved-location strong { flex: 1; min-width: 80px; overflow-wrap: anywhere; }
-.reserved-location a:focus-visible { outline: 3px solid #926bb5; outline-offset: 3px; }
-@media (max-width: 420px) {
-  .reserved-location { gap: 0 12px; font-size: 13px; }
-  .reserved-location strong { flex-basis: calc(100% - 120px); text-align: right; }
-}
-@media print { .reserved-location { display: none; } }
-body.reserved-page:has(> .members-page) > .reserved-header {
-  gap: 8px 16px;
-  padding: 8px 24px;
-}
-body.reserved-page:has(> .members-page) > .reserved-header .brand { min-height: 44px; padding: 4px 8px }
-body.reserved-page:has(> .members-page) > .reserved-header img { width: 36px; height: 36px }
-body.reserved-page:has(> .members-page) > .reserved-header :is(a, button, summary, select) { min-height: 44px }
-body.reserved-page:has(> .members-page) > .reserved-header :is(a, button, summary, select):focus-visible {
-  outline: 3px solid var(--y, #fdc500);
-  outline-offset: 3px;
-}
-body.reserved-page:has(> .members-page) > .reserved-header :is(.view-as-form, .view-as-active) :focus-visible {
-  outline-color: var(--vd, #211638);
-}
 #nas-login-form [hidden], #people-tool[hidden], #people-access-tool[hidden] { display: none }
 #password-fields, #confirmation-field { display: grid; gap: 10px }
 #nas-login-form p { font-size: 14px }
@@ -81,7 +58,7 @@ body.reserved-page:has(> .members-page) > .reserved-header :is(.view-as-form, .v
 @media (max-width: 600px) {
   body.reserved-page > .reserved-header { gap: 8px; padding: 10px 16px; }
   body.reserved-page > .reserved-header .brand { min-width: 0; padding: 6px 8px; }
-  body.reserved-page > .reserved-header > a:not(.brand) { max-width: 45%; font-size: 12px; text-align: right; overflow-wrap: anywhere; }
+  body.reserved-page > .reserved-header > a:not(.brand, .reserved-brand) { max-width: 45%; font-size: 12px; text-align: right; overflow-wrap: anywhere; }
   body.reserved-page > #reserved-content { width: calc(100% - 28px); margin: 20px auto; }
   #reserved-content > h1 { font-size: clamp(1.7rem, 8vw, 2.4rem); line-height: 1.1; }
   #reserved-content .button { max-width: 100%; white-space: normal; text-align: center; overflow-wrap: anywhere; }
@@ -165,20 +142,79 @@ body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#log
   box-sizing: border-box !important; width: calc(100% - 48px) !important; max-width: none !important;
   margin: 24px auto !important; padding-inline: 0 !important;
 }
-.reserved-location { width: calc(100% - 48px); max-width: none }
-body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: 24px !important }
-@media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer) { padding-inline: 12px !important } }
+body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 24px !important }
+@media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 12px !important } }
 @media (max-width: 600px) {
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { width: calc(100% - 24px) !important }
-  .reserved-location { width: calc(100% - 24px) }
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { margin-block: 16px !important }
 }
 
 /* Almeno il 10% di margine a destra e a sinistra su schermi larghi */
 @media (min-width: 900px) {
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))),
-  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])),
-  .reserved-location { width: 80% !important }
-  body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.reserved-header, .site-footer),
-  body.reserved-page.dashboard-page:has(#riservata:not([hidden])) > .reserved-header { padding-inline: 10% !important }
+  body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: 80% !important }
+  body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 10% !important }
 }
+
+/* Un solo header per dashboard, gestionali e strumenti assemblea. */
+body > :is(.reserved-header, .setup-header, .hd).reserved-navbar {
+  position: sticky; top: 0; z-index: 40; display: flex; flex: none; flex-wrap: wrap;
+  align-items: center; justify-content: space-between; gap: 8px 16px;
+  box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 8px 24px;
+  border: 0; background: var(--v, #462678); color: #fff; font: 13px/1.4 Montserrat, system-ui, sans-serif;
+}
+.reserved-navbar *, .reserved-navbar *::before, .reserved-navbar *::after { box-sizing: border-box }
+.reserved-navbar.reserved-header [hidden], .reserved-navbar.setup-header [hidden], .reserved-navbar.hd [hidden] { display: none !important }
+.reserved-navbar :is(a, button, summary, select):focus-visible { outline: 3px solid var(--y, #fdc500); outline-offset: 2px }
+body > .reserved-navbar a.reserved-brand {
+  display: flex; flex: 0 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 48px; max-width: 260px;
+  padding: 4px 10px; border-radius: 8px; background: #fff; color: var(--vd, #211638);
+  text-decoration: none; text-align: left; font-size: 13px;
+}
+body > .reserved-navbar .reserved-brand img { flex: none; width: auto; height: 36px; object-fit: contain }
+.reserved-navbar .reserved-brand > div { min-width: 0 }
+.reserved-navbar .reserved-brand strong { display: block; font: inherit; font-weight: 800 }
+body > .reserved-navbar .reserved-title { display: block; margin: 0; font: 600 12px/1.4 Montserrat, system-ui, sans-serif; overflow-wrap: anywhere }
+body > .reserved-navbar .reserved-menu { display: flex; flex: 1; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 16px; min-width: 0 }
+body > .reserved-navbar :is(.reserved-links, .reserved-actions) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; margin: 0 }
+body > .reserved-navbar :is(.reserved-links, .reserved-actions) > :is(a, button),
+body > .reserved-navbar .reserved-actions > details > summary {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px;
+  margin: 0; padding: 8px 10px; border: 1px solid #ffffff70; border-radius: 8px;
+  background: transparent; color: #fff; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.reserved-navbar .reserved-links > a[aria-current="page"] { box-shadow: inset 0 -3px var(--y, #fdc500) }
+.reserved-navbar :is(.reserved-links, .reserved-actions) > :is(a, button):hover { background: #ffffff20 }
+body > .reserved-navbar .reserved-actions > .pill { max-width: 100%; white-space: normal }
+body > .reserved-navbar .header-status { margin: 0 }
+body > .reserved-navbar .reserved-menu-toggle {
+  display: none; flex: none; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px;
+  margin: 0; padding: 8px 10px; border: 1px solid #ffffff70; border-radius: 8px;
+  background: transparent; color: #fff; box-shadow: none; font: inherit; font-weight: 700; cursor: pointer;
+}
+.reserved-menu-icon { display: grid; gap: 4px; width: 20px }
+.reserved-menu-icon > span { display: block; height: 2px; border-radius: 2px; background: currentColor }
+.reserved-menu-open .reserved-menu-icon > span:first-child { transform: translateY(6px) rotate(45deg) }
+.reserved-menu-open .reserved-menu-icon > span:nth-child(2) { opacity: 0 }
+.reserved-menu-open .reserved-menu-icon > span:last-child { transform: translateY(-6px) rotate(-45deg) }
+.reserved-navbar > .view-as-active { flex-basis: 100%; justify-content: flex-end; border-radius: 8px }
+.reserved-navbar :is(.view-as-active, .view-as-form) :focus-visible { outline-color: var(--vd, #211638) }
+@media (max-width: 1024px) {
+  body > :is(.reserved-header, .setup-header, .hd).reserved-navbar { gap: 8px; padding: 8px 12px }
+  body > .reserved-navbar a.reserved-brand { flex: 1; max-width: calc(100% - 92px) }
+  body > .reserved-navbar .reserved-menu-toggle { display: inline-flex }
+  body > .reserved-navbar:not(.reserved-menu-open) .reserved-menu { display: none }
+  body > .reserved-navbar .reserved-menu {
+    position: absolute; top: 100%; left: 0; right: 0; display: block;
+    max-height: calc(100dvh - 100% - 8px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 12px; border-top: 1px solid #ffffff40; background: var(--v, #462678); box-shadow: 0 8px 16px #21163830;
+  }
+  body > .reserved-navbar :is(.reserved-links, .reserved-actions) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px }
+  body > .reserved-navbar .reserved-actions { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffffff40 }
+  body > .reserved-navbar :is(.reserved-links, .reserved-actions) > :is(a, button),
+  body > .reserved-navbar .reserved-actions > details > summary { width: 100%; justify-content: flex-start; text-align: left }
+  body > .reserved-navbar .view-as { order: initial; justify-content: flex-start }
+  body > .reserved-navbar :is(.view-as-form, .header-status > div) { position: static; width: 100%; margin-top: 8px }
+  .reserved-navbar .view-as-active .view-as-return { min-height: 44px }
+}
+@media print { body > .reserved-navbar { display: none !important } }
