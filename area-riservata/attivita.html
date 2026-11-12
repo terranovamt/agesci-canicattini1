@@ -22,7 +22,6 @@
     <div class="members-heading">
       <div><h1>Attività</h1></div>
       <label id="activities-search-label" class="activities-search" hidden><span>Cerca</span><input id="activities-search" type="search" placeholder="Titolo o nome del socio"></label>
-      <a class="button button-secondary" href="soci.html">Libro soci →</a>
     </div>
     <p id="activities-status" role="status" aria-live="polite"></p>
     <p id="activities-login" hidden>Accedi dal NAS con una branca di servizio assegnata. <a href="./">Vai all’accesso →</a></p>
@@ -52,7 +51,13 @@
           <a id="paths-all-back" class="button button-secondary" href="attivita.html#paths-panel">← Tutti i percorsi</a>
           <a id="paths-member-back" class="button button-secondary" hidden>Scheda personale →</a>
         </div>
-        <div id="paths-filters" class="path-filters" role="group" aria-label="Filtra percorsi"></div>
+        <details id="paths-filter-disclosure" class="path-filter-disclosure">
+          <summary class="path-filter-toggle">
+            <span>Filtri percorsi</span>
+            <span id="paths-filter-count" class="path-filter-count" hidden></span>
+          </summary>
+          <div id="paths-filters" class="path-filters" role="group" aria-label="Filtra percorsi"></div>
+        </details>
         <div id="paths-members" class="activities-grid"></div>
         <p id="paths-hint" class="members-note" hidden></p>
         <div id="paths-list" class="activities-grid"></div>
@@ -195,6 +200,7 @@
   <script src="../assets/js/shared/accesso.js" defer></script>
   <script src="../assets/js/shared/section-nav.js" defer></script>
   <script src="../assets/js/soci-model.js" defer></script>
+  <script src="../assets/js/shared/unit-symbol.js" defer></script>
   <script src="../assets/js/activities-model.js" defer></script>
   <script src="../assets/js/tournament-model.js" defer></script>
   <script src="../assets/js/attivita.js" defer></script>

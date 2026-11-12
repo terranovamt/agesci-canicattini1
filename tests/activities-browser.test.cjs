@@ -68,6 +68,14 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor:1, mobile:width < 500 });
         await go("attivita.html");
         await wait("!document.getElementById('activities-app').hidden");
+        assert.equal(await page.evaluate("document.getElementById('activities-branch').closest('label').hidden"), true,
+          "the L/C chief does not need a branch selector");
+        assert.deepEqual(await page.evaluate(`(() => ({
+          branch: document.getElementById('reserved-content').dataset.branch,
+          label: document.querySelector('.branch-identity-marker').textContent.trim(),
+          icon: document.querySelector('.branch-identity-marker img').getAttribute('src').endsWith('branca-lc-cappellino.svg')
+        }))()`), { branch: "L/C", label: "Branca L/C", icon: true },
+        "the shared content margin identifies the L/C chief's branch");
         assert.equal(await page.evaluate("document.getElementById('activities-search').closest('label').hidden"), false,
           "the 30-member branch exposes search");
         assert.equal(await page.evaluate("document.querySelector('.reserved-brand').getAttribute('aria-label').includes('Home capi')"), true);
@@ -193,7 +201,7 @@ test("demo screens expose navigation, individual paths, clear attendance and com
     }
   });
 
-test("branch chiefs land on today's program, including the last camp day, across four screen formats",
+test("branch chiefs land on today's program, including the last camp day, across five screen formats",
   { skip: !chrome, timeout: 120000 }, async t => {
     const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-live-browser-"));
     const app = await startNasDev({ basePath: "/agesci-canicattini1", censusCodes: "7654321,7654322,7654323" });
@@ -241,6 +249,11 @@ test("branch chiefs land on today's program, including the last camp day, across
               {date:'2027-01-05',time:'11:00',title:'Cerchio e verifica'}
             ].filter(item => branch !== 'L/C' || item.date === '2027-01-05')});
         }
+        const unitless = await ACCESSO.request('members', 'POST', {code:'490003', branch:'E/G',
+          profile:{givenName:'Socio', surname:'Senza squadriglia'}, values:{}});
+        await ACCESSO.request('activities/paths', 'POST', {branch:'E/G', kind:'badge',
+          personId:unitless.member.id, title:'Percorso senza squadriglia',
+          steps:[{title:'Tappa di prova',done:false}], closed:false});
       })()`);
       const chiefs = await page.evaluate("window.testChiefs");
       const images = [];
@@ -254,8 +267,8 @@ test("branch chiefs land on today's program, including the last camp day, across
       };
       for (const [branch, color] of [["L/C", "rgb(211, 168, 23)"], ["E/G", "rgb(57, 130, 88)"], ["R/S", "rgb(188, 78, 80)"]]) {
         await page.evaluate(`ACCESSO.request('auth/view-as', 'POST', {personId:${chiefs[branch]}})`);
-        for (const [label, width, height] of [["telefono",390,844], ["tablet",820,1180],
-          ["portatile",1366,768], ["desktop",1920,1080]]) {
+        for (const [label, width, height] of [["telefono compatto",390,844], ["telefono ampio",430,932],
+          ["tablet",820,1180], ["portatile",1366,768], ["desktop",1920,1080]]) {
           await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor:1, mobile:width < 500 });
           await go("");
           await wait("document.getElementById('dashboard-event-title').textContent.startsWith('Oggi con')");
@@ -264,7 +277,7 @@ test("branch chiefs land on today's program, including the last camp day, across
             return {branch:document.getElementById('reserved-content').dataset.branch,
               title:document.getElementById('dashboard-title').textContent,
               color:getComputedStyle(panel).borderTopColor,
-              first:panel.getBoundingClientRect().top <= document.getElementById('dashboard-more').getBoundingClientRect().top,
+              first:panel.getBoundingClientRect().top <= document.getElementById('dashboard-overview').getBoundingClientRect().top,
               actionVisible:action.getBoundingClientRect().bottom <= innerHeight,
               overflow:document.documentElement.scrollWidth > innerWidth,
               now:document.getElementById('dashboard-event-moment').textContent,
@@ -306,8 +319,70 @@ test("branch chiefs land on today's program, including the last camp day, across
             await wait("!document.getElementById('activities-app').hidden");
             const id = href.split("#")[1];
             assert.equal(await page.evaluate(`document.getElementById(${JSON.stringify(id)}).hidden`), false, "branch shortcut opens its section");
+            assert.equal(await page.evaluate("document.getElementById('activities-branch').closest('label').hidden"), true,
+              `${branch}: the chief does not need a branch selector`);
+            const navigationShortcuts = await page.evaluate(`(() => ({
+              menuHasMembers:!!document.querySelector('.reserved-links a[href$="soci.html"]'),
+              pageLinkCount:document.querySelectorAll('.activities-page > .members-heading > a[href="soci.html"]').length
+            }))()`);
+            assert.equal(navigationShortcuts.menuHasMembers, true, `${branch}: Libro soci remains in the shared menu`);
+            assert.equal(navigationShortcuts.pageLinkCount, 0,
+              `${branch} ${label}: Libro soci uses only the shared navigation`);
+            assert.deepEqual(await page.evaluate(`(() => ({
+              branch: document.getElementById('reserved-content').dataset.branch,
+              label: document.querySelector('.branch-identity-marker').textContent.trim(),
+              icon: document.querySelector('.branch-identity-marker img').getAttribute('src').split('/').pop()
+            }))()`), { branch, label: "Branca " + branch, icon:
+              branch === "L/C" ? "branca-lc-cappellino.svg" :
+                branch === "E/G" ? "branca-eg-tenda.svg" : "branca-rs-forcola.svg" },
+            `${branch}: the shared content margin shows the right branch graphic`);
+            const identityLayout = await page.evaluate(`(() => {
+              const marker = document.querySelector('.branch-identity-marker');
+              const heading = marker.closest('.branch-heading-title');
+              const title = heading?.querySelector('h1');
+              const markerRect = marker.getBoundingClientRect();
+              const titleRect = title?.getBoundingClientRect();
+              return {visible:!marker.hidden, integrated:!!title && marker.parentElement === heading,
+                sameLine:!!titleRect && Math.abs(markerRect.top + markerRect.height / 2 -
+                  (titleRect.top + titleRect.height / 2)) < 6,
+                iconWidth:marker.querySelector('img').getBoundingClientRect().width,
+                desktopStripe:getComputedStyle(document.getElementById('reserved-content'),'::after').display};
+            })()`);
+            assert.equal(identityLayout.integrated, true, `${branch} ${label}: identity is integrated with the page title`);
+            assert.equal(identityLayout.sameLine, true, `${branch} ${label}: identity shares the title row`);
+            assert.equal(identityLayout.desktopStripe, "none", `${branch} ${label}: no detached desktop rail`);
+            if (width <= 1024) {
+              assert.equal(identityLayout.visible, true, `${branch} ${label}: branch remains visible on compact screens`);
+              assert.ok(identityLayout.iconWidth >= (width <= 430 ? 28 : 36),
+                `${branch} ${label}: branch icon remains readable: ${JSON.stringify(identityLayout)}`);
+            }
           }
           t.diagnostic(branch + " " + label + ": live home, current program and shortcuts");
+        }
+        if (branch === "E/G") {
+          await go("attivita.html");
+          await wait("!document.getElementById('activities-app').hidden");
+          await page.evaluate("document.getElementById('paths-tab').click()");
+          await wait("!document.getElementById('paths-panel').hidden");
+          assert.equal(await page.evaluate(`(() => {
+            const panel = document.getElementById('paths-panel');
+            return panel.textContent.includes('Percorso senza squadriglia') ||
+              panel.textContent.includes('Senza squadriglia');
+          })()`), false, "paths without an assigned squadron are omitted");
+          assert.equal(await page.evaluate(`(() => {
+            const group = document.querySelector('#paths-members .activity-path-unit[data-branch="E/G"]');
+            const summary = group?.querySelector(':scope > summary');
+            const label = summary?.querySelector('span')?.textContent || '';
+            const identity = window.SOCI_MODEL.patrolIdentity(label.slice(0, label.lastIndexOf(' · ')));
+            const colors = getComputedStyle(summary, '::after');
+            const symbol = summary?.firstElementChild;
+            return !!identity &&
+              symbol?.matches('svg[aria-label^="Guidone della squadriglia"]') &&
+              getComputedStyle(symbol).width === '64px' &&
+              colors.display !== 'none' && colors.width === '92px' &&
+              group.style.getPropertyValue('--unit-color') === identity.color &&
+              group.style.getPropertyValue('--unit-color-secondary') === identity.color2;
+          })()`), true, "E/G path groups show the same guidone and patrol colors as the Libro soci");
         }
         await page.evaluate("ACCESSO.request('auth/view-as', 'DELETE')");
       }
@@ -685,6 +760,18 @@ test("login autofill, education dates, activities and progression work on four s
           await wait("!document.getElementById('path-dialog').open");
         }
         await shot(label + "-09-percorsi-" + branch.replace("/", ""));
+        assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('#paths-filters > [role="group"] > .path-filter-label')]
+          .map(label=>label.textContent.trim())`), ["Stato di avanzamento", "Tipo di percorso"],
+        `${branch}: path filters distinguish progress from path type`);
+        assert.equal(await page.evaluate("document.getElementById('paths-filter-disclosure').open"),
+          width > 1024, `${label}: filters default closed only on mobile and tablet`);
+        if (width <= 1024) {
+          assert.equal(await page.evaluate("document.querySelector('.path-filter-toggle').checkVisibility()"), true,
+            `${label}: compact filter control is visible`);
+          await click(".path-filter-toggle");
+          assert.equal(await page.evaluate("document.getElementById('paths-filters').checkVisibility()"), true,
+            `${label}: filter groups open on demand`);
+        }
         await expand("#paths-list .path-more");
         await click("#paths-list .path-more button");
         await shot(label + "-10-tappe-" + branch.replace("/", ""));

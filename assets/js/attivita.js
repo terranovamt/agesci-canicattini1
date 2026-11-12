@@ -7,6 +7,12 @@
   const pathLabels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
   const pathDrafts = new Map();
   const pathFilter = { state: '', kind: '' };
+  const pathFilterDisclosure = $('paths-filter-disclosure');
+  const compactPathFilters = matchMedia('(max-width: 1024px)');
+  pathFilterDisclosure.open = !compactPathFilters.matches;
+  compactPathFilters.addEventListener('change', () => {
+    pathFilterDisclosure.open = !compactPathFilters.matches;
+  });
   const materialOptions = new Map();
   const linkedMemberId = new URLSearchParams(location.search).get('member');
   let activityPlaceChanged = false;
@@ -70,7 +76,8 @@
       input.value = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits.length === 2 ? digits + ':' : digits;
     });
   }
-  function roster() { return data.members.filter(member => member.branch === branch()); }
+  function roster() { return data.members.filter(member => member.branch === branch() && !M.isNonFrequentante(member)); }
+  function pathRoster() { return roster().filter(member => String(member.unit || '').trim()); }
   function pathFilterMatch(item) {
     const selectedState = pathFilter.state, kind = pathFilter.kind;
     const hidden = !selectedState && !pathMember() && ['Conquistato', 'Conclusa'].includes(state(item));
@@ -79,30 +86,44 @@
   }
   function pathFiltersActive() { return !!(pathFilter.state || pathFilter.kind); }
   function renderPathFilters(scope) {
+    const activeCount = Number(!!pathFilter.state) + Number(!!pathFilter.kind);
+    $('paths-filter-count').textContent = activeCount ? `${activeCount} attivi` : '';
+    $('paths-filter-count').hidden = !activeCount;
     const chip = (label, group, value) => {
       const element = button(label, () => { pathFilter[group] = pathFilter[group] === value ? '' : value; render(); });
       element.className = 'members-filter-chip'; element.setAttribute('aria-pressed', String(pathFilter[group] === value));
       return element;
     };
+    const filterGroup = (label, className, id, chips) => {
+      const group = node('div', undefined, `path-filter-group ${className}`);
+      const heading = node('span', label, 'path-filter-label');
+      heading.id = id;
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-labelledby', id);
+      group.append(heading, ...chips);
+      return group;
+    };
     const states = ['Definito', 'In lavorazione', 'Conquistato', 'Conclusa'];
     const kinds = Object.keys(pathLabels).filter(kind => scope.some(item => item.kind === kind));
     $('paths-filters').replaceChildren(
-      ...states.map(label => chip(`${label} ${scope.filter(item => state(item) === label).length}`, 'state', label)),
-      ...kinds.map(kind => chip(`${pathLabels[kind]} ${scope.filter(item => item.kind === kind).length}`, 'kind', kind)));
+      filterGroup('Stato di avanzamento', 'path-filter-status', 'paths-state-filter-label',
+        states.map(label => chip(`${label} ${scope.filter(item => state(item) === label).length}`, 'state', label))),
+      ...(kinds.length ? [filterGroup('Tipo di percorso', 'path-filter-kind', 'paths-kind-filter-label',
+        kinds.map(kind => chip(`${pathLabels[kind]} ${scope.filter(item => item.kind === kind).length}`, 'kind', kind)))] : []));
   }
   function pathMember() {
-    return roster().find(member => String(member.id) === linkedMemberId);
+    return pathRoster().find(member => String(member.id) === linkedMemberId);
   }
   function attendanceColors(unit) {
     const saved = attendanceUnits.find(item => item.branch === branch() && M.unitKey(item.name) === M.unitKey(unit));
     const identity = branch() === 'E/G' ? M.patrolIdentity(unit) : null;
-    const color = saved?.color || (branch() === 'L/C'
+    const color = identity?.color || saved?.color || (branch() === 'L/C'
       ? Object.entries(M.sestigliaColors).find(([name]) => M.unitKey(name) === M.unitKey(unit))?.[1]
-      : identity?.color);
+      : null);
     const primary = color || M.branchColors[branch()];
     return branch() === 'L/C'
       ? [primary, primary]
-      : [primary, saved?.color2 || identity?.color2 || primary];
+      : [primary, identity?.color2 || saved?.color2 || primary];
   }
   function memberLink(person) {
     const link = node('a', person.name);
@@ -139,9 +160,10 @@
   function render() {
     const lc = branch() === 'L/C', rs = branch() === 'R/S';
     const search = $('activities-search');
-    search.closest('label').hidden = !search.value && roster().length <= 12 &&
+    search.closest('label').hidden = !search.value && pathRoster().length <= 12 &&
       data.events.filter(item => item.branch === branch()).length <= 12 &&
-      data.paths.filter(item => item.branch === branch()).length <= 12;
+      data.paths.filter(item => item.branch === branch() &&
+        pathRoster().some(member => member.id === item.personId)).length <= 12;
     document.querySelector('.activities-context').hidden =
       [...document.querySelectorAll('.activities-context > label')].every(label => label.hidden);
     $('paths-tab').hidden = rs;
@@ -214,7 +236,7 @@
     if (!events.length) $('events-list').append(node('p', 'Nessuna attività trovata. Crea il primo incontro di branca.', 'members-note'));
     $('paths-members').hidden = !!selectedMember;
     if (!selectedMember) {
-      const grouped = roster().filter(member => matches(member.name) || data.paths.some(item =>
+      const grouped = pathRoster().filter(member => matches(member.name) || data.paths.some(item =>
         item.branch === branch() && item.personId === member.id && matches(item.title))).reduce((groups, member) => {
         const unit = member.unit || (branch() === 'L/C' ? 'Senza sestiglia' : 'Senza squadriglia');
         if (!groups.has(unit)) groups.set(unit, []);
@@ -224,11 +246,17 @@
       const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b, 'it'));
       $('paths-members').replaceChildren(...groups.map(([unit, members]) => {
         const group = node('details', undefined, 'activity-path-unit');
+        group.dataset.branch = branch();
         const [color, color2] = attendanceColors(unit);
         group.style.setProperty('--unit-color', color);
         group.style.setProperty('--unit-color-secondary', color2);
         group.open = true;
-        group.append(node('summary', `${unit} · ${members.length}`));
+        const summary = node('summary');
+        if (branch() === 'E/G') summary.append(window.SOCI_UNIT_SYMBOL({
+          branch: branch(), name: unit, color, color2,
+        }));
+        summary.append(node('span', `${unit} · ${members.length}`));
+        group.append(summary);
         const list = node('div', undefined, 'activity-path-unit-members');
         list.append(...members.flatMap(member => {
           const link = () => {
@@ -1385,10 +1413,11 @@
       ]);
       data = activities; attendanceUnits = members?.units || [];
       options($('activities-branch'), data.branches.map(branch => [branch, branch]));
+      const singleBranch = data.branches.length === 1;
       const linkedMember = data.members.find(member => String(member.id) === linkedMemberId &&
         data.branches.includes(member.branch));
       if (linkedMember) $('activities-branch').value = linkedMember.branch;
-      $('activities-branch').closest('label').hidden = data.branches.length === 1;
+      $('activities-branch').closest('label').hidden = singleBranch;
       $('activities-app').hidden = $('activities-search-label').hidden = false; render(); $('activities-status').textContent = '';
       const params = new URLSearchParams(location.search), eventId = params.get('event');
       selectLinkedSection();
