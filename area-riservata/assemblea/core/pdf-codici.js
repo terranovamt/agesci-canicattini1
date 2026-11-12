@@ -1,9 +1,32 @@
 /* PDF minimo (Helvetica) con i cartoncini dei codici di voto: nessuna libreria esterna. */
 window.PDF_CODICI = (function () {
   const esc = t => String(t).replace(/[^\x20-\x7e\xa0-\xff]/g, '?').replace(/([\\()])/g, '\\$1');
-  /* A4 orizzontale, griglia 4x4 di cartoncini ad angoli vivi, da ritagliare lungo i bordi */
+  // Larghezze Helvetica-Bold ASCII in millesimi di em; gli accenti mantengono la larghezza della lettera.
+  const boldWidths = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,
+    975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,
+    667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,
+    333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,
+    611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,
+  ];
+  const nameWidth = t => [...String(t).replace(/[^\x20-\x7e\xa0-\xff]/g, '?').normalize('NFD').replace(/[\u0300-\u036f]/g, '')]
+    .reduce((sum, c) => sum + (boldWidths[c.charCodeAt(0) - 32] || 1000), 0) / 1000;
+  const nameLines = (name, width, size) => {
+    const text = String(name).trim().replace(/\s+/g, ' ');
+    if (nameWidth(text) * size <= width) return [text];
+    const spaces = [...text.matchAll(/ /g)].map(m => m.index);
+    const breaks = spaces.length ? spaces : Array.from({ length: text.length - 1 }, (_, i) => i + 1);
+    const split = breaks.reduce((best, at) => {
+      const lines = [text.slice(0, at).trim(), text.slice(at).trim()];
+      const widest = Math.max(...lines.map(nameWidth));
+      return !best || widest < best.widest ? { lines, widest } : best;
+    }, null);
+    return split.lines;
+  };
+  /* A4 orizzontale, griglia 5x4 di cartoncini ad angoli vivi, da ritagliare lungo i bordi */
   function crea(titolo, righe) {
-    const W = 842, H = 595, MX = 21, MY = 20, COL = 4, RIG = 4, PER = COL * RIG;
+    const W = 842, H = 595, MX = 21, MY = 20, COL = 5, RIG = 4, PER = COL * RIG;
     const cw = (W - 2 * MX) / COL, ch = (H - 2 * MY) / RIG, HEAD = 30, BOX = 40;
     const taglia = (t, n) => (String(t).length > n ? String(t).slice(0, n - 1) + '.' : String(t));
     const n = v => v.toFixed(2);
@@ -14,14 +37,20 @@ window.PDF_CODICI = (function () {
       let s = '0.5 w\n';
       rs.forEach((r, k) => {
         const x = MX + (k % COL) * cw, y = H - MY - (Math.floor(k / COL) + 1) * ch;
+        const lines = nameLines(r.nome, cw - 20, 13);
+        const nameSize = Math.min(13, (cw - 20) / Math.max(...lines.map(nameWidth)));
+        s += `q ${n(x)} ${n(y)} ${n(cw)} ${n(ch)} re W n\n`;
         s += `0.29 0.16 0.49 rg ${n(x)} ${n(y + ch - HEAD)} ${n(cw)} ${HEAD} re f\n`;
         s += '1 1 1 rg\n' + testo(2, 9.5, x + 10, y + ch - 13, 'AGESCI Canicattini 1') + testo(1, 8, x + 10, y + ch - 24, taglia(titolo, 38));
-        s += '0.16 0.09 0.31 rg\n' + testo(2, 13, x + 10, y + ch - HEAD - 22, taglia(r.nome, 24));
-        s += '0.35 0.35 0.4 rg\n' + testo(1, 8.5, x + 10, y + ch - HEAD - 36, taglia(`Socio ${r.codice}  -  ${r.branca}`, 40));
+        s += '0.16 0.09 0.31 rg\n';
+        lines.forEach((line, index) => {
+          s += testo(2, Math.floor(nameSize * 100) / 100, x + 10, y + ch - HEAD - 16 - index * 14, line);
+        });
+        s += '0.35 0.35 0.4 rg\n' + testo(1, 8.5, x + 10, y + ch - HEAD - 44, taglia(`Socio ${r.codice}  -  ${r.branca}`, 40));
         s += `0.97 0.78 0 rg ${n(x + 10)} ${n(y + 16)} ${n(cw - 20)} ${BOX} re f\n`;
         s += '0.16 0.09 0.31 rg\n' + testo(2, 7, x + 14, y + 16 + BOX - 10, 'CODICE DI VOTO') + testo(2, 24, x + 14, y + 22, r.personale, '5 Tc');
         s += '0.35 0.35 0.4 rg\n' + testo(1, 6.5, x + 10, y + 7, 'Personale e segreto: non cederlo');
-        s += `0.6 0.6 0.65 RG ${n(x)} ${n(y)} ${n(cw)} ${n(ch)} re S\n`;
+        s += `Q\n0.6 0.6 0.65 RG ${n(x)} ${n(y)} ${n(cw)} ${n(ch)} re S\n`;
       });
       return s;
     });

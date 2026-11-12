@@ -92,3 +92,67 @@ test("setup heading summarises date, convocations, agenda points and slides", ()
   assert.match(setup, /view === "generale" \|\| view === "ordine"\) \$\("#intro"\)\.textContent = riepilogo\(\)/);
   assert.match(setup, / all'ordine del giorno/);
 });
+
+async function codePdf(rows) {
+  const context = { window: {}, Blob, Uint8Array };
+  vm.runInNewContext(
+    fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/pdf-codici.js"), "utf8"),
+    context,
+  );
+  const blob = context.window.PDF_CODICI.crea("Codici di voto - Censiti 2025", rows);
+  return Buffer.from(await blob.arrayBuffer()).toString("latin1");
+}
+
+test("voting-code PDF places twenty cards in five columns and four rows before starting a new page", async () => {
+  const rows = Array.from({ length: 21 }, (_, i) => ({
+    nome: "Socio " + i, codice: String(i), branca: "E/G", personale: "123456",
+  }));
+  const pdf = await codePdf(rows);
+  const streams = [...pdf.matchAll(/\nstream\n([\s\S]*?)endstream/g)].map(match => match[1]);
+  assert.equal(streams.length, 2);
+  assert.match(pdf, /\/MediaBox \[0 0 842 595\]/);
+  const cards = stream => [...stream.matchAll(/ RG ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) re S/g)]
+    .map(match => match.slice(1).map(Number));
+  assert.deepEqual(cards(streams[0]), rows.slice(0, 20).map((_, i) => [
+    21 + i % 5 * 160, 575 - (Math.floor(i / 5) + 1) * 138.75, 160, 138.75,
+  ]));
+  assert.deepEqual(cards(streams[1]), [[21, 436.25, 160, 138.75]]);
+});
+
+test("voting-code names wrap into at most two complete lines and wide glyphs stay inside the card", async () => {
+  const names = [
+    "i".repeat(30),
+    "W".repeat(30),
+    "WWWWWWWW WWWWWWWW",
+    "Massimiliano D'Àngelo Castelluccio",
+    "WWWWW (WWWWW) \\ WWWWW",
+  ];
+  const pdf = await codePdf(names.map(nome => ({ nome, codice: "1234567", branca: "E/G", personale: "987654" })));
+  const cards = [...pdf.matchAll(/q ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) re W n\n([\s\S]*?)Q\n/g)];
+  assert.equal(cards.length, names.length);
+  for (const [index, card] of cards.entries()) {
+    const [x, y, width, height] = card.slice(1, 5).map(Number);
+    const lines = [...card[5].matchAll(/BT \/F2 ([\d.]+) Tf 0 Tc ([\d.]+) ([\d.]+) Td \(((?:\\.|[^\\)])*)\) Tj ET/g)]
+      .map(match => ({
+        size: Number(match[1]), x: Number(match[2]), y: Number(match[3]),
+        text: match[4].replace(/\\([\\()])/g, "$1"),
+      }))
+      .filter(line => line.y > y + 56 && line.y < y + height - 30);
+    assert.ok(lines.length >= 1 && lines.length <= 2);
+    assert.equal(lines.map(line => line.text).join(names[index].includes(" ") ? " " : ""), names[index]);
+    if (index === 0) {
+      assert.equal(lines.length, 1, "narrow letters do not wrap unnecessarily");
+      assert.equal(lines[0].size, 13);
+    } else {
+      assert.equal(lines.length, 2);
+    }
+    for (const line of lines) {
+      assert.equal(line.x, x + 10);
+      assert.ok(line.y - line.size * .25 > y + 56, "name stays above the vote-code box");
+      if (index === 1 || index === 2) {
+        const textWidth = line.text.length * .944 * line.size;
+        assert.ok(line.x + textWidth <= x + width - 10, "wide letters stay within the right padding");
+      }
+    }
+  }
+});
