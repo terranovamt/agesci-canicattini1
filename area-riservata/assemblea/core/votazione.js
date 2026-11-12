@@ -89,7 +89,7 @@
     const vai = async () => {
       if (!/^\d{6}$/.test(i.value)) { e.textContent = "Inserisci le 6 cifre del tuo codice"; return; }
       ok.disabled = true;
-      try { const r = await VOTO.post("identify", { code: i.value }); code = i.value; who = r; schermataVoto(); }
+      try { const r = await VOTO.post("identify", { code: i.value }); code = i.value; who = r; VOTO.poll = r.poll; schermataVoto(); }
       catch (x) { e.textContent = x.message; ok.disabled = false; }
     };
     ok.onclick = vai;
@@ -102,18 +102,24 @@
     const nome = h("h2", { textContent: "Ciao " + who.nome });
     if (!p || !p.aperta) return mostra(nome, h("p", { textContent: "Al momento non c'è nessuna votazione aperta." }), annulla());
     if (who.haVotato && who.poll && who.poll.id === p.id) return mostra(nome, h("p", { textContent: "Hai già votato: il tuo voto è registrato e segreto." }), annulla());
-    let scelta = null;
-    const e = h("div", { className: "er", role: "alert" });
-    const ok = h("button", { type: "button", className: "go", textContent: "Conferma il voto", disabled: true });
     const bs = p.opzioni.map((o, n) => Object.assign(h("button", { type: "button", textContent: o, className: p.modalita === "scelta" ? "c" + n : "" }), {
-      onclick() { scelta = n; bs.forEach((b, k) => b.classList.toggle("sel", k === n)); ok.disabled = false; },
+      onclick() { schermataConferma(n); },
     }));
+    mostra(nome, h("p", { textContent: p.domanda }), ...bs);
+  }
+  function schermataConferma(scelta) {
+    const p = VOTO.poll;
+    if (!p || !p.aperta) return schermataVoto();
+    const e = h("div", { className: "er", role: "alert" });
+    const ok = h("button", { type: "button", className: "go", textContent: "Conferma il voto" });
+    // Annulla torna alle opzioni: dopo un tocco sbagliato non serve rifare "Vota" e reinserire il codice.
+    const indietro = Object.assign(h("button", { type: "button", textContent: "Annulla" }), { onclick: () => schermataVoto() });
     ok.onclick = async () => {
       ok.disabled = true;
       try { await VOTO.post("cast", { code, poll: p.id, scelta }); mostra(h("h2", { textContent: "Voto registrato" }), h("p", { textContent: "Grazie " + who.nome + ": nessuno potrà vedere cosa hai votato." }), annulla()); setTimeout(() => { if (!box.hidden) chiudi(); }, 4000); }
       catch (x) { e.textContent = x.message; ok.disabled = false; }
     };
-    mostra(nome, h("p", { textContent: p.domanda }), ...bs, e, ok, annulla("Annulla"));
+    mostra(h("h2", { textContent: "Hai selezionato: " + p.opzioni[scelta] }),     h("p", { textContent: p.domanda }), e, ok, indietro);
   }
   btn.onclick = () => schermataCodice();
   VOTO.on(p => { btn.hidden = !(p && p.aperta); if (who && !box.hidden && !(p && p.aperta)) schermataVoto(); });
