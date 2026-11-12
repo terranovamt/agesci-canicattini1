@@ -2,11 +2,25 @@
 set -Eeuo pipefail
 umask 077
 
-NAS_ROOT="${NAS_ROOT:-/volume1/docker/agesci-nas}"
+export NAS_ROOT="${NAS_ROOT:-/volume1/docker/agesci-nas}"
 REPOSITORY="https://github.com/terranovamt/agesci-canicattini1.git"
 BRANCH="NAS"
 phase="preparazione"
 trap 'echo "Aggiornamento NAS fallito durante: $phase (riga $LINENO)." >&2' ERR
+
+write_deployment_status() {
+    local from="$1" to="$2"
+    if [[ ! "$to" =~ ^[0-9a-f]{40}$ ]] ||
+        { [ -n "$from" ] && [[ ! "$from" =~ ^[0-9a-f]{40}$ ]]; }; then
+        echo "Stato della pagina di attesa non aggiornato: commit non validi." >&2
+        return 1
+    fi
+    mkdir -p "$NAS_ROOT/deployment" || return $?
+    chmod 755 "$NAS_ROOT/deployment" || return $?
+    printf '{"previous":"%s","next":"%s"}\n' "$from" "$to" > "$NAS_ROOT/deployment/status.json.tmp" || return $?
+    chmod 644 "$NAS_ROOT/deployment/status.json.tmp" || return $?
+    mv "$NAS_ROOT/deployment/status.json.tmp" "$NAS_ROOT/deployment/status.json"
+}
 
 prune_releases() {
     # Older installations have no record of the previous healthy release.
@@ -74,6 +88,14 @@ export NAS_RELEASE_REVISION="$revision"
 previous="$(cat "$NAS_ROOT/current-revision" 2>/dev/null || true)"
 previous_configuration="$(cat "$NAS_ROOT/current-configuration" 2>/dev/null || true)"
 if [ "$revision" = "$previous" ] && [ "$configuration" = "$previous_configuration" ]; then
+    if [ ! -f "$NAS_ROOT/deployment/status.json" ]; then
+        phase="inizializzazione dei commit della pagina di attesa"
+        last_previous=""
+        if [ -f "$NAS_ROOT/previous-revision" ]; then
+            last_previous="$(cat "$NAS_ROOT/previous-revision")"
+        fi
+        write_deployment_status "$last_previous" "$revision"
+    fi
     phase="pulizia delle release obsolete"
     prune_releases
     echo "NAS gia' aggiornato a $revision."
@@ -103,6 +125,8 @@ if [ -n "$previous" ] && [ -d "$NAS_ROOT/releases/$previous" ]; then
         previous_has_gate=true
     fi
 fi
+phase="aggiornamento dei commit della pagina di attesa"
+write_deployment_status "$previous" "$revision"
 phase="build delle immagini app e web"
 compose "$release" build
 phase="build dell'immagine calendari"
@@ -147,6 +171,9 @@ else
     if [ -n "$previous" ] && [ -d "$NAS_ROOT/releases/$previous" ]; then
         phase="ripristino della release $previous"
         export NAS_RELEASE_REVISION="$previous"
+        if ! write_deployment_status "$revision" "$previous"; then
+            echo "Impossibile aggiornare i commit della pagina di attesa; tento comunque il ripristino." >&2
+        fi
         if [ "$previous_has_gate" = true ]; then
             compose "$NAS_ROOT/releases/$previous" up -d --build --wait --wait-timeout 120 gate
         else

@@ -772,6 +772,22 @@ Non occorrono asset del backend. La pagina controlla ogni cinque secondi
 che il backend funzioni. La pagina non sostituisce retroattivamente le schede
 gia' aperte e non reinvia operazioni di salvataggio.
 
+In fondo a entrambe le varianti compare `commit precedente → nuovo commit`,
+con i primi **7 caratteri** di ogni hash. L'updater scrive atomicamente solo
+questi riferimenti in `NAS_ROOT/deployment/status.json`; gate monta questa
+cartella in sola lettura e serve `/agesci-canicattini1/deployment.json` senza
+cache, anche se app/web sono spenti. Non accede al database o ai secret.
+I valori vengono riletti ogni cinque secondi; durante il rollback la freccia
+indica la versione tentata e quella da ripristinare. Al primo avvio, senza una
+versione precedente, compare `—`. Se i metadati non sono disponibili la pagina
+lo segnala, senza inventare hash e senza bloccare il ritorno al sito.
+
+Alla prima installazione di questa funzione, un vecchio launcher puo' non aver
+ancora creato i metadati: il nuovo updater li inizializza al controllo
+successivo, anche se il NAS e' gia' aggiornato, usando le ultime release
+registrate. Per averli gia' durante quel primo deploy aggiornare prima il
+launcher con la procedura qui sotto.
+
 Al primo passaggio da una release senza gate, l'updater ferma il vecchio web
 per liberare 8080, avvia gate e poi sostituisce app/web. Questa prima migrazione
 puo' avere una breve interruzione prima dell'avvio del proxy. Se il deploy
@@ -808,6 +824,7 @@ la destinazione del reverse proxy e non rimuovere `data` o la configurazione.
   repository.git/                     Copia Git bare del branch NAS
   releases/<commit>/                  Versioni del codice
   current-revision                     Ultima release riuscita
+  deployment/status.json               Commit precedente e destinazione, pubblici
   data/site.sqlite                    Contenuti, PDF e stato persistenti
   data/calendars/                      Snapshot calendario persistente
 ```

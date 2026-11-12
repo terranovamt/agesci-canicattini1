@@ -81,6 +81,9 @@ case "$*" in
   *" stop web") rm -f "$NAS_ROOT/legacy-listener" ;;
   *" stop gate") rm -f "$NAS_ROOT/gate-listener" ;;
   *" up "*)
+    if [ ! -r "$NAS_ROOT/deployment/status.json" ]; then echo "deployment metadata missing" >&2; exit 24; fi
+    printf '%s ' "$NAS_RELEASE_REVISION" >> "$NAS_ROOT/deployment-history.log"
+    cat "$NAS_ROOT/deployment/status.json" >> "$NAS_ROOT/deployment-history.log"
     case "$*" in
       *" gate")
         if ! grep -q '^  gate:' "$compose_file"; then echo "no such service: gate" >&2; exit 20; fi
@@ -118,8 +121,13 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
       return execFileSync("git", ["-C", repository, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
     };
     const releases = () => fs.readdirSync(path.join(root, "releases")).filter(name => /^[a-f0-9]{40}$/.test(name)).sort();
+    const statusPath = path.join(root, "deployment/status.json");
+    const deployment = () => JSON.parse(fs.readFileSync(statusPath, "utf8"));
     run();
     const revision = fs.readFileSync(path.join(root, "current-revision"), "utf8");
+    assert.deepEqual(deployment(), { previous: "", next: revision.trim() });
+    assert.equal(fs.statSync(statusPath).mode & 0o777, 0o644);
+    assert.equal(fs.statSync(path.dirname(statusPath)).mode & 0o777, 0o755);
     const fingerprint = fs.readFileSync(path.join(root, "current-configuration"), "utf8");
     const operations = fs.readFileSync(path.join(root, "operations.log"), "utf8");
     assert.ok(operations.includes("--env-file " + path.join(root, "nas.env")));
@@ -148,15 +156,21 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     fs.symlinkSync(path.join(root, "data"), path.join(root, "releases", "b".repeat(40)));
     const second = commit("second");
     run();
+    assert.deepEqual(deployment(), { previous: revision.trim(), next: second });
     assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), revision.trim());
     assert.deepEqual(releases(), [revision.trim(), second, "b".repeat(40)].sort());
     assert.ok(fs.existsSync(path.join(root, "releases", "manual-backup")));
     assert.ok(fs.readFileSync(path.join(root, "operations.log"), "utf8").includes(`image rm agesci-nas-app:${legacy}`));
     const third = commit("third");
     run();
+    assert.deepEqual(deployment(), { previous: second, next: third });
     assert.deepEqual(releases(), [second, third, "b".repeat(40)].sort());
+    fs.unlinkSync(statusPath);
+    assert.match(run(), /NAS gia' aggiornato/);
+    assert.deepEqual(deployment(), { previous: second, next: third });
     fs.writeFileSync(path.join(root, ".env"), "NAS_CAPO_CODES=7654323\n");
     run();
+    assert.deepEqual(deployment(), { previous: third, next: third });
     assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), second);
     const beforeFailure = fs.readFileSync(path.join(root, "current-configuration"), "utf8");
     const failed = commit("failed");
@@ -177,6 +191,10 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
       assert.match(error.stderr.toString(), /tento comunque il ripristino/);
       return true;
     });
+    assert.deepEqual(deployment(), { previous: failed, next: third });
+    const history = fs.readFileSync(path.join(root, "deployment-history.log"), "utf8");
+    assert.ok(history.includes(failed + " " + JSON.stringify({ previous: third, next: failed })));
+    assert.ok(history.includes(third + " " + JSON.stringify({ previous: failed, next: third })));
     assert.equal(fs.readFileSync(path.join(root, "current-revision"), "utf8").trim(), third);
     assert.equal(fs.readFileSync(path.join(root, "current-configuration"), "utf8"), beforeFailure);
     assert.equal(fs.readFileSync(path.join(root, "previous-revision"), "utf8").trim(), second);
@@ -202,9 +220,16 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     assert.equal(fs.readFileSync(path.join(root, "current-revision"), "utf8").trim(), third);
     assert.equal(fs.readFileSync(path.join(root, "current-configuration"), "utf8"), beforeFailure);
     run();
+    assert.deepEqual(deployment(), { previous: third, next: failed });
     assert.deepEqual(releases(), [third, failed, "b".repeat(40)].sort());
     assert.equal(fs.readFileSync(path.join(root, "data/keep.txt"), "utf8"), "existing runtime data");
     assert.equal(fs.existsSync(path.join(root, "update.lock")), false);
+    fs.writeFileSync(path.join(root, "current-revision"), 'invalid"commit');
+    assert.throws(() => run(), error => {
+      assert.match(error.stderr.toString(), /commit non validi/);
+      return true;
+    });
+    assert.deepEqual(deployment(), { previous: third, next: failed });
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

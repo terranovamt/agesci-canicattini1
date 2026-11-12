@@ -14,6 +14,41 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const html = read("deploy/synology/maintenance.html");
 const config = read("deploy/synology/gate.nginx.conf");
 
+function waitingPage(hour = 12, search = "") {
+  const browser = {
+    health: { ok: false },
+    deployment: { previous: "a".repeat(40), next: "b".repeat(40) },
+    deploymentOk: true,
+    revisions: { textContent: "" },
+    document: { body: { dataset: {} } },
+    reloads: 0,
+  };
+  browser.document.getElementById = id => {
+    assert.equal(id, "deployment-revisions");
+    return browser.revisions;
+  };
+  vm.runInNewContext(html.match(/<script>([\s\S]+?)<\/script>/)[1], {
+    document: browser.document, URLSearchParams, Date,
+    Intl: { DateTimeFormat: function () { return { format: () => String(hour) }; } },
+    location: { search, reload() { browser.reloads++; } },
+    setInterval(callback, milliseconds) {
+      assert.equal(milliseconds, 5000);
+      browser.tick = callback;
+    },
+    async fetch(url, options) {
+      assert.equal(options.cache, "no-store");
+      if (url === "/agesci-canicattini1/deployment.json") {
+        if (browser.deployment instanceof Error) throw browser.deployment;
+        return { ok: browser.deploymentOk, json: async () => browser.deployment };
+      }
+      assert.equal(url, "/agesci-canicattini1/healthz");
+      if (browser.health instanceof Error) throw browser.health;
+      return browser.health;
+    },
+  });
+  return browser;
+}
+
 test("NAS gate owns the public port independently of app and web", () => {
   const compose = read("deploy/synology/compose.yaml");
   const web = compose.split("\n  web:")[1].split("\n  gate:")[0];
@@ -22,6 +57,8 @@ test("NAS gate owns the public port independently of app and web", () => {
   assert.match(gate, /127\.0\.0\.1:8080:8080/);
   assert.doesNotMatch(gate, /depends_on:/);
   assert.match(gate, /\/gate-healthz/);
+  assert.ok(gate.includes("${NAS_ROOT:-/volume1/docker/agesci-nas}/deployment:/usr/share/nginx/deployment:ro"));
+  assert.doesNotMatch(gate, /\/data|nas\.env/);
   assert.match(config, /resolver 127\.0\.0\.11 valid=2s ipv6=off;/);
   assert.match(config, /proxy_pass \$web_upstream;/);
   assert.match(config, /proxy_buffering off;/);
@@ -34,36 +71,59 @@ test("NAS gate owns the public port independently of app and web", () => {
 test("NAS waiting page is self-contained and reloads only when the backend recovers", async () => {
   assert.doesNotMatch(html, /<(?:script|link|img)\b[^>]*(?:src|href)=/i);
   assert.match(html, /prefers-reduced-motion/);
-  const source = html.match(/<script>([\s\S]+?)<\/script>/)[1];
   for (const [hour, search, theme] of [
-    [6, "", "giorno"], [17, "", "giorno"], [18, "", "notte"], [5, "", "notte"],
+    [8, "", "giorno"], [19, "", "giorno"], [20, "", "notte"], [5, "", "notte"],
     [12, "?tema=notte", "notte"], [0, "?tema=giorno", "giorno"],
   ]) {
-    let tick, result, reloads = 0;
-    const document = { body: { dataset: {} } };
-    vm.runInNewContext(source, {
-      document, URLSearchParams, Date,
-      Intl: { DateTimeFormat: function () { return { format: () => String(hour) }; } },
-      location: { search, reload() { reloads++; } },
-      setInterval(callback, milliseconds) {
-        assert.equal(milliseconds, 5000);
-        tick = callback;
-      },
-      async fetch(url, options) {
-        assert.equal(url, "/agesci-canicattini1/healthz");
-        assert.equal(options.cache, "no-store");
-        if (result instanceof Error) throw result;
-        return result;
-      },
-    });
-    assert.equal(document.body.dataset.t, theme);
+    const browser = waitingPage(hour, search);
+    assert.equal(browser.document.body.dataset.t, theme);
+    await delay(0);
+    assert.equal(browser.revisions.textContent, "aaaaaaa \u2192 bbbbbbb");
     for (const next of [{ ok: false }, new Error("backend restarting"), { ok: true }]) {
-      result = next;
-      tick();
+      browser.health = next;
+      browser.tick();
       await delay(0);
-      assert.equal(reloads, next.ok ? 1 : 0);
+      assert.equal(browser.reloads, next.ok ? 1 : 0);
     }
   }
+});
+
+test("NAS waiting page updates short commits for rollback and reports missing or invalid metadata", async () => {
+  const browser = waitingPage();
+  await delay(0);
+  browser.deployment = { previous: "b".repeat(40), next: "a".repeat(40) };
+  browser.tick();
+  await delay(0);
+  assert.equal(browser.revisions.textContent, "bbbbbbb \u2192 aaaaaaa");
+  browser.deployment = { previous: "", next: "a".repeat(40) };
+  browser.tick();
+  await delay(0);
+  assert.equal(browser.revisions.textContent, "\u2014 \u2192 aaaaaaa");
+  for (const deployment of [
+    new Error("network unavailable"), null, {},
+    { previous: "short", next: "a".repeat(40) },
+    { previous: "", next: "too-short" },
+    { previous: "", next: ["a".repeat(40)] },
+  ]) {
+    browser.deployment = deployment;
+    browser.tick();
+    await delay(0);
+    assert.equal(browser.revisions.textContent, "Versioni non disponibili");
+  }
+  browser.deployment = { previous: "a".repeat(40), next: "b".repeat(40) };
+  browser.deploymentOk = false;
+  browser.tick();
+  await delay(0);
+  assert.equal(browser.revisions.textContent, "Versioni non disponibili");
+  browser.deploymentOk = true;
+  browser.tick();
+  await delay(0);
+  assert.equal(browser.revisions.textContent, "aaaaaaa \u2192 bbbbbbb");
+  browser.deploymentOk = false;
+  browser.health = { ok: true };
+  browser.tick();
+  await delay(0);
+  assert.equal(browser.reloads, 1, "Missing commit metadata must not prevent the page from recovering");
 });
 
 test("NAS gate serves real HTTP 503 during outages and resumes proxying after recovery", {
@@ -100,9 +160,13 @@ test("NAS gate serves real HTTP 503 during outages and resumes proxying after re
     fs.mkdirSync(path.join(directory, "logs"));
     fs.mkdirSync(path.join(directory, "temp"));
     fs.writeFileSync(path.join(directory, "index.html"), html);
+    const statusPath = path.join(directory, "status.json");
+    const deployment = { previous: "a".repeat(40), next: "b".repeat(40) };
+    fs.writeFileSync(statusPath, JSON.stringify(deployment));
     const serverConfig = config.replace("listen 8080;", `listen 127.0.0.1:${port};`)
       .replace("http://web:8080", `http://127.0.0.1:${upstreamPort}`)
-      .replace("/usr/share/nginx/waiting/index.html", JSON.stringify(prefix + "index.html"));
+      .replace("/usr/share/nginx/waiting/index.html", JSON.stringify(prefix + "index.html"))
+      .replace("/usr/share/nginx/deployment/status.json", JSON.stringify(prefix + "status.json"));
     fs.writeFileSync(path.join(directory, "nginx.conf"), `
 worker_processes 1;
 daemon off;
@@ -136,6 +200,19 @@ http {
     }
     assert.ok(ready, "Nginx did not become ready");
     assert.equal((await fetch(origin + "/_nas_waiting.html")).status, 404);
+    const statusUrl = origin + "/agesci-canicattini1/deployment.json";
+    const metadata = await fetch(statusUrl);
+    assert.equal(metadata.status, 200);
+    assert.match(metadata.headers.get("content-type"), /application\/json/);
+    assert.equal(metadata.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await metadata.json(), deployment);
+    const rollback = { previous: deployment.next, next: deployment.previous };
+    fs.writeFileSync(statusPath + ".tmp", JSON.stringify(rollback));
+    fs.renameSync(statusPath + ".tmp", statusPath);
+    assert.deepEqual(await (await fetch(statusUrl)).json(), rollback);
+    fs.unlinkSync(statusPath);
+    assert.equal((await fetch(statusUrl)).status, 404);
+    fs.writeFileSync(statusPath, JSON.stringify(deployment));
     const route = "/agesci-canicattini1/area-riservata/assemblea/?from=update";
     for (const method of ["GET", "HEAD", "POST"]) {
       const response = await fetch(origin + route, { method });

@@ -25,7 +25,10 @@
         display: grid;
         place-items: center;
         padding: 24px;
-        font: 16px/1.5 system-ui, "Segoe UI", sans-serif;
+        font:
+          16px/1.5 system-ui,
+          "Segoe UI",
+          sans-serif;
         color: #fff;
         text-align: center;
         overflow-x: hidden;
@@ -56,6 +59,13 @@
       .note {
         color: var(--vl);
         font-size: 0.9rem;
+      }
+      .revisions {
+        margin-bottom: 0;
+        font:
+          0.8rem/1.5 ui-monospace,
+          Consolas,
+          monospace;
       }
       .art {
         width: min(320px, 80vw);
@@ -185,7 +195,11 @@
           <circle class="spark" cx="165" cy="190" r="4" />
           <circle class="spark b" cx="195" cy="190" r="3" />
           <circle class="spark c" cx="180" cy="190" r="5" />
-          <path class="flame" d="M180 80c10 40 50 60 50 120a50 50 0 0 1-100 0c0-34 24-44 28-70 14 14 22 20 22-50z" fill="var(--o)" />
+          <path
+            class="flame"
+            d="M180 80c10 40 50 60 50 120a50 50 0 0 1-100 0c0-34 24-44 28-70 14 14 22 20 22-50z"
+            fill="var(--o)"
+          />
           <path class="flame inner" d="M180 140c6 24 28 36 28 66a28 28 0 0 1-56 0c0-22 20-30 28-66z" fill="var(--y)" />
           <path d="M110 262 250 232M250 262 110 232" stroke="#7a4a2a" stroke-width="14" stroke-linecap="round" />
         </svg>
@@ -197,23 +211,60 @@
 
       <p class="eyebrow" data-for="notte">Veglia al fuoco</p>
       <h1 data-for="notte">Stiamo accendendo il fuoco di bivacco…</h1>
-      <p data-for="notte">Mentre la legna prende, il sito si aggiorna. Mettetevi comodi: torniamo subito con una novità.</p>
+      <p data-for="notte">
+        Mentre la legna prende, il sito si aggiorna. Mettetevi comodi: torniamo subito con una novità.
+      </p>
 
       <p class="note" role="status">
-        Controllo se il sito è pronto<span class="dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+        Controllo se il sito è pronto<span class="dots" aria-hidden="true"
+          ><span>.</span><span>.</span><span>.</span></span
+        >
         La pagina si ricarica da sola.
       </p>
       <p class="note">AGESCI Canicattini 1 · Gruppo Scout</p>
+      <p class="note revisions" id="deployment-revisions" aria-live="polite">Versioni in caricamento…</p>
     </main>
     <script>
       (function () {
         var forced = new URLSearchParams(location.search).get("tema");
         var hour = Number(
-          new Intl.DateTimeFormat("it-IT", { hour: "numeric", hourCycle: "h23", timeZone: "Europe/Rome" }).format(new Date()),
+          new Intl.DateTimeFormat("it-IT", { hour: "numeric", hourCycle: "h23", timeZone: "Europe/Rome" }).format(
+            new Date(),
+          ),
         );
-        var day = hour >= 6 && hour < 18;
+        var day = hour >= 8 && hour < 20;
         document.body.dataset.t = forced === "giorno" || forced === "notte" ? forced : day ? "giorno" : "notte";
+        var revisions = document.getElementById("deployment-revisions");
+        function showRevisions(text) {
+          if (revisions.textContent !== text) revisions.textContent = text;
+        }
+        function updateRevisions() {
+          fetch("/agesci-canicattini1/deployment.json", { cache: "no-store" })
+            .then(function (response) {
+              if (!response.ok) throw new Error("Versioni non disponibili");
+              return response.json();
+            })
+            .then(function (status) {
+              var hash = /^[0-9a-f]{40}$/;
+              if (
+                !status ||
+                typeof status.next !== "string" ||
+                typeof status.previous !== "string" ||
+                !hash.test(status.next) ||
+                (status.previous !== "" && !hash.test(status.previous))
+              ) {
+                throw new Error("Commit non validi");
+              }
+              var previous = status.previous ? status.previous.slice(0, 7) : "—";
+              showRevisions(previous + " → " + status.next.slice(0, 7));
+            })
+            .catch(function () {
+              showRevisions("Versioni non disponibili");
+            });
+        }
+        updateRevisions();
         setInterval(function () {
+          updateRevisions();
           fetch("/agesci-canicattini1/healthz", { cache: "no-store" })
             .then(function (response) {
               if (response.ok) location.reload();
