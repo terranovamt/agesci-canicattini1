@@ -299,6 +299,8 @@ della release corrente precedente. `unhealthy` e `Restarting (1)` indicano un
 errore di avvio, non necessariamente un timeout troppo breve: cercare nei log
 del backend la causa (per esempio `Cannot find module`). Una build riuscita
 non garantisce che l'immagine includa tutti i moduli richiesti dal server.
+`Bind mount failed ... does not exist` indica una cartella host da creare
+prima dell'avvio: Synology non la crea automaticamente.
 Controllare che il commit sia su `NAS`, l'attivita' sia abilitata e lo spazio
 libero sia sufficiente. Confrontare il file `current-revision` con la release
 visibile nel monitor della regia. Per la diagnosi condividere solo il log
@@ -633,6 +635,7 @@ proxy va verificata nuovamente anche quella catena di fiducia.
 | Conteggio schede diverso dai flussi live  | Schede nascoste, iframe, connessioni streaming e scadenze diverse: sono indicatori distinti                         |
 | Calendario grigio/non aggiornato          | Controllare ultima attivita' DSM, log del job e disponibilita' feed; non cancellare lo snapshot                     |
 | Commit non distribuito                    | Controllare push su `NAS`, attivita' abilitata, Git, DNS, lock, spazio e log build                                  |
+| 502/503/200 a cicli di pochi minuti       | Deploy fallito e rollback a ogni controllo DSM: leggere il log dell'attivita' e correggere la causa su `NAS`        |
 | PDF/titoli tornati ai valori iniziali     | Il database/volume e' cambiato o vuoto: fermare servizi e verificare `NAS_DATA_DIR` e backup                        |
 
 Chiedere a chi ha problemi pagina, orario e tipo di rete/browser, non password.
@@ -782,11 +785,21 @@ indica la versione tentata e quella da ripristinare. Al primo avvio, senza una
 versione precedente, compare `—`. Se i metadati non sono disponibili la pagina
 lo segnala, senza inventare hash e senza bloccare il ritorno al sito.
 
+Synology non crea le cartelle sorgenti mancanti dei bind mount: il container
+non parte con `Bind mount failed ... does not exist`. Per questo l'updater crea
+`NAS_ROOT/deployment` prima di build e avvio, e la ricrea al controllo
+successivo se manca. Non avviare gate a mano senza questa cartella. Un updater
+che non la crea non puo' installare una release con questo mount: gate fallisce,
+il rollback ripristina la versione precedente e ogni controllo DSM ripete il
+tentativo, con il sito che alterna 502, 503 e 200 ogni pochi minuti.
+
 Alla prima installazione di questa funzione, un vecchio launcher puo' non aver
 ancora creato i metadati: il nuovo updater li inizializza al controllo
 successivo, anche se il NAS e' gia' aggiornato, usando le ultime release
-registrate. Per averli gia' durante quel primo deploy aggiornare prima il
-launcher con la procedura qui sotto.
+registrate. Il passaggio e' quindi avvenuto in due release: la prima installa
+gate e nuovo updater senza mount, la seconda aggiunge il mount quando la
+cartella esiste. In alternativa aggiornare prima il launcher con la procedura
+qui sotto.
 
 Al primo passaggio da una release senza gate, l'updater ferma il vecchio web
 per liberare 8080, avvia gate e poi sostituisce app/web. Questa prima migrazione
