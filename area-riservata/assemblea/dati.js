@@ -25,7 +25,7 @@
 // - "titolo_barra": testo nella barra viola in alto, opzionale dove è presente la barra.
 
 // TIPI DI SLIDE E PARAMETRI:
-// - slide_qr_live: { titolo, sottotitolo, data_ora, immagine }; QR (../../assets/img/qr.svg) e conto alla rovescia fino a "data_ora" (es. "2026-11-20T20:30:00"); tutti i parametri sono opzionali.
+// - slide_qr_live: { titolo, sottotitolo, data_ora, immagine }; usa qr-live.png come QR predefinito e conto alla rovescia fino a "data_ora" (es. "2026-11-20T20:30:00"); tutti i parametri sono opzionali.
 // - slide_titolo: { titolo, sottotitolo }.
 // - slide_divisore_sezione: { titolo, sottotitolo }; se il sottotitolo manca, mostra il titolo dell'assemblea.
 // - slide_ordine_del_giorno: { punti: [ { testo, slide_collegata } ] }.
@@ -43,7 +43,7 @@
 // - slide_rendiconto_andamento_avanzo: nessun parametro.
 // - slide_patrimonio_barre: nessun parametro, usa i dati di PATRIMONIO.
 // - slide_patrimonio_ciambella: nessun parametro.
-// - slide_foto_gruppo: usa il file "../../assets/img/foto-gruppo.jpg".
+// - slide_foto_gruppo: usa foto-gruppo.avif con fallback WebP.
 // - slide_grazie: { testo }; se manca, il testo predefinito è "Grazie".
 
 window.DATI = {
@@ -533,12 +533,12 @@ window.DATI = {
     "anno_corrente": 2026,
     "data_riferimento": "30 Settembre",
     "voci": [
-      { "nome": "Beni Durevoli", "icona": "../../assets/img/casa.png", "colore_css": "--vl", "importo_anno_precedente": 279, "importo_anno_corrente": 279 },
-      { "nome": "Cassa di Co.Ca.", "icona": "../../assets/img/coca.png", "colore_css": "--v2", "importo_anno_precedente": 0, "importo_anno_corrente": 0 },
-      { "nome": "Cassa branca L/C", "icona": "../../assets/img/lc.png", "colore_css": "--y", "importo_anno_precedente": 505.43, "importo_anno_corrente": 587.72 },
-      { "nome": "Cassa branca E/G", "icona": "../../assets/img/eg.png", "colore_css": "--g", "importo_anno_precedente": 522.22, "importo_anno_corrente": 1423.25 },
-      { "nome": "Cassa branca R/S", "icona": "../../assets/img/rs.png", "colore_css": "--r", "importo_anno_precedente": 56.5, "importo_anno_corrente": 97.75 },
-      { "nome": "C/C di gruppo", "icona": "../../assets/img/cc.png", "colore_css": "--v", "importo_anno_precedente": 1622, "importo_anno_corrente": 1790.27 }
+      { "nome": "Beni Durevoli", "icona": "../../assets/img/casa.webp", "colore_css": "--vl", "importo_anno_precedente": 279, "importo_anno_corrente": 279 },
+      { "nome": "Cassa di Co.Ca.", "icona": "../../assets/img/coca.webp", "colore_css": "--v2", "importo_anno_precedente": 0, "importo_anno_corrente": 0 },
+      { "nome": "Cassa branca L/C", "icona": "../../assets/img/lc.webp", "colore_css": "--y", "importo_anno_precedente": 505.43, "importo_anno_corrente": 587.72 },
+      { "nome": "Cassa branca E/G", "icona": "../../assets/img/eg.webp", "colore_css": "--g", "importo_anno_precedente": 522.22, "importo_anno_corrente": 1423.25 },
+      { "nome": "Cassa branca R/S", "icona": "../../assets/img/rs.webp", "colore_css": "--r", "importo_anno_precedente": 56.5, "importo_anno_corrente": 97.75 },
+      { "nome": "C/C di gruppo", "icona": "../../assets/img/cc.webp", "colore_css": "--v", "importo_anno_precedente": 1622, "importo_anno_corrente": 1790.27 }
     ]
   },
 

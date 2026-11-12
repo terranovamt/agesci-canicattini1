@@ -149,8 +149,8 @@ consumerebbe risorse senza velocizzare il sito. Per eventuali evoluzioni:
 - Eseguire `SELECT` puntuali, verificare indici con `EXPLAIN ANALYZE`, usare un
   pool limitato e collocare applicazione e DB nella stessa rete/area geografica.
 - Caching dei dati pubblici con TTL e invalidazione; non memorizzare risposte
-  autenticate in cache condivise. Una CDN non accelera automaticamente Firebase
-  o GitHub e non rende private le pagine dell'area riservata.
+  autenticate in cache condivise. Una CDN non accelera automaticamente le API
+  del backend o GitHub e non rende private le pagine dell'area riservata.
 - Introdurre OpenTelemetry per un backend misurabile: limiti di raccolta,
   campionamento e redazione di chiavi, token, URL e dati personali. RUM richiede
   una valutazione privacy, non la registrazione di documenti o credenziali.
@@ -326,8 +326,7 @@ dell'attivita', dopo aver rimosso eventuali credenziali: non condividere `.env`,
 9. Provare un riavvio controllato: i dati persistono, gli amministratori devono
    riaccedere e il pubblico deve riconnettersi. Non farlo durante un'assemblea.
 
-Solo dopo questi controlli aggiornare i collegamenti pubblici e dismettere il
-vecchio Firebase. Non fare il primo collaudo con documenti o dati riservati.
+Non fare il primo collaudo con documenti o dati riservati.
 
 Limiti RAM iniziali: backend 512 MiB, Nginx e tunnel 128 MiB ciascuno,
 job calendari 256 MiB. Il kernel del DS1522+ verificato ha rifiutato le quote
@@ -431,8 +430,7 @@ La sessione personale usa cookie HttpOnly, Secure e SameSite=Strict, dura otto o
 non conserva la password nel browser. Il reset revoca tutte le sessioni della persona;
 il pubblico riconnette lo stream. Slide e PDF sono pubblici. Il limite di upload
 e' inferiore a 20 MiB. Non esporre il backend direttamente: si fida dell'IP
-inoltrato da Nginx. Disattivare il vecchio Firebase solo dopo il collaudo e
-il cambio dei link pubblici. Non pubblicare questo branch NAS su GitHub Pages.
+inoltrato da Nginx. Non pubblicare questo branch NAS su GitHub Pages.
 
 ## Monitoraggio in regia
 
@@ -481,6 +479,12 @@ Il logo raster e' incorporato direttamente; nessun servizio esterno genera il QR
 La decodifica ZXing e' stata verificata a 256, 320, 640 e 990 pixel.
 Lo SVG ottimizzato non superava gli stessi controlli a tutte le dimensioni.
 Verificare comunque la scansione fisica dal proiettore e dal telefono.
+
+Le quattro fotografie del PEG vengono servite in WebP quando supportato, con il
+JPEG originale come fallback: i file mostrati passano da 374.450 a 310.592 byte.
+Le icone del rendiconto usano le versioni WebP gia' presenti; i PNG restano
+disponibili come originali e per le icone di sito/Apple. Guidoncini, simboli e
+texture restano SVG per conservarne la resa vettoriale.
 
 Tutto il sito, API, PDF, calendari e cookie amministrativo usa il prefisso
 `/agesci-canicattini1/`. `NAS_PUBLIC_ORIGIN` resta solo l'origine HTTPS,
@@ -727,8 +731,8 @@ non dichiararla attiva solo perche' il tunnel funziona.
   come `/setup`.
   Gli HTML di redirect nella root, le vecchie cartelle e i manifest di
   compatibilita' sono stati rimossi: Nginx mantiene i vecchi ingressi con
-  redirect 308. Su GitHub Pages e nella preview usare invece
-  direttamente le pagine nelle sottocartelle.
+  redirect 308. Su GitHub Pages usare invece direttamente le pagine nelle
+  sottocartelle.
 
 Non attivare una regola Cloudflare "Cache Everything" sull'intero sito.
 Configurare il rispetto degli header dell'origine e il bypass per contenuti

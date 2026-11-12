@@ -5,7 +5,7 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/shared/assemblea.js"), "utf8");
 function load(fetch) {
-  const c = { window: { LIVE: { url: "https://firebase.test/" } }, fetch, setInterval, clearInterval };
+  const c = { window: { LIVE: { nas: true, url: "https://nas.test/api/state/" } }, fetch, setInterval, clearInterval };
   vm.runInNewContext(source, c);
   return c.window.ASSEMBLEA;
 }
@@ -15,14 +15,14 @@ test("starting saves content, resets live and activates in one atomic request", 
     requests.push([url, opts]);
     return { ok: true };
   });
-  await a.salva(true, "key", { anno_esercizio: 2027 });
+  await a.salva(true, { anno_esercizio: 2027 });
   assert.equal(requests.length, 1);
   const [url, opts] = requests[0],
     body = JSON.parse(opts.body);
-  assert.equal(url, "https://firebase.test/.json");
+  assert.equal(url, "https://nas.test/api/state/.json");
   assert.equal(opts.method, "PATCH");
-  assert.deepEqual(body.assemblea, { k: "key", stato: { attiva: true } });
-  assert.deepEqual(body.live, { k: "key", stato: { pos: 0, max: 0 } });
+  assert.deepEqual(body.assemblea, { stato: { attiva: true } });
+  assert.deepEqual(body.live, { stato: { pos: 0, max: 0 } });
   assert.equal(body.modifiche.patch, '{"anno_esercizio":2027}');
   assert.deepEqual(body.modifiche.t, { ".sv": "timestamp" });
 });
@@ -32,12 +32,19 @@ test("ending changes only lifecycle state, not content or live position", async 
     body = JSON.parse(o.body);
     return { ok: true };
   });
-  await a.salva(false, "key");
-  assert.deepEqual(body, { assemblea: { k: "key", stato: { attiva: false } } });
+  await a.salva(false);
+  assert.deepEqual(body, { assemblea: { stato: { attiva: false } } });
+});
+test("financial slide icons use the existing WebP assets", () => {
+  const data = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/dati.js"), "utf8");
+  const icons = [...data.matchAll(/"icona":\s*"([^"]+\.webp)"/g)].map((match) => match[1]);
+  assert.equal(icons.length, 6);
+  for (const icon of icons)
+    assert.ok(fs.existsSync(path.resolve(__dirname, "../area-riservata/assemblea", icon)), icon);
 });
 test("read and write failures are explicit, not inactive or success fallbacks", async () => {
-  const denied = load(async () => ({ ok: false, status: 403 }));
-  await assert.rejects(denied.salva(true, "bad"), /Chiave non valida/);
+  const denied = load(async () => ({ ok: false, status: 403, text: async () => "Sessione scaduta" }));
+  await assert.rejects(denied.salva(true), /Sessione scaduta/);
   await assert.rejects(denied.leggi(), /403/);
   const invalid = load(async () => ({ ok: true, json: async () => ({ attiva: "yes" }) }));
   await assert.rejects(invalid.leggi(), /non valido/);

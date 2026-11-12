@@ -61,6 +61,16 @@ test("home introduces the dedicated PEG page and the original PDF stays availabl
   }
   for (const image of read(currentPegPath).matchAll(/src="(\.\.\/assets\/peg\/[^"]+)"/g))
     assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", image[1])));
+  const photoSources = [
+    ...read(currentPegPath).matchAll(
+      /<picture>\s*<source srcset="([^"]+\.webp)" type="image\/webp"\s*\/>\s*<img[\s\S]*?src="([^"]+\.jpg)"[\s\S]*?<\/picture>/g,
+    ),
+  ];
+  assert.equal(photoSources.length, 4);
+  for (const [, webp, jpeg] of photoSources) {
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", webp)));
+    assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", jpeg)));
+  }
   for (const link of read(currentPegPath).matchAll(/(?:href|src)="(\.\.\/[^"#]+)"/g))
     assert.ok(fs.existsSync(path.resolve(root, currentPegPath, "..", link[1])), link[1]);
   assert.ok(fs.existsSync(path.join(root, "assets/fonts/caveat.ttf")));
