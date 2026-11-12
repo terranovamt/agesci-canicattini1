@@ -57,7 +57,7 @@ test("NAS gate owns the public port independently of app and web", () => {
   assert.match(gate, /127\.0\.0\.1:8080:8080/);
   assert.doesNotMatch(gate, /depends_on:/);
   assert.match(gate, /\/gate-healthz/);
-  assert.ok(gate.includes("${NAS_ROOT:-/volume1/docker/agesci-nas}/deployment:/usr/share/nginx/deployment:ro"));
+  assert.doesNotMatch(gate, /volumes:/);
   assert.doesNotMatch(gate, /\/data|nas\.env/);
   assert.match(config, /resolver 127\.0\.0\.11 valid=2s ipv6=off;/);
   assert.match(config, /proxy_pass \$web_upstream;/);
