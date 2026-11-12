@@ -12,3 +12,6 @@ deploy/synology/data/
 .env
 .preview-browser-*/
 tools/atti-assemblea/pdf/
+.github/
+.vscode/
+.guide-browser-*/
