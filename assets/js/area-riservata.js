@@ -64,10 +64,6 @@
       document.getElementById('login').hidden = true;
       document.getElementById('riservata').hidden = false;
       document.getElementById('esci').hidden = false;
-      document.getElementById('people-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
-      document.getElementById('activities-tool').hidden = !window.NAS.user.admin && !window.NAS.user.serviceBranch;
-      document.getElementById('winter-camp-tool').hidden = !window.NAS.user.admin && window.NAS.user.serviceBranch !== 'E/G';
-      document.getElementById('people-access-tool').hidden = !window.NAS.user.admin;
       loginFeedback(form, '', '');
       window.AREA_DASHBOARD.load();
     }

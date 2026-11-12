@@ -24,7 +24,7 @@ body.reserved-page .reserved-header .brand,
 .nas-navbar img { width: 48px; height: 48px; object-fit: contain }
 .nas-navbar nav { display: flex; flex-wrap: wrap; gap: 20px }
 .nas-navbar nav a { display: inline-flex; align-items: center; min-height: 44px }
-#nas-login-form [hidden], #people-tool[hidden], #people-access-tool[hidden] { display: none }
+#nas-login-form [hidden] { display: none }
 #password-fields, #confirmation-field { display: grid; gap: 10px }
 #nas-login-form p { font-size: 14px }
 .password-input { position: relative; min-width: 0 }
@@ -162,6 +162,59 @@ body > :is(.reserved-header, .setup-header, .hd).reserved-navbar {
   align-items: center; justify-content: space-between; gap: 8px 16px;
   box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 8px 24px;
   border: 0; background: var(--v, #462678); color: #fff; font: 13px/1.4 Montserrat, system-ui, sans-serif;
+}
+body.reserved-page main[data-branch="L/C"] { --branch-accent: #d3a817; --branch-soft: #fff7d6; --branch-ink: #695000; }
+body.reserved-page main[data-branch="E/G"] { --branch-accent: #398258; --branch-soft: #edf7ef; --branch-ink: #215335; }
+body.reserved-page main[data-branch="R/S"] { --branch-accent: #bc4e50; --branch-soft: #fff0ef; --branch-ink: #8a3033; }
+body.reserved-page .branch-identity-marker[data-branch="L/C"] { --branch-accent: #d3a817; --branch-soft: #fff7d6; --branch-ink: #695000; }
+body.reserved-page .branch-identity-marker[data-branch="E/G"] { --branch-accent: #398258; --branch-soft: #edf7ef; --branch-ink: #215335; }
+body.reserved-page .branch-identity-marker[data-branch="R/S"] { --branch-accent: #bc4e50; --branch-soft: #fff0ef; --branch-ink: #8a3033; }
+body.reserved-page .branch-heading-title:not(.branch-heading-brand-title) {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0;
+}
+body.reserved-page .branch-heading-title:not(.branch-heading-brand-title) > h1 {
+  flex: 0 0 auto; margin: 0; white-space: nowrap;
+}
+body.reserved-page .branch-heading-brand-title { display: contents; }
+body.reserved-page .branch-heading-brand-title:has(.branch-identity-marker:not([hidden])) {
+  display: flex; flex-wrap: wrap; align-items: center; min-width: 0;
+}
+body.reserved-page .branch-identity-marker {
+  display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; width: fit-content; max-width: 100%;
+  margin: 0; padding: 5px 12px; border: 1px solid var(--branch-accent);
+  border-left-width: 4px; border-radius: 12px; background: var(--branch-soft); color: var(--branch-ink);
+  font-size: 15px; font-weight: 800; line-height: 1.2;
+}
+body.reserved-page .branch-identity-marker[hidden] { display: none !important; }
+body.reserved-page .branch-identity-marker img {
+  flex: none; width: 40px; height: 40px; margin: 0; padding: 3px; border: 2px solid var(--branch-accent);
+  border-radius: 50%; background: #fff; object-fit: contain;
+}
+body.reserved-page:not(.dashboard-page) main[data-branch]::after { display: none; }
+body > .reserved-navbar .branch-heading-brand-title {
+  gap: 4px 8px; align-items: center;
+}
+body > .reserved-navbar .branch-heading-brand-title .branch-identity-marker {
+  gap: 6px; padding: 4px 8px; border-left-width: 3px; border-radius: 9px; font-size: 14px;
+}
+body > .reserved-navbar .branch-heading-brand-title .branch-identity-marker img {
+  width: 36px; height: 36px; padding: 2px; border-width: 1px;
+}
+@media (max-width: 600px) {
+  body.reserved-page .branch-heading-title:not(.branch-heading-brand-title) { gap: 6px 8px; }
+  body.reserved-page .branch-identity-marker {
+    gap: 6px; padding: 4px 9px; border-left-width: 3px; border-radius: 10px; font-size: 13px;
+  }
+  body.reserved-page .branch-identity-marker img { width: 30px; height: 30px; padding: 2px; border-width: 1px; }
+  body.reserved-page :is(.members-heading, .metrics-heading) > :has(.branch-heading-title) { flex: 0 0 100%; }
+  body.reserved-page .branch-heading-title:not(.branch-heading-brand-title) { flex-wrap: nowrap; }
+  body > .reserved-navbar .branch-heading-brand-title { flex-wrap: wrap; }
+  body > .reserved-navbar .branch-heading-brand-title .branch-identity-marker { font-size: 12px; }
+  body > .reserved-navbar .branch-heading-brand-title .branch-identity-marker img { width: 28px; height: 28px; }
+}
+@media (min-width: 601px) and (max-width: 1024px) {
+  body.reserved-page .branch-identity-marker { padding: 6px 12px; font-size: 15px; }
+  body.reserved-page .branch-identity-marker img { width: 40px; height: 40px; }
 }
 .reserved-navbar *, .reserved-navbar *::before, .reserved-navbar *::after { box-sizing: border-box }
 .reserved-navbar.reserved-header [hidden], .reserved-navbar.setup-header [hidden], .reserved-navbar.hd [hidden] { display: none !important }

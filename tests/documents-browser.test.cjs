@@ -555,7 +555,7 @@ test("public documents and management work in a browser at all required widths",
                 doc.getElementById(id).getClientRects().length > 0),
             documentManagerLinks: doc.querySelectorAll('#riservata a[href="documenti.html"]').length,
             unassignedCapo: !frame.contentWindow.NAS.user.admin && !frame.contentWindow.NAS.user.serviceBranch &&
-              ['people-tool', 'people-access-tool', 'dashboard-group-overview', 'dashboard-metrics']
+              ['dashboard-group-overview', 'dashboard-metrics']
                 .every(id => doc.getElementById(id).getClientRects().length === 0),
             pdfLinks: [...doc.querySelectorAll('#dashboard-document-links a')].every(link =>
               link.getClientRects().length > 0 && link.getAttribute('href').startsWith('../documents/pdf/') &&

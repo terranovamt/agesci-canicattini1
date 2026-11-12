@@ -243,7 +243,6 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 .library-overview ul { padding-left: 20px }
 .library-overview li a { display: inline-flex; align-items: center; min-height: 44px; color: var(--v); overflow-wrap: anywhere }
 .dashboard-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 24px 0 }
-.dashboard-work-tools { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: stretch }
 .dashboard-tool-coming { border: 1px dashed var(--vl); background: linear-gradient(145deg, var(--w), var(--bg)) }
 .dashboard-coming-label { flex: 0 0 auto !important; margin: 14px 0 0 !important; color: var(--v) !important; font-size: 12px !important; font-weight: 800; letter-spacing: .04em; text-transform: uppercase }
 .group-census-overview { margin: 0 0 24px; padding: clamp(20px, 3vw, 32px); border-radius: var(--radius-xl); box-shadow: var(--shadow-card); background: var(--w); min-width: 0 }
@@ -261,8 +260,6 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 .dashboard-tool h3 { font-size: 21px; line-height: 1.3; margin: 20px 0 0 }
 .dashboard-tool p { flex: 1; color: var(--v2); font-size: 14px; margin: 12px 0 24px }
 #riservata .dashboard-tool .button { margin: 0; border-radius: var(--radius-md) }
-.people-tool-actions { display: flex; flex-wrap: wrap; gap: 12px; width: 100% }
-.people-tool-actions .button { max-width: 100%; text-align: center; overflow-wrap: anywhere }
 .dashboard-workflow { margin-top: 24px }
 .dashboard-workflow ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding-left: 24px; margin: 24px 0 }
 .dashboard-workflow li { padding-left: 4px }
@@ -273,7 +270,6 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
   .group-census-counts { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 }
 @media (max-width: 600px) {
-  .people-tool-actions { flex-direction: column; align-items: stretch }
 }
 :where(a[href], button, input):focus-visible { outline: 3px solid var(--v); outline-offset: 3px }
 
@@ -338,6 +334,8 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
 /* Dashboard only: keep the shared reserved and public layouts unchanged. */
 .dashboard-page > .reserved-header :is(a, button, summary, select):focus-visible { outline: 3px solid var(--y); outline-offset: 3px }
 .dashboard-page > .reserved-header .brand:focus-visible { outline-color: var(--v) }
+body.dashboard-page:has(#login:not([hidden])) > .reserved-navbar :is(.reserved-menu-toggle, .reserved-menu),
+body.dashboard-page:has(#login:not([hidden])) > .reserved-header > a:not(.brand, .reserved-brand) { display: none }
 body.reserved-page.dashboard-page > #reserved-content { width: min(calc(100% - 32px), 1120px); margin: 24px auto }
 body.reserved-page.dashboard-page > #reserved-content:has(#login:not([hidden])) { max-width: 580px }
 .dashboard-page .dashboard-intro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; max-width: none; margin-bottom: 12px }
@@ -365,10 +363,9 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
 .dashboard-page #login .accesso input[aria-invalid="true"] { border-color: var(--r-strong) }
 .dashboard-page #login .accesso button:disabled { cursor: wait }
 .dashboard-page #nas-login-form #census-code-hint { margin: 6px 0 0; color: var(--v2); font-size: 13px }
-.dashboard-page .dashboard-more { border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w); overflow: hidden }
-.dashboard-page .dashboard-more > summary { padding: 14px 16px; font-size: 17px; font-weight: 750; cursor: pointer; min-height: 48px }
-.dashboard-page .dashboard-more > summary span { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--v2) }
-.dashboard-page .dashboard-more-content { padding: 0 12px 12px }
+.dashboard-page .dashboard-shortcuts-heading { margin: 10px 0 8px; color: var(--v2); font-size: 15px; font-weight: 750 }
+.dashboard-page .dashboard-overview-section { min-width: 0; margin: 8px 0 24px }
+.dashboard-page .dashboard-overview-title { margin: 0 0 12px; color: var(--v); font: 700 clamp(22px, 3vw, 28px)/1.2 Georgia, serif }
 .dashboard-page .group-census-overview { padding: 14px; margin-bottom: 12px }
 .dashboard-page .group-census-overview h2 { font-size: 22px }
 .dashboard-page .group-census-status { margin: 8px 0; font-size: 12px }
@@ -377,19 +374,16 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
 .dashboard-page .group-census-counts .group-census-total { grid-column: auto }
 .dashboard-page .group-census-counts dt { font-size: 12px }
 .dashboard-page .group-census-counts dd { margin-top: 2px; font-size: 24px }
-.dashboard-page .dashboard-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start }
-.dashboard-page .dashboard-stack { display: grid; gap: 12px; min-width: 0; align-content: start }
+.dashboard-page .dashboard-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: stretch }
+.dashboard-page .dashboard-layout-wide { grid-column: 1 / -1 }
 .dashboard-page .dashboard-secondary { padding: 14px; margin: 0; border-radius: var(--radius-md); background: var(--w); min-width: 0 }
 .dashboard-page .metrics-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px }
 .dashboard-page .metrics-overview dd { font-size: 22px }
-.dashboard-page .dashboard-work-tools { grid-template-columns: minmax(0, 1fr); align-items: stretch; margin: 0; gap: 12px }
-.dashboard-page .dashboard-work-tools:has(#people-tool[hidden]) { grid-template-columns: 1fr }
 .dashboard-page :is(.dashboard-tool, .library-overview, .dashboard-secondary) h2 { font-size: 18px; line-height: 1.3; margin: 0 0 8px }
 .dashboard-page .dashboard-tool, .dashboard-page .library-overview { padding: 14px; box-shadow: none; border: 1px solid var(--vl); border-radius: var(--radius-md) }
 .dashboard-page .dashboard-tool .eyebrow { flex: none; margin: 0 0 8px; font-size: 11px }
 .dashboard-page .dashboard-tool > p:not(.eyebrow) { margin-top: 0 }
-.dashboard-page .dashboard-tool .button { width: 100% }
-.dashboard-page .people-tool-actions { gap: 12px }
+.dashboard-page .dashboard-tool .button { width: 100%; margin: 8px 0 0 }
 .dashboard-page .dashboard-assembly-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px }
 .dashboard-page #riservata .dashboard-assembly-actions .button { margin: 0; border-radius: var(--radius-md) }
 .dashboard-page #riservata :is(a[href], button) { min-height: 44px; min-width: 44px; max-width: 100%; overflow-wrap: anywhere }
@@ -434,8 +428,14 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
 .dashboard-page .dashboard-event-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding-top: 8px; }
 .dashboard-page .dashboard-event-summary .dashboard-hint { font-size: 11px }
 .dashboard-page .dashboard-fees-link { display: inline-flex; align-items: center; color: var(--branch-ink); font-size: 13px; font-weight: 750; text-decoration: underline; text-underline-offset: 3px }
-.dashboard-page .dashboard-branch-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 0 0 12px; }
-.dashboard-page #riservata .dashboard-branch-tools .button { display: flex; align-items: center; justify-content: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-md); font-size: 12px; text-align: left; line-height: 1.3 }
+.dashboard-page .dashboard-branch-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 0 12px; }
+.dashboard-page #reserved-content[data-branch="L/C"] .dashboard-branch-tools { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dashboard-page #riservata .dashboard-branch-tools .button { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; margin: 0; padding: 12px 14px; border-radius: var(--radius-md); font-size: 14px; font-weight: 750; text-align: left; line-height: 1.3 }
+.dashboard-page #riservata .dashboard-branch-tools .button::after { content: "→"; flex: 0 0 auto; font-size: 18px; line-height: 1 }
+@media (max-width: 800px) {
+  .dashboard-page .dashboard-branch-tools,
+  .dashboard-page #reserved-content[data-branch="L/C"] .dashboard-branch-tools { grid-template-columns: minmax(0, 1fr) }
+}
 .dashboard-page #reserved-content[data-view="admin"] #dashboard-group-overview { border-top: 5px solid var(--v); }
 .dashboard-page #dashboard-assembly-title { margin: 8px 0; font-size: 17px }
 .dashboard-page .dashboard-hint, .dashboard-page #dashboard-assembly-details { color: var(--v2); font-size: 13px; overflow-wrap: anywhere }
@@ -453,18 +453,15 @@ body.dashboard-page .dashboard-intro h1 { font-size: clamp(23px, 3vw, 30px); mar
   .dashboard-page .dashboard-event-summary { flex-direction: column; align-items: flex-start; align-content: start; gap: 8px; padding: 0 0 0 20px; border-left: 1px solid var(--vl) }
 }
 @media (min-width: 800px) {
-  .dashboard-page .dashboard-layout { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) }
-  .dashboard-page .dashboard-work-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .dashboard-page .dashboard-layout { grid-template-columns: repeat(2, minmax(0, 1fr)) }
   .dashboard-page .dashboard-branch-tools { grid-template-columns: repeat(4, minmax(0, 1fr)) }
   .dashboard-page .dashboard-event-actions { max-width: 520px }
-  .dashboard-page .dashboard-more-content { padding: 0 16px 16px }
 }
 @media (max-width: 600px) {
   .dashboard-page #login { padding: 16px }
   .dashboard-page #login .accesso { width: 100%; margin-top: 0 }
   .dashboard-page #login .password-input { width: 100%; max-width: 100% }
   body.reserved-page.dashboard-page > #reserved-content { margin: 16px auto }
-  .dashboard-page .dashboard-work-tools { grid-template-columns: 1fr }
   .dashboard-page .group-census-counts { grid-template-columns: repeat(4, minmax(0, 1fr)) }
   .dashboard-page .group-census-counts > div { padding: 8px }
   .dashboard-page .group-census-counts .group-census-total { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px }
@@ -494,51 +491,42 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
 .dashboard-page #riservata > #dashboard-event-panel { order: 1 }
 .dashboard-page #riservata > #dashboard-transfers-alert { order: 2 }
 .dashboard-page #riservata > #dashboard-branch-tools { order: 3 }
-.dashboard-page #riservata > #dashboard-more { order: 4 }
+.dashboard-page #riservata > #dashboard-overview { order: 4 }
 @media (min-width: 820px) {
   body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: min(calc(100% - 32px), 1280px) }
   .dashboard-page #riservata:not([hidden]) { grid-template-columns: 150px minmax(0, 1fr) }
   .dashboard-page #riservata > * { grid-column: 2; order: 0 }
-  .dashboard-page #riservata > #dashboard-branch-tools:not([hidden]) {
+  .dashboard-page .dashboard-shortcuts-heading { display: none }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata > #dashboard-branch-tools:not([hidden]) {
     grid-column: 1; grid-row: 1 / span 6; position: sticky; top: 12px; align-content: start;
     grid-template-columns: 1fr; padding: 8px; gap: 6px; border-radius: var(--radius-md); background: var(--vd)
   }
-  .dashboard-page #riservata #dashboard-branch-tools .button { background: transparent !important; color: #fff !important; border-color: transparent !important }
-  .dashboard-page #riservata #dashboard-branch-tools .button:is(:hover, :focus-visible) { background: var(--v) !important; color: var(--y) !important }
-  .dashboard-page #riservata #dashboard-branch-tools .button:focus-visible { outline-color: var(--y) }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata #dashboard-branch-tools .button { background: transparent !important; color: #fff !important; border-color: transparent !important }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata #dashboard-branch-tools .button:is(:hover, :focus-visible) { background: var(--v) !important; color: var(--y) !important }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata #dashboard-branch-tools .button:focus-visible { outline-color: var(--y) }
 }
 @media (min-width: 1100px) {
   body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: calc(100% - 48px) }
   .dashboard-page #riservata:not([hidden]) { grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr) }
-  .dashboard-page #riservata > #dashboard-more { grid-column: 3; grid-row: 1 / span 6 }
+  .dashboard-page #riservata > #dashboard-overview { grid-column: 3; grid-row: 1 / span 6 }
   .dashboard-page #riservata > :is(#dashboard-session-status, #dashboard-event-panel, #dashboard-transfers-alert) { grid-column: 2 }
   .dashboard-page .dashboard-upcoming-event:not([hidden]) { grid-template-columns: minmax(0, 1fr) }
   .dashboard-page .dashboard-event-summary { flex-direction: row; padding: 8px 0 0; border-left: 0 }
-}
-/* Dove il browser lo permette, "Altro" è sempre aperto su schermi larghi */
-@supports selector(::details-content) {
-  @media (min-width: 1100px) {
-    .dashboard-page #dashboard-more:not([open])::details-content { content-visibility: visible; display: block }
-    .dashboard-page #dashboard-more > summary { display: none }
-    .dashboard-page #dashboard-more { border: 0; background: transparent }
-    .dashboard-page #dashboard-more .dashboard-more-content { padding: 0 }
-  }
 }
 @media (min-width: 1700px) {
   body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: calc(100% - 48px) }
   .dashboard-page #riservata:not([hidden]) { grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1.7fr) }
 }
 @media (min-width: 820px) {
-  .dashboard-page #riservata #dashboard-branch-tools .button { font-size: 14px }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata #dashboard-branch-tools .button { font-size: 14px }
 }
-/* Sezione "Altro": usa tutto lo spazio quando non c'è un'attività da mostrare, una colonna se è stretta */
+/* Area di gestione: usa tutto lo spazio quando non c'è un'attività da mostrare. */
 @media (min-width: 1100px) {
-  .dashboard-page #riservata:has(#dashboard-event-panel[hidden]) > #dashboard-more { grid-column: 2 / -1 }
-  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1fr) }
-  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-work-tools:not(:has(#people-tool[hidden])) { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata:has(#dashboard-event-panel[hidden]) > #dashboard-overview { grid-column: 2 / -1 }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1fr) }
 }
 @media (min-width: 1700px) {
-  .dashboard-page #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) }
+  .dashboard-page #reserved-content[data-view="branch"] #riservata:has(#dashboard-event-panel:not([hidden])) .dashboard-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) }
 }
 @media (min-width: 820px) {
   .dashboard-page .group-census-overview { padding: 10px 14px }
@@ -546,7 +534,7 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
   .dashboard-page .group-census-counts { margin-top: 6px }
   .dashboard-page .group-census-counts > div { padding: 6px 10px }
   .dashboard-page .group-census-counts dd { font-size: 20px }
-  .dashboard-page .dashboard-more-content { overflow-x: clip }
+  .dashboard-page .dashboard-overview-section { overflow-x: clip }
 }
 /* Identità di branca: fascia colorata con simbolo SVG (lupetto, giglio, fuoco) e motto */
 .dashboard-page #reserved-content[data-branch] .dashboard-intro {
@@ -573,6 +561,31 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > #esci { order: 3; margin: 0 }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > .branch-motto { order: 2 }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > h1 { order: 1 }
+}
+
+@media (min-width: 820px) {
+  .dashboard-page #reserved-content[data-view="admin"] #riservata:not([hidden]) { grid-template-columns: minmax(0, 1fr); gap: 12px }
+  .dashboard-page #reserved-content[data-view="admin"] #riservata > * { grid-column: 1; grid-row: auto }
+  .dashboard-page #reserved-content[data-view="admin"] #riservata > #dashboard-overview { grid-column: 1; grid-row: auto }
+  .dashboard-page #reserved-content[data-view="admin"] #dashboard-branch-tools:not([hidden]) {
+    position: static; grid-row: auto; align-content: stretch; grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0; gap: 8px; border-radius: 0; background: transparent
+  }
+  .dashboard-page #reserved-content[data-view="admin"] .dashboard-shortcuts-heading { display: block }
+}
+.dashboard-page #reserved-content[data-view="admin"] .dashboard-intro #dashboard-title { font-size: clamp(22px, 3vw, 26px) }
+.dashboard-page #reserved-content[data-view="admin"] .dashboard-branch-tools .button {
+  min-height: 44px; margin: 0; padding: 9px 10px; border: 1px solid var(--v); border-radius: var(--radius-sm);
+  color: var(--w); background: var(--v); font-weight: 750; line-height: 1.25
+}
+.dashboard-page #reserved-content[data-view="admin"] .dashboard-branch-tools .button::after { font-size: 16px }
+.dashboard-page #reserved-content[data-view="admin"] #dashboard-assembly-panel,
+.dashboard-page #reserved-content[data-view="admin"] #dashboard-documents-panel {
+  border: 1px solid var(--vl); border-radius: var(--radius-md); box-shadow: none
+}
+.dashboard-page #reserved-content[data-view="admin"] #dashboard-overview-title { margin-bottom: 10px }
+@media (max-width: 819px) {
+  .dashboard-page #reserved-content[data-view="admin"] .dashboard-branch-tools:not([hidden]) { grid-template-columns: minmax(0, 1fr) }
 }
 
 @media (min-width: 900px) {

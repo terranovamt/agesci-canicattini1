@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!header || header.classList.contains('reserved-navbar')) return;
   const base = window.LIVE?.basePath ?? location.pathname.split('/area-riservata/')[0];
   const homePath = base + '/area-riservata/';
+  const content = document.querySelector('#reserved-content') || document.querySelector('main');
+  const isDashboard = document.body.classList.contains('dashboard-page') ||
+    content?.classList.contains('dashboard-page');
+  const pageHeading = isDashboard ? null : content?.querySelector('h1');
+  const branchVisuals = {
+    'L/C': { label: 'Branca L/C', icon: 'branca-lc-cappellino.svg' },
+    'E/G': { label: 'Branca E/G', icon: 'branca-eg-tenda.svg' },
+    'R/S': { label: 'Branca R/S', icon: 'branca-rs-forcola.svg' },
+  };
   const normalize = pathname => pathname.replace(/index\.html$/, '').replace(/\/$/, '');
   const linkTo = (path, label) => {
     const link = document.createElement('a');
@@ -24,8 +33,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const title = header.querySelector('h1') || document.createElement('span');
   if (!title.textContent) title.textContent = document.title.split(/[·—]/)[0].trim();
   title.className = 'reserved-title';
-  heading.append(name, title);
+  const branchMarker = document.createElement('div');
+  branchMarker.className = 'branch-identity-marker';
+  branchMarker.hidden = true;
+  const branchIcon = document.createElement('img');
+  branchIcon.alt = '';
+  const branchLabel = document.createElement('span');
+  branchMarker.append(branchIcon, branchLabel);
+  const branchHeading = document.createElement('div');
+  branchHeading.className = 'branch-heading-title';
+  if (pageHeading) {
+    pageHeading.before(branchHeading);
+    branchHeading.append(pageHeading, branchMarker);
+    heading.append(name, title);
+  } else if (isDashboard) {
+    content?.prepend(branchMarker);
+    heading.append(name, title);
+  } else {
+    branchHeading.classList.add('branch-heading-brand-title');
+    branchHeading.append(title, branchMarker);
+    heading.append(name, branchHeading);
+  }
   brand.append(logo, heading);
+  function updateBranchIdentity() {
+    const user = window.NAS?.user;
+    const branch = window.NAS?.viewAs?.target?.serviceBranch ||
+      (user?.admin ? '' : user?.serviceBranch);
+    const visual = branchVisuals[branch];
+    if (!content || !visual) {
+      if (content) delete content.dataset.branch;
+      delete branchMarker.dataset.branch;
+      branchMarker.hidden = true;
+      return;
+    }
+    content.dataset.branch = branch;
+    branchMarker.dataset.branch = branch;
+    branchMarker.hidden = isDashboard;
+    if (branchMarker.hidden) return;
+    branchIcon.src = base + '/assets/img/' + visual.icon;
+    branchLabel.textContent = visual.label;
+  }
+  updateBranchIdentity();
+  window.addEventListener('nas:identitychange', updateBranchIdentity);
 
   const toggle = document.createElement('button');
   toggle.id = 'reserved-menu-toggle';

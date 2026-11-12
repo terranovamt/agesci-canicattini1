@@ -180,6 +180,16 @@ il comando sul server di produzione.
 Per collaudare backend NAS e monitor con database temporaneo, usare Node 24:
 `node tools/nas-dev.cjs`. Il comando stampa URL e password di solo test;
 nessun dato reale del NAS viene modificato. CPU/RAM host richiedono Linux/NAS.
+Per confrontare le pagine dell'area riservata sui sette schermi, apri
+`<URL stampato>/design-system/area-riservata-responsive.html`: il selettore e i link
+nelle anteprime sincronizzano la navigazione. La pagina e' solo uno strumento
+locale di confronto e non viene servita dal sito pubblicato.
+Per provare **Visualizza come** con un capo per ciascuna branca, avvia invece
+`node tools/nas-demo.cjs` e apri lo stesso percorso di confronto dall'URL
+stampato. Accedi come amministratore, apri Visualizza come, scegli il capo
+L/C, E/G o R/S e premi **Ricarica** nel confronto per applicare la sessione a
+tutti e sette gli schermi. La demo contiene un account per branca e solo dati
+inventati; al riavvio il database temporaneo viene ricreato.
 
 Avvia il sito con hot reload senza installare dipendenze:
 

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Confronto responsive · Area riservata</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 10px;
+        background: #f3f0e8;
+        color: #211638;
+        font: 14px system-ui, sans-serif;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-bottom: 8px;
+      }
+
+      header > div:first-child {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 19px;
+      }
+
+      header p {
+        margin: 0;
+        color: #5a5362;
+        font-size: 12px;
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-weight: 650;
+      }
+
+      select,
+      button {
+        min-height: 32px;
+        border: 1px solid #d5ccdf;
+        border-radius: 7px;
+        padding: 5px 9px;
+        background: #fff;
+        color: #211638;
+        font: inherit;
+      }
+
+      button {
+        border-color: #4a2a7c;
+        background: #4a2a7c;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      main {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      article {
+        flex: 0 0 auto;
+        padding: 7px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 12px #21163818;
+      }
+
+      h2 {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin: 0 0 6px;
+        color: #4a2a7c;
+        font-size: 12px;
+      }
+
+      small {
+        color: #5a5362;
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .frame {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #d5ccdf;
+        border-radius: 5px;
+        background: #f3f0e8;
+      }
+
+      iframe {
+        position: absolute;
+        inset: 0;
+        transform-origin: top left;
+        border: 0;
+        background: #f3f0e8;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Confronto responsive · Area riservata</h1>
+        <p>Naviga da una qualsiasi anteprima; dopo un cambio ruolo premi Ricarica per aggiornare tutti gli schermi.</p>
+      </div>
+      <div class="controls">
+        <label for="page-picker">Schermata</label>
+        <select id="page-picker" aria-label="Apri la schermata in tutti i viewport"></select>
+        <button id="reload-views" type="button">Ricarica</button>
+      </div>
+    </header>
+    <main id="viewports" aria-label="Area riservata su sette dimensioni dello schermo"></main>
+    <script>
+      const pages = [
+        { label: "Home / login", path: "area-riservata/" },
+        { label: "Attività", path: "area-riservata/attivita.html" },
+        { label: "Soci", path: "area-riservata/soci.html" },
+        { label: "Persone", path: "area-riservata/persone.html" },
+        { label: "Documenti", path: "area-riservata/documenti.html" },
+        { label: "Statistiche", path: "area-riservata/statistiche.html" },
+        { label: "Assemblea", path: "area-riservata/assemblea/" },
+        { label: "Setup assemblea", path: "area-riservata/assemblea/setup.html" },
+        { label: "Regia", path: "area-riservata/assemblea/regia.html" },
+        { label: "Guida assemblea", path: "area-riservata/assemblea/guida.html" },
+      ];
+      const screens = [
+        { name: "Mobile compatto", width: 390, height: 844, scale: 0.5 },
+        { name: "Mobile ampio", width: 430, height: 932, scale: 0.5 },
+        { name: "Tablet", width: 820, height: 1180, scale: 0.42 },
+        { name: "Laptop", width: 1366, height: 768, scale: 0.35 },
+        { name: "Desktop FHD", width: 1920, height: 1080, scale: 0.25 },
+        { name: "2K", width: 2560, height: 1440, scale: 0.18 },
+        { name: "4K", width: 3840, height: 2160, scale: 0.13 },
+      ];
+      const container = document.getElementById("viewports");
+      const pagePicker = document.getElementById("page-picker");
+      const siteRoot = new URL("../", window.location.href);
+
+      for (const page of pages) {
+        const option = document.createElement("option");
+        option.value = page.path;
+        option.textContent = page.label;
+        pagePicker.append(option);
+      }
+
+      function syncScreens(destination) {
+        const url = new URL(destination, siteRoot);
+        const selectedPage = pages.find(
+          (page) => new URL(page.path, siteRoot).pathname === url.pathname,
+        );
+        pagePicker.value = selectedPage?.path || "";
+        for (const screen of screens) {
+          screen.iframe.src = url.href;
+          screen.iframe.title = `${screen.name} · ${selectedPage?.label || "pagina corrente"}`;
+        }
+      }
+
+      for (const screen of screens) {
+        const card = document.createElement("article");
+        const heading = document.createElement("h2");
+        const name = document.createElement("span");
+        const dimensions = document.createElement("small");
+        const frame = document.createElement("div");
+        const iframe = document.createElement("iframe");
+
+        name.textContent = screen.name;
+        dimensions.textContent = `${screen.width} × ${screen.height}`;
+        heading.append(name, dimensions);
+        frame.className = "frame";
+        iframe.title = screen.name;
+        iframe.loading = "eager";
+        iframe.src = new URL(pages[0].path, siteRoot).href;
+        frame.append(iframe);
+        card.append(heading, frame);
+        container.append(card);
+        screen.frame = frame;
+        screen.iframe = iframe;
+        iframe.addEventListener("load", () => {
+          const frameDocument = iframe.contentDocument;
+          if (!frameDocument) return;
+          frameDocument.addEventListener(
+            "click",
+            (event) => {
+              const target = event.target;
+              const link = target && typeof target.closest === "function"
+                ? target.closest("a[href]")
+                : null;
+              if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+              const destination = new URL(link.href, iframe.contentWindow.location.href);
+              if (destination.origin !== siteRoot.origin || !destination.pathname.startsWith(siteRoot.pathname))
+                return;
+              event.preventDefault();
+              syncScreens(destination.href);
+            },
+            true,
+          );
+        });
+      }
+
+      pagePicker.addEventListener("change", () =>
+        syncScreens(new URL(pagePicker.value, siteRoot).href),
+      );
+      document.getElementById("reload-views").addEventListener("click", () => {
+        const currentUrl = screens[0].iframe.contentWindow.location.href;
+        syncScreens(currentUrl);
+      });
+
+      function fitComparison() {
+        const rows = [screens.slice(0, 4), screens.slice(4)];
+        const widthScale = Math.min(
+          ...rows.map((row) => {
+            const frameWidth = row.reduce((sum, screen) => sum + screen.width * screen.scale, 0);
+            const fixedWidth = row.length * 14 + (row.length - 1) * 8;
+            return (document.documentElement.clientWidth - 20 - fixedWidth) / frameWidth;
+          }),
+        );
+        const rowHeights = rows.map((row) =>
+          Math.max(...row.map((screen) => screen.height * screen.scale)),
+        );
+        const frameHeight = rowHeights.reduce((sum, height) => sum + height, 0);
+        const fixedHeight =
+          document.querySelector("header").offsetHeight +
+          20 +
+          8 +
+          rows.length * 34 +
+          (rows.length - 1) * 8;
+        const heightScale =
+          (document.documentElement.clientHeight - fixedHeight) / frameHeight;
+        const scale = Math.max(0.05, Math.min(
+          1,
+          widthScale,
+          heightScale,
+        ));
+
+        for (const screen of screens) {
+          const scaledWidth = screen.width * screen.scale * scale;
+          const scaledHeight = screen.height * screen.scale * scale;
+          screen.frame.style.width = `${scaledWidth}px`;
+          screen.frame.style.height = `${scaledHeight}px`;
+          screen.iframe.style.width = `${screen.width}px`;
+          screen.iframe.style.height = `${screen.height}px`;
+          screen.iframe.style.transform = `scale(${screen.scale * scale})`;
+        }
+      }
+
+      fitComparison();
+      window.addEventListener("resize", fitComparison, { passive: true });
+    </script>
+  </body>
+</html>

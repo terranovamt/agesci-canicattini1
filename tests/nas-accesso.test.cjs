@@ -109,7 +109,6 @@ test('NAS first access shows password and required confirmation only after code 
   await t.get('nas-login-form').onsubmit({ preventDefault() {} });
   assert.deepEqual(t.calls[1], ['login', 'A-long-password!', '7654321', 'A-long-password!', undefined]);
   assert.equal(t.get('riservata').hidden, false);
-  assert.equal(t.get('people-tool').hidden, true);
   assert.equal(t.get('nas-password').value, '');
   assert.equal(t.get('nas-password').type, 'password');
 });

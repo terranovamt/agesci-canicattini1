@@ -98,6 +98,15 @@ test("NAS gateway serves pages, config, QR and PDFs only under the site prefix",
     assert.match(reserved, /class="brand" href="\.\.\/"/);
     assert.match(reserved, /href="#reserved-content"/);
     assert.doesNotMatch(reserved, /<!-- include:/);
+    const responsiveComparison = await fetch(root + "/design-system/area-riservata-responsive.html");
+    assert.equal(responsiveComparison.status, 200);
+    const responsiveComparisonHtml = await responsiveComparison.text();
+    assert.match(responsiveComparisonHtml, /id="page-picker"/);
+    assert.match(responsiveComparisonHtml, /id="reload-views"/);
+    assert.match(responsiveComparisonHtml, /function syncScreens/);
+    assert.match(responsiveComparisonHtml, /createElement\("iframe"\)/);
+    assert.equal((responsiveComparisonHtml.match(/\{ label: "/g) || []).length, 10);
+    assert.equal((await fetch(root + "/design-system/proposte-area-riservata.html")).status, 404);
     assert.equal((await fetch(app.origin + "/index.html")).status, 404);
     assert.equal((await fetch(app.origin + "/api/session")).status, 404);
     const redirect = await fetch(root, { redirect: "manual" });

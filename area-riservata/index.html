@@ -93,10 +93,10 @@
             <a id="dashboard-fees-action" class="dashboard-fees-link" href="attivita.html" hidden>Quote · Da ricevere →</a>
           </div>
         </article>
+        <h2 id="dashboard-shortcuts-heading" class="dashboard-shortcuts-heading" hidden>Accesso rapido</h2>
         <nav id="dashboard-branch-tools" class="dashboard-branch-tools" aria-label="Strumenti della tua branca" hidden></nav>
-        <details id="dashboard-more" class="dashboard-more">
-        <summary>Altro <span>Strumenti, gruppo e documenti</span></summary>
-        <div class="dashboard-more-content">
+        <section id="dashboard-overview" class="dashboard-overview-section" aria-labelledby="dashboard-overview-title">
+        <h2 id="dashboard-overview-title" class="dashboard-overview-title">Gestione e risorse</h2>
         <article id="dashboard-group-overview" class="group-census-overview" aria-labelledby="group-census-title" hidden>
           <div class="metrics-heading">
             <h2 id="group-census-title">Censimenti per branca</h2>
@@ -105,48 +105,32 @@
           <p id="dashboard-group-status" class="group-census-status" role="status" aria-live="polite">Caricamento censimenti…</p>
           <dl id="dashboard-group-counts" class="group-census-counts"></dl>
         </article>
-        <div class="dashboard-layout">
-        <div class="dashboard-stack" id="dashboard-work-panel">
-          <div class="dashboard-tools dashboard-work-tools">
-          <article id="people-tool" class="dashboard-tool" hidden>
-            <h2>Libro soci</h2>
-            <div class="people-tool-actions">
-              <a class="button button-secondary" href="soci.html">Apri il libro soci →</a>
-              <a id="people-access-tool" class="button button-secondary" href="persone.html">Gestisci accessi capi →</a>
+        <div class="dashboard-layout" id="dashboard-layout">
+          <article id="documents-tool" class="dashboard-tool dashboard-layout-wide">
+            <h2>Gestione documenti</h2>
+            <p>Caricamento e organizzazione dei materiali del gruppo.</p>
+            <a class="button button-secondary" href="documenti.html">Carica o gestisci documenti →</a>
+          </article>
+          <section class="dashboard-workflow dashboard-layout-wide" id="dashboard-assembly-panel" aria-labelledby="workflow-title">
+            <h2 id="workflow-title">Assemblea di gruppo</h2>
+            <h3 id="dashboard-assembly-title">Caricamento…</h3>
+            <p id="dashboard-assembly-details" role="status">Lettura dei dati pubblicati.</p>
+            <button id="dashboard-assembly-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
+            <p class="dashboard-publication-notice">Riepilogo dei dati pubblicati, non della diretta. Prima di iniziare, pubblica le modifiche locali del setup e verifica la vista pubblico.</p>
+            <div class="dashboard-assembly-actions">
+              <a class="button button-secondary" href="assemblea/setup.html">Apri il setup →</a>
+              <a class="button button-secondary" href="assemblea/regia.html">Apri la regia →</a>
+              <a class="text-link" href="assemblea/guida.html">Leggi la guida completa →</a>
             </div>
-          </article>
-          <article id="documents-tool" class="dashboard-tool">
-            <h2>Documenti del gruppo</h2>
-            <a class="button button-secondary" href="documenti.html">Carica e gestisci documenti →</a>
-          </article>
-          </div>
-        <section class="dashboard-workflow" id="dashboard-assembly-panel" aria-labelledby="workflow-title">
-          <h2 id="workflow-title">Assemblea di gruppo</h2>
-          <h3 id="dashboard-assembly-title">Caricamento…</h3>
-          <p id="dashboard-assembly-details" role="status">Lettura dei dati pubblicati.</p>
-          <button id="dashboard-assembly-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
-          <p class="dashboard-publication-notice">Riepilogo dei dati pubblicati, non della diretta. Prima di iniziare, pubblica le modifiche locali del setup e verifica la vista pubblico.</p>
-          <div class="dashboard-assembly-actions">
-            <a class="button button-secondary" href="assemblea/setup.html">Apri il setup →</a>
-            <a class="button button-secondary" href="assemblea/regia.html">Apri la regia →</a>
-            <a class="text-link" href="assemblea/guida.html">Leggi la guida completa →</a>
-          </div>
-        </section>
-          <article class="dashboard-tool" aria-labelledby="activities-coming-title">
-            <h2 id="activities-coming-title">Attività e campi</h2>
-            <a id="activities-tool" class="button button-secondary" href="attivita.html" hidden>Gestisci attività →</a>
-            <a id="winter-camp-tool" class="button button-secondary" href="attivita.html?new=campo-invernale" hidden>Prepara campo invernale · 2–5 gennaio 2027 →</a>
-          </article>
-        </div>
-        <aside class="dashboard-stack" id="dashboard-summary-panel" aria-label="Dati pubblicati e statistiche">
-          <article class="library-overview" aria-labelledby="dashboard-documents-title">
-            <h2 id="dashboard-documents-title">Biblioteca del gruppo</h2>
+          </section>
+          <article id="dashboard-documents-panel" class="library-overview dashboard-layout-wide" aria-labelledby="dashboard-documents-title">
+            <h2 id="dashboard-documents-title">Documenti pubblicati</h2>
             <p id="dashboard-documents-status" role="status">Caricamento dell’indice PDF…</p>
             <ul id="dashboard-document-links"></ul>
             <button id="dashboard-documents-retry" class="button button-secondary" type="button" hidden>Riprova caricamento</button>
-            <a class="text-link" href="../documenti/">Consulta tutti i PDF →</a>
+            <a class="text-link" href="../documenti/">Consulta i PDF pubblicati →</a>
           </article>
-          <article id="dashboard-metrics" class="dashboard-metrics dashboard-secondary" aria-labelledby="dashboard-metrics-title" hidden>
+          <article id="dashboard-metrics" class="dashboard-metrics dashboard-secondary dashboard-layout-wide" aria-labelledby="dashboard-metrics-title" hidden>
             <h2 id="dashboard-metrics-title">Sito e server</h2>
             <a class="text-link" href="statistiche.html">Statistiche sito →</a>
             <p id="dashboard-metrics-status" class="metrics-status" role="status" aria-live="polite">Caricamento...</p>
@@ -159,10 +143,8 @@
               <div><dt>Segnalazioni oggi</dt><dd id="dashboard-errors">-</dd></div>
             </dl>
           </article>
-        </aside>
         </div>
-        </div>
-        </details>
+        </section>
       </section>
     </main>
     <!-- include:footer {"top":"reserved-content"} -->

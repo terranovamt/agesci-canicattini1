@@ -16,6 +16,11 @@
       }
       return r.json();
     }
+    function notifyIdentityChange() {
+      if (typeof window.dispatchEvent === 'function' && typeof Event === 'function') {
+        window.dispatchEvent(new Event('nas:identitychange'));
+      }
+    }
     async function entra(password, code, confirmation, temporary) {
       const result = password === 'nas-session' && code === undefined
         ? await request('auth/me')
@@ -24,6 +29,7 @@
       window.NAS.user = result.user;
       if (result.user && !result.user.viewAs) window.NAS.viewAs = null;
       if (typeof document !== 'undefined') viewAsControl();
+      notifyIdentityChange();
       sessionStorage.setItem('canicattini-area-chiave', 'nas-session');
       sessionStorage.setItem('canicattini-area-verificata', 'nas-session');
     }
@@ -32,6 +38,7 @@
       window.NAS.user = null;
       window.NAS.viewAs = null;
       if (typeof document !== 'undefined') document.querySelector('.view-as')?.remove();
+      notifyIdentityChange();
       sessionStorage.removeItem('canicattini-area-chiave');
       sessionStorage.removeItem('canicattini-area-verificata');
       localStorage.removeItem('assemblea-gh-token');
@@ -40,11 +47,13 @@
     async function vista(personId) {
       const result = await request('auth/view-as', 'POST', { personId });
       Object.assign(window.NAS, result);
+      notifyIdentityChange();
       return result;
     }
     async function tornaAdmin() {
       const result = await request('auth/view-as', 'DELETE');
       Object.assign(window.NAS, result);
+      notifyIdentityChange();
       return result;
     }
     const BRANCHES = ['L/C', 'E/G', 'R/S'];

@@ -774,8 +774,19 @@
       const q = sociQuery.trim().toLowerCase();
       const shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code + " " + (m.profile.email || "")).toLowerCase().includes(q)));
       count.textContent = shown.length + " di " + all.length + " soci";
-      const table = el("table", { className: "soci-table" }, el("thead", {}, el("tr", {}, ...["Nome", "Cognome", "Codice", "Branca", "Contatto", "Email"].map((h) => el("th", { textContent: h })))));
-      table.append(el("tbody", {}, ...shown.map((m) => el("tr", {}, ...[m.profile.givenName || m.name, m.profile.surname || "", m.code, m.branch, m.profile.phone || "", m.profile.email || ""].map((v) => el("td", { textContent: v }))))));
+      const columns = ["Nome", "Cognome", "Codice", "Branca", "Contatto", "Email"];
+      const table = el("table", { className: "soci-table" },
+        el("thead", {}, el("tr", {}, ...columns.map((h) => el("th", { textContent: h })))));
+      table.append(el("tbody", {}, ...shown.map((m) => {
+        const row = el("tr");
+        [m.profile.givenName || m.name, m.profile.surname || "", m.code, m.branch,
+          m.profile.phone || "", m.profile.email || ""].forEach((value, index) => {
+          const cell = el("td", { textContent: value });
+          cell.dataset.label = columns[index];
+          row.append(cell);
+        });
+        return row;
+      })));
       list.append(shown.length ? table : el("p", { className: "empty-state", textContent: "Nessun socio trovato." }));
     };
     const count = el("strong", { className: "soci-count" });

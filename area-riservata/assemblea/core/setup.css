@@ -257,12 +257,24 @@ dialog a { color: var(--v); font-weight: 700 }
   .setup-header, footer { padding-inline: 10% }
 }
 
-.soci-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px }
+.soci-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; min-width: 0 }
 .soci-tools select, .soci-tools input { width: auto; min-height: 44px; font: inherit; padding: 8px; border: 1px solid var(--vl); border-radius: 8px }
 .soci-tools input { flex: 1 1 200px; min-width: 0; width: auto }
-.soci-count { margin-left: auto }
+.soci-count { flex: 0 0 auto; margin-left: auto }
 .soci-table { width: 100%; border-collapse: collapse; background: var(--w); border-radius: var(--radius-md) }
 .soci-table th, .soci-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--vl) }
+@media (max-width: 520px) {
+  .soci-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .soci-tools select, .soci-tools input, .soci-tools button { width: 100%; min-width: 0 }
+  .soci-tools input, .soci-count { grid-column: 1 / -1; margin: 0 }
+  .soci-tools button { padding: 8px; overflow-wrap: anywhere }
+  .soci-table, .soci-table tbody { display: block; width: 100%; min-width: 0 }
+  .soci-table thead { display: none }
+  .soci-table tbody { display: grid; gap: 8px }
+  .soci-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w) }
+  .soci-table td { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 8px; border: 0; overflow-wrap: anywhere }
+  .soci-table td::before { content: attr(data-label); color: var(--v2); font-size: 11px; font-weight: 700 }
+}
 
 /* interruttore del voto online */
 .voto-sw { border: 2px solid #0002; border-radius: 14px; background: #fff; transition: background .2s, border-color .2s }

@@ -32,15 +32,15 @@
     const profiles = {
       "L/C": { title: "Area capi L/C", motto: "Lupetti e Coccinelle · Cerchio · Giungla e Bosco",
         tools: [["Attività", "attivita.html"], ["Torneo sestiglie", "attivita.html#tournament-panel"],
-          ["Percorsi dei lupetti", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
+          ["Prede e specialità", "attivita.html#paths-panel"], ["Lupetti", "soci.html"]] },
       "E/G": { title: "Area capi E/G", motto: "Esploratori e Guide · Reparto · Squadriglie",
         tools: [["Attività", "attivita.html"], ["Specialità e brevetti", "attivita.html#paths-panel"],
           ["Esploratori e guide", "soci.html"]] },
       "R/S": { title: "Area capi R/S", motto: "Rover e Scolte · Clan · Strada",
-        tools: [["Attività e route", "attivita.html"], ["Rover e scolte", "soci.html"], ["Documenti", "documenti.html"]] },
+        tools: [["Attività e route", "attivita.html"], ["Rover e scolte", "soci.html"]] },
     };
     const profile = user?.admin
-      ? { title: "Area di gruppo", tools: [["Tutte le attività", "attivita.html"], ["Libro soci", "soci.html"], ["Accessi capi", "persone.html"]] }
+      ? { title: "Benvenuto", tools: [["Tutte le attività", "attivita.html"], ["Libro soci", "soci.html"], ["Accessi capi", "persone.html"]] }
       : profiles[user?.serviceBranch];
     if (!profile) return;
     if (!user.admin) $("reserved-content").setAttribute("data-branch", user.serviceBranch);
@@ -62,6 +62,7 @@
       link.href = href; link.textContent = label;
       return link;
     }));
+    $("dashboard-shortcuts-heading").hidden = false;
     tools.hidden = false;
   }
   function metrics() {
