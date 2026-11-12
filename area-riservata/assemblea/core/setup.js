@@ -766,10 +766,11 @@
     const branches = [...new Set(all.map((m) => m.branch))].sort();
     if (!branches.includes(sociBranch)) sociBranch = "";
     const list = el("div", { className: "soci-list" });
+    let shown = [];
     const fill = () => {
       list.innerHTML = "";
       const q = sociQuery.trim().toLowerCase();
-      const shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code + " " + (m.profile.email || "")).toLowerCase().includes(q)));
+      shown = all.filter((m) => (!sociBranch || m.branch === sociBranch) && (!q || (m.name + " " + m.code + " " + (m.profile.email || "")).toLowerCase().includes(q)));
       count.textContent = shown.length + " di " + all.length + " soci";
       const columns = ["Nome", "Cognome", "Codice", "Branca", "Contatto", "Email"];
       const table = el("table", { className: "soci-table" },
@@ -797,6 +798,11 @@
     const pdf = el("button", { type: "button", className: "btn", textContent: "Scarica PDF codici di voto" });
     const rigenera = el("button", { type: "button", className: "btn sec", textContent: "Rigenera codici" });
     const scarica = async (nuovi) => {
+      const codiciVisibili = new Set(shown.map((m) => m.code));
+      if (!codiciVisibili.size) {
+        status("Nessun censito visibile da esportare.", "ko");
+        return;
+      }
       pdf.disabled = rigenera.disabled = true;
       try {
         const r = await fetch((window.LIVE.basePath || "") + "/api/vote/codes", {
@@ -804,17 +810,19 @@
         });
         if (!r.ok) throw new Error((await r.text()) || "Errore " + r.status);
         const { righe } = await r.json();
-        const a = el("a", { href: URL.createObjectURL(window.PDF_CODICI.crea("Codici di voto - Censiti " + sociYear, righe)), download: "codici-voto-" + sociYear + ".pdf" });
+        const righeVisibili = righe.filter((riga) => codiciVisibili.has(riga.codice));
+        const a = el("a", { href: URL.createObjectURL(window.PDF_CODICI.crea("Codici di voto - Censiti " + sociYear, righeVisibili)), download: "codici-voto-" + sociYear + ".pdf" });
         a.click();
         URL.revokeObjectURL(a.href);
         status(nuovi ? "Codici rigenerati: PDF scaricato, i vecchi codici non valgono più" : "PDF dei codici di voto scaricato", "ok");
       } catch (e) {
         status(e.message, "ko");
+      } finally {
+        pdf.disabled = rigenera.disabled = false;
       }
-      pdf.disabled = rigenera.disabled = false;
     };
     pdf.onclick = () => scarica(false);
-    rigenera.onclick = () => confirm("Rigenerare TUTTI i codici di voto? I codici già stampati o distribuiti non varranno più e dovrai ristampare il PDF.") && scarica(true);
+    rigenera.onclick = () => shown.length > 0 && confirm("Rigenerare TUTTI i codici di voto? I codici già stampati o distribuiti non varranno più e dovrai ristampare il PDF.") && scarica(true);
     c.append(el("div", { className: "soci-tools" }, yearSel, branchSel, search, count, pdf, rigenera), list);
     fill();
   }

@@ -42,6 +42,9 @@ function setup(options = {}) {
       append(...children) {
         this.children.push(...children);
       },
+      click() {
+        if (this.onclick) this.onclick();
+      },
       remove() {},
       setAttribute(name, value) {
         this.attributes[name] = value;
@@ -68,7 +71,7 @@ function setup(options = {}) {
     if (!elements.has(s)) elements.set(s, element("div"));
     return elements.get(s);
   };
-  for (const name of ["generale", "ordine", "bilancio", "json", "guida", "limiti"]) {
+  for (const name of ["generale", "ordine", "bilancio", "soci", "json", "guida", "limiti"]) {
     const tab = element("button");
     tab.dataset.tab = name;
     tabs.push(tab);
@@ -82,6 +85,7 @@ function setup(options = {}) {
     window: {
       ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
       LIVE: { nas: true, basePath: "" },
+      PDF_CODICI: options.pdfCodici || { crea: () => ({}) },
     },
     document: {
       querySelector: $,
@@ -128,8 +132,11 @@ function setup(options = {}) {
     addEventListener(name, fn) {
       listeners[name] = fn;
     },
+    URL: { createObjectURL: () => "blob:setup-test", revokeObjectURL() {} },
     fetch: async (url, opts) => {
       requests.push({ url, opts });
+      if (url === "/api/members") return { status: 200, ok: true, json: async () => options.soci };
+      if (url === "/api/vote/codes") return { status: 200, ok: true, json: async () => ({ righe: options.voteRows || [] }) };
       assert.match(url, /^\/api\/content\/dati\.js$/, "expected NAS content API only");
       if (options.denied) return { status: 401, ok: false, text: async () => "Sessione scaduta" };
       if (opts.method === "PUT") {
@@ -155,6 +162,7 @@ function setup(options = {}) {
   vm.runInContext(source, context);
   return {
     $,
+    created,
     requests,
     scripts,
     listeners,
@@ -193,6 +201,77 @@ test("setup loads without live streams, polling or presence", async () => {
   assert.equal(t.$("#app").hidden, false);
   assert.equal(t.$("#fassemblea_titolo").value, "Assemblea");
   assert.equal(t.$("#salva-dati").disabled, true);
+});
+
+test("voting-code PDFs follow the visible census filters without narrowing global regeneration", async () => {
+  const soci = {
+    currentYear: "2026",
+    members: [
+      {
+        name: "Attivo", code: "A1", profile: {},
+        censuses: [{ year: "2026", statusCode: "A" }, { year: "2025", statusCode: "A", branch: "E/G" }],
+      },
+      {
+        name: "Sospeso recente", code: "S1", profile: {},
+        censuses: [{ year: "2026", statusCode: "S" }, { year: "2025", statusCode: "A", branch: "E/G" }],
+      },
+      {
+        name: "Sospeso precedente", code: "S2", profile: {},
+        censuses: [{ year: "2025", statusCode: "S", branch: "E/G" }],
+      },
+      {
+        name: "Dimesso", code: "D1", profile: {},
+        censuses: [{ year: "2026", statusCode: "D" }, { year: "2025", statusCode: "A", branch: "E/G" }],
+      },
+      {
+        name: "Altra branca", code: "B1", profile: {},
+        censuses: [{ year: "2026", statusCode: "A" }, { year: "2025", statusCode: "A", branch: "L/C" }],
+      },
+    ],
+  };
+  const pdfCalls = [];
+  const t = setup({
+    soci,
+    voteRows: soci.members.map((member) => ({ codice: member.code, nome: member.name })),
+    pdfCodici: {
+      crea: (_title, rows) => {
+        pdfCalls.push(rows);
+        return {};
+      },
+    },
+  });
+  const find = (predicate) => t.created.findLast(predicate);
+  t.tab("soci");
+  await flush();
+  const branch = find((node) => node.getAttribute("ariaLabel") === "Branca");
+  branch.value = "E/G";
+  branch.onchange();
+  const pdf = () => find((node) => node.textContent === "Scarica PDF codici di voto");
+  const regenerate = () => find((node) => node.textContent === "Rigenera codici");
+  await pdf().onclick();
+  assert.deepEqual(pdfCalls[0].map((row) => row.codice), ["A1", "S1"]);
+
+  const search = find((node) => node.getAttribute("ariaLabel") === "Cerca socio");
+  search.value = "Sospeso recente";
+  search.oninput();
+  await pdf().onclick();
+  assert.deepEqual(pdfCalls[1].map((row) => row.codice), ["S1"]);
+  await regenerate().onclick();
+  assert.deepEqual(pdfCalls[2].map((row) => row.codice), ["S1"]);
+
+  const voteRequests = t.requests.filter((request) => request.url === "/api/vote/codes");
+  assert.deepEqual(voteRequests.map((request) => JSON.parse(request.opts.body)), [
+    { anno: "2025" },
+    { anno: "2025" },
+    { anno: "2025", rigenera: true },
+  ]);
+  search.value = "nessun risultato";
+  search.oninput();
+  const callsBeforeEmptyExport = voteRequests.length;
+  await pdf().onclick();
+  await regenerate().onclick();
+  assert.equal(t.requests.filter((request) => request.url === "/api/vote/codes").length, callsBeforeEmptyExport);
+  assert.equal(t.$("#stato").textContent, "Nessun censito visibile da esportare.");
 });
 
 test("NAS setup publishes through the local content API", async () => {
@@ -794,9 +873,9 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
         check(!$('#year-dialog').open && $('#json-text').value === '{"unfinished":', 'pending text blocks wizard without loss');
         w.confirmResult = true;
         click('#json-discard');
-        $('#gh').showModal();
+        $('#year-dialog').showModal();
         fits('token dialog');
-        $('#gh').close();
+        $('#year-dialog').close();
         click('#nuovo-anno');
         click('#year-cancel');
         check(!$('#year-dialog').open && $('#dirty').textContent.includes('Nessuna modifica'), 'confirmed wizard cancel preserves setup');
