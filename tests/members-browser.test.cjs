@@ -94,10 +94,13 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.adminBranchSelector = !$('units-branch').closest('label').hidden;
           const visibleInViewport = element => { const rect = element.getBoundingClientRect();
             return rect.width > 0 && rect.height > 0 && rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth; };
-          results.lowHeightControls = innerHeight > 500 || (visibleInViewport(document.querySelector('#members-app > .section-nav')) &&
+          results.filterDisclosureInitial = innerWidth <= 1024
+            ? !$('members-filter-disclosure').open && visibleInViewport($('members-filter-disclosure').querySelector('summary'))
+            : $('members-filter-disclosure').open;
+          results.lowHeightControls = innerHeight > 500 || (visibleInViewport(document.querySelector('#members-section-nav-row > .section-nav')) &&
             visibleInViewport($('members-access-link')) && visibleInViewport($('new-member')) &&
             visibleInViewport(document.querySelector('.members-summary button')) &&
-            visibleInViewport($('members-advanced-search').querySelector('summary')));
+            visibleInViewport($('members-filter-disclosure').querySelector('summary')));
           results.lowHeightSearchTop = Math.round($('members-filters').elements.search.getBoundingClientRect().top);
           $('reload-members').click(); await settle();
           results.noReloadSuccess = $('members-status').textContent === '' && !$('members-app').inert;
@@ -132,10 +135,13 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
             document.querySelector('.members-table-wrap').scrollWidth <= document.querySelector('.members-table-wrap').clientWidth;
           results.rowTouchTarget = [...document.querySelectorAll('.members-row-select, #members-list .member-name')]
             .every(control => control.getBoundingClientRect().height >= 44);
-          const secondary = document.querySelector('.members-secondary-actions');
-          secondary.open = true;
-          results.secondaryActionsFit = controlsFit(secondary);
-          secondary.open = false;
+          const filterDisclosure = $('members-filter-disclosure');
+          const wasFilterDisclosureOpen = filterDisclosure.open;
+          filterDisclosure.open = true;
+          const actions = $('members-filter-actions');
+          results.secondaryActionsFit = filterDisclosure.contains(actions) &&
+            actions.closest('details') === filterDisclosure && controlsFit(actions);
+          filterDisclosure.open = wasFilterDisclosureOpen;
           results.rows = $('members-list').rows.length;
           results.visibleCount = [...$('members-summary').querySelectorAll('strong')].reduce((n,el) => n + Number(el.textContent), 0);
           const originalMembers = snapshot.members;
@@ -147,6 +153,12 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           }));
           $('reload-members').click(); await settle();
           const codes = () => [...$('members-list').querySelectorAll('td:nth-child(2) .member-code')].map(code => code.textContent).join(',');
+          const censusSort = document.querySelector('[data-sort="census"]');
+          censusSort.click();
+          const headerRows = [...document.querySelectorAll('.members-table thead th')]
+            .filter(cell => cell.getClientRects().length).map(cell => Math.round(cell.getBoundingClientRect().top));
+          results.compactSortHeaderOneLine = innerWidth > 420 || headerRows.every(top => top === headerRows[0]);
+          censusSort.click(); censusSort.click();
           const ageSort = document.querySelector('[data-sort="age"]');
           ageSort.click();
           results.ageAscending = codes() === '999941,999940,999942,999943' &&
@@ -175,9 +187,10 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
             ['year', 'status', 'showSuspended'].every(name => $('members-advanced-search').contains(filters[name])) &&
             !$('members-advanced-search').open;
           results.resetHiddenWithoutFilters = $('members-active-filters').hidden && !resetFilters.getClientRects().length &&
-            !$('members-filters').contains(resetFilters) && (innerHeight <= 500 || filters.search.checkVisibility());
-          results.searchVisible = innerHeight <= 500 || filters.search.checkVisibility() && filters.search.getBoundingClientRect().height >= 40;
+            !$('members-filters').contains(resetFilters) && filters.search.checkVisibility();
+          results.searchVisible = filters.search.checkVisibility() && filters.search.getBoundingClientRect().height >= 40;
           filters.search.value = 'Esempio'; $('members-filters').oninput();
+          results.filterCount = $('members-filter-count').textContent === '1 attivo';
           const chipRect = document.querySelector('[data-filter-key="search"]').getBoundingClientRect();
           const resetRect = resetFilters.getBoundingClientRect();
           results.resetRightOfActiveFilters = !$('members-active-filters').hidden && resetRect.width >= 44 && resetRect.height >= 44 &&
@@ -186,6 +199,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           resetFilters.click(); await settle();
           results.resetClearsAndHides = filters.search.value === '' && $('members-active-filters').hidden &&
             $('members-list').rows.length === 2;
+          results.filterCountReset = $('members-filter-count').textContent === '0 attivi';
           filters.showSuspended.checked = true; $('members-filters').oninput();
           results.checkboxShowsReset = !$('members-active-filters').hidden && resetFilters.getClientRects().length > 0;
           filters.showSuspended.checked = false; $('members-filters').oninput();
@@ -221,9 +235,14 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           document.querySelector('[data-filter-key="year"]').click();
           results.yearChipToggle = filters.year.value === '' && $('members-list').rows.length === 1;
           results.advancedCollapsed = !$('members-advanced-search').open;
+          $('members-filter-disclosure').open = true;
           $('members-advanced-search').querySelector('summary').click();
           results.advancedExpanded = $('members-advanced-search').open &&
             $('members-advanced-search').querySelector('[name="birthYear"]').getClientRects().length > 0;
+          results.advancedGroups = [...document.querySelectorAll('.members-filter-group legend')]
+            .map(legend => legend.textContent).join('|') === 'Censimento|Branca ed età|Anagrafica|Campi educativi';
+          results.advancedMobileStack = innerWidth > 600 ||
+            getComputedStyle(document.querySelector('.members-filters-advanced')).gridTemplateColumns.trim().split(/\s+/).length === 1;
           results.advancedFits = controlsFit($('members-filters')) &&
             $('members-filters').scrollWidth <= $('members-filters').clientWidth;
           filters.field.value = 'E/G:squadriglia'; filters.value.value = 'Aquile'; $('members-filters').oninput();
@@ -481,6 +500,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("unit-symbol.js") ? `<script>${read("assets/js/shared/unit-symbol.js")}</script>` :
           src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
           src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
@@ -516,12 +536,12 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       for (const key of ["loaded", "glance", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
-        "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
+        "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "filterDisclosureInitial", "filterCount", "filterCountReset", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "docsWithoutSelection", "docsAllResults", "docsSideBySide", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",
         "incomingOpensTab", "lcRoute", "mixedBlocked", "mixedStaysOpen", "emptyDisabled", "emptyBlocked", "emptyStaysOpen", "invalidNoApi", "keySuggested", "keyEditable", "optionsConditional", "nonSelectOptions",
-        "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedFits", "dialogUsesSpace", "pickerFits", "macroFits", "documentsFit",
+        "readableList", "rowTouchTarget", "secondaryActionsFit", "advancedGroups", "advancedMobileStack", "advancedFits", "dialogUsesSpace", "pickerFits", "macroFits", "documentsFit",
         "importSourceFits", "importReviewFits", "settingsFits", "transfersFit", "pendingLayout", "multipleMacroFits",
-        "qualityChip", "searchVisible", "rowOpens", "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
+        "qualityChip", "searchVisible", "rowOpens", "compactSortHeaderOneLine", "ageAscending", "ageDescending", "sortCleared", "nameAscending", "switchSort", "branchBadgeColor"])
         assert.equal(results[key], true, key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
       assert.equal(results.rows, 2);

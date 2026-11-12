@@ -212,6 +212,7 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("unit-symbol.js") ? `<script>${read("assets/js/shared/unit-symbol.js")}</script>` :
           src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
           src.includes("member-activities.js") ? `<script>${read("assets/js/member-activities.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` : "")

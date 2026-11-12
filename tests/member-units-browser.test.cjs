@@ -140,6 +140,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
             $('unit-available-status').textContent.includes('Nessun nome'), 'safeSearch');
           search.value = ''; search.oninput();
           check(availableCards.every(card => !card.hidden), 'clearNameSearch');
+          check(innerWidth < 1100 || $('unit-unassigned').getBoundingClientRect().width >= 260, 'availablePanelWidened');
           check($('lc-environment-form').hidden && !$('units-board').textContent.includes('Persona 7'), 'egScope');
           $('new-unit').click(); form.elements.name.value = 'Nome senza colori'; form.elements.name.oninput();
           check($('unit-appearance').hidden && $('unit-name-hint').textContent.includes('non sono definiti'), 'fixedEditor');
@@ -199,7 +200,9 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           const columns = new Set(cards.map(card => Math.round(card.getBoundingClientRect().left))).size;
           results.measures = { columns, boardWidth: Math.round($('units-board').getBoundingClientRect().width), cardWidth: Math.round(cards[0].getBoundingClientRect().width),
             cardHeight: Math.round(cards[1].getBoundingClientRect().height) };
-          check(columns >= (innerWidth >= 1366 ? 4 : innerWidth >= 820 ? 2 : 1), 'usefulColumns');
+          check(columns >= (innerWidth >= 1920 ? 4 : innerWidth >= 820 ? 2 : 1), 'usefulColumns');
+          check(innerWidth < 1100 || [...document.querySelectorAll('.units-board .member-name')]
+            .every(name => getComputedStyle(name).whiteSpace === 'nowrap'), 'singleLineNames');
           check(cards.every(card => card.getBoundingClientRect().width <= 360) && fits(), 'boardGridFits');
           check([...$('units-board').querySelectorAll('.unit-chief')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(70, 38, 120)') &&
             [...$('units-board').querySelectorAll('.unit-deputy')].every(lane => getComputedStyle(lane).backgroundColor === 'rgb(230, 218, 241)') &&
@@ -225,12 +228,12 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
     const page = renderHtml(read("area-riservata/soci.html"), "area-riservata/soci.html")
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
-        const file = ["soci-model.js", "soci-units.js", "soci.js"].find(file => src.endsWith("/" + file));
+        const file = ["soci-model.js", "shared/unit-symbol.js", "soci-units.js", "soci.js"].find(file => src.endsWith("/" + file));
         return file ? `<script>${read("assets/js/" + file)}</script>` : src.endsWith("/section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "";
       })
       .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`)
       .replace("</body>", `<script>${exercise}</script></body>`);
-    for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390]]) {
+    for (const [width, height] of [[1920, 1080], [1366, 768], [1280, 800], [820, 1180], [390, 844], [1180, 820], [844, 390]]) {
       const file = path.join(directory, "fixture.html");
       fs.writeFileSync(file, `<!doctype html><body><script>
         const frame = document.createElement('iframe'); frame.style.cssText = 'border:0;width:${width}px;height:${height}px';
@@ -253,7 +256,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
         "hidePreserves", "restorePreserves", "egScope", "roleOrder", "legacyVisible", "occupiedError", "dragMove", "dropTargets",
         "equilateral", "compactRows", "fixedColors", "noAppearanceButton", "emptyFlag", "compactHeight",
         "egFits", "touchTargets", "noErrors", "unassignedAlwaysOpen", "lcCount", "countsIncludeLegacy", "countsAfterMove", "noMoveDialog",
-        "cardNotStretched", "usefulColumns", "boardGridFits", "roleContrast", "emptyAvailableHidden", "keyboardCancel", "tapSelection", "tapMove", "badgesAndMissing", "highlightSubstring", "safeSearch"])
+        "availablePanelWidened", "cardNotStretched", "usefulColumns", "singleLineNames", "boardGridFits", "roleContrast", "emptyAvailableHidden", "keyboardCancel", "tapSelection", "tapMove", "badgesAndMissing", "highlightSubstring", "safeSearch"])
         assert.equal(results[key], true, width + " " + key + ": " + JSON.stringify(results));
       t.diagnostic(width + "×" + height + ": " + JSON.stringify(results.measures));
     }

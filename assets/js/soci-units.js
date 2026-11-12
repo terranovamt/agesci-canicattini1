@@ -1,7 +1,6 @@
 (function () {
   'use strict';
   const M = window.SOCI_MODEL;
-  const guidoniRoot = new URL('../img/guidoni/', document.currentScript.src || new URL('assets/js/soci-units.js', document.baseURI)).href;
   const $ = id => document.getElementById(id);
   const el = (tag, text, className) => {
     const node = document.createElement(tag);
@@ -16,32 +15,6 @@
     }));
     if (items.some(([value]) => String(value) === previous)) select.value = previous;
   };
-  function symbol(unit) {
-    const ns = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', '0 0 220 160');
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', (unit.branch === 'L/C' ? 'Triangolo della sestiglia ' : 'Guidone della squadriglia ') + unit.name);
-    const shape = (tag, attributes) => {
-      const node = document.createElementNS(ns, tag);
-      for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
-      return node;
-    };
-    if (unit.branch === 'L/C') {
-      svg.append(shape('path', { d: 'M110 10 L190 148.564 L30 148.564 Z', fill: unit.color, stroke: '#f5cb31', 'stroke-width': '10', 'stroke-linejoin': 'round' }));
-    } else {
-      const outline = 'M30 20 Q155 12 205 80 Q155 148 30 140 Z';
-      svg.append(shape('path', { d: 'M23 8 V153', stroke: '#76512d', 'stroke-width': '6', 'stroke-linecap': 'round' }));
-      svg.append(shape('path', { d: outline, fill: '#ffffff', stroke: '#5c5660', 'stroke-width': '2' }));
-      const identity = M.patrolIdentity(unit.name);
-      if (identity) {
-        const image = shape('image', { href: guidoniRoot + identity.image, x: 0, y: 0, width: 220, height: 160, preserveAspectRatio: 'xMidYMid meet' });
-        image.addEventListener('error', () => image.remove(), { once: true });
-        svg.append(image);
-      }
-    }
-    return svg;
-  }
   window.SOCI_UNITS = function ({ perform, reload, openMember }) {
     let data, editing = null, draftEmblem = '', imageBusy = false, editorSnapshot = '';
     const branchSelect = $('units-branch'), form = $('unit-form'), search = $('unit-available-search');
@@ -69,6 +42,7 @@
     const environment = () => data.lc.environment;
     const visibleUnits = () => data.units.filter(unit => unit.branch === branch() && !unit.hidden);
     const members = () => data.members.filter(member => member.branch === branch() && member.kind === 'ragazzo' &&
+      !M.isNonFrequentante(member) &&
       !M.longSuspended(member, data.currentYear));
     const state = () => JSON.stringify([form.elements.name.value, form.elements.color.value, form.elements.color2.value, draftEmblem]);
     const editorDirty = () => $('unit-dialog').open && state() !== editorSnapshot;
@@ -77,7 +51,7 @@
       $('unit-dialog').close();
     };
     function preview() {
-      $('unit-symbol-preview').replaceChildren(symbol({
+      $('unit-symbol-preview').replaceChildren(window.SOCI_UNIT_SYMBOL({
         branch: branch(), name: form.elements.name.value, color: form.elements.color.value,
         color2: form.elements.color2.value, emblem: draftEmblem,
       }));
@@ -334,6 +308,7 @@
       const card = el('article', undefined, 'unit-member');
       card.dataset.memberId = member.id;
       const name = el('button', member.name, 'member-name');
+      name.title = member.name;
       name.dataset.name = member.name;
       name.type = 'button';
       name.onclick = () => {
@@ -430,7 +405,7 @@
         const missing = roles.slice(0, 2).filter(role => !assigned.some(member => member.values[branch()]?.ruolo === role))
           .map(role => ['capo', 'vice'][roles.indexOf(role)]);
         if (missing.length) title.append(el('small', 'Manca: ' + missing.join(' · '), 'unit-missing'));
-        heading.append(symbol(unit), title);
+        heading.append(window.SOCI_UNIT_SYMBOL(unit), title);
         const hide = el('button', '×', 'unit-hide');
         hide.type = 'button'; hide.onclick = () => {
           if (!confirm('Nascondere ' + unit.name + '? Assegnazioni, colori e simbolo saranno conservati.')) return;
@@ -488,7 +463,7 @@
           await window.ACCESSO.request('members/units', 'POST', { branch: branch(), name: unit.name });
           await reload();
         }, $('units-status'));
-        row.append(symbol(unit), restore); return row;
+        row.append(window.SOCI_UNIT_SYMBOL(unit), restore); return row;
       }));
     }
     return {

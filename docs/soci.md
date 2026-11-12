@@ -97,6 +97,13 @@ una presente ma vuota li azzera. L'import non elimina record duplicati.
 
 ## Schede, ricerche ed estrazioni
 
+Nella scheda anagrafica dei ragazzi, **Non frequentante** esclude il socio
+dai conteggi e dalle nuove attività, dai percorsi operativi e dall'assegnazione
+a sestiglie o squadriglie e dalle selezioni per documenti e passaggi. La scheda
+e lo storico restano consultabili; il flag non modifica né cancella i censimenti
+AGESCI, quindi il ragazzo resta incluso nei conteggi ufficiali dei censiti per
+l'assemblea.
+
 Aprire il nome di un socio per consultare lo storico e modificare i dati
 consentiti. Le modifiche manuali non riscrivono lo storico ufficiale. Gli
 account preesistenti senza scheda devono essere completati prima di applicare macro.

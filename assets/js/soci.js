@@ -2,6 +2,15 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const M = window.SOCI_MODEL, A = window.ACCESSO, filters = $('members-filters');
+  const filterDisclosure = $('members-filter-disclosure');
+  const compactFilters = window.matchMedia('(max-width: 1024px)');
+  filterDisclosure.open = !compactFilters.matches;
+  compactFilters.addEventListener('change', () => {
+    const shouldOpen = !compactFilters.matches;
+    if (!shouldOpen && filterDisclosure.contains(document.activeElement))
+      filterDisclosure.querySelector('summary').focus();
+    filterDisclosure.open = shouldOpen;
+  });
   const profileForm = $('member-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
@@ -40,6 +49,13 @@
     options(select, branches.map(branch => [branch, M.branchLabel(branch)]), first);
   }
   function input(labelText, name, value, definition = {}) {
+    if (definition.type === 'checkbox') {
+      const label = node('label', labelText, 'members-check');
+      const checkbox = node('input');
+      checkbox.type = 'checkbox'; checkbox.name = name; checkbox.checked = value === true;
+      label.prepend(checkbox);
+      return label;
+    }
     if (definition.type === 'multiselect') {
       const group = node('fieldset', undefined, 'members-choice-field members-wide');
       const selected = M.selectedChoices(value);
@@ -146,7 +162,7 @@
       return true;
     });
   }
-  function chosen() { return data.members.filter(member => selected.has(member.id)); }
+  function chosen() { return data.members.filter(member => selected.has(member.id) && !M.isNonFrequentante(member)); }
   function updateSelection() {
     $('members-count').textContent = `${results().length} risultati · ${selected.size} selezionati`;
     $('open-macro').disabled = !selected.size;
@@ -157,10 +173,14 @@
   }
   function render() {
     const visible = results(), rows = [];
-    if (!filters.elements.showSuspended.checked)
-      data.members.filter(member => M.longSuspended(member, data.currentYear)).forEach(member => selected.delete(member.id));
-    const countable = data.members.filter(member => filters.elements.showSuspended.checked || !M.longSuspended(member, data.currentYear));
-    $('members-summary').replaceChildren(...M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch).map(branch => {
+    data.members.filter(member => M.isNonFrequentante(member) ||
+      (!filters.elements.showSuspended.checked && M.longSuspended(member, data.currentYear)))
+      .forEach(member => selected.delete(member.id));
+    const countable = data.members.filter(member => !M.isNonFrequentante(member) &&
+      (filters.elements.showSuspended.checked || !M.longSuspended(member, data.currentYear)));
+    const branches = M.branches.filter(branch => window.NAS.user.admin || branch === window.NAS.user.serviceBranch);
+    const summary = $('members-summary');
+    summary.replaceChildren(...branches.map(branch => {
       const card = node('button'); card.type = 'button';
       card.style.setProperty('--branch-color', M.branchColors[branch]);
       card.setAttribute('aria-pressed', String(filters.elements.branch.value === branch));
@@ -175,6 +195,15 @@
       };
       return card;
     }));
+    const sectionNavRow = $('members-section-nav-row');
+    const branchHeading = document.querySelector('.members-page-heading .branch-heading-title');
+    branchHeading?.classList.remove('members-heading-title--summary');
+    if (branches.length === 1 && branchHeading) {
+      branchHeading.append(summary);
+      branchHeading.classList.add('members-heading-title--summary');
+    } else {
+      sectionNavRow.append(summary);
+    }
     renderQuickFilters();
     for (const chip of document.querySelectorAll('[data-quality]'))
       chip.setAttribute('aria-pressed', String(filters.elements.quality.value === chip.dataset.quality));
@@ -230,12 +259,14 @@
         cell.colSpan = 6;
         const button = node('button', (birthYear ? 'Nati nel ' + birthYear : 'Nascita non indicata') + ' · Seleziona questo gruppo', 'member-name');
         button.type = 'button';
-        button.onclick = () => { visible.filter(m => (m.profile.birthDate?.slice(0, 4) || '') === birthYear).forEach(m => selected.add(m.id)); render(); };
+        button.onclick = () => { visible.filter(m => !M.isNonFrequentante(m) &&
+          (m.profile.birthDate?.slice(0, 4) || '') === birthYear).forEach(m => selected.add(m.id)); render(); };
         cell.append(button); row.append(cell); rows.push(row);
       }
       const row = node('tr'), checkCell = node('td'), checkbox = node('input');
       checkbox.type = 'checkbox'; checkbox.checked = selected.has(member.id);
-      checkbox.setAttribute('aria-label', 'Seleziona ' + member.name);
+      checkbox.disabled = M.isNonFrequentante(member);
+      checkbox.setAttribute('aria-label', checkbox.disabled ? member.name + ': non frequentante, non selezionabile' : 'Seleziona ' + member.name);
       checkbox.onchange = () => { checkbox.checked ? selected.add(member.id) : selected.delete(member.id); updateSelection(); };
       const checkLabel = node('label', undefined, 'members-row-select');
       checkLabel.append(checkbox); checkCell.append(checkLabel);
@@ -243,6 +274,7 @@
       name.type = 'button'; name.onclick = () => openMember(member);
       row.onclick = event => { if (!event.target.closest('button, label, input, a')) openMember(member); };
       nameCell.append(name, node('span', member.code, 'member-code'));
+      if (M.isNonFrequentante(member)) nameCell.append(node('span', 'Non frequentante', 'member-code'));
       const branchCell = node('td'), branchBadge = node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge');
       if (M.branchColors[member.branch]) branchBadge.style.setProperty('--branch-color', M.branchColors[member.branch]);
       branchCell.append(branchBadge);
@@ -266,6 +298,7 @@
   function renderQuickFilters() {
     const container = $('members-quick-filters');
     container.replaceChildren();
+    let activeCount = 0;
     for (const [key, label] of Object.entries({
       search: 'Ricerca', branch: 'Branca', year: 'Anno censimento', status: 'Stato AGESCI',
       showSuspended: 'Sospesi inclusi', minAge: 'Età minima', maxAge: 'Età massima',
@@ -274,6 +307,7 @@
     })) {
       const control = filters.elements[key], checked = control.type === 'checkbox';
       if (checked ? !control.checked : !control.value) continue;
+      activeCount++;
       const value = control.tagName === 'SELECT' ? control.selectedOptions[0].textContent : control.value;
       const text = checked ? label : `${label}: ${value}`;
       const button = node('button', text + ' ×', 'members-filter-chip');
@@ -288,6 +322,7 @@
       };
       container.append(button);
     }
+    $('members-filter-count').textContent = `${activeCount} attiv${activeCount === 1 ? 'o' : 'i'}`;
     container.hidden = !container.children.length;
     $('members-active-filters').hidden = container.hidden;
   }
@@ -655,6 +690,7 @@
       item.append(chip); list.append(item);
     };
     add(M.branchLabel(member.branch) || 'Da assegnare');
+    if (M.isNonFrequentante(member)) add('Non frequentante');
     const years = age(member);
     if (years !== null && years !== undefined) add(years + ' anni');
     const current = census(member);
@@ -692,12 +728,15 @@
       [$('member-guardian-type'), ['guardianType']], [$('member-guardian-source'), ['guardians']],
     ]) {
       target.replaceChildren(...keys.map(key => {
-        const definition = key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
+        const definition = key === 'nonFrequentante' ? { type: 'checkbox' }
+          : key === 'birthDate' ? { type: 'date' } : key === 'guardians' ? { long: true, max: 12000 }
           : key === 'email' ? { type: 'email' } : key === 'phone' ? { type: 'tel' }
           : key === 'sex' ? { type: 'select', options: ['M', 'F'] }
           : key === 'digital' ? { type: 'select', options: ['True', 'False'] }
           : {};
-        return input(M.profileFields[key], 'profile:' + key, profile[key], definition);
+        const field = input(M.profileFields[key], 'profile:' + key, profile[key], definition);
+        if (key === 'nonFrequentante') field.hidden = M.isAdult({ ...member, branch: profileForm.elements.branch.value });
+        return field;
       }));
     }
     $('member-guardian-source').querySelector('input,textarea').readOnly = true;
@@ -726,6 +765,7 @@
     $('member-dialog').showModal();
   }
   profileForm.elements.branch.onchange = () => {
+    const nonFrequentante = profileForm.elements['profile:nonFrequentante'];
     const oldBranch = educationBranch;
     educationDraft();
     const definitions = data.fields.filter(field => field.branch === oldBranch);
@@ -735,6 +775,8 @@
       profileForm.elements.branch.value = oldBranch;
       return;
     }
+    if (nonFrequentante) nonFrequentante.closest('label').hidden =
+      M.isAdult({ ...editing, branch: profileForm.elements.branch.value });
     drafts[oldBranch] = { ...editing?.values[oldBranch] };
     renderEducation();
     configureMemberSections();
@@ -770,7 +812,8 @@
     const hasGuardianSection = memberSections.includes('guardians');
     if (hasGuardianSection) profileTargets.push('member-guardian-type', 'member-guardian-source');
     const profile = { ...editing?.profile, ...Object.fromEntries(profileTargets
-      .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')]).map(el => [el.name.slice(8), el.value])) };
+      .flatMap(id => [...$(id).querySelectorAll('input,select,textarea')])
+      .map(el => [el.name.slice(8), el.type === 'checkbox' ? el.checked : el.value])) };
     if (hasGuardianSection) profile.guardianContacts = guardianPayload();
     const payload = { code: profileForm.elements.code.value, branch, profile, values: drafts[branch] || {}, revision: editing?.revision };
     run(async () => {
@@ -850,7 +893,7 @@
     const form = event.currentTarget, payload = Object.fromEntries(new FormData(form));
     run(async () => { await A.request('members/templates', 'POST', payload); form.reset(); await load(); });
   };
-  function docMembers() { return selected.size ? chosen() : results(); }
+  function docMembers() { return selected.size ? chosen() : results().filter(member => !M.isNonFrequentante(member)); }
   function documentTexts() {
     const template = data.templates.find(template => String(template.id) === $('document-template').value);
     return docMembers().map(member => {
@@ -908,10 +951,13 @@
     if (data) render();
     if (document.activeElement === document.body || document.activeElement?.id === 'members-reset-filters') {
       const advanced = $('members-advanced-search');
-      (advanced.open ? filters.elements.search : advanced.querySelector('summary')).focus();
+      const target = !filterDisclosure.open ? filterDisclosure.querySelector('summary') :
+        advanced.open ? filters.elements.search : advanced.querySelector('summary');
+      target.focus();
     }
   }, 0);
-  $('select-results').onclick = () => { results().forEach(member => selected.add(member.id)); render(); };
+  $('select-results').onclick = () => { results().filter(member => !M.isNonFrequentante(member))
+    .forEach(member => selected.add(member.id)); render(); };
   $('clear-selection').onclick = () => { selected.clear(); render(); };
   $('new-member').onclick = () => openMember(null);
   $('open-import').onclick = () => {
@@ -929,7 +975,9 @@
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   branchOptions(filters.elements.branch, ['', 'Tutte le branche']);
   branchOptions(profileForm.elements.branch); branchOptions($('field-form').elements.branch);
-  $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !window.NAS?.user?.admin;
+  const admin = !!window.NAS?.user?.admin;
+  $('members-primary-actions').hidden = !admin;
+  $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !admin;
   if (!window.NAS?.user || (!window.NAS.user.admin && !window.NAS.user.serviceBranch)) {
     $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';
     return;

@@ -24,48 +24,75 @@
     </div>
     <p id="members-status" role="status" aria-live="polite"></p>
     <section id="members-app" hidden>
-      <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
-        <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
-        <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie</button>
-        <button id="transfers-tab" type="button" data-section-target="members-transfer-panel" hidden>Passaggi</button>
-        <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
-      </nav>
+      <div id="members-section-nav-row" class="members-section-nav-row">
+        <nav class="section-nav" data-section-nav aria-label="Attività del Libro soci" hidden>
+          <button type="button" data-section-target="members-search-panel">Soci e ricerca</button>
+          <button id="units-tab" type="button" data-section-target="members-units-panel">Sestiglie</button>
+          <button id="transfers-tab" type="button" data-section-target="members-transfer-panel" hidden>Passaggi</button>
+          <button type="button" data-section-target="members-settings-panel">Campi e modelli</button>
+        </nav>
+        <div id="members-summary" class="members-summary" role="group" aria-label="Filtra soci per branca"></div>
+      </div>
       <div id="members-search-panel" data-section-panel>
-      <div id="members-summary" class="members-summary" role="group" aria-label="Filtra soci per branca"></div>
       <button id="members-incoming" class="button button-secondary" type="button" hidden></button>
       <div class="members-controls">
-      <div class="members-toolbar members-primary-actions">
+      <div id="members-primary-actions" class="members-toolbar members-primary-actions" hidden>
         <button id="new-member" class="button button-primary" type="button">+ Nuovo socio</button>
-        <details class="members-secondary-actions">
-          <summary>Altre azioni</summary>
-          <div class="members-toolbar">
-        <button id="open-import" class="button button-secondary" type="button">Importa CSV AGESCI</button>
-        <button id="export-members" class="button button-secondary" type="button">Esporta risultati</button>
-        <button id="reload-members" class="button button-secondary" type="button">Ricarica</button>
-          </div>
-        </details>
       </div>
       <form id="members-filters" class="members-filters" role="search" aria-label="Ricerca soci">
         <label class="members-search members-main-search">Cerca un socio<input name="search" type="search" placeholder="Nome, cognome, codice, contatti..." autocomplete="off"></label>
-        <div id="members-quick-quality" class="members-quick-quality" role="group" aria-label="Verifiche rapide">
-          <button type="button" class="members-filter-chip" data-quality="contacts" aria-pressed="false">Senza email e cellulare</button>
-          <button type="button" class="members-filter-chip" data-quality="incomplete" aria-pressed="false">Anagrafica da completare</button>
-        </div>
-        <details id="members-advanced-search" class="members-advanced-search">
-          <summary>Altri filtri</summary>
-          <div class="members-filters-advanced">
-            <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
-            <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
-            <label class="members-check"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
-            <label>Branca<select name="branch"><option value="">Tutte le branche</option></select></label>
-            <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
-            <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
-            <label>Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
-            <label class="members-check"><input name="groupBirthYear" type="checkbox">Raggruppa per anno di nascita</label>
-            <label>Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="incomplete">Anagrafica da completare</option></select></label>
-            <label>Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
-            <label>Valore contiene<input name="value" type="search" autocomplete="off"></label>
-            <label class="members-check"><input name="missing" type="checkbox">Campo educativo vuoto</label>
+        <details id="members-filter-disclosure" class="members-filter-disclosure">
+          <summary>Filtri e azioni <span id="members-filter-count" class="members-filter-count">0 attivi</span></summary>
+          <div class="members-filter-disclosure-body">
+            <div id="members-quick-quality" class="members-quick-quality" role="group" aria-labelledby="members-quick-quality-heading">
+              <span id="members-quick-quality-heading" class="members-filter-group-label">Verifiche rapide</span>
+              <button type="button" class="members-filter-chip" data-quality="contacts" aria-pressed="false">Senza email e cellulare</button>
+              <button type="button" class="members-filter-chip" data-quality="incomplete" aria-pressed="false">Anagrafica da completare</button>
+            </div>
+            <div id="members-filter-actions" class="members-filter-actions" role="group" aria-label="Azioni">
+              <button id="open-import" class="button button-secondary" type="button">Importa CSV AGESCI</button>
+              <button id="export-members" class="button button-secondary" type="button">Esporta risultati</button>
+              <button id="reload-members" class="button button-secondary" type="button">Ricarica</button>
+            </div>
+            <details id="members-advanced-search" class="members-advanced-search">
+              <summary>Filtri avanzati</summary>
+              <div class="members-filters-advanced">
+                <fieldset class="members-filter-group">
+                  <legend>Censimento</legend>
+                  <div class="members-filter-group-fields">
+                    <label>Anno censimento<select name="year"><option value="">Ultimo disponibile per socio</option></select></label>
+                    <label>Status AGESCI<select name="status"><option value="">Tutti gli status</option></select></label>
+                    <label class="members-check members-filter-wide"><input name="showSuspended" type="checkbox">Mostra anche sospesi da oltre un anno</label>
+                  </div>
+                </fieldset>
+                <fieldset class="members-filter-group">
+                  <legend>Branca ed età</legend>
+                  <div class="members-filter-group-fields">
+                    <label class="members-filter-wide">Branca<select name="branch"><option value="">Tutte le branche</option></select></label>
+                    <div class="members-filter-pair">
+                      <label>Età minima<input name="minAge" type="number" min="0" max="130"></label>
+                      <label>Età massima<input name="maxAge" type="number" min="0" max="130"></label>
+                    </div>
+                    <label class="members-filter-wide">Anno di nascita<select name="birthYear"><option value="">Tutti gli anni</option></select></label>
+                    <label class="members-check members-filter-wide"><input name="groupBirthYear" type="checkbox">Raggruppa per anno di nascita</label>
+                  </div>
+                </fieldset>
+                <fieldset class="members-filter-group">
+                  <legend>Anagrafica</legend>
+                  <div class="members-filter-group-fields">
+                    <label class="members-filter-wide">Verifiche anagrafiche<select name="quality"><option value="">Tutte le schede</option><option value="contacts">Senza email e cellulare</option><option value="incomplete">Anagrafica da completare</option></select></label>
+                  </div>
+                </fieldset>
+                <fieldset class="members-filter-group">
+                  <legend>Campi educativi</legend>
+                  <div class="members-filter-group-fields">
+                    <label class="members-filter-wide">Campo educativo<select name="field"><option value="">Tutti i campi</option></select></label>
+                    <label class="members-filter-wide">Valore contiene<input name="value" type="search" autocomplete="off"></label>
+                    <label class="members-check members-filter-wide"><input name="missing" type="checkbox">Campo educativo vuoto</label>
+                  </div>
+                </fieldset>
+              </div>
+            </details>
           </div>
         </details>
       </form>
@@ -282,6 +309,7 @@
   <script src="../assets/js/nas-nav.js" defer></script>
   <script src="../assets/js/shared/accesso.js"></script>
   <script src="../assets/js/soci-model.js"></script>
+  <script src="../assets/js/shared/unit-symbol.js"></script>
   <script src="../assets/js/activities-model.js"></script>
   <script src="../assets/js/member-activities.js"></script>
   <script src="../assets/js/soci-units.js"></script>

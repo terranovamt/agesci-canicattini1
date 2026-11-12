@@ -63,7 +63,7 @@ function fixture() {
   return renderHtml(read("area-riservata/soci.html"), "area-riservata/soci.html")
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
-      const file = ["soci-model.js", "soci-units.js", "soci.js"].find(file => src.endsWith("/" + file));
+      const file = ["soci-model.js", "shared/unit-symbol.js", "soci-units.js", "soci.js"].find(file => src.endsWith("/" + file));
       return file ? `<script>${read("assets/js/" + file)}</script>` : src.endsWith("/section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "";
     })
     .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"].map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);

@@ -6,6 +6,7 @@
     return ['Adulti', 'Branca Adulti'].includes(branch) ? (full ? 'Co.Ca. · Comunità Capi' : 'Co.Ca.') : branch;
   }
   function isAdult(member) { return member?.kind === 'capo' || member?.branch === 'Adulti'; }
+  function isNonFrequentante(member) { return member?.profile?.nonFrequentante === true; }
   const profileFields = {
     givenName: 'Nome', surname: 'Cognome', sex: 'Sesso', birthDate: 'Data nascita',
     birthTown: 'Comune nascita', taxCode: 'Codice fiscale', nationality: 'Nazionalita',
@@ -15,6 +16,7 @@
     guardianType: 'Responsabilita genitoriale', guardians: 'Dati responsabili genitoriali',
     digital: 'Gestione digitale', consent2a: 'Consenso 2A', consent2b: 'Consenso 2B',
     consent2c: 'Consenso 2C', magazines: 'Consenso riviste',
+    nonFrequentante: 'Non frequentante',
   };
   const headers = [
     ['givenName', 'NOME'], ['surname', 'COGNOME'], ['sex', 'SESSO'], ['birthDate', 'DATA NASCITA'],
@@ -304,7 +306,7 @@
     return '"' + (/^[\s]*[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
   }
   function exportCsv(rows) { return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'); }
-  const model = { branches, branchColors, branchLabel, isAdult, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
+  const model = { branches, branchColors, branchLabel, isAdult, isNonFrequentante, profileFields, guardianFields, parseGuardians, specialtyCatalogs, competencyBadges,
     lcMoments, sestigliaColors, unitKey, unitField, unitRoles, patrolColors, patrolCatalog, patrolIdentity, ignoredProfileFields, pendingCoca,
     selectedChoices, censusFields, defaultFields, nextBranch, longSuspended, date, parseImport, exportCsv };
   if (typeof module === 'object' && module.exports) module.exports = model;

@@ -92,6 +92,8 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
           result.loaded = !$('members-app').hidden && showing('members-search-panel') && $('members-transfer-panel').hidden;
           result.branchCardColor = getComputedStyle($('members-summary').querySelector('button')).getPropertyValue('--branch-color').trim();
           result.branchCardCount = $('members-summary').querySelector('strong').textContent;
+          result.branchCardBesideIdentity = document.querySelector('.branch-heading-title').contains($('members-summary')) &&
+            $('members-summary').getBoundingClientRect().right <= innerWidth + 1;
           result.visibleMemberRows = $('members-list').rows.length;
           result.hidden = ['members-access-link','new-member','open-import','template-form'].every(id => getComputedStyle($(id)).display === 'none');
           result.scope = [...$('field-form').elements.branch.options].map(option => option.value);
@@ -203,6 +205,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       .replace(/<link\b[^>]*>/g, "")
       .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
         src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("unit-symbol.js") ? `<script>${read("assets/js/shared/unit-symbol.js")}</script>` :
           src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
           src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
           src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
@@ -234,6 +237,7 @@ test("staff UI hides admin tools, constrains fields and exposes destination conf
       assert.equal(measured.height, height);
       assert.equal(measured.branchCardColor, M.branchColors["E/G"]);
       assert.equal(measured.branchCardCount, "1");
+      assert.equal(measured.branchCardBesideIdentity, true);
       assert.equal(measured.visibleMemberRows, 1);
       for (const key of ["loaded", "hidden", "populatedNote", "incomingCta", "transfersShown", "transfersFit", "confirmVisible", "approvalCleared",
         "searchShown", "branchLocked", "noEducationalInput", "proposeEnabled", "macroClosed", "outgoingPending", "fits", "fitsAfterZero",
