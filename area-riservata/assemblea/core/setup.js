@@ -765,6 +765,7 @@
       .sort((a, b) => a.name.localeCompare(b.name, "it"));
     const branches = [...new Set(all.map((m) => m.branch))].sort();
     if (!branches.includes(sociBranch)) sociBranch = "";
+    const branchLabel = (branch) => branch === "Adulti" ? "CO.CA." : branch;
     const list = el("div", { className: "soci-list" });
     let shown = [];
     const fill = () => {
@@ -777,7 +778,7 @@
         el("thead", {}, el("tr", {}, ...columns.map((h) => el("th", { textContent: h })))));
       table.append(el("tbody", {}, ...shown.map((m) => {
         const row = el("tr");
-        [m.profile.givenName || m.name, m.profile.surname || "", m.code, m.branch,
+        [m.profile.givenName || m.name, m.profile.surname || "", m.code, branchLabel(m.branch),
           m.profile.phone || "", m.profile.email || ""].forEach((value, index) => {
           const cell = el("td", { textContent: value });
           cell.dataset.label = columns[index];
@@ -791,7 +792,7 @@
     const yearSel = el("select", { ariaLabel: "Anno di iscrizione" }, ...years.map((y) => el("option", { value: y, textContent: "Iscritti " + y, selected: y === sociYear })));
     yearSel.onchange = () => { sociYear = yearSel.value; render(); };
     const branchSel = el("select", { ariaLabel: "Branca" }, el("option", { value: "", textContent: "Tutte le branche" }),
-      ...branches.map((b) => el("option", { value: b, textContent: b + " (" + all.filter((m) => m.branch === b).length + ")", selected: b === sociBranch })));
+      ...branches.map((b) => el("option", { value: b, textContent: branchLabel(b) + " (" + all.filter((m) => m.branch === b).length + ")", selected: b === sociBranch })));
     branchSel.onchange = () => { sociBranch = branchSel.value; render(); };
     const search = el("input", { type: "search", placeholder: "Cerca nome, codice o email", value: sociQuery, ariaLabel: "Cerca socio" });
     search.oninput = () => { sociQuery = search.value; fill(); };

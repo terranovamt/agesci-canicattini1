@@ -39,6 +39,7 @@ window.PDF_CODICI = (function () {
         const x = MX + (k % COL) * cw, y = H - MY - (Math.floor(k / COL) + 1) * ch;
         const lines = nameLines(r.nome, cw - 20, 13);
         const nameSize = Math.min(13, (cw - 20) / Math.max(...lines.map(nameWidth)));
+        const branca = ['Adulti', 'Branca Adulti'].includes(r.branca) ? 'CO.CA.' : r.branca;
         s += `q ${n(x)} ${n(y)} ${n(cw)} ${n(ch)} re W n\n`;
         s += `0.29 0.16 0.49 rg ${n(x)} ${n(y + ch - HEAD)} ${n(cw)} ${HEAD} re f\n`;
         s += '1 1 1 rg\n' + testo(2, 9.5, x + 10, y + ch - 13, 'AGESCI Canicattini 1') + testo(1, 8, x + 10, y + ch - 24, taglia(titolo, 38));
@@ -46,7 +47,7 @@ window.PDF_CODICI = (function () {
         lines.forEach((line, index) => {
           s += testo(2, Math.floor(nameSize * 100) / 100, x + 10, y + ch - HEAD - 16 - index * 14, line);
         });
-        s += '0.35 0.35 0.4 rg\n' + testo(1, 8.5, x + 10, y + ch - HEAD - 44, taglia(`Socio ${r.codice}  -  ${r.branca}`, 40));
+        s += '0.35 0.35 0.4 rg\n' + testo(1, 8.5, x + 10, y + ch - HEAD - 44, taglia(`Socio ${r.codice}  -  ${branca}`, 40));
         s += `0.97 0.78 0 rg ${n(x + 10)} ${n(y + 16)} ${n(cw - 20)} ${BOX} re f\n`;
         s += '0.16 0.09 0.31 rg\n' + testo(2, 7, x + 14, y + 16 + BOX - 10, 'CODICE DI VOTO') + testo(2, 24, x + 14, y + 22, r.personale, '5 Tc');
         s += '0.35 0.35 0.4 rg\n' + testo(1, 6.5, x + 10, y + 7, 'Personale e segreto: non cederlo');

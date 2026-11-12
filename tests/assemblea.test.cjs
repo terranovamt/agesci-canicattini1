@@ -103,6 +103,16 @@ async function codePdf(rows) {
   return Buffer.from(await blob.arrayBuffer()).toString("latin1");
 }
 
+test("voting-code PDF labels the adult branch CO.CA. without changing other branches", async () => {
+  const pdf = await codePdf(["Adulti", "Branca Adulti", "E/G"].map((branca, index) => ({
+    nome: "Socio", codice: String(index), branca, personale: "123456",
+  })));
+  assert.ok(pdf.includes("(Socio 0  -  CO.CA.)"));
+  assert.ok(pdf.includes("(Socio 1  -  CO.CA.)"));
+  assert.ok(pdf.includes("(Socio 2  -  E/G)"));
+  assert.ok(!pdf.includes("Adulti"));
+});
+
 test("voting-code PDF places twenty cards in five columns and four rows before starting a new page", async () => {
   const rows = Array.from({ length: 21 }, (_, i) => ({
     nome: "Socio " + i, codice: String(i), branca: "E/G", personale: "123456",

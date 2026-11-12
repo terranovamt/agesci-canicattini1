@@ -227,6 +227,10 @@ test("voting-code PDFs follow the visible census filters without narrowing globa
         name: "Altra branca", code: "B1", profile: {},
         censuses: [{ year: "2026", statusCode: "A" }, { year: "2025", statusCode: "A", branch: "L/C" }],
       },
+      {
+        name: "Capo", code: "C1", profile: {},
+        censuses: [{ year: "2026", statusCode: "A" }, { year: "2025", statusCode: "A", branch: "Adulti" }],
+      },
     ],
   };
   const pdfCalls = [];
@@ -272,6 +276,17 @@ test("voting-code PDFs follow the visible census filters without narrowing globa
   await regenerate().onclick();
   assert.equal(t.requests.filter((request) => request.url === "/api/vote/codes").length, callsBeforeEmptyExport);
   assert.equal(t.$("#stato").textContent, "Nessun censito visibile da esportare.");
+
+  search.value = "";
+  search.oninput();
+  const adultOption = find((node) => node.tagName === "OPTION" && node.value === "Adulti");
+  assert.equal(adultOption.textContent, "CO.CA. (1)");
+  const branchSelect = find((node) => node.getAttribute("ariaLabel") === "Branca");
+  branchSelect.value = "Adulti";
+  branchSelect.onchange();
+  assert.ok(find((node) => node.tagName === "TD" && node.textContent === "CO.CA."));
+  await pdf().onclick();
+  assert.deepEqual(pdfCalls[3].map((row) => row.codice), ["C1"]);
 });
 
 test("NAS setup publishes through the local content API", async () => {
