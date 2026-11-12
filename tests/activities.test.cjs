@@ -25,6 +25,23 @@ async function start(dataDir) {
   return { request, close: async () => { server.stop(); await once(server, "close"); } };
 }
 
+test("nonfrequentanti stay in the member register but are excluded from future activity rosters", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-nonfrequentanti-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  const r = (...args) => app.request(...args);
+  await r("auth/login", "POST", { code: "23816938", password });
+  const inactive = (await r("members", "POST", { code: "91001", branch: "E/G",
+    profile: { givenName: "Ragazzo", surname: "Non frequentante", nonFrequentante: true } }, 201)).member;
+  const active = (await r("members", "POST", { code: "91002", branch: "E/G",
+    profile: { givenName: "Ragazzo", surname: "Attivo" } }, 201)).member;
+  assert.equal((await r("members")).members.some(member => member.id === inactive.id), true);
+  assert.equal((await r("activities")).members.some(member => member.id === inactive.id), false);
+  assert.equal((await r("activities")).members.some(member => member.id === active.id), true);
+  await r("activities/events", "POST", { branch: "E/G", kind: "riunione", title: "Prova",
+    date: "2026-11-15", attendance: [{ personId: inactive.id, status: "" }] }, 400);
+});
+
 test("the quota is due by everyone regardless of attendance or legacy flags, without resetting payments", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-fees-"));
   const app = await start(directory);

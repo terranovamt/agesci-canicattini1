@@ -109,13 +109,14 @@ function createActivities(db, people) {
   const all = category => db.prepare("SELECT * FROM activities WHERE category=? ORDER BY id DESC").all(category).map(record);
   const roster = () => {
     const year = db.prepare("SELECT max(year) AS year FROM member_censuses").get().year || String(new Date().getFullYear());
-    return db.prepare(`SELECT p.id,p.name,p.kind,m.branch,v.data AS valuesData FROM people p
+    return db.prepare(`SELECT p.id,p.name,p.kind,m.branch,m.data AS profileData,v.data AS valuesData FROM people p
       JOIN member_profiles m ON p.id=m.person_id
       LEFT JOIN member_values v ON v.person_id=p.id AND v.branch=m.branch
       WHERE p.kind='ragazzo' ORDER BY p.name,p.id`).all()
-      .filter(person => !M.longSuspended({ censuses: db.prepare(
-        "SELECT year,data FROM member_censuses WHERE person_id=? ORDER BY year DESC"
-      ).all(person.id).map(row => ({ ...JSON.parse(row.data), year: row.year })) }, year))
+      .filter(person => !M.isNonFrequentante({ profile: JSON.parse(person.profileData) }) &&
+        !M.longSuspended({ censuses: db.prepare(
+          "SELECT year,data FROM member_censuses WHERE person_id=? ORDER BY year DESC"
+        ).all(person.id).map(row => ({ ...JSON.parse(row.data), year: row.year })) }, year))
       .map(person => {
         const values = JSON.parse(person.valuesData || "{}");
         return { id: person.id, name: person.name, kind: person.kind, branch: person.branch,

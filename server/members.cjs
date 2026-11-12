@@ -170,7 +170,13 @@ function createMembers(db, people) {
   const validateProfile = value => {
     if (!object(value) || Object.keys(value).some(key => key !== "guardianContacts" && !Object.hasOwn(M.profileFields, key))) fail(400, "Campi anagrafici non validi");
     const profile = Object.fromEntries(Object.entries(value).filter(([key]) => key !== "guardianContacts" && !M.ignoredProfileFields.includes(key))
-      .map(([key, value]) => [key, text(value, key === "guardians" ? 12000 : 500)]));
+      .map(([key, value]) => {
+        if (key === "nonFrequentante") {
+          if (typeof value !== "boolean") fail(400, "Stato di frequenza non valido");
+          return [key, value];
+        }
+        return [key, text(value, key === "guardians" ? 12000 : 500)];
+      }));
     if (Object.hasOwn(value, "guardianContacts")) {
       if (!Array.isArray(value.guardianContacts) || value.guardianContacts.length > 20)
         fail(400, "Responsabili genitoriali non validi (massimo 20)");

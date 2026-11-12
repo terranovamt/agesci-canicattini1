@@ -94,15 +94,16 @@ function createMemberUnits(db) {
     if (changed && M.unitRoles(branch).slice(0, 2).includes(values.ruolo)) {
       const year = db.prepare(`SELECT max(c.year) AS year FROM member_censuses c
         JOIN people p ON p.id=c.person_id WHERE p.census_code!=?`).get(ADMIN_CODE).year || String(new Date().getFullYear());
-      const occupied = db.prepare(`SELECT v.person_id,v.data FROM member_values v
+      const occupied = db.prepare(`SELECT v.person_id,v.data,m.data AS profileData FROM member_values v
         JOIN member_profiles m ON m.person_id=v.person_id JOIN people p ON p.id=v.person_id
         WHERE v.branch=? AND m.branch=? AND v.person_id!=? AND p.census_code!=?`)
         .all(branch, branch, member.id, ADMIN_CODE).some(row => {
           const other = JSON.parse(row.data);
           const censuses = db.prepare("SELECT year,data FROM member_censuses WHERE person_id=? ORDER BY year DESC").all(row.person_id)
             .map(row => ({ year: row.year, ...JSON.parse(row.data) }));
-          return M.unitKey(other[key]) === M.unitKey(name) && other.ruolo === values.ruolo &&
-            !M.longSuspended({ censuses }, year);
+          const profile = JSON.parse(row.profileData);
+          return !M.isNonFrequentante({ profile }) && M.unitKey(other[key]) === M.unitKey(name) &&
+            other.ruolo === values.ruolo && !M.longSuspended({ censuses }, year);
         });
       if (occupied) fail(409, "Questo posto e occupato: sposta prima il capo o il vice attuale.");
     }
@@ -193,6 +194,8 @@ function createMemberUnits(db) {
         requireRevision(member, value.revision);
         if (!member.revision || member.kind !== "ragazzo" || !["L/C", "E/G"].includes(member.branch))
           fail(400, "Seleziona un ragazzo con una scheda completa in L/C o E/G.");
+        if (M.isNonFrequentante(member))
+          fail(400, "Non puoi assegnare un ragazzo non frequentante a una sestiglia o squadriglia.");
         const values = { ...(member.values[member.branch] || {}) };
         const key = M.unitField(member.branch);
         if (value.unitId === null) { values[key] = ""; values.ruolo = ""; }

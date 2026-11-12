@@ -409,18 +409,52 @@ test("census overview returns only latest-year branch aggregates to administrato
   db.close();
   const response = await app.request("members/overview");
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
+  const expected = {
     year: "2026", total: 4,
     branches: [
       { branch: "L/C", count: 1 }, { branch: "E/G", count: 3 },
       { branch: "R/S", count: 0 }, { branch: "Adulti", count: 0 },
     ],
-  });
+  };
+  assert.deepEqual(await response.json(), expected);
   const state = await app.snapshot();
+  const member = state.members.find(item => item.code === "012345");
+  const updated = await app.request("members/" + member.id, "PATCH", {
+    code: member.code, branch: member.branch, profile: { ...member.profile, nonFrequentante: true },
+    values: member.values[member.branch] || {}, revision: member.revision,
+  });
+  assert.equal(updated.status, 200, await updated.text());
+  assert.equal((await app.snapshot()).members.find(item => item.id === member.id).profile.nonFrequentante, true);
+  assert.deepEqual(await (await app.request("members/overview")).json(), expected,
+    "nonfrequentanti restano inclusi nei censimenti ufficiali");
   const chief = state.members.find(member => member.code === "7654321");
   assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
   await app.login("7654321");
   assert.equal((await app.request("members/overview")).status, 403);
+});
+
+test("nonfrequentanti do not occupy unit roles and cannot be reassigned to a unit", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-nonfrequentanti-units-"));
+  const app = await start(directory, "7654321");
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  const inactive = (await (await app.request("members", "POST", {
+    code: "012351", branch: "E/G",
+    profile: { givenName: "Ragazzo", surname: "Non frequentante", nonFrequentante: true },
+    values: { squadriglia: "Panda", ruolo: "Capo squadriglia" },
+  })).json()).member;
+  const active = (await (await app.request("members", "POST", {
+    code: "012352", branch: "E/G", profile: { givenName: "Ragazzo", surname: "Attivo" },
+  })).json()).member;
+  const unit = (await app.snapshot()).units.find(item => item.name === "Panda");
+  const activeAssignment = await app.request("members/units/assign", "PATCH", {
+    memberId: active.id, revision: active.revision, unitId: unit.id, role: "Capo squadriglia",
+  });
+  assert.equal(activeAssignment.status, 200, await activeAssignment.text());
+  const inactiveAssignment = await app.request("members/units/assign", "PATCH", {
+    memberId: inactive.id, revision: inactive.revision, unitId: unit.id, role: "Squadrigliere",
+  });
+  assert.equal(inactiveAssignment.status, 400, await inactiveAssignment.text());
 });
 
 test("CSV export is formula-safe with valid quoting and leading-zero codes", () => {
@@ -601,7 +635,8 @@ test("real NAS gateway connects the member page, session config, assets and API 
   assert.match(config, /"admin":true/);
   assert.match(config, /"basePath":"\/agesci-canicattini1"/);
   assert.equal((await fetch(root + "/api/members", { headers })).status, 200);
-  for (const asset of ["assets/js/soci-model.js", "assets/js/soci-units.js", "assets/js/soci.js", "assets/css/soci.css"])
+  for (const asset of ["assets/js/soci-model.js", "assets/js/shared/unit-symbol.js",
+    "assets/js/soci-units.js", "assets/js/soci.js", "assets/css/soci.css"])
     assert.equal((await fetch(root + "/" + asset)).status, 200);
   const dashboard = await (await fetch(root + "/area-riservata/")).text();
   assert.match(dashboard, /href="soci.html"/);
