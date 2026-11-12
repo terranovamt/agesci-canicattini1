@@ -1,6 +1,6 @@
 # Gerarchia del sito e del repository
 
-[README](../README.md) · [Sviluppo](sviluppo.md) · [Contenuti](contenuti.md)
+[README](../README.md) · [Sviluppo](sviluppo.md)
 
 Il primo livello separa **sezioni del sito**, **risorse e dati** e **strumenti
 di manutenzione**. Dentro una sezione si separano pagine, logica comune e
@@ -53,8 +53,6 @@ pubblicazione GitHub Pages restano separati.
 ├── documents/                     Biblioteca pubblica
 │   ├── index.json                 Metadati dei documenti
 │   └── pdf/                       PDF pubblicati
-├── firebase/
-│   └── database.rules.json        Riferimento legacy, non usato dal backend NAS
 ├── server/                        Backend Node 24, SQLite e immagine Docker
 │   └── members.cjs                Anagrafe e censimenti nel database esistente
 ├── deploy/
@@ -62,7 +60,7 @@ pubblicazione GitHub Pages restano separati.
 ├── docs/                          Documentazione tecnica e operativa, audit
 ├── design-system/                 Specifiche visive, non codice runtime
 ├── tests/                         Test automatici Node e Python
-├── tools/                         Preview locale e sincronizzatore dei calendari
+├── tools/                         Server demo, build e sincronizzatore dei calendari
 ├── .github/
 │   └── prompts/                    Cataloghi e strumenti per lo sviluppo
 ├── README.md                      Ingresso per chi lavora al repository
@@ -74,14 +72,14 @@ Le cartelle obsolete e gli HTML di compatibilita' sono stati rimossi.
 il PEG esiste soltanto in `peg/`, con il nome minuscolo anche su Windows.
 I manifest restano alla radice e nella presentazione che li utilizza.
 Soltanto sul NAS Nginx mantiene i vecchi indirizzi con redirect HTTP.
-GitHub Pages e la preview non applicano queste regole: usare i percorsi
-canonici nelle sottocartelle.
+GitHub Pages non applica queste regole: usare i percorsi canonici nelle
+sottocartelle.
 
 ## Come leggere la gerarchia
 
 **Le pagine sono organizzate per funzione**, non tutte alla radice.
-`assemblea/` raccoglie i documenti preparatori pubblici, senza login e senza
-chiamate Firebase; `peg/` conserva i progetti educativi pubblici per edizione.
+`assemblea/` raccoglie i documenti preparatori pubblici, senza login né
+dipendenze dall'area riservata; `peg/` conserva i progetti educativi pubblici per edizione.
 `documenti/` è l'archivio pubblico con filtro per anno e ricerca testuale.
 La home mostra solo i quattro documenti più recenti per data di pubblicazione.
 `area-riservata/` raccoglie login e gestione del sito, con setup, regia e
@@ -151,10 +149,10 @@ Quando si pubblica questa migrazione, chiudere e riaprire eventuali schede
 di setup e regia già aperte prima del deployment: il vecchio JavaScript
 potrebbe conservare in memoria la precedente destinazione dei salvataggi.
 Le nuove pagine degli strumenti caricano `config/site.js` con
-`nas: true`; le scritture vanno alle API locali, non a GitHub o Firebase.
+`nas: true`; le scritture passano dalle API locali.
 
-I percorsi relativi permettono di servire lo stesso sito sia sotto
-`/agesci-canicattini1/` su GitHub Pages sia nella preview locale. Le URL CSS
+I percorsi relativi permettono di servire il sito sotto
+`/agesci-canicattini1/` su GitHub Pages. Le URL CSS
 sono risolte rispetto al foglio di stile; i collegamenti generati dagli
 script classici sono invece relativi alla pagina HTML che li esegue.
 Per questo uno spostamento richiede di verificare entrambi, non solo i tag
@@ -184,7 +182,7 @@ compilazione o cambiare le impostazioni Pages.
 
 Comandi di verifica: `node --test tests/*.test.cjs` per il sito,
 `python -m unittest discover -s tests -p test_calendar_sync.py` per il
-sincronizzatore e `node tools/preview.cjs` per l'anteprima.
+sincronizzatore e `node tools/nas-dev.cjs` per il backend locale.
 I test della struttura controllano risorse, link interni, manifest,
 destinazioni dei salvataggi e assenza delle vecchie cartelle. I test Synology
 controllano le destinazioni dei redirect nella configurazione Nginx;

@@ -23,9 +23,9 @@ accedono solo con la password provvisoria `Canicattini1` e devono sceglierne sub
 una nuova; senza questo passaggio non ottengono nessuna sessione. L'account
 amministratore usa sempre `NAS_ADMIN_PASSWORD`.
 
-Questo branch usa **Node 24 e SQLite sul Synology**, senza Firebase per login,
-diretta, contenuti o PDF. Setup e gestione documenti salvano direttamente sul
-NAS, senza token GitHub. GitHub resta la sorgente del codice: un'attivita' DSM
+Questo branch usa **Node 24 e SQLite sul Synology** per login, diretta,
+contenuti e PDF. Setup e gestione documenti salvano direttamente sul NAS.
+GitHub resta la sorgente del codice: un'attivita' DSM
 controlla `NAS` ogni minuto e distribuisce l'ultimo commit preservando i dati.
 Non pubblicare questo branch su GitHub Pages.
 
@@ -81,8 +81,6 @@ destinazione. Raggruppamento per anno di nascita e progressioni sono manuali.
 | Documento                                                          | Contenuto                                                                    |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | [docs/assemblea.md](docs/assemblea.md)                             | aprire e chiudere l'assemblea, dashboard regia, schermo proiettore, pubblico |
-| [docs/contenuti.md](docs/contenuti.md)                             | riferimento storico al setup GitHub della versione main                      |
-| [docs/firebase.md](docs/firebase.md)                               | riferimento storico Firebase, non usato dal backend NAS                      |
 | [docs/sviluppo.md](docs/sviluppo.md)                               | struttura del codice e dei tipi di slide                                     |
 | [docs/struttura-repository.md](docs/struttura-repository.md)       | gerarchia completa del repository e criteri di organizzazione                |
 | [docs/audit-ui-ux.md](docs/audit-ui-ux.md)                         | audit UI/UX e priorità di manutenzione                                       |
@@ -191,18 +189,9 @@ L/C, E/G o R/S e premi **Ricarica** nel confronto per applicare la sessione a
 tutti e sette gli schermi. La demo contiene un account per branca e solo dati
 inventati; al riavvio il database temporaneo viene ricreato.
 
-Avvia il sito con hot reload senza installare dipendenze:
-
-```sh
-node tools/preview.cjs
-```
-
-Apri `http://127.0.0.1:4173`. Nell’anteprima l’area riservata si apre senza
-chiave, Firebase e gestione documenti sono simulati in memoria e i salvataggi su GitHub sono bloccati;
-nessuna modifica viene inviata ai servizi reali. Il server ascolta solo su
-`127.0.0.1` e ricarica la pagina quando cambiano i file del progetto.
-Le modifiche ai PDF della simulazione sono visibili ricaricando la home e si
-perdono al riavvio del server: i file del repository non vengono modificati.
+Per provare il backend in locale con database temporaneo usa
+`node tools/nas-dev.cjs`; per le viste dimostrative con dati fittizi usa
+`node tools/nas-demo.cjs`. Entrambi sono isolati dai dati del NAS.
 
 ## Prestazioni e build statica
 
@@ -278,7 +267,7 @@ articolo e comma di `documents/pdf/RegolamentoAssembleaCanicattini1.pdf`, con
 «Scopri di più» che apre i quattro punti principali (artt. 1, 3, 10–11, 14–15).
 La stessa card compare in `assemblea/index.html`.
 Non caricare informazioni riservate: repository e documenti sono pubblici.
-I salvataggi sul NAS non attendono GitHub Pages.
+I salvataggi aggiornano il sito sul NAS tramite il backend.
 
 ## Calendario personalizzato
 
@@ -354,7 +343,7 @@ eventuale pubblicazione GitHub Pages restano separati.
 
 `index.html` e' l'unico file HTML alla radice. I vecchi HTML di ingresso
 e le cartelle di compatibilita' sono stati rimossi: sul NAS i loro indirizzi sono reindirizzati da Nginx,
-mentre su GitHub Pages e nella preview occorre usare i percorsi attuali.
+mentre sulle pagine statiche GitHub occorre usare i percorsi canonici.
 Esistono soltanto `peg/` per il PEG e `assemblea/` per i documenti pubblici;
 regia, setup e guida restano in `area-riservata/assemblea/`.
 

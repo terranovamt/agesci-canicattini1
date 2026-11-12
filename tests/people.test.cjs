@@ -179,7 +179,7 @@ test("NAS rejects bad credentials, foreign origins and shared password login", a
       assert.equal((await app.login(code)).status, 400);
     }
     assert.equal((await app.request("people")).status, 401);
-    assert.equal((await app.request("state/modifiche/k.json", "PUT", password)).status, 410);
+    assert.equal((await app.request("state/modifiche/k.json", "PUT", password)).status, 404);
     for (let i = 0; i < 5; i++) assert.equal((await app.login("23816938", "wrong-password")).status, 401);
     assert.equal((await app.login()).status, 429);
   } finally { await app.close(); await fs.rm(directory, { recursive: true, force: true }); }

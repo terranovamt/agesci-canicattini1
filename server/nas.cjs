@@ -267,9 +267,6 @@ async function createNasServer({
         database.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId(request));
         return send(response, 200, { ok: true }, undefined, { "Set-Cookie": cookie("", 0) });
       }
-      if (url.pathname === "/api/state/modifiche/k.json" && method === "PUT") {
-        fail(410, "Accedi con codice censimento e password dall'area riservata");
-      }
       if (url.pathname.startsWith("/api/state/")) {
         const route =
           url.pathname

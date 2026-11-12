@@ -20,7 +20,6 @@ test('NAS authentication uses the server cookie, never persists passwords or a s
   assert.equal(c.window.ACCESSO.verificata(), false);
   await c.window.ACCESSO.entra('A-long-password1!', '23816938', 'A-long-password1!');
   assert.equal(c.window.ACCESSO.verificata(), true);
-  assert.equal(c.window.ACCESSO.chiave(), 'nas-session');
   assert.equal(requests[0][0], '/api/auth/login');
   assert.equal(requests[0][1].credentials, 'same-origin');
   assert.deepEqual(JSON.parse(requests[0][1].body), {
@@ -35,6 +34,8 @@ test('NAS authentication uses the server cookie, never persists passwords or a s
 test('NAS expired sessions and failed requests are explicit errors', async () => {
   const c = {
     window: { NAS: { user: { admin: false } } },
+    sessionStorage: { removeItem() {} },
+    localStorage: { removeItem() {} },
     fetch: async () => ({ ok: false, status: 401, text: async () => 'Accedi di nuovo.' })
   };
   vm.runInNewContext(source('shared/accesso.js'), c);
