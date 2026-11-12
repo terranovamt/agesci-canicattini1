@@ -15,8 +15,8 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
     .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
   const logo = fs.readFileSync(path.join(root, 'assets/img/logo-grande.webp')).toString('base64');
   const source = fs.readFileSync(path.join(assemblea, 'core/regia.js'), 'utf8').replace(
-    /if \(key\) accedi\(key\);\s*else mostraLogin\(\);/,
-    'window.TEST = { disegna, mostraStato, collega: v => { V = v } };'
+    /\r?\n  avvia\(\);\r?\n\}\)\(\);/,
+    'window.TEST = { disegna, mostraStato, collega: v => { V = v } };\n})();'
   );
   const html = fs.readFileSync(path.join(assemblea, 'regia.html'), 'utf8')
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
@@ -24,8 +24,11 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
     .replace('../../assets/img/logo-grande.webp', `data:image/webp;base64,${logo}`)
     .replace('</head>', `<style>${css}</style></head>`)
     .replace('</body>', `<script>
-      window.LIVE = { url: 'https://firebase.test' };
-      window.ACCESSO = { chiave: () => '' };
+      window.addEventListener('error', event => {
+        document.documentElement.dataset.lastError = event.message;
+      });
+      window.LIVE = { url: '/api/state' };
+      window.ACCESSO = { verificata: () => true };
       ${fs.readFileSync(path.join(root, 'assets/js/nas-nav.js'), 'utf8')}
       document.dispatchEvent(new Event('DOMContentLoaded'));
       ${source}
@@ -39,7 +42,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       });
       document.querySelector('#anteprima').contentWindow.VISTA = { vai() {} };
       document.querySelector('#app').hidden = false;
-      document.querySelectorAll('header [hidden]:not(#reserved-menu)').forEach(el => el.hidden = false);
+      document.querySelectorAll('header #schermo, header #setup, header #esci').forEach(el => el.hidden = false);
       ${fs.readFileSync(path.join(root, 'assets/js/shared/section-nav.js'), 'utf8')}
       TEST.mostraStato(true);
       draw();
@@ -191,7 +194,9 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       const wrapper = path.join(dir, 'viewport.html');
       fs.writeFileSync(wrapper, `<!doctype html><iframe src="regia.html" style="border:0;width:${width}px;height:${height}px"
         onload="const out = document.createElement('pre'); out.id = 'results';
-          const result = JSON.parse(this.contentDocument.querySelector('#results').textContent);
+          const inner = this.contentDocument;
+          const node = inner.querySelector('#results');
+          const result = node ? JSON.parse(node.textContent) : { error: inner.documentElement.dataset.lastError || 'No layout results' };
           result.focusRestored = this.contentDocument.activeElement.id === 'nas-expand';
           out.textContent = JSON.stringify(result); document.body.append(out)"></iframe>`);
       const result = spawnSync(chrome, [
@@ -205,6 +210,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       assert.ok(match, 'browser must return measured layout results at ' + viewport + ': ' +
         result.stderr + result.stdout.slice(-3000));
       const { results, measurements, modal, phone, navbar, viewport: measured, focusRestored } = JSON.parse(match[1]);
+      assert.equal(JSON.parse(match[1]).error, undefined, JSON.stringify(JSON.parse(match[1])));
       assert.deepEqual(measured, [width, height], 'fixture uses the exact viewport');
       assert.equal(phone, width < 700 && height >= width, 'phone layout only in portrait below 700px at ' + viewport);
       if (width <= 1024) {
@@ -231,7 +237,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
         for (const key of ['currentSize', 'nextSize'])
           assert.ok(Math.abs(row[key][0] / row[key][1] - 16 / 9) < .02, key + ' preserves 16:9 at ' + viewport);
         if (['1920,1080', '1366,768', '1180,820'].includes(viewport) && !row.expanded) {
-          assert.ok(row.currentSize[0] >= (width >= 1366 ? 500 : 350), 'main preview is not tiny at ' + viewport);
+          assert.ok(row.currentSize[0] >= (width >= 1366 ? 500 : 350), 'main preview is not tiny at ' + viewport + ': ' + row.currentSize[0]);
           assert.ok(row.nextSize[0] >= 240, 'next preview remains legible at ' + viewport);
           
         }

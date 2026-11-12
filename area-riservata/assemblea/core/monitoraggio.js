@@ -47,7 +47,6 @@
     start() {
       if (started || !window.LIVE?.nas) return;
       started = true;
-      $("legacy-service-metrics").hidden = true;
       $("nas-monitor").hidden = false;
       $("nas-statistics-link").hidden = !window.NAS?.user?.admin;
       const panel = $("nas-monitor"),

@@ -104,21 +104,6 @@ input {
   border: 1.5px solid #d5d0e0;
   border-radius: var(--radius-sm);
 }
-#login {
-  max-width: 460px;
-  margin: 40px auto;
-  padding: 22px;
-  background: #fff;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-#login h2 {
-  margin: 0 0 6px;
-}
-#login form {
-  display: flex;
-  gap: 8px;
-}
 .err {
   color: var(--r-strong);
   font-weight: 600;
@@ -317,65 +302,6 @@ kbd {
   font-size: 12px;
   margin-left: 6px;
 }
-.kpi {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.kpi div {
-  background: var(--bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-}
-.kpi b {
-  font-size: 30px;
-  color: var(--v);
-}
-.kpi span {
-  font-size: 12px;
-  font-weight: 700;
-}
-.kpi small {
-  font-size: 11px;
-  opacity: 0.65;
-  min-height: 1.3em;
-}
-.meter {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 8px;
-  font-size: 13px;
-  margin-bottom: 9px;
-}
-.meter b {
-  font-size: 13px;
-}
-.meter i {
-  grid-column: 1/-1;
-  height: 9px;
-  background: #ece8f3;
-  border-radius: 9px;
-  overflow: hidden;
-}
-.meter u {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: var(--g);
-  border-radius: 9px;
-  transition:
-    width 0.6s,
-    background 0.3s;
-}
-.meter u.warn {
-  background: var(--o-strong);
-}
-.meter u.ko {
-  background: var(--r-strong);
-}
 .note {
   font-size: 12px;
   opacity: 0.75;
@@ -484,9 +410,6 @@ details.note summary {
   font-weight: 700;
   color: var(--v);
 }
-details.note .meter {
-  margin: 6px 0;
-}
 
 /* Schermi orizzontali (laptop, desktop, iPad): tutta la regia sta nella finestra, la pagina non scorre.
    Le anteprime 16:9 si adattano allo spazio libero; elenco e schede scorrono solo al loro interno. */
@@ -507,9 +430,6 @@ details.note .meter {
   }
   header img {
     height: 30px;
-  }
-  #login {
-    flex: none;
   }
   .avviso {
     flex: none;
@@ -544,7 +464,7 @@ details.note .meter {
     grid-template-columns: clamp(150px, 15vw, 300px) minmax(0, 1.75fr) minmax(270px, 1fr);
     /* la riga centrale prende l'altezza naturale delle anteprime 16:9 (se c'è spazio), il resto va alle schede */
     grid-template-rows: auto minmax(0, auto) minmax(clamp(190px, 34%, 300px), 1fr);
-    grid-template-areas: "lista avvio avvio" "lista onda lato" "lista dati fb";
+    grid-template-areas: "lista avvio avvio" "lista onda lato" "lista dati server";
     align-items: stretch;
   }
   .avvio-live {
@@ -567,8 +487,8 @@ details.note .meter {
   .dati-live {
     grid-area: dati;
   }
-  .fb {
-    grid-area: fb;
+  .server {
+    grid-area: server;
   }
   .lista {
     grid-area: lista;
@@ -602,7 +522,7 @@ details.note .meter {
   }
   .onda > .fit {
     grid-area: fit;
-    margin-top: 6px;
+    margin-top: 0;
   }
   h2#titolo {
     grid-area: tit;
@@ -711,46 +631,6 @@ details.note .meter {
     display: flex;
     align-items: center;
     font-size: 12px;
-  }
-  .kpi {
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .kpi div {
-    padding: 6px 10px;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 10px;
-    align-items: center;
-  }
-  .kpi b {
-    grid-row: span 2;
-    font-size: clamp(20px, 3vh, 30px);
-  }
-  .kpi small {
-    min-height: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .meter {
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-  .meter b {
-    font-size: 12px;
-  }
-  .fb {
-    container-type: inline-size;
-  }
-  @container (max-width: 420px) {
-    .meter {
-      grid-template-columns: 1fr;
-    }
-    .meter b {
-      font-weight: 600;
-      opacity: 0.8;
-    }
   }
 
   .lista ol {
@@ -1013,8 +893,7 @@ h2#titolo, h3#titolo-next {
 .dati-live .mini { float: none; flex-wrap: wrap; margin: 8px 0; }
 #dati-live-stato { display: block; min-height: 0; margin: 8px 0 0; overflow-wrap: anywhere; }
 #dati-live-pending { margin: 8px 0; font-size: 12px; font-weight: 700; }
-.meter, .kpi, .nas-kpi { min-width: 0; }
-.kpi div, .meter b { min-width: 0; overflow-wrap: anywhere; }
+.nas-kpi { min-width: 0; }
 #nas-monitor-dialog { overflow: auto; }
 #nas-monitor-dialog > .monitor-heading {
   position: sticky; top: 0; z-index: 2; background: #fff; padding: 8px 0;
@@ -1047,7 +926,7 @@ h2#titolo, h3#titolo-next {
     grid-template-columns: minmax(0, 1.8fr) minmax(250px, 1fr) clamp(300px, 27vw, 440px);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: "avvio avvio tools" "onda lato panel" "onda comandi panel";
-    gap: 12px;
+    gap: 10px;
     padding: 12px 16px;
   }
   .comandi { flex-direction: column; gap: 10px; }
@@ -1107,7 +986,7 @@ h2#titolo, h3#titolo-next {
 @media (min-width: 1000px) and (min-height: 560px) and (orientation: landscape) {
   main {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1.2fr) auto minmax(0, .8fr);
     grid-template-areas: "avvio avvio" "onda lato" "onda comandi" "live live";
   }
   #app > .regia-section-nav { display: none; }
