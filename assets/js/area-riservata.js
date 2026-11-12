@@ -1,6 +1,6 @@
 (function () {
   const A = window.ACCESSO;
-  const feedback = document.getElementById(window.NAS ? 'accesso-stato' : 'legacy-accesso-stato');
+  const feedback = document.getElementById('accesso-stato');
   function loginFeedback(form, state, message, target) {
     form.querySelectorAll('input[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
     feedback.setAttribute('data-state', state);
@@ -44,7 +44,6 @@
     }
     togglePassword.onclick = () => toggleVisibility(password, togglePassword);
     toggleConfirmation.onclick = () => toggleVisibility(confirmation, toggleConfirmation);
-    document.getElementById('login-form').hidden = true;
     form.hidden = false;
     function resetFields() {
       checkedCode = '';
@@ -142,35 +141,5 @@
       }
     };
     if (A.verificata()) showTools();
-    return;
   }
-  const form = document.getElementById('login-form');
-  const input = document.getElementById('chiave');
-  function mostraStrumenti() {
-    input.value = '';
-    document.getElementById('login').hidden = true;
-    document.getElementById('riservata').hidden = false;
-    document.getElementById('esci').hidden = false;
-    loginFeedback(form, '', '');
-    window.AREA_DASHBOARD.load();
-  }
-  async function login(key) {
-    form.querySelector('button').disabled = true;
-    loginFeedback(form, 'pending', 'Verifica della chiave in corso…');
-    try {
-      await A.entra(key);
-      mostraStrumenti();
-    } catch (e) {
-      document.getElementById('login').hidden = false;
-      document.getElementById('riservata').hidden = true;
-      loginFeedback(form, 'error', 'Accesso non riuscito: ' + e.message, input);
-    } finally { form.querySelector('button').disabled = false }
-  }
-  form.onsubmit = e => { e.preventDefault(); login(input.value.trim()) };
-  document.getElementById('esci').onclick = () => {
-    A.esci();
-    location.replace('../');
-  };
-  if (A.verificata()) mostraStrumenti();
-  else if (A.chiave()) login(A.chiave());
 })();

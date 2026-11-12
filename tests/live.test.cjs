@@ -8,47 +8,31 @@ const root = path.join(__dirname, "../area-riservata/assemblea");
 const config = fs.readFileSync(path.join(__dirname, "../config/site.js"), "utf8");
 const sync = fs.readFileSync(path.join(root, "core", "live.js"), "utf8");
 
-function role(search, page = "setup") {
-  const session = new Map(),
-    replaced = [];
+function role(search) {
   const context = {
     window: {},
-    location: { search, pathname: "/", origin: "https://site.test", replace: (u) => replaced.push(u) },
+    location: { search, pathname: "/", origin: "https://site.test" },
     URLSearchParams,
-    localStorage: { getItem: () => "old-key" },
-    sessionStorage: { setItem: (k, v) => session.set(k, v) },
-    document: { getElementById: (id) => (id === "stage" && page === "presentazione" ? {} : null) },
   };
   vm.runInNewContext(config, context);
-  return Object.assign(context.window.LIVE, { replaced, session });
+  return context.window.LIVE;
 }
 
-test("dashboard views: preview and screen never publish, old regia link opens the dashboard", () => {
-  const p = role("?vista=principale&regia=k", "presentazione");
+test("dashboard views: main presenter view publishes; preview and screen stay local", () => {
+  const p = role("?vista=principale");
   assert.equal(p.ruolo, "regia");
-  assert.equal(p.chiave, "k");
-  assert.deepEqual(p.replaced, []);
   for (const v of ["anteprima", "schermo"]) {
-    const r = role("?vista=" + v + "&regia=k", "presentazione");
+    const r = role("?vista=" + v);
     assert.equal(r.ruolo, "locale");
-    assert.equal(r.chiave, null);
     assert.equal(r.vista, v);
   }
   assert.equal(role("?vista=altro").vista, null);
-  const old = role("?regia=k", "presentazione");
-  assert.deepEqual(old.replaced, ["regia.html"]);
-  assert.equal(old.session.get("canicattini-area-chiave"), "k");
-  assert.equal(old.ruolo, "locale", "non pubblica mentre reindirizza");
-  assert.deepEqual(role("?regia=k").replaced, [], "setup e regia.html non reindirizzano");
 });
 
-test("only an explicit, nonempty regia parameter selects the presenter", () => {
-  for (const search of ["", "?regia=", "?foo=bar"]) {
+test("legacy regia query parameters cannot select a presenter", () => {
+  for (const search of ["", "?regia=old-key", "?regia=", "?foo=bar"]) {
     assert.equal(role(search).ruolo, "pubblico");
-    assert.equal(role(search).chiave, null);
   }
-  assert.equal(role("?regia=test-key").ruolo, "regia");
-  assert.equal(role("?regia=test-key").chiave, "test-key");
 });
 
 function viewer(isMobile, read, visitorId) {
@@ -220,7 +204,7 @@ function presenter(write) {
     requests = [],
     dot = { style: {} };
   const c = {
-    window: { LIVE: { url: "https://firebase.test", ruolo: "regia", chiave: "key" } },
+    window: { LIVE: { nas: true, url: "https://nas.test/api/state", ruolo: "regia" } },
     document: { title: "", createElement: () => dot, body: { append() {} } },
     scenes: [{}, {}, {}],
     si: 0,
@@ -334,7 +318,7 @@ test("failed activation keeps the current slide and resumes normal publishing", 
   await p.timeouts.at(-1)();
   await assert.rejects(
     p.c.window.LIVE.avviaLive(async () => {
-      throw new Error("Firebase 403");
+      throw new Error("NAS 403");
     }),
     /403/,
   );

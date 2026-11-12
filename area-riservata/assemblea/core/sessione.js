@@ -31,7 +31,7 @@
     e.stopPropagation();
     if (!confirm('Terminare l’assemblea e riportare il sito alla home del gruppo?')) return;
     fine.disabled = true;
-    try { await A.salva(false, L.chiave); location.replace('../../') }
+    try { await A.salva(false); location.replace('../../') }
     catch (err) {
       fine.disabled = false;
       errore.textContent = err.message;

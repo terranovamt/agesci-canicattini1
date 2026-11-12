@@ -23,13 +23,6 @@
         <button id="esci" class="text-button" hidden>Esci dall’area riservata</button>
       </div>
       <section id="login" aria-labelledby="dashboard-title">
-        <p id="legacy-login-hint" hidden>Inserisci la chiave di accesso.</p>
-        <form id="login-form" class="accesso">
-          <label for="chiave">Chiave di accesso</label>
-          <input id="chiave" type="password" autocomplete="current-password" aria-describedby="legacy-accesso-stato" required />
-          <p id="legacy-accesso-stato" class="dashboard-login-status" role="status" aria-live="polite" aria-atomic="true"></p>
-          <button class="button" type="submit">Accedi</button>
-        </form>
         <form id="nas-login-form" class="accesso" hidden>
           <label for="census-code">Codice censimento <span class="login-label-hint">5–9 cifre</span></label>
           <input id="census-code" type="text" inputmode="numeric" autocomplete="username" autocapitalize="off" spellcheck="false" minlength="5" maxlength="9" pattern="[0-9]{5,9}" title="Da 5 a 9 cifre, senza spazi" placeholder="7654321" aria-describedby="census-code-hint accesso-stato" required>

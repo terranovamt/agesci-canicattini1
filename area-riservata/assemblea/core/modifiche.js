@@ -1,4 +1,4 @@
-/* core/modifiche.js — modifiche live ai dati (Firebase, nodo "modifiche").
+/* core/modifiche.js — modifiche live ai dati (patch del server NAS).
    La regia salva una "patch" (solo i campi cambiati rispetto a dati.js);
    regia e pubblico la applicano sopra dati.js e si aggiornano in tempo reale.
    Formato patch: oggetti = campi cambiati; null = campo cancellato;

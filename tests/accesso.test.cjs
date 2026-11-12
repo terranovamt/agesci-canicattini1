@@ -4,16 +4,18 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/shared/accesso.js"), "utf8");
-function load(fetch, nas = false) {
+function load(fetch, initial = {}) {
   const session = new Map(),
     local = new Map();
+  for (const [key, value] of Object.entries(initial.session || {})) session.set(key, value);
+  for (const [key, value] of Object.entries(initial.local || {})) local.set(key, value);
   const storage = (map) => ({
     getItem: (k) => map.get(k) || null,
     setItem: (k, v) => map.set(k, v),
     removeItem: (k) => map.delete(k),
   });
   const c = {
-    window: { LIVE: { nas, url: nas ? "/api/state/" : "https://firebase.test/" } },
+    window: { NAS: { user: initial.user || null, basePath: "" } },
     fetch,
     sessionStorage: storage(session),
     localStorage: storage(local),
@@ -22,81 +24,55 @@ function load(fetch, nas = false) {
   return { a: c.window.ACCESSO, session, local };
 }
 
-test("NAS login does not store the password and logout revokes the server session", async () => {
+test("NAS login uses the session API and does not store credentials", async () => {
   const calls = [];
-  const { a, session } = load(async (url, options) => {
+  const { a, session, local } = load(async (url, options) => {
     calls.push({ url, options });
-    return { ok: true };
-  }, true);
-  await a.entra("test-password");
-  assert.equal(a.chiave(), "nas-session");
+    return { ok: true, json: async () => ({ user: { code: "12345" } }) };
+  });
+  assert.equal(a.verificata(), false);
+  await a.entra("test-password", "12345", "confirmation");
+  assert.equal(calls[0].url, "/api/auth/login");
+  assert.equal(calls[0].options.credentials, "same-origin");
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    code: "12345",
+    password: "test-password",
+    confirmation: "confirmation",
+  });
+  assert.equal(a.verificata(), true);
   assert.ok(![...session.values()].includes("test-password"));
-  a.esci();
-  assert.equal(calls[1].url, "/api/logout");
-  assert.equal(calls[1].options.keepalive, true);
+  assert.equal(local.size, 0);
 });
 
-test("opening NAS regia revalidates the cookie, never sends the session marker as a password", async () => {
+test("NAS logout revokes the server session and clears the client identity", async () => {
   const calls = [];
-  let authenticated = true;
   const { a } = load(async (url, options) => {
     calls.push({ url, options });
-    return { ok: true, json: async () => ({ authenticated }) };
-  }, true);
-  await a.entra("test-password");
-  await a.entra(a.chiave());
-  assert.equal(calls[1].url, "/api/session");
-  assert.equal(calls[1].options.body, undefined);
-  authenticated = false;
-  await assert.rejects(a.entra(a.chiave()), /Sessione NAS scaduta/);
+    return { ok: true, json: async () => ({ ok: true }) };
+  }, { user: { code: "12345" } });
+  await a.esci();
+  assert.equal(calls[0].url, "/api/logout");
+  assert.equal(calls[0].options.method, "POST");
   assert.equal(a.verificata(), false);
 });
-test("access is confirmed by Firebase without changing content or lifecycle", async () => {
-  let release, request;
-  const { a } = load((url, opts) => {
-    request = [url, opts];
-    return new Promise((r) => {
-      release = r;
-    });
-  });
-  const pending = a.entra("test-key");
-  assert.equal(a.chiave(), "");
-  assert.equal(a.verificata(), false);
-  release({ ok: true });
-  await pending;
-  assert.equal(a.chiave(), "test-key");
-  assert.equal(a.verificata(), true);
-  assert.equal(request[0], "https://firebase.test/modifiche/k.json");
-  assert.equal(request[1].method, "PUT");
-  assert.equal(request[1].body, '"test-key"');
-});
-test("wrong or revoked keys are rejected and forgotten", async () => {
-  let ok = true;
-  const { a } = load(async () => ({ ok, status: 403 }));
-  await a.entra("old-key");
-  ok = false;
-  await assert.rejects(a.entra("bad-key"), /Chiave non valida/);
-  assert.equal(a.chiave(), "");
-  assert.equal(a.verificata(), false);
-});
-test("offline login does not authenticate and logout also forgets the GitHub token", async () => {
-  const { a, local } = load(async () => {
+test("failed NAS login remains unauthenticated and propagates the server error", async () => {
+  const { a } = load(async () => {
     throw new Error("Offline");
   });
-  await assert.rejects(a.entra("key"), /Offline/);
-  assert.equal(a.chiave(), "");
-  local.set("assemblea-gh-token", "token");
-  a.esci();
-  assert.equal(local.size, 0);
+  await assert.rejects(a.entra("password", "12345"), /Offline/);
   assert.equal(a.verificata(), false);
 });
 
-test("a key stored by an old regia URL is not a verified session", () => {
-  const { a, session } = load(async () => {
+test("legacy keys and GitHub tokens are removed from browser storage", () => {
+  const { a, session, local } = load(async () => {
     throw new Error("must not fetch");
+  }, {
+    session: { "canicattini-area-chiave": "unverified", "canicattini-area-verificata": "unverified" },
+    local: { "assemblea-gh-token": "old-token" },
   });
-  session.set("canicattini-area-chiave", "unverified");
   assert.equal(a.verificata(), false);
+  assert.equal(session.size, 0);
+  assert.equal(local.size, 0);
 });
 
 test("NAS view-as uses dedicated session endpoints and never sends credentials", async () => {
@@ -106,10 +82,16 @@ test("NAS view-as uses dedicated session endpoints and never sends credentials",
     { user: { admin: false, serviceBranch: "E/G" }, viewAs: { adminName: "Amministratore", target: { id: 2, name: "Capo", serviceBranch: "E/G" } } },
     { user: { admin: true }, viewAs: null },
   ];
-  vm.runInNewContext(source, { window, fetch: async (url, options) => {
-    calls.push({ url, method: options.method, body: options.body });
-    return { ok: true, json: async () => replies.shift() };
-  } });
+  const storage = { removeItem() {}, setItem() {}, getItem() { return null } };
+  vm.runInNewContext(source, {
+    window,
+    sessionStorage: storage,
+    localStorage: storage,
+    fetch: async (url, options) => {
+      calls.push({ url, method: options.method, body: options.body });
+      return { ok: true, json: async () => replies.shift() };
+    },
+  });
   await window.ACCESSO.vista(2);
   assert.equal(window.NAS.user.admin, false);
   assert.equal(window.NAS.viewAs.target.serviceBranch, "E/G");

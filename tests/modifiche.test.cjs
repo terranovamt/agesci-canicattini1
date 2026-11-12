@@ -37,9 +37,9 @@ test('patches survive later dati.js edits and list length changes replace the li
   edit.assemblea.seconda_convocazione = '21:15';
   const patch = diffPatch(base, edit);
   const newer = JSON.parse(JSON.stringify(base));
-  newer.slide[0].titolo = 'Titolo nuovo da GitHub';
+  newer.slide[0].titolo = 'Titolo nuovo da NAS';
   const out = applyPatch(newer, patch);
-  assert.equal(out.slide[0].titolo, 'Titolo nuovo da GitHub');
+  assert.equal(out.slide[0].titolo, 'Titolo nuovo da NAS');
   assert.equal(out.slide[1].persone.length, 3);
   assert.equal(out.assemblea.seconda_convocazione, '21:15');
   assert.equal(out.assemblea.prima_convocazione, '20:30');

@@ -5,8 +5,8 @@
 - Prodotto: sito e strumenti per l'assemblea del gruppo AGESCI Canicattini 1:
   home, area riservata, setup dei contenuti, regia live, presentazione pubblica
   e guida.
-- Stack: HTML statico, CSS e JavaScript senza framework o bundler; pubblicazione
-  su GitHub Pages. La regia usa Firebase; il setup salva `dati.js` tramite GitHub.
+- Stack: HTML statico, CSS e JavaScript senza framework o bundler; il branch NAS
+  usa Node.js e SQLite per login, regia, setup e documenti.
   Non ci sono `package.json`, Tailwind o component library. I test sono Node
   (`node --test tests/*.test.cjs`).
 - Stili: fogli CSS distinti per home, setup, regia e presentazione; la

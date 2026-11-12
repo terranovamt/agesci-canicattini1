@@ -6,7 +6,7 @@ const { test } = require('node:test');
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 test('home stays on the group page until the assembly is active', () => {
-  for (const search of ['', '?regia=test']) {
+  for (const search of ['', '?ref=test']) {
     let destination, state, error;
     const elements = { 'assembly-connection-status': {} };
     vm.runInNewContext(read('assets/js/home.js'), {

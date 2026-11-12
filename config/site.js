@@ -11,30 +11,12 @@ window.LIVE = {
   // 'massimo'  = il pubblico non supera la slide più avanzata che hai raggiunto
   limite: "corrente",
   ruolo: "locale",
-  // dove la pagina di setup salva dati.js con "Salva su GitHub"
-  github: { repo: "terranovamt/agesci-canicattini1", ramo: "NAS", cartella: "area-riservata/assemblea" },
 };
-/* Solo chi apre /?regia=LA-TUA-CHIAVE è il presentatore.
-   Senza il parametro, anche nello stesso browser, il ruolo è sempre "pubblico". */
+/* La vista principale incorporata nella dashboard pubblica; anteprima e schermo restano locali. */
 (function () {
   const L = window.LIVE;
   if (!L.url) return;
-  const q = new URLSearchParams(location.search),
-    c = q.get("regia");
-  L.chiave = c || null;
-  L.ruolo = c ? "regia" : "pubblico";
-  /* dashboard regia (regia.html): principale = regia nascosta che pubblica,
-     anteprima = slide successiva, schermo = finestra solo slide per proiettore/condivisione */
+  const q = new URLSearchParams(location.search);
   L.vista = ["principale", "anteprima", "schermo"].includes(q.get("vista")) ? q.get("vista") : null;
-  if (L.vista && L.vista !== "principale") {
-    L.ruolo = "locale";
-    L.chiave = null;
-  }
-  /* il vecchio link /?regia=… apre la dashboard */
-  if (c && !L.vista && document.getElementById("stage")) {
-    sessionStorage.setItem("canicattini-area-chiave", c);
-    location.replace("regia.html");
-    L.ruolo = "locale";
-    L.chiave = null;
-  }
+  L.ruolo = L.vista === "principale" ? "regia" : L.vista ? "locale" : "pubblico";
 })();

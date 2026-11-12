@@ -7,7 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea
 function load(fetch, ruolo = 'regia') {
   const session = new Map(), timers = [], listeners = {};
   const c = {
-    window: { LIVE: { url: 'https://firebase.test/', ruolo } }, fetch,
+    window: { LIVE: { nas: true, url: 'https://nas.test/api/state/', ruolo } }, fetch,
     sessionStorage: { getItem: k => session.get(k) || null, setItem: (k, v) => session.set(k, v) },
     document: { visibilityState: 'visible', addEventListener: () => { } },
     addEventListener: (e, f) => { listeners[e] = f }, setInterval: (f, ms) => timers.push([f, ms]), Date, Math, JSON
@@ -30,7 +30,7 @@ test('heartbeat writes server timestamp and role, reuses id and deletes on close
   P.avvia('r'); P.avvia('r');
   assert.equal(calls.length, 1);
   const [url, o] = calls[0];
-  assert.match(url, /^https:\/\/firebase\.test\/presenza\/[a-z0-9]{1,24}\.json$/);
+  assert.match(url, /^https:\/\/nas\.test\/api\/state\/presenza\/[a-z0-9]{1,24}\.json$/);
   assert.deepEqual(JSON.parse(o.body), { t: { '.sv': 'timestamp' }, r: 'r' });
   assert.equal(o.method, 'PUT');
   assert.equal(timers[0][1], 25000);

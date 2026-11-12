@@ -247,8 +247,6 @@ dialog a { color: var(--v); font-weight: 700 }
   .year-heading { padding-bottom: 4px }
   .year-heading h2 { font-size: 16px }
   .dialog-actions { padding-top: 6px }
-  #gh { max-width: 850px; max-height: calc(100dvh - 16px); margin: 8px auto; padding: 12px 16px }
-  #gh .row { position: sticky; bottom: -12px; background: var(--w); padding: 8px 0 }
 }
 #app[data-view="bilancio"] .form-section + .form-section { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--vl) }
 

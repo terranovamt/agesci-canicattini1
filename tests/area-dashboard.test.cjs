@@ -419,7 +419,7 @@ test("dashboard presents one operational layout without tabs or duplicate docume
   assert.ok(html.indexOf('id="dashboard-overview"') < html.indexOf('id="documents-tool"'),
     "group tools are organized under the overview section");
   assert.match(html, /<form id="nas-login-form"[\s\S]*id="accesso-stato"[\s\S]*?<\/form>/);
-  assert.match(html, /<form id="login-form"[\s\S]*id="legacy-accesso-stato"[\s\S]*?<\/form>/);
+  assert.doesNotMatch(html, /id="login-form"|id="chiave"|legacy-accesso-stato/);
   assert.ok(html.indexOf('id="dashboard-group-overview"') < html.indexOf('id="dashboard-layout"'));
   assert.ok(html.indexOf('id="dashboard-event-panel"') < html.indexOf('id="dashboard-group-overview"'),
     "today's activity must come before administrative content in reading order");
@@ -434,7 +434,7 @@ test("dashboard presents one operational layout without tabs or duplicate docume
   assert.equal((html.match(/href="documenti.html"/g) || []).length, 1);
 });
 
-function loginHarness({ nas = true, firstAccess = false, admin = false, serviceBranch = "LC" } = {}) {
+function loginHarness({ firstAccess = false, admin = false, serviceBranch = "LC" } = {}) {
   const elements = new Map();
   const get = id => {
     if (!elements.has(id)) elements.set(id, {
@@ -452,13 +452,11 @@ function loginHarness({ nas = true, firstAccess = false, admin = false, serviceB
     return elements.get(id);
   };
   get("accesso-stato").parent = get("nas-login-form");
-  get("legacy-accesso-stato").parent = get("login-form");
   get("esci").hidden = get("riservata").hidden = true;
   const calls = [];
   let releaseStatus, releaseLogin, loadCount = 0;
   const access = {
     verificata: () => false,
-    chiave: () => "",
     request(route, method, data) {
       calls.push({ route, method, data });
       return new Promise(resolve => { releaseStatus = () => resolve({ firstAccess }); });
@@ -474,7 +472,7 @@ function loginHarness({ nas = true, firstAccess = false, admin = false, serviceB
   const window = {
     ACCESSO: access,
     AREA_DASHBOARD: { load() { loadCount++; } },
-    ...(nas ? { NAS: { user: { admin, serviceBranch } } } : {}),
+    NAS: { user: { admin, serviceBranch } },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-riservata.js"), "utf8"), {
     window, document: { getElementById: get }, location: { replace() {} },
@@ -573,23 +571,9 @@ for (const role of [
   });
 }
 
-test("legacy login distinguishes pending and error within its own form", async () => {
-  const app = loginHarness({ nas: false });
-  const get = app.get, form = get("login-form"), status = get("legacy-accesso-stato");
-  get("chiave").value = " key ";
-  form.onsubmit({ preventDefault() {} });
-  assert.equal(status.parent, form);
-  assert.equal(status.dataset.state, "pending");
-  app.login("Chiave errata");
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(status.dataset.state, "error");
-  assert.equal(get("login").hidden, false);
-  form.onsubmit({ preventDefault() {} });
-  app.login();
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(get("riservata").hidden, false);
-  assert.equal(status.textContent, "");
-  assert.equal(app.loads(), 1);
+test("the reserved area has no legacy shared-key login", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/index.html"), "utf8");
+  assert.doesNotMatch(html, /legacy-accesso|type="password"[^>]*id="chiave"|id="login-form"/);
 });
 
 test("unified dashboard and login adapt across six device layouts", { skip: !chrome }, t => {

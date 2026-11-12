@@ -1,4 +1,4 @@
-/* core/live.js — sincronizzazione live regia → pubblico (Firebase Realtime Database, via REST + SSE).
+/* core/live.js — sincronizzazione live regia → pubblico tramite API NAS.
    Si appoggia al motore di index.html (go, next, prev, scenes, si, sk). */
 (function () {
   const L = window.LIVE;
@@ -25,7 +25,7 @@
       if (!scenes.length || sospeso) return;
       const p = enc(si, sk);
       maxP = Math.max(maxP, p);
-      const body = JSON.stringify({ stato: { pos: p, max: maxP }, k: L.chiave });
+      const body = JSON.stringify({ stato: { pos: p, max: maxP } });
       if (invio || body === inviato) return;
       invio = true;
       let completa;
@@ -34,7 +34,7 @@
       });
       try {
         const r = await fetch(U + "/live.json", { method: "PUT", body });
-        if (!r.ok) throw new Error("Pubblicazione live non riuscita (Firebase " + r.status + ")");
+        if (!r.ok) throw new Error("Pubblicazione live non riuscita (NAS " + r.status + ")");
         inviato = body;
         dot.style.background = "#21A067";
       } catch (e) {
@@ -59,7 +59,7 @@
         await fineInvio;
         await salva();
         maxP = 0;
-        inviato = JSON.stringify({ stato: { pos: 0, max: 0 }, k: L.chiave });
+        inviato = JSON.stringify({ stato: { pos: 0, max: 0 } });
         go(0, 0);
       } finally {
         sospeso = false;
@@ -310,7 +310,7 @@
     const v = versione;
     try {
       const r = await fetch(U + "/live/stato.json", { cache: "no-store" });
-      if (!r.ok) throw new Error("Lettura live non riuscita (Firebase " + r.status + ")");
+      if (!r.ok) throw new Error("Lettura live non riuscita (NAS " + r.status + ")");
       const d = await r.json();
       if (!connesso && v === versione) {
         S = d || {};

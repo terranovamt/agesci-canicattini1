@@ -1,13 +1,11 @@
-/* Setup statico: modifica dati.js e salva su GitHub, senza accessi Firebase. */
+/* Setup NAS: modifica e pubblica i contenuti di base tramite il server. */
 (function () {
   if (!window.ACCESSO.verificata()) {
     location.replace("../");
     return;
   }
   const $ = (s) => document.querySelector(s);
-  const M = window.MODIFICHE,
-    L = window.LIVE || {};
-  const nas = L.nas === true;
+  const M = window.MODIFICHE;
   const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -728,7 +726,6 @@
     sociBranch = "";
   async function loadSoci() {
     try {
-      if (!nas) throw new Error("Il Libro soci è disponibile solo sul NAS.");
       const r = await fetch((window.LIVE.basePath || "") + "/api/members", { cache: "no-store" });
       if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Accedi come amministratore per leggere il Libro soci." : "Libro soci non disponibile.");
       soci = await r.json();
@@ -900,7 +897,7 @@
       const anchor = tab === "limiti" ? "limiti" : "setup";
       const src = "guida.html?embed" + (tab === "limiti" ? "&solo=limiti" : "") + "#" + anchor;
       $("#doc-link").href = "guida.html#" + anchor;
-      $("#doc-link").textContent = tab === "limiti" ? "Apri i limiti in una nuova scheda ↗" : "Apri la guida al setup in una nuova scheda ↗";
+      $("#doc-link").textContent = tab === "limiti" ? "Apri il monitor NAS in una nuova scheda ↗" : "Apri la guida al setup in una nuova scheda ↗";
       if ($("#doc").getAttribute("src") !== src) $("#doc").src = src;
     } else if (edit) {
       if (prev !== tab) scrollTo(0, 0);
@@ -918,17 +915,15 @@
       : "Il testo rispecchia la bozza.";
     $("#json-discard").disabled = !jsonPending || saving;
     $("#json-apply").disabled = saving;
-    $("#salva-gh").textContent = saving
+    $("#salva-dati").textContent = saving
       ? "Salvataggio in corso…" : "Salva dati base";
-    $("#save-destination").textContent = nas ? "Destinazione: NAS · dati.js" : "Destinazione: GitHub · dati.js";
-    $("#salva-gh").disabled = !d || jsonPending || saving;
+    $("#save-destination").textContent = "Destinazione: NAS · dati.js";
+    $("#salva-dati").disabled = !d || jsonPending || saving;
     $("#annulla").disabled = !unsaved() || saving;
     $("#nuovo-anno").disabled = !edit || saving;
   }
 
-  /* ---------- GitHub: salva dati.js ---------- */
-  const GH = L.github || {};
-  const TK = "assemblea-gh-token";
+  /* ---------- pubblicazione NAS ---------- */
   const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
   const b64enc = (s) => {
     const b = new TextEncoder().encode(s);
@@ -936,92 +931,47 @@
     for (let i = 0; i < b.length; i += 0x8000) r += String.fromCharCode(...b.subarray(i, i + 0x8000));
     return btoa(r);
   };
-  function token() {
-    const t = localStorage.getItem(TK);
-    if (t) return Promise.resolve(t);
-    const d = $("#gh");
-    $("#gh-repo").textContent = GH.repo;
-    $("#gh-token").value = "";
-    return new Promise((res) => {
-      d.onclose = () => {
-        const v = $("#gh-token").value.trim();
-        if (d.returnValue === "ok" && v) {
-          localStorage.setItem(TK, v);
-          $("#dimentica").hidden = false;
-          res(v);
-        } else res(null);
-      };
-      d.returnValue = "";
-      d.showModal();
-    });
-  }
-  async function gh(file, tk, body) {
-    if (nas) {
-      const response = await fetch((window.LIVE.basePath || "") + "/api/content/" + encodeURIComponent(file), {
-        method: body ? "PUT" : "GET",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: body && JSON.stringify(body),
-      });
-      if (response.status === 409) throw Object.assign(new Error("conflitto"), { conflict: true });
-      if (!response.ok) throw new Error(await response.text());
-      return response.json();
-    }
-    const url = "https://api.github.com/repos/" + GH.repo + "/contents/" + GH.cartella + "/" + file;
-    const r = await fetch(body ? url : url + "?ref=" + encodeURIComponent(GH.ramo), {
+  async function contenuti(body) {
+    const response = await fetch((window.LIVE.basePath || "") + "/api/content/dati.js", {
       method: body ? "PUT" : "GET",
       cache: "no-store",
+      headers: { "Content-Type": "application/json" },
       body: body && JSON.stringify(body),
-      headers: { Authorization: "Bearer " + tk, Accept: "application/vnd.github+json" },
     });
-    if (r.status === 401) {
-      localStorage.removeItem(TK);
-      $("#dimentica").hidden = true;
-      throw new Error("Token GitHub non valido o scaduto: riprova e inseriscine uno nuovo");
-    }
-    if (r.status === 403 || (r.status === 404 && body))
-      throw new Error("Il token non può scrivere in " + GH.repo + " (serve Contents: Read and write)");
-    if (r.status === 404) return null;
-    if (r.status === 409 || r.status === 422) throw Object.assign(new Error("conflitto"), { conflict: true });
-    if (!r.ok) throw new Error("GitHub: errore " + r.status);
-    return r.json();
+    if (response.status === 409) throw Object.assign(new Error("conflitto"), { conflict: true });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
   }
-  async function salvaGitHub() {
+  async function salvaContenuti() {
     if (saving || !edit || jsonPending) return;
-    if (!nas && !GH.repo) return toast('⚠ Imposta "github" in config/site.js');
     saving = true;
     updateDirty();
     const snapshot = clone(edit);
     try {
-      const tk = nas ? null : await token();
-      if (!nas && !tk) return;
-      status(nas ? "Pubblicazione in corso…" : "Salvo su GitHub…");
+      status("Pubblicazione in corso…");
       for (let tentativo = 0; tentativo < 3; tentativo++) {
-        const fd = await gh("dati.js", tk);
-        if (!fd) throw new Error(nas ? "Contenuti pubblicati non trovati" : "dati.js non trovato su GitHub");
+        const fd = await contenuti();
         const testo = b64dec(fd.content);
-        /* Applica solo le modifiche locali sopra l'ultima versione su GitHub. */
+        /* Applica solo le modifiche locali sopra l'ultima versione pubblicata. */
         const voluto = M.applyPatch(window.SALVA_DATI.valuta(testo), M.diffPatch(base, snapshot));
         const nuovo = window.SALVA_DATI.genera(testo, voluto);
         if (nuovo === testo) {
           sync(voluto, snapshot);
-          toast(nas ? "Contenuti già aggiornati" : "dati.js su GitHub è già aggiornato");
+          toast("Contenuti già aggiornati");
           return;
         }
         try {
-          await gh("dati.js", tk, {
-            message: "Aggiorna dati.js dalla pagina di setup",
+          await contenuti({
             content: b64enc(nuovo),
             sha: fd.sha,
-            branch: GH.ramo,
           });
         } catch (e) {
           if (e.conflict && tentativo < 2) continue;
           throw e;
         }
         sync(voluto, snapshot);
-        status(nas ? "Pubblicato" : "Salvato su GitHub; pubblicazione Pages in attesa", "ok");
-        toast(nas ? "Contenuti pubblicati" : "Salvato su GitHub: tra circa 1 minuto è online");
+        status("Pubblicato", "ok");
+        toast("Contenuti pubblicati");
         return;
       }
     } catch (e) {
@@ -1047,26 +997,19 @@
     }
   }
 
-  $("#salva-gh").onclick = () => salvaGitHub();
+  $("#salva-dati").onclick = () => salvaContenuti();
   $("#slide-editor-chiudi").onclick = () => $("#slide-editor").close();
   $("#slide-editor").onclose = () => {
     slideEditor = null;
     render();
   };
-  $("#dimentica").hidden = nas || !localStorage.getItem(TK);
-  $("#dimentica").onclick = () => {
-    localStorage.removeItem(TK);
-    $("#dimentica").hidden = true;
-    toast("Token GitHub dimenticato");
-  };
   $("#esci-area").onclick = () => {
     if (
       edit &&
       unsaved() &&
-      !confirm(nas ? "Uscire senza pubblicare le modifiche?" : "Uscire senza salvare le modifiche su GitHub?")
+      !confirm("Uscire senza pubblicare le modifiche?")
     )
       return;
-    localStorage.removeItem(TK);
     window.ACCESSO.esci();
     if (published) edit = clone(published);
     jsonPending = false;
@@ -1108,12 +1051,7 @@
       apply(data) {
         edit = data;
         go("generale");
-        status(
-          nas
-            ? "Nuovo anno nella bozza: salva i dati base sul NAS"
-            : "Nuovo anno nella bozza: salva i dati base su GitHub",
-          "live",
-        );
+        status("Nuovo anno nella bozza: salva i dati base sul NAS", "live");
         toast("Nuovo anno pronto. Nessuna pubblicazione effettuata.");
       },
       error(message) {

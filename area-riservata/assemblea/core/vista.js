@@ -1,5 +1,5 @@
 /* core/vista.js — modalità usate dalla dashboard regia (regia.html).
-   ?vista=principale&regia=…  regia vera (pubblica su Firebase), comandata dalla dashboard
+   ?vista=principale          regia vera, comandata dalla dashboard
    ?vista=anteprima            slide successiva, solo da guardare
    ?vista=schermo              finestra con sole slide per proiettore o condivisione schermo
    Le finestre dello stesso browser si parlano con BroadcastChannel. */

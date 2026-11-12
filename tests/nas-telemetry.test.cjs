@@ -22,7 +22,8 @@ function browser(enabled = true, preview = false, storage = new Map(), route = "
       };
     },
   };
-  window.top = window.self = window;
+  window.self = window;
+  window.top = preview ? {} : window;
   const context = {
     window,
     crypto: window.crypto,
@@ -85,12 +86,15 @@ test("browser telemetry counts a view and heartbeat and never includes query str
 });
 
 test("disabled telemetry and preview do not create visitor IDs or periodic beacons", async () => {
-  for (const app of [browser(false), browser(true, true)]) {
-    await flush();
+  const disabled = browser(false);
+  const preview = browser(true, true);
+  await flush();
+  for (const app of [disabled, preview]) {
     assert.equal(app.storage.size, 0);
     assert.equal(app.intervals.length, 0);
-    assert.ok(app.calls.every((call) => call.url === "/api/telemetry/config"));
   }
+  assert.deepEqual(disabled.calls.map((call) => call.url), ["/api/telemetry/config"]);
+  assert.equal(preview.calls.length, 0);
 });
 
 test("tracking distinguishes statistics, document management, preparatory documents and slides", async () => {

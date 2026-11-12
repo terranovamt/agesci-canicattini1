@@ -14,9 +14,9 @@ function fixture(file, css, scripts, user) {
   const index = read("documents/index.json");
   const calendars = read("calendars/events.json");
   const mock = `
-    window.ACCESSO = { verificata: () => true, chiave: () => '', esci() {} };
+    window.ACCESSO = { verificata: () => true, esci() {} };
     ${user ? `window.NAS = { user: ${JSON.stringify(user)} };` : ""}
-    window.LIVE = { nas: ${!!user || file === "area-riservata/assemblea/setup.html"}, github: { repo: 'test/repo', ramo: 'test' } };
+    window.LIVE = { nas: ${!!user || file === "area-riservata/assemblea/setup.html"}, basePath: '' };
     window.DOCUMENTS_PREVIEW = true;
     history.replaceState = () => {};
     let items = ${index};
@@ -267,7 +267,7 @@ test("public documents and management work in a browser at all required widths",
                 writtenDate: after.assemblea.data,
                 qrDate: after.slide.find(slide => slide.tipo === 'slide_qr_live').data_ora,
                 newAmount: after.entrate[0].importo, previousAmount: after.entrate[0].importo_anno_precedente,
-                dirty: !doc.querySelector('#salva-gh').disabled, wizardClosed: !wizard.open });
+                dirty: !doc.querySelector('#salva-dati').disabled, wizardClosed: !wizard.open });
             }
           }
         }
@@ -373,7 +373,7 @@ test("public documents and management work in a browser at all required widths",
           results.push({ initialSlots: texts('#preparatory-slots .slot-type'), initialStates: slotStates(),
             initialCount: doc.querySelectorAll('.managed-document').length,
             source: doc.querySelector('#documents-source').textContent,
-            credentialsHiddenInPreview: doc.querySelector('#github-credentials').hidden,
+            legacyCredentialsAbsent: !doc.querySelector('#github-credentials'),
             publicWarning: doc.querySelector('#publish-destination').textContent,
             techSecondary: [...doc.querySelectorAll('.managed-document .doc-tech')].every(details => !details.open),
             deleteDistinct: [...doc.querySelectorAll('.managed-document')].every(article =>
@@ -468,9 +468,6 @@ test("public documents and management work in a browser at all required widths",
           win.fetch = originalFetch;
           await doc.querySelector('#reload-documents').onclick();
           doc.querySelector('.managed-document button').click();
-          const credentials = doc.querySelector('#github-credentials');
-          credentials.hidden = false;
-          credentials.open = true;
           for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [1180, 820], [390, 844], [844, 390]]) {
             frame.style.width = width + 'px';
             frame.style.height = height + 'px';
@@ -676,7 +673,7 @@ test("public documents and management work in a browser at all required widths",
     assert.deepEqual(manage.initialStates, expectedStates);
     assert.equal(manage.initialCount, 4);
     assert.match(manage.source, /anteprima locale/);
-    assert.equal(manage.credentialsHiddenInPreview, true);
+    assert.equal(manage.legacyCredentialsAbsent, true);
     assert.match(manage.publicWarning, /PDF pubblici/);
     assert.equal(manage.techSecondary, true);
     assert.equal(manage.deleteDistinct, true);

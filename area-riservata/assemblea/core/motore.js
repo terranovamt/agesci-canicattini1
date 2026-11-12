@@ -57,7 +57,7 @@ function start(data) {
 /* carica dati.js e lo ricontrolla ogni 2 secondi: se cambia, la presentazione si ricostruisce restando dov'eri */
 let last = null;
 function load(first) { loadDati(first) }
-/* dati effettivi = dati.js + eventuali modifiche live da Firebase (core/modifiche.js) */
+/* dati effettivi = dati.js + eventuali modifiche live (core/modifiche.js) */
 function refreshDati() {
   const M = window.MODIFICHE, base = window.DATI_BASE;
   if (!base || (M && !M.ready)) return;

@@ -20,7 +20,7 @@
       <details class="header-status">
         <summary>Connessione</summary>
         <div><span id="b-live" class="pill">Stato non verificato</span>
-        <span id="b-fb" class="pill">Server...</span></div>
+        <span id="b-server" class="pill">Server...</span></div>
       </details>
       <span class="sp"></span>
       <button
@@ -33,21 +33,6 @@
       <a id="setup" class="btn sec" href="setup.html" target="assemblea-setup" hidden>Setup ↗</a>
       <button id="esci" class="sec" hidden>Esci</button>
     </header>
-
-    <section id="login" hidden>
-      <h2>Area riservata</h2>
-      <p>Inserisci la chiave di accesso per aprire la regia.</p>
-      <form id="login-form">
-        <input
-          id="chiave"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Chiave regia"
-          required
-        /><button>Entra</button>
-      </form>
-      <p id="login-err" class="err" role="alert"></p>
-    </section>
 
     <details id="avviso" class="avviso" hidden>
       <summary id="avviso-titolo">Anteprima · assemblea non iniziata</summary>
@@ -129,30 +114,7 @@
         <p id="dati-live-stato" role="status" aria-live="polite">Caricamento dati…</p>
       </section>
 
-      <section id="regia-server-panel" class="fb card" data-section-panel>
-        <div id="legacy-service-metrics">
-          <h3>Firebase <small>piano gratuito Spark</small></h3>
-          <div class="kpi">
-            <div><b id="k-disp">–</b><span>dispositivi collegati</span><small id="k-ruoli"></small></div>
-            <div><b id="k-lat">–</b><span>risposta Firebase</span><small id="k-agg"></small></div>
-          </div>
-          <div class="meter">
-            <span>Connessioni stimate della presentazione</span><b id="m-conn-t">–</b><i><u id="m-conn"></u></i>
-          </div>
-          <details class="note">
-            <summary>Quote e consumi reali</summary>
-            <div class="meter">
-              <span>Budget download giornaliero / 360 MB</span><b id="m-down-t">Consumo reale: solo in console</b>
-            </div>
-            <div class="meter">
-              <span>Spazio salvato / 1 GB</span><b id="m-spazio-t">Utilizzo e %: solo in console</b>
-            </div>
-            360 MB/giorno è il budget operativo indicato per questo progetto: verifica la quota del tuo servizio nella
-            console. Le presenze e le connessioni stimate non sono le metriche ufficiali Firebase. Le API pubbliche del
-            database non espongono il consumo giornaliero o lo spazio totale; per i consumi reali apri la
-            <a id="console" target="_blank" rel="noopener">console Firebase → Utilizzo</a>.
-          </details>
-        </div>
+      <section id="regia-server-panel" class="server card" data-section-panel>
         <div id="nas-monitor" hidden>
           <div class="monitor-heading">
             <h3>Metriche server</h3>

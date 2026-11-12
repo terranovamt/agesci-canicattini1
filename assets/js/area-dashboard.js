@@ -4,14 +4,10 @@
   let started = false, agenda = null;
   function loginAccessibility() {
     if (!document.forms?.length) return;
-    for (const [formId, statusId, inputIds] of [
-      ["login-form", "legacy-accesso-stato", ["chiave"]],
-      ["nas-login-form", "accesso-stato", ["census-code", "nas-password", "nas-confirmation"]],
-    ]) {
-      const form = $(formId), status = $(statusId);
-      if (!form || !status) continue;
-      const inputs = inputIds.map($).filter(Boolean);
-      inputs.forEach(input => input.addEventListener?.("input", () => {
+    const form = $("nas-login-form"), status = $("accesso-stato");
+    if (!form || !status) return;
+    ["census-code", "nas-password", "nas-confirmation"].map($).filter(Boolean).forEach(input => {
+      input.addEventListener?.("input", () => {
         input.removeAttribute("aria-invalid");
         if (status.dataset.state === "error") {
           status.dataset.state = "";
@@ -19,11 +15,11 @@
           status.setAttribute("role", "status");
           status.setAttribute("aria-live", "polite");
         }
-      }));
-      form.addEventListener?.("invalid", event => {
-        event.target.setAttribute("aria-invalid", "true");
-      }, true);
-    }
+      });
+    });
+    form.addEventListener?.("invalid", event => {
+      event.target.setAttribute("aria-invalid", "true");
+    }, true);
   }
   loginAccessibility();
   function personalize() {

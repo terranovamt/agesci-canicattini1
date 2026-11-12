@@ -6,26 +6,24 @@ const { test } = require('node:test');
 
 const root = path.join(__dirname, '..');
 const guide = fs.readFileSync(path.join(root, 'area-riservata/assemblea/guida.html'), 'utf8');
-const ids = ['link', 'ciclo', 'regia', 'pubblico', 'setup', 'problemi', 'dati', 'firebase', 'limiti'];
+const ids = ['link', 'ciclo', 'regia', 'pubblico', 'setup', 'problemi', 'dati', 'limiti'];
 const viewports = [[1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390]];
 const section = id => guide.match(new RegExp(`<section id="${id}">([\\s\\S]*?)</section>`))[1];
 const text = html => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 const chrome = ['google-chrome', 'chromium', 'chromium-browser'].find(command =>
   spawnSync(command, ['--version'], { encoding: 'utf8' }).status === 0);
 
-test('guide preserves all anchors, operational order and NAS/static/live distinctions', () => {
+test('guide preserves all anchors and documents the NAS-only workflow', () => {
   assert.deepEqual([...guide.matchAll(/<section id="([^"]+)"/g)].map(match => match[1]), ids);
   const index = guide.match(/<nav id="guide-toc"[\s\S]*?<\/nav>/)[0];
   assert.deepEqual([...index.matchAll(/href="#([^"]+)"/g)].map(match => match[1]), ids);
   assert.doesNotMatch(guide, /data-section-panel|<details\b|<iframe\b/);
-  assert.match(text(section('setup')), /bozza locale.*salvarla\/pubblicarla/);
-  assert.match(text(section('setup')), /Sul NAS.*senza token GitHub/);
-  assert.match(text(section('setup')), /GitHub Pages.*token.*pubblicazione/);
+  assert.match(text(section('setup')), /bozza locale.*occorre poi salvarla/);
+  assert.match(text(section('setup')), /server NAS.*sessione autorizzata/);
   assert.match(text(section('setup')), /non legge né cancella le patch live/);
   assert.match(text(section('regia')), /patch live.*non sono il salvataggio della bozza/);
-  assert.match(text(section('dati')), /Solo modalità GitHub Pages.*non equivale a pubblicare la base sul NAS/);
-  for (const id of ['firebase', 'limiti']) assert.match(text(section(id)), /non.*NAS/);
-  assert.match(text(section('problemi')), /Sul NAS.*sessione e permessi.*Su GitHub.*token/);
+  assert.match(text(section('dati')), /server NAS conserva e serve i contenuti/);
+  assert.match(text(section('problemi')), /autenticato.*permessi necessari/);
   for (const id of ['setup', 'problemi']) {
     const table = section(id).match(/<table[\s\S]*?<\/table>/)[0];
     assert.match(table, /<caption>/);
@@ -33,11 +31,9 @@ test('guide preserves all anchors, operational order and NAS/static/live distinc
     assert.match(table, /scope="row"/);
     assert.equal([...table.matchAll(/<td\b/g)].length, [...table.matchAll(/<td data-label=/g)].length);
   }
-  // Verify the provider distinction against behavior, not UI labels being revised elsewhere.
   const setup = fs.readFileSync(path.join(root, 'area-riservata/assemblea/core/setup.js'), 'utf8');
-  assert.match(setup, /nas\s*=\s*L\.nas\s*===\s*true/);
-  assert.match(setup, /\/api\/content\//);
-  assert.match(setup, /nas\s*\?\s*null\s*:\s*await token\(\)/);
+  assert.match(setup, /\/api\/content\/dati\.js/);
+  assert.doesNotMatch(setup, /GitHub|firebase|token\(\)/i);
 });
 
 test('guide browser: complete sticky index, readable tables, anchors and embed at six viewports',
@@ -88,7 +84,7 @@ test('guide browser: complete sticky index, readable tables, anchors and embed a
               check(visible(doc.querySelector('.hd')) === !embed, label + ': embed header');
               check(visible(index) === !solo, label + ': solo index');
               for (const id of ids)
-                check(visible(doc.getElementById(id)) === (!solo || ['firebase','limiti'].includes(id)),
+                check(visible(doc.getElementById(id)) === (!solo || id === 'limiti'),
                   label + ': searchable content ' + id);
               if (!solo) {
                 check(visible(toggle) === (width < 800), label + ': responsive index mode');
@@ -157,8 +153,8 @@ test('guide browser: complete sticky index, readable tables, anchors and embed a
                     label + ': Escape restores focus');
                 }
               }
-              for (const id of ['setup', 'problemi', 'firebase']) {
-                if (solo && id !== 'firebase') continue;
+              for (const id of ['setup', 'problemi']) {
+                if (solo) continue;
                 const table = doc.querySelector('#' + id + ' table');
                 check(table.getBoundingClientRect().right <= width &&
                   table.getBoundingClientRect().left >= 0, label + ': table fits ' + id);
@@ -168,12 +164,6 @@ test('guide browser: complete sticky index, readable tables, anchors and embed a
                   check([...table.querySelectorAll('td')].every(cell =>
                     win.getComputedStyle(cell, '::before').content.includes(cell.dataset.label)),
                     label + ': mobile table labels ' + id);
-              }
-              if (embed) {
-                const external = doc.querySelector('#firebase a[href^="https:"]');
-                doc.addEventListener('click', event => event.preventDefault(), {once:true});
-                external.click();
-                check(external.target === '_blank', label + ': embedded external link');
               }
               if (solo) {
                 win.location.hash = '#limiti'; await rendered(win);

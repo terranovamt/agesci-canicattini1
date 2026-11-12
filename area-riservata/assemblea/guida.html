@@ -383,7 +383,7 @@
       }
       html.solo main { display: block; max-width: 920px; }
       html.solo .guide-index,
-      html.solo .guide-content > section:not(#limiti):not(#firebase) {
+      html.solo .guide-content > section:not(#limiti) {
         display: none;
       }
       html.solo section { scroll-margin-top: 80px; }
@@ -395,7 +395,7 @@
       }
     </style>
     <script>
-      /* dentro la pagina di setup (?embed): senza intestazione; con &solo=limiti mostra solo Firebase e limiti */
+      /* Dentro il setup (?embed) mostra il monitor NAS senza intestazione. */
       const q = new URLSearchParams(location.search);
       document.documentElement.classList.add("guide-js");
       if (q.has("embed")) document.documentElement.classList.add("emb");
@@ -430,7 +430,7 @@
           <a href="#link">Link e accesso</a><a href="#ciclo">Home e assemblea</a>
           <a href="#regia">Regia</a><a href="#pubblico">Pubblico</a><a href="#setup">Setup e bozza</a>
           <a href="#problemi">Problemi</a><a href="#dati">Avanzate: dati.js</a>
-          <a href="#firebase">Solo Firebase</a><a href="#limiti">Quote Firebase</a>
+          <a href="#limiti">Monitor NAS</a>
         </nav>
       </aside>
       <div class="guide-content">
@@ -439,7 +439,7 @@
         <div class="cards">
           <div class="card g">
             <b>Pubblico</b>Condividi l'indirizzo della home dell'installazione in uso, anche con il QR della slide iniziale.
-            Non usare l'indirizzo GitHub Pages se stai conducendo l'assemblea sul NAS.
+            Condividi sempre l'indirizzo pubblico del NAS.
           </div>
           <div class="card">
             <b>Regia</b>Dashboard sul PC, dall'area riservata:<br /><code>…/area-riservata/assemblea/regia.html</code>
@@ -453,15 +453,11 @@
           ><a class="btn" href="setup.html">Apri il setup</a>
         </p>
         <div class="note warn">
-          <b>Sicurezza.</b> Non condividere mai la chiave né un vecchio link con <code>?regia=</code>: chi ha la chiave
-          può guidare la presentazione e cambiare i dati. Sul NAS usa il tuo accesso all'area riservata;
-          nella modalità Firebase la chiave resta nella sessione della scheda.
+          <b>Sicurezza.</b> Accedi dall'area riservata con il tuo account personale. Non condividere password o
+          sessioni; esci dai dispositivi condivisi.
         </div>
         <div class="note">
-          <b>Quale installazione?</b> Sul <strong>NAS</strong> accesso e salvataggio passano dal server:
-          non serve un token GitHub né configurare Firebase. Nella modalità <strong>GitHub Pages + Firebase</strong>,
-          GitHub conserva i contenuti di base e Firebase gestisce il live. Le istruzioni Firebase e le sue quote
-          in fondo alla guida riguardano solo questa seconda modalità.
+          Accesso, contenuti, documenti e diretta sono gestiti dal server NAS.
         </div>
       </section>
 
@@ -469,14 +465,13 @@
         <h2><span class="n">2</span>Home e assemblea</h2>
         <p>
           Di norma il sito mostra la home del gruppo. Entra nell'<b>Area riservata</b> con l'accesso previsto
-          dall'installazione, poi scegli Setup o Regia. Il setup prepara i contenuti di base;
-          la regia conduce il live tramite il NAS oppure Firebase.
+          con il tuo account personale, poi scegli Setup o Regia. Il setup prepara i contenuti di base;
+          la regia conduce il live tramite il server NAS.
         </p>
         <ol class="steps">
           <li>
             Prepara la bozza nel setup e premi <b>Salva dati base</b>:
-            sul NAS salva sul server, su GitHub attendi anche la pubblicazione Pages. Poi entra
-            nella regia e premi <b>Avvia live</b>: mantiene le
+            sul NAS salva sul server. Poi entra nella regia e premi <b>Avvia live</b>: mantiene le
             modifiche live esistenti e riparte dalla slide QR senza ricaricare la presentazione. La dashboard passa in
             onda alla conferma del servizio live; chi è sulla home entra entro circa 10 secondi.
           </li>
@@ -486,20 +481,16 @@
             10 secondi il pubblico torna alla home.
           </li>
         </ol>
-        <p>
-          La chiusura non cancella i contenuti. Solo nella modalità Firebase, le regole devono includere il nodo
-          <code>assemblea</code> con la stessa chiave della regia.
-        </p>
+        <p>La chiusura non cancella i contenuti.</p>
         <p>
           Usa <b>Esci dall'area riservata</b> quando hai finito, soprattutto sui dispositivi condivisi.
-          Nella modalità Firebase le scritture live richiedono la chiave, mentre i salvataggi su GitHub
-          richiedono un token autorizzato. Sul NAS valgono la sessione e i permessi dell'utente.
+          Le operazioni usano la sessione NAS e i permessi del tuo account.
         </p>
       </section>
 
       <section id="regia">
         <h2><span class="n">3</span>Regia (dashboard)</h2>
-        <p>Apri la regia sul PC dall'area riservata. Nella modalità Firebase inserisci la chiave se richiesta.</p>
+        <p>Apri la regia sul PC dall'area riservata.</p>
         <div class="note">
           <b>Durante l'assemblea.</b> Avvia il live, guida le slide con Indietro / Avanti e termina l'assemblea
           per riportare il pubblico alla home. Le modifiche rapide della regia sono una <strong>patch live</strong>:
@@ -527,10 +518,8 @@
             regie. Il setup non legge né cancella questi dati live, che restano pubblici nelle slide.
           </div>
           <div class="card y">
-            <b>Server e monitoraggio</b>Sul NAS il monitor mostra connessioni live e risorse del server.
-            Nella modalità Firebase trovi presenze, tempo di risposta e connessioni stimate:
-            non sono le connessioni ufficiali della console. Per quote e consumi reali,
-            consulta <a href="#limiti">Quote Firebase</a>. Non inserire credenziali di servizio nel sito.
+            <b>Server e monitoraggio</b>Il monitor NAS mostra connessioni live, dispositivi e risorse del server.
+            Per dettagli e indicatori, consulta <a href="#limiti">Monitor NAS</a>.
           </div>
         </div>
         <table>
@@ -598,7 +587,7 @@
         <p>
           Per preparare <b>nomi, orari, date, testi, numeri</b>, l'<b>ordine delle slide</b> o nasconderne una, salvando
           i contenuti di base (<code>dati.js</code>). Modificare i campi o chiudere l'editor mantiene solo la
-          <strong>bozza locale</strong>: occorre poi salvarla/pubblicarla. Il setup non usa Firebase e
+          <strong>bozza locale</strong>: occorre poi salvarla. Il setup
           non legge né cancella le patch live della regia.
         </p>
         <ol class="steps">
@@ -608,9 +597,8 @@
             Ripristina riporta un campo al valore pubblicato. Chiudere l'editor non pubblica i dati.
           </li>
           <li>
-            Premi <b>Salva dati base</b> nella barra inferiore. <b>Sul NAS</b> salva i contenuti
-            sul server con la sessione autorizzata, senza token GitHub. <b>Su GitHub Pages</b> salva
-            <code>dati.js</code> con un token di scrittura e attendi la pubblicazione (circa un minuto).
+            Premi <b>Salva dati base</b> nella barra inferiore. Il server NAS salva i contenuti
+            con la sessione autorizzata.
             Controlla l'esito prima di avviare il live dalla regia.
           </li>
         </ol>
@@ -647,7 +635,7 @@
           </tr>
           <tr>
             <th scope="row">Guida · Limiti</th>
-            <td data-label="Contenuti">Questa guida e le quote della modalità Firebase.</td>
+            <td data-label="Contenuti">Questa guida e il monitor del server NAS.</td>
           </tr>
           </tbody>
         </table>
@@ -667,8 +655,8 @@
             <strong>JSON</strong> permette di aggiungere slide.
           </div>
           <div class="card y">
-            <b>Salvataggio della base</b>Il setup non apre connessioni Firebase e non invia presenze.
-            Il salvataggio unisce le modifiche locali all'ultima versione dei contenuti sul NAS o su GitHub.
+            <b>Salvataggio della base</b>Il setup non modifica le patch live della regia.
+            Il salvataggio unisce le modifiche locali all'ultima versione pubblicata sul NAS.
           </div>
           <div class="card r">
             <b>Modifiche live separate</b>I dati pubblicati dalla regia non vengono letti o cancellati dal setup e
@@ -689,44 +677,39 @@
           <tr>
             <th scope="row">Servizio live non raggiungibile in regia</th>
             <td data-label="Verifica">
-              Controlla la rete. Sul NAS verifica lo stato del server nel monitor; nella modalità Firebase
-              controlla anche le regole del database.
+              Controlla la rete e verifica lo stato del server dal monitor NAS nella regia.
             </td>
           </tr>
           <tr>
             <th scope="row">Dispositivi sempre 0 in regia</th>
             <td data-label="Verifica">
-              Verifica che il pubblico usi la stessa installazione. Solo su Firebase, controlla che le regole
-              includano il nodo <code>presenza</code>.
+              Verifica che il pubblico usi la stessa installazione e controlla i dispositivi nel monitor NAS.
             </td>
           </tr>
           <tr>
             <th scope="row">Setup: salvataggio non riuscito</th>
             <td data-label="Verifica">
-              Sul NAS controlla sessione e permessi; se i contenuti sono cambiati, ricarica prima di salvare.
-              Su GitHub usa un token con Contents: Read and write sul repository configurato.
-              Il token GitHub non serve sul NAS.
+              Controlla di essere ancora autenticato e di avere i permessi necessari. Se i contenuti sono cambiati,
+              ricarica prima di salvare.
             </td>
           </tr>
           <tr>
             <th scope="row">“Non trovo dati.js”</th>
             <td data-label="Verifica">
-              Controlla disponibilità e sintassi del file. Se modificato a mano su GitHub, correggilo o annulla
-              il commit; sul NAS verifica il server e i contenuti pubblicati.
+              Verifica la disponibilità del server NAS e ricarica i contenuti pubblicati dal setup.
             </td>
           </tr>
           <tr>
             <th scope="row">Il pubblico non si sposta</th>
             <td data-label="Verifica">
               Controlla che l'assemblea sia attiva e che il telefono usi la stessa installazione, poi ricarica.
-              Per Firebase verifica anche le <a href="#limiti">quote di connessione</a>; sul NAS consulta il monitor.
+              Verifica che il live sia attivo, poi consulta il <a href="#limiti">monitor NAS</a> e ricarica la pagina.
             </td>
           </tr>
           <tr>
             <th scope="row">Modifiche del setup non visibili</th>
             <td data-label="Verifica">
-              Verifica di aver salvato/pubblicato la bozza. Su GitHub attendi anche Pages (circa un minuto).
-              Se un campo è cambiato dalla regia, prevale la patch live sul NAS o su Firebase:
+              Verifica di aver salvato la bozza. Se un campo è cambiato dalla regia, prevale la patch live:
               salvare la base non la cancella.
             </td>
           </tr>
@@ -735,23 +718,11 @@
       </section>
 
       <section id="dati">
-        <h2><span class="n">7</span>Avanzate: dati.js e GitHub</h2>
+        <h2><span class="n">7</span>Avanzate: dati.js</h2>
         <div class="note">
-          <b>Solo modalità GitHub Pages.</b> Sul NAS usa il salvataggio del setup: il server conserva e serve
-          i contenuti pubblicati. Modificare il file su GitHub non equivale a pubblicare la base sul NAS.
-          Per l'uso ordinario segui <a href="#setup">Setup e bozza</a>.
+          Per l'uso ordinario segui <a href="#setup">Setup e bozza</a>. Il server NAS conserva e serve i contenuti
+          pubblicati; non modificare direttamente i file del sito.
         </div>
-        <ol class="steps">
-          <li>
-            Apri
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/area-riservata/assemblea/dati.js"
-              >dati.js su GitHub</a
-            >
-            e seleziona Modifica.
-          </li>
-          <li>Modifica e premi <b>Commit changes</b>.</li>
-          <li>Dopo circa 1 minuto (pubblicazione di GitHub Pages) gli schermi si aggiornano da soli.</li>
-        </ol>
         <p>
           In alto ci sono <code>assemblea</code> (data, titolo, orari delle convocazioni), poi la lista
           <code>slide</code> in ordine di presentazione, poi censimenti, bilancio e patrimonio. Ogni slide accetta
@@ -759,194 +730,33 @@
           <code>&lt;b&gt;…&lt;/b&gt;</code> è grassetto.
         </p>
         <div class="note warn">
-          <b>Attenzione.</b> A virgole e virgolette: con un errore gli schermi aperti restano alla versione precedente e
-          chi apre la pagina vede “Non trovo dati.js”. Preferisci il setup per preparare la base;
-          durante l'assemblea usa le modifiche live della regia per i campi previsti.
+          <b>Attenzione.</b> Modifiche manuali a virgole e virgolette possono rendere il file non valido. Usa la scheda
+          JSON del setup e premi <b>Applica alla bozza</b>; il pulsante <b>Scarica dati.js aggiornato</b> crea una copia
+          locale. Durante l'assemblea usa le modifiche live della regia per i campi previsti.
         </div>
-        <h3>Salvare la base su GitHub dal setup</h3>
-        <p>
-          <b>Salva dati base</b> usa la destinazione dell'installazione. Solo nella modalità GitHub, la prima
-          volta il setup chiede un <b>token GitHub</b>, salvato solo su quel dispositivo (dal menu,
-          <b>Dimentica token GitHub</b> lo cancella):
-        </p>
-        <ol class="steps">
-          <li>
-            Apri
-            <a href="https://github.com/settings/personal-access-tokens/new"
-              >github.com/settings/personal-access-tokens/new</a
-            >
-            (Fine-grained token).
-          </li>
-          <li><b>Repository access</b> → <i>Only select repositories</i> → <code>agesci-canicattini1</code>.</li>
-          <li><b>Permissions</b> → <b>Contents: Read and write</b> → <b>Generate token</b>, copialo nel setup.</li>
-        </ol>
-        <p style="font-size: 14px">
-          Il setup cambia solo le righe modificate di <code>dati.js</code> e fa il commit con il tuo account. In
-          alternativa: <b>⋯ → Scarica dati.js aggiornato</b> e caricalo a mano.
-        </p>
       </section>
 
-      <section id="firebase">
-        <h2><span class="n">8</span>Solo modalità Firebase</h2>
-        <div class="note">
-          <b>Configurazione avanzata, non necessaria sul NAS.</b> Questa sezione descrive il servizio live
-          della modalità GitHub Pages + Firebase, non il server NAS.
-        </div>
-        <h3>Configurare Firebase da zero</h3>
-        <p>Basta un account Google e il piano gratuito: nessuna carta, nessuna chiave API, nessun SDK.</p>
-        <ol class="steps">
-          <li>
-            Apri <a href="https://console.firebase.google.com">console.firebase.google.com</a> →
-            <b>Crea un progetto</b> (Analytics non serve).
-          </li>
-          <li>
-            <b>Build → Realtime Database → Crea database</b>: posizione <b>Belgio (europe-west1)</b>, modalità
-            <b>blocco</b>. Firestore, Authentication e Hosting non servono.
-          </li>
-          <li>Nella scheda <b>Dati</b> copia l'URL del database (<code>https://…firebasedatabase.app/</code>).</li>
-          <li>
-            Scheda <b>Regole</b>: incolla <code>firebase/database.rules.json</code>, sostituisci tutte e tre le
-            <code>LA-TUA-CHIAVE</code> con la stessa chiave e premi <b>Pubblica</b>. La chiave va solo nella console,
-            mai su GitHub.
-          </li>
-          <li>Su GitHub metti l'URL in <code>url:</code> di <code>config/site.js</code> e fai Commit (~1 minuto).</li>
-          <li>
-            Prova: apri <code>regia.html</code> sul PC, inserisci la chiave e premi <b>Avvia live</b>. Apri il pubblico
-            sul telefono: il telefono segue e la dashboard conta 1 dispositivo; poi modifica i presenti dalla regia e
-            premi <b>Pubblica live</b>.
-          </li>
-        </ol>
-        <p style="font-size: 14px">
-          Per cambiare chiave modifica le regole; per disattivare il live metti <code>url: ''</code> in
-          <code>config/site.js</code>.
-        </p>
-
-        <p>
-          Realtime Database <code>assemblea-canicattini1</code> (europe-west1), indirizzo in
-          <code>config/site.js</code>.
-        </p>
-        <table class="responsive-table" role="table">
-          <caption>Nodi del database Firebase</caption>
-          <thead><tr>
-            <th scope="col">Nodo</th>
-            <th scope="col">Chi scrive</th>
-            <th scope="col">Chi legge</th>
-            <th scope="col">Cosa contiene</th>
-          </tr></thead>
-          <tbody>
-          <tr>
-            <th scope="row"><code>live/stato</code></th>
-            <td data-label="Scrive">regia</td>
-            <td data-label="Legge">tutti</td>
-            <td data-label="Contenuti">posizione: slide × 1000 + passo</td>
-          </tr>
-          <tr>
-            <th scope="row"><code>modifiche/patch</code></th>
-            <td data-label="Scrive">regia</td>
-            <td data-label="Legge">presentazione</td>
-            <td data-label="Contenuti">differenze rispetto a dati.js</td>
-          </tr>
-          <tr>
-            <th scope="row"><code>modifiche/t</code></th>
-            <td data-label="Scrive">regia</td>
-            <td data-label="Legge">presentazione</td>
-            <td data-label="Contenuti">ora dell'ultima pubblicazione</td>
-          </tr>
-          <tr>
-            <th scope="row"><code>live/k</code>, <code>modifiche/k</code></th>
-            <td data-label="Scrive">regia</td>
-            <td data-label="Legge">nessuno</td>
-            <td data-label="Contenuti">chiave, controllata dalle regole</td>
-          </tr>
-          <tr>
-            <th scope="row"><code>assemblea/stato</code></th>
-            <td data-label="Scrive">regia</td>
-            <td data-label="Legge">home / presentazione / regia</td>
-            <td data-label="Contenuti"><code>attiva</code>: home o presentazione</td>
-          </tr>
-          <tr>
-            <th scope="row"><code>presenza/{id}</code></th>
-            <td data-label="Scrive">ogni dispositivo</td>
-            <td data-label="Legge">tutti</td>
-            <td data-label="Contenuti">ora e ruolo, per contare i collegati</td>
-          </tr>
-          </tbody>
-        </table>
-        <h3>Regole (da fare una volta)</h3>
-        <ol class="steps">
-          <li>Console Firebase → <b>Realtime Database</b> → scheda <b>Regole</b>.</li>
-          <li>
-            Incolla il contenuto di
-            <a href="https://github.com/terranovamt/agesci-canicattini1/blob/main/firebase/database.rules.json"
-              ><code>firebase/database.rules.json</code></a
-            >.
-          </li>
-          <li>
-            Sostituisci tutte e tre le <code>LA-TUA-CHIAVE</code> con la stessa chiave della regia (solo nella console,
-            mai nel repository) e premi <b>Pubblica</b>.
-          </li>
-        </ol>
-        <pre tabindex="0" aria-label="Esempio di regole Firebase">
-{
-  "rules": {
-    ".read": false, ".write": false,
-    "assemblea": {
-      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
-      "stato": {
-        ".read": true,
-        ".validate": "newData.hasChildren(['attiva'])",
-        "attiva": { ".validate": "newData.isBoolean()" }
-      }
-    },
-    "live": {
-      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
-      "stato": { ".read": true }
-    },
-    "modifiche": {
-      ".write": "newData.child('k').val() === 'LA-TUA-CHIAVE'",
-      "patch": { ".read": true, ".validate": "newData.isString() &amp;&amp; newData.val().length &lt; 1000000" },
-      "t": { ".read": true }
-    },
-    "presenza": {
-      ".read": true,
-      "$id": {
-        ".write": "$id.length &lt;= 24",
-        ".validate": "newData.hasChildren(['t','r']) &amp;&amp; newData.child('t').val() === now &amp;&amp; newData.child('r').isString() &amp;&amp; newData.child('r').val().length &lt; 12",
-        "t": { ".validate": true }, "r": { ".validate": true }, "$altro": { ".validate": false }
-      }
-    }
-  }
-}</pre
-        >
-      </section>
 
       <section id="limiti">
-        <h2><span class="n">9</span>Quote Firebase (Spark)</h2>
+        <h2><span class="n">8</span>Monitor NAS</h2>
         <div class="note">
-          <b>Solo Firebase.</b> Queste quote non si applicano al NAS: per il server usa il monitor della regia.
-          Le connessioni indicate in regia sono stime; consumo reale e spazio totale si verificano nella console Firebase.
+          Apri la scheda <b>Server</b> nella regia e premi <b>Apri monitor</b> per vedere lo stato aggiornato
+          dell'installazione.
         </div>
         <div class="cards">
-          <div class="card r">
-            <span class="big">100</span><b>connessioni simultanee</b>1 connessione SSE per spettatore e per regia.
-            Setup: <strong>zero</strong>. Lascia margine per richieste REST e altri client.
+          <div class="card">
+            <b>Connessioni live</b>Flussi SSE aperti dalla presentazione e dalla regia.
           </div>
           <div class="card g">
-            <span class="big">360 MB</span><b>budget download al giorno</b>Budget operativo indicato per questo
-            progetto: verifica la quota vigente e il consumo reale nella console Firebase → Utilizzo. La dashboard non
-            calcola consumi fittizi a partire dal tempo trascorso.
+            <b>Dispositivi e visitatori</b>Conteggi di presentazione e persone collegate al sito.
           </div>
-          <div class="card g"><span class="big">1 GB</span><b>dati archiviati</b>La presentazione usa pochi KB.</div>
+          <div class="card y">
+            <b>Risorse</b>CPU, memoria, ritardo dell'event loop e volume dati del server.
+          </div>
         </div>
         <p>
-          Oltre 100 connessioni Firebase rifiuta le nuove: alcuni telefoni potrebbero non seguire la regia. Per
-          assemblee più numerose valuta il piano <b>Blaze</b> (a consumo, con quote e costi da verificare)
-          oppure proietta senza far collegare tutti. Il pubblico controlla le modifiche live
-          con una lettura leggera ogni 10 s, senza occupare una seconda connessione.
-        </p>
-        <p>
-          Limiti indicativi: verifica quelli aggiornati su
-          <a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a>.
+          Se la diretta non risponde, verifica prima la rete e lo stato del server; non condividere schermate
+          contenenti informazioni riservate.
         </p>
       </section>
 

@@ -1,4 +1,4 @@
-/* core/presenza.js — conta i dispositivi collegati (nodo Firebase "presenza").
+/* core/presenza.js — conta i dispositivi collegati tramite stato NAS.
    Ogni pagina scrive ogni 25 s { t: ora del server, r: ruolo } e si cancella quando si chiude.
    La dashboard regia legge il nodo e conta chi si è fatto sentire nell'ultimo minuto. */
 (function () {

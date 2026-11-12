@@ -1,6 +1,6 @@
 /* core/salva-dati.js — riscrive il testo di dati.js con i nuovi dati, cambiando solo le parti modificate:
    commenti e formattazione restano dove sono.
-   Usato dalla pagina di setup per "Salva su GitHub". */
+   Usato dalla pagina di setup prima della pubblicazione sul NAS. */
 (function () {
   const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
   const deq = (a, b) => {

@@ -38,14 +38,14 @@ function load(options = {}) {
   };
   let remote = options.patch;
   const c = {
-    window: { LIVE: { url: 'https://firebase.test/' } },
+    window: { LIVE: { nas: true, url: 'https://nas.test/api/state/' } },
     document: { querySelector: $, createElement: element },
     confirm: () => options.confirm !== false,
     fetch: async (url, opts) => {
       requests.push({ url, opts });
       if (opts?.method) {
         if (options.waitWrite) await options.waitWrite;
-        if (options.denied) return { ok: false, status: 403 };
+        if (options.denied) return { ok: false, status: 403, text: async () => 'Sessione scaduta' };
         remote = JSON.parse(opts.body).patch;
         remote = remote === null ? undefined : JSON.parse(remote);
         return { ok: true };
@@ -63,7 +63,7 @@ function load(options = {}) {
   return {
     $, requests, rendered, vista, c,
     setRemote: p => { remote = p },
-    start: async () => { c.window.REGIA_DATI.avvia(vista, 'key'); await flush() },
+    start: async () => { c.window.REGIA_DATI.avvia(vista); await flush() },
     inputs: () => $('#dati-live-campi').children.map(l => l.children[0]),
     submit: () => $('#dati-live-form').onsubmit({ preventDefault() {} })
   };
@@ -83,7 +83,7 @@ test('regia loads effective values and only the requested roles, preserving setu
   await t.submit();
   const write = t.requests.find(r => r.opts?.method);
   const body = JSON.parse(write.opts.body);
-  assert.equal(body.k, 'key');
+  assert.equal(Object.hasOwn(body, 'k'), false);
   assert.deepEqual(body.t, { '.sv': 'timestamp' });
   const out = t.c.window.MODIFICHE.applyPatch(base, JSON.parse(body.patch));
   assert.equal(out.censimenti.presenti_attuali, 60);
@@ -166,7 +166,7 @@ test('failed writes retain edits, do not refresh screens and show errors', async
   await t.submit();
   assert.equal(t.inputs()[0].value, '50');
   assert.equal(t.rendered.length, 0);
-  assert.match(t.$('#dati-live-stato').textContent, /Chiave non valida/);
+  assert.match(t.$('#dati-live-stato').textContent, /Sessione scaduta/);
   assert.equal(t.$('#dati-live-pubblica').disabled, false);
 });
 

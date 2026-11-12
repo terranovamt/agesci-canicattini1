@@ -26,16 +26,15 @@ procedura.
   quando richiesto da `deploy/synology/nginx.conf`; il resto delle pagine è
   servito staticamente.
 - **Sviluppo locale:** `tools/nas-dev.cjs` avvia il gateway e il backend con
-  database di test temporaneo; `tools/preview.cjs` serve una simulazione
-  statica con alcune funzioni simulate, non il backend NAS. `tools/build-site.cjs`
+  database di test temporaneo; `tools/nas-demo.cjs` aggiunge dati fittizi e
+  account demo. `tools/build-site.cjs`
   copia gli ingressi pubblicabili in `dist/` e aggiunge hash agli asset CSS/JS
   locali.
 - **Deploy:** `server/Dockerfile` definisce il backend Node 24; il
   `deploy/synology/Dockerfile` costruisce e serve il sito tramite Nginx.
   `deploy/synology/compose.yaml` coordina i servizi e il volume dati;
   `deploy/synology/update.sh` crea release dal branch `NAS` e attende gli
-  healthcheck. Evitare di confondere questa modalità con la pubblicazione
-  statica o il flusso Firebase storico.
+  healthcheck.
 
 ## Setup e comandi di verifica
 
@@ -44,9 +43,6 @@ script `npm` per build o test: i comandi sono diretti e non richiedono un
 passo di installazione delle dipendenze Node.
 
 ```sh
-# Simulazione delle pagine, senza backend NAS reale
-node tools/preview.cjs
-
 # Backend NAS locale, con password e dati temporanei stampati dal comando
 node tools/nas-dev.cjs
 
@@ -98,12 +94,10 @@ non equivale a un collaudo di rete o di container sul NAS.
   sessione. Monitoraggio e presenze live hanno contatori distinti.
 - **Setup e regia:** le modifiche locali del setup sono una bozza; chiudere
   l'editor o premere **Applica alla bozza** nel JSON non salva i contenuti di
-  base. **Salva dati base** aggiorna `dati.js` sul NAS oppure su GitHub nella
-  modalità statica.
+  base. **Salva dati base** aggiorna `dati.js` sul NAS.
   La regia pubblica invece una patch live separata, che prevale sui campi
   corrispondenti della base. Il setup non legge né cancella questa patch.
-  Nella guida distinguere i due contesti: token GitHub, regole e quote Firebase
-  non sono requisiti universali del NAS.
+  Il flusso di autenticazione, salvataggio e diretta è gestito dal server NAS.
 - **Deploy:** i file persistenti stanno fuori dalla release sotto il volume
   dati; la release è codice statico/backend. In caso di healthcheck fallito,
   `update.sh` tenta il ripristino del codice precedente, ma non ripristina
@@ -512,7 +506,7 @@ Chromium/Chrome headless se installato, fixture con API simulate, viewport
 `members-staff-browser.test.cjs` verifica strumenti amministrativi nascosti,
 campi per branca, proposta e conferma nel browser. Questi test non
 sostituiscono il collaudo del container sul NAS. Per verificare l'interfaccia
-con API reali usare `tools/nas-dev.cjs`, non `tools/preview.cjs`.
+con API reali usare `tools/nas-dev.cjs` o `tools/nas-demo.cjs`.
 
 ## Checklist pre-merge
 

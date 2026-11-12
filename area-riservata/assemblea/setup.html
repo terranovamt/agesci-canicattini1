@@ -27,11 +27,11 @@
           <button data-tab="soci" aria-pressed="false">Censiti</button>
         </div>
         <details id="setup-tools" class="setup-tools">
-          <summary>Strumenti <small>JSON · Guida · Limiti · Nuovo anno</small></summary>
+          <summary>Strumenti <small>JSON · Guida · Monitor NAS · Nuovo anno</small></summary>
           <div class="tools-actions">
             <button data-tab="json" aria-pressed="false">JSON</button>
             <button data-tab="guida" class="doc" aria-pressed="false">Guida</button>
-            <button data-tab="limiti" class="doc" aria-pressed="false">Limiti</button>
+            <button data-tab="limiti" class="doc" aria-pressed="false">Monitor NAS</button>
             <button id="nuovo-anno" type="button" disabled>Setup nuovo anno</button>
           </div>
           <span class="links"
@@ -72,13 +72,12 @@
     <footer id="bar" hidden>
       <span id="dirty" role="status" aria-live="polite"></span>
       <button id="annulla" class="sec" disabled>Scarta modifiche</button>
-      <button id="salva-gh" aria-describedby="save-destination" disabled>Salva dati base</button>
+      <button id="salva-dati" aria-describedby="save-destination" disabled>Salva dati base</button>
       <span id="save-destination" class="hint"></span>
       <details class="more">
         <summary title="Altro" aria-label="Altre azioni">⋯</summary>
         <div>
           <button id="scarica" class="sec">Scarica dati.js aggiornato</button>
-          <button id="dimentica" class="sec" hidden>Dimentica token GitHub</button>
           <button id="esci-area" class="sec">Esci e torna alla home</button>
         </div>
       </details>
@@ -91,31 +90,6 @@
         <p class="hint">Modifiche nella bozza, non ancora salvate.</p>
         <button id="slide-editor-chiudi" type="button">Fine modifica</button>
       </div>
-    </dialog>
-
-    <dialog id="gh">
-      <form method="dialog">
-        <h2>Salva su GitHub</h2>
-        <p>
-          Per scrivere <code>dati.js</code> serve un <b>token GitHub</b>. Si crea una volta e resta solo su questo
-          dispositivo.
-        </p>
-        <ol>
-          <li>
-            Apri
-            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener"
-              >github.com → Fine-grained token</a
-            >.
-          </li>
-          <li><b>Repository access</b> → <i>Only select repositories</i> → <code id="gh-repo"></code>.</li>
-          <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>.</li>
-          <li><b>Generate token</b>, copialo e incollalo qui.</li>
-        </ol>
-        <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…" required />
-        <div class="row">
-          <button value="ok">Salva su GitHub</button><button value="no" class="sec" formnovalidate>Annulla</button>
-        </div>
-      </form>
     </dialog>
 
     <dialog id="year-dialog" aria-labelledby="year-title" aria-describedby="year-progress">

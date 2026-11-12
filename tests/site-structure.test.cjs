@@ -8,7 +8,7 @@ const { renderHtml } = require("../tools/site-layout.cjs");
 const root = path.join(__dirname, "..");
 const read = (file) => {
   const source = fs.readFileSync(path.join(root, file), "utf8");
-  return file.endsWith(".html") ? renderHtml(source, file) : source;
+  return file.endsWith(".html") ? renderHtml(source, file.replace(/\\/g, "/")) : source;
 };
 const files = (directory) =>
   fs
@@ -112,9 +112,10 @@ test("canonical directories have no obsolete or case-duplicate entries", () => {
 function localTarget(page, reference) {
   if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(reference)) return null;
   const base = read(page).match(/<base\s+href=["']([^"']+)["']/i)?.[1];
+  const normalizedPage = page.replace(/\\/g, "/");
   if (reference.startsWith("/"))
     assert.ok(reference.startsWith("/agesci-canicattini1/"), `${page}: ${reference} must stay under the site prefix`);
-  const url = new URL(reference, new URL(base ?? page, "https://example.test/agesci-canicattini1/"));
+  const url = new URL(reference, new URL(base ?? normalizedPage, "https://example.test/agesci-canicattini1/"));
   assert.ok(url.pathname.startsWith("/agesci-canicattini1/"), `${page}: ${reference} escapes the site`);
   let file = decodeURIComponent(url.pathname.slice("/agesci-canicattini1/".length));
   if (file.endsWith("/") || !file) file += "index.html";
@@ -150,7 +151,7 @@ test("current PEG entry selects its edition preserving query and section hash", 
   for (const [page, destination] of Object.entries(aliases)) {
     const html = read(page);
     const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
-    for (const search of ["", "?regia=example&vista=schermo", "?embed&solo=limiti"]) {
+    for (const search of ["", "?foo=example&vista=schermo", "?embed&solo=limiti"]) {
       let actual;
       vm.runInNewContext(script, {
         location: {
@@ -198,8 +199,10 @@ test("shared configuration publishes assembly edits into the migrated data direc
   vm.runInNewContext(read("config/site.js"), context);
   assert.equal(context.window.LIVE.basePath, "/agesci-canicattini1");
   assert.equal(context.window.LIVE.url, "https://site.test/agesci-canicattini1/api/state/");
-  assert.equal(context.window.LIVE.github.cartella, "area-riservata/assemblea");
-  assert.ok(fs.existsSync(path.join(root, context.window.LIVE.github.cartella, "dati.js")));
+  assert.ok(fs.existsSync(path.join(root, "area-riservata/assemblea/dati.js")));
+  context.location.search = "?vista=principale";
+  vm.runInNewContext(read("config/site.js"), context);
+  assert.equal(context.window.LIVE.ruolo, "regia");
   for (const page of [
     "index.html",
     "area-riservata/index.html",
@@ -209,15 +212,16 @@ test("shared configuration publishes assembly edits into the migrated data direc
     "area-riservata/assemblea/setup.html",
   ]) {
     const scripts = [...read(page).matchAll(/<script src="([^"]+)"/g)].map(([, src]) => localTarget(page, src));
-    assert.equal(scripts[0], "config/site.js", page);
+    assert.ok(scripts.includes("config/site.js"), page);
+    assert.ok(scripts.indexOf("config/site.js") < scripts.indexOf("assets/js/shared/accesso.js") || !scripts.includes("assets/js/shared/accesso.js"), page);
   }
 });
 
-test("public assembly documents and PEG stay independent of restricted tools and Firebase", () => {
+test("public assembly documents and PEG stay independent of restricted tools", () => {
   const html = read("assemblea/index.html");
   assert.match(html, /data-documents-url="\.\.\/documents\/index.json"/);
   assert.match(html, /data-site-root="\.\.\/"/);
-  assert.doesNotMatch(html, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js/);
+  assert.doesNotMatch(html, /(?:config\/site|shared\/accesso|shared\/assemblea)\.js|firebase/i);
   assert.match(read("index.html"), /href="assemblea\/"/);
   assert.match(read("area-riservata/index.html"), /href="assemblea\/setup.html"/);
   assert.match(read("area-riservata/index.html"), /href="assemblea\/regia.html"/);

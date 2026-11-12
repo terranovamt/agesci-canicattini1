@@ -86,7 +86,7 @@ test("NAS image copies only public site directories, not development tools or se
   for (const [, directory] of dockerfile.matchAll(/^COPY ([\w/-]+)\/ \/usr\/share\/nginx\/html\//gm)) {
     assert.ok(fs.statSync(path.join(root, directory)).isDirectory(), directory);
     assert.ok(
-      !["deploy", "tools", "tests", ".github", "firebase", "PEG", "Assemblea-di-Gruppo"].includes(directory),
+      !["deploy", "tools", "tests", ".github", "PEG", "Assemblea-di-Gruppo"].includes(directory),
       directory,
     );
   }

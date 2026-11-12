@@ -6,11 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const D = window.DOCUMENTS;
   const M = window.DOCUMENTS_MODEL;
-  const preview = window.DOCUMENTS_PREVIEW === true;
-  const nas = window.LIVE?.nas === true && !preview;
-  const github = !preview && !nas;
-  const branch = window.LIVE?.github?.ramo || "";
-  const limitMiB = nas ? 20 : 100;
+  const limitMiB = 20;
   const currentYear = new Date().getFullYear();
   const typeLabel = (type) => (M.assemblyTypes.find(([value]) => value === type) || [])[1] || "";
   let items = [],
@@ -20,7 +16,6 @@
     pending = null,
     busy = false,
     formDirty = false;
-  const credentials = () => (github ? $("document-token").value.trim() || localStorage.getItem(D.tokenKey) || "" : "");
   const pdfHref = (file) => "../documents/pdf/" + encodeURIComponent(file);
   const sorted = (list) =>
     [...list].sort(
@@ -48,32 +43,14 @@
   }
 
   $("documents-app").hidden = false;
-  $("github-credentials").hidden = !github;
-  $("nas-session").hidden = !nas;
   $("preparatory-year").textContent = currentYear;
-  $("documents-source").textContent = preview
-    ? "Sorgente: anteprima locale (simulazione)"
-    : nas
-      ? "Sorgente: NAS del gruppo"
-      : "Sorgente: GitHub · " + (window.LIVE?.github?.repo || "") + (branch ? " @ " + branch : "");
-  $("upload-hint").textContent =
-    "PDF pubblico, inferiore a " + limitMiB + " MiB (limite " + (nas ? "NAS" : "GitHub") + ").";
-  $("publish-timing").textContent = preview
-    ? "Anteprima: le modifiche restano simulate, nessuna pubblicazione reale."
-    : nas
-      ? "Al salvataggio il NAS pubblica subito la modifica sul sito."
-      : "Il salvataggio crea un commit su GitHub: il sito pubblico cambia solo quando termina il deploy di GitHub Pages.";
-  if (github) $("document-token").value = localStorage.getItem(D.tokenKey) || "";
+  $("documents-source").textContent = "Sorgente: NAS del gruppo";
+  $("upload-hint").textContent = "PDF pubblico, inferiore a " + limitMiB + " MiB (limite NAS).";
+  $("publish-timing").textContent = "Al salvataggio il NAS pubblica subito la modifica sul sito.";
 
   function message(text, kind = "") {
     $("documents-message").textContent = text;
     $("documents-message").className = kind;
-  }
-  function tokenState() {
-    if (!github) return;
-    const stored = Boolean(localStorage.getItem(D.tokenKey));
-    $("token-state").textContent = stored ? "· memorizzato in questo browser" : "· nessun token memorizzato";
-    if (!stored && !$("document-token").value.trim()) $("github-credentials").open = true;
   }
   function syncDisabled() {
     $("documents-app")
@@ -294,25 +271,17 @@
     render();
     message("Caricamento dei documenti…", "pending");
     try {
-      items = sorted(await D.load(credentials()));
+      items = sorted(await D.load());
       loadState = "ready";
       reset();
-      message(
-        preview
-          ? "Anteprima: modifiche simulate in memoria, nessuna pubblicazione reale."
-          : nas
-            ? "Documenti aggiornati dal NAS."
-            : "Documenti aggiornati da GitHub" + (branch ? " (ramo " + branch + ")." : "."),
-      );
+      message("Documenti aggiornati dal NAS.");
     } catch (error) {
       loadState = "error";
       loadError = error.message;
       message(error.message, "error");
-      if (github) $("github-credentials").open = true;
     } finally {
       busy = false;
       render();
-      tokenState();
     }
   }
   async function publish(change) {
@@ -321,41 +290,22 @@
     lock(true);
     render();
     message(
-      preview
-        ? "Salvataggio simulato in corso: non ancora salvato."
-        : nas
-          ? "Invio al NAS in corso: non ancora pubblicato."
-          : "Invio a GitHub in corso: non ancora salvato.",
+      "Invio al NAS in corso: non ancora pubblicato.",
       "pending",
     );
     try {
       D.apply(items, change);
-      const next = await D.save(change, credentials());
-      if (github) localStorage.setItem(D.tokenKey, credentials());
+      const next = await D.save(change);
       items = sorted(next);
       pending = null;
       if (!deleting || editing?.file === change.previous.file) reset();
-      message(
-        preview
-          ? (deleting ? "Eliminato" : "Salvato") + " nella simulazione locale. Ricarica la home per vedere il risultato."
-          : nas
-            ? deleting
-              ? "Eliminato dal sito."
-              : "Pubblicato sul sito."
-            : (deleting ? "Eliminazione salvata" : "Salvato") +
-              " su GitHub: commit creato" +
-              (branch ? " sul ramo " + branch : "") +
-              ". Non è ancora online: il sito si aggiorna al termine del deploy di GitHub Pages.",
-        "success",
-      );
+      message(deleting ? "Eliminato dal sito." : "Pubblicato sul sito.", "success");
     } catch (error) {
       pending = null;
       message((deleting ? "Non eliminato: " : "Non salvato: ") + error.message, "error");
-      if (github && !localStorage.getItem(D.tokenKey)) $("github-credentials").open = true;
     } finally {
       busy = false;
       render();
-      tokenState();
     }
   }
   async function remove(item) {
@@ -368,7 +318,7 @@
   async function readPdf(file) {
     if (!D.safeName(file.name)) throw new Error("Seleziona un file con estensione .pdf e un nome valido");
     if (file.size >= limitMiB * 1024 * 1024)
-      throw new Error(nas ? "Il PDF supera il limite NAS di 20 MiB" : "Il PDF supera il limite GitHub di 100 MiB");
+      throw new Error("Il PDF supera il limite NAS di 20 MiB");
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") throw new Error("Il file selezionato non è un PDF valido");
     let binary = "";
@@ -444,13 +394,6 @@
   };
   $("new-document").onclick = () => startNew();
   $("reload-documents").onclick = reload;
-  $("connect-github").onclick = reload;
-  $("forget-token").onclick = () => {
-    localStorage.removeItem(D.tokenKey);
-    $("document-token").value = "";
-    tokenState();
-    message("Token GitHub dimenticato da questo browser.");
-  };
   addEventListener("beforeunload", (event) => {
     if (formDirty || busy) event.preventDefault();
   });

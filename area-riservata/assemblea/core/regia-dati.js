@@ -9,7 +9,7 @@
   const testo = s => String(s ?? '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim();
   const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  let tipoCorrente = '', vista, chiave, campi = [], occupato = false;
+  let tipoCorrente = '', vista, campi = [], occupato = false;
   const modificati = () => campi.filter(c => c.input.value !== c.iniziale);
   function pending() {
     const n = modificati().length;
@@ -33,7 +33,7 @@
   }
   async function leggiPatch() {
     const r = await fetch(U + '/modifiche/patch.json', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Impossibile leggere le modifiche (Firebase ' + r.status + ')');
+    if (!r.ok) throw new Error('Impossibile leggere le modifiche (NAS ' + r.status + ')');
     const p = await r.json();
     return p === null ? undefined : JSON.parse(p);
   }
@@ -133,11 +133,9 @@
       });
       const nuova = M.diffPatch(base, edit);
       const r = await fetch(U + '/modifiche.json', { method: 'PUT', body: JSON.stringify({
-        k: chiave, patch: nuova === undefined ? null : JSON.stringify(nuova), t: { '.sv': 'timestamp' }
+        patch: nuova === undefined ? null : JSON.stringify(nuova), t: { '.sv': 'timestamp' }
       }) });
-      if (!r.ok) throw new Error(r.status === 401 || r.status === 403
-        ? 'Chiave non valida o regole Firebase non aggiornate'
-        : 'Pubblicazione non riuscita (Firebase ' + r.status + ')');
+      if (!r.ok) throw new Error(await r.text());
       vista.MODIFICHE.patch = nuova;
       vista.MODIFICHE.ready = true;
       vista.refreshDati();
@@ -156,5 +154,5 @@
     if (modificati().length && !confirm('Scartare le modifiche non pubblicate e ricaricare i valori?')) return;
     ricarica();
   };
-  window.REGIA_DATI = { slide(t) { if (t !== tipoCorrente) { tipoCorrente = t; mostra(t) } }, avvia(w, k) { vista = w; chiave = k; ricarica() } };
+  window.REGIA_DATI = { slide(t) { if (t !== tipoCorrente) { tipoCorrente = t; mostra(t) } }, avvia(w) { vista = w; ricarica() } };
 })();

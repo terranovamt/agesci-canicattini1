@@ -26,13 +26,13 @@ function dashboard(attiva, count = 4, failed = false, options = {}) {
   };
   const context = {
     window: {
-      LIVE: { nas: !!options.nas, url: "https://firebase.test/" },
-      ACCESSO: { chiave: () => (options.nas ? "nas-session" : ""), entra: async () => {} },
+      LIVE: { url: "/api/state" },
+      ACCESSO: { verificata: () => true, esci: async () => {} },
       PRESENZA: { avvia() {}, conta: () => ({ totale: count, ruoli: { p: count - 1, r: 1 }, scaduti: [] }) },
       ASSEMBLEA: {
         async salva(...args) {
           if (options.waitSave) await options.waitSave;
-          if (options.saveFailure) throw new Error("Firebase 403");
+          if (options.saveFailure) throw new Error("NAS 403");
           saves.push(args);
           attiva = args[0];
         },
@@ -74,40 +74,19 @@ function dashboard(attiva, count = 4, failed = false, options = {}) {
   };
   vm.runInNewContext(
     source.replace(
-      /if\s*\(key\)\s*accedi\(key\);\s*else\s*mostraLogin\(\);/,
-      "V = { avviaLive: salva => salva(), next: () => window.advanced = true }; window.TEST = { controlla, meter, avviaLive, accedi };",
+      /\r?\n  avvia\(\);\r?\n\}\)\(\);/,
+      "\n  V = { avviaLive: salva => salva(), next: () => window.advanced = true };\n  window.TEST = { controlla, avviaLive };\n})();",
     ),
     context,
   );
   return { api: context.window.TEST, $, saves, alerts, redirects, requests, context, keydown: e => keydown(e) };
 }
 
-test("NAS regia uses session marker in iframe URLs and local health instead of Firebase console", async () => {
-  const t = dashboard(true, 4, false, { nas: true });
-  await t.api.accedi("test-password-not-for-production");
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.match(t.$("#principale").src, /regia=nas-session/);
-  assert.ok(!t.$("#principale").src.includes("test-password"));
-  assert.equal(t.$("#console").href, "/healthz");
-  assert.equal(t.$("#b-fb").textContent, "NAS ok");
-  assert.match(t.$("#m-conn-t").textContent, /flussi \(stima\)/);
-});
-
-test("connection estimates show true percentages and warning thresholds", async () => {
-  for (const [count, cls] of [
-    [4, ""],
-    [70, "warn"],
-    [90, "ko"],
-    [120, "ko"],
-  ]) {
-    const { api, $ } = dashboard(true, count);
-    await api.controlla();
-    assert.equal($("#m-conn-t").textContent, `≈ ${count} / 100 · ${count}%`);
-    assert.equal($("#m-conn").style.width, Math.min(100, count) + "%");
-    assert.equal($("#m-conn").className, cls);
-    assert.equal($("#m-down-t").textContent, "", "no fictional download calculation");
-    assert.equal($("#m-spazio-t").textContent, "", "no partial data presented as total storage");
-  }
+test("regia embeds the main presentation without a query-string credential", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/regia.html"), "utf8");
+  assert.match(source, /\.\/\?vista=principale/);
+  assert.doesNotMatch(source, /regia=|firebase/i);
+  assert.doesNotMatch(html, /id="b-fb"|firebase/i);
 });
 
 test("inactive or unknown assembly has no in-onda styling", async () => {
@@ -123,34 +102,6 @@ test("inactive or unknown assembly has no in-onda styling", async () => {
       assert.equal($("#b-assemblea").textContent, attiva === false ? "Assemblea non iniziata" : "Assemblea non verificata");
     }
   }
-});
-
-test("monitor metrics distinguish missing, zero, disabled collection and errors", () => {
-  const nodes = new Map();
-  const node = id => {
-    if (!nodes.has(id)) nodes.set(id, { textContent: "", hidden: false, parentElement: {} });
-    return nodes.get(id);
-  };
-  let watcher;
-  const context = {
-    window: { LIVE: { nas: true }, NAS_METRICS: { watch(config) { watcher = config; return {} } } },
-    document: { getElementById: node }
-  };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/monitoraggio.js"), "utf8"), context);
-  context.window.NAS_MONITOR.start();
-  watcher.render({ enabled: false, sampledAt: "2026-11-09T12:00:00Z", traffic: { presentationDevices: 0 }, resources: {} });
-  assert.equal(node("nas-online").textContent, "0");
-  assert.equal(node("nas-streams").textContent, "- / -");
-  assert.equal(node("nas-devices").textContent, "Rilevazione disattivata");
-  assert.equal(node("nas-cpu").textContent, "-");
-  assert.match(node("nas-status").textContent, /Metriche aggiornate alle/);
-  assert.doesNotMatch(node("nas-status").textContent, /Live/);
-  watcher.render({ traffic: {}, resources: {} });
-  assert.equal(node("nas-online").textContent, "-");
-  assert.equal(node("nas-devices").textContent, "-");
-  watcher.error("Sessione scaduta");
-  assert.equal(node("nas-online").textContent, "-");
-  assert.equal(node("nas-status").textContent, "Sessione scaduta");
 });
 
 test("a failed check revokes in-onda certainty and critical actions, then recovers", async () => {
@@ -229,22 +180,12 @@ test("overlapping status checks issue one batch of requests", async () => {
   const t = dashboard(true, 4, false, options);
   const first = t.api.controlla();
   await t.api.controlla();
-  assert.equal(t.requests.length, 3);
+  assert.equal(t.requests.length, 2);
   release();
   await first;
 });
 
-test("unavailable metrics are explicit, not stale or zero usage", async () => {
-  const { api, $ } = dashboard(true, 4, true);
-  await api.controlla();
-  assert.equal($("#m-conn-t").textContent, "Non disponibile");
-  assert.equal($("#k-ruoli").textContent, "Presenze non verificabili");
-  assert.equal($("#b-live").textContent, "Stato live non verificato");
-  assert.equal($("#inizia").disabled, true);
-  assert.equal($("#termina").disabled, true);
-});
-
-test("lifecycle controls follow Firebase state, independent of slide number", async () => {
+test("lifecycle controls follow NAS state, independent of slide number", async () => {
   for (const active of [false, true, undefined]) {
     const t = dashboard(active);
     await t.api.controlla();
@@ -259,7 +200,7 @@ test("starting in regia preserves the patch and updates immediately without relo
   const t = dashboard(false, 4, false, { patch: JSON.stringify(patch) });
   await t.api.controlla();
   await t.$("#inizia").onclick();
-  assert.deepEqual(JSON.parse(JSON.stringify(t.saves)), [[true, "", patch]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(t.saves)), [[true, patch]]);
   assert.equal(t.$("#principale").src, undefined, "no iframe reload");
   assert.equal(t.$("#onda-label").textContent, "In onda");
   assert.equal(t.$("#avviso").hidden, true);

@@ -1,5 +1,5 @@
 (function () {
-  if (window.DOCUMENTS_PREVIEW || window.top !== window.self) return;
+  if (window.top !== window.self) return;
   const nativeFetch = window.fetch.bind(window);
   const route = location.pathname.toLowerCase();
   const basePath = route.startsWith("/agesci-canicattini1/") ? "/agesci-canicattini1" : "";

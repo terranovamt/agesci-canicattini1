@@ -104,7 +104,7 @@ test('the next rollover preserves the history from the prior one and handles unk
   assert.equal(year2028.storico_avanzo_per_anno['2027'], 450);
 });
 
-test('annual data serializes with the existing GitHub save helper, retaining comments and new scout year', () => {
+test('annual data serializes with the NAS content helper, retaining comments and new scout year', () => {
   const source = initial(), next = prepare(source, completed(source), null);
   const context = { window: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../area-riservata/assemblea/core/salva-dati.js'), 'utf8'), context);

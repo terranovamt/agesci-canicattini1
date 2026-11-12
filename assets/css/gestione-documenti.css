@@ -23,11 +23,6 @@ a { color: var(--v) }
 #documents-message.success { color: var(--g-strong); font-weight: 700 }
 #documents-message.error { color: var(--r-strong); font-weight: 700 }
 
-.credentials { margin-bottom: 12px; padding: 0 14px; border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w) }
-.credentials[open] { padding-bottom: 14px }
-.credentials summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 44px; font-weight: 700; color: var(--v); cursor: pointer }
-.token-state { color: var(--v2); font-size: 13px; font-weight: 400 }
-.credentials label { margin-top: 4px }
 
 .top-bar { display: grid; gap: 12px; margin-bottom: 16px }
 .top-bar > * { margin: 0 }
@@ -51,7 +46,6 @@ legend { padding: 0; font-weight: 700; font-size: 14px }
 .current-file { margin-top: 16px; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--bg); font-size: 14px; overflow-wrap: anywhere }
 .current-file a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700 }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px }
-.credentials .actions { margin-top: 12px }
 
 button { min-height: 44px; padding: 10px 16px; border: 0; border-radius: var(--radius-md); background: var(--v); color: var(--w); font: 700 14px/1.4 system-ui, sans-serif; cursor: pointer }
 button.secondary { background: var(--bg); color: var(--v); box-shadow: inset 0 0 0 1px var(--v2) }

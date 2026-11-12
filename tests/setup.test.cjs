@@ -19,7 +19,6 @@ function setup(options = {}) {
     redirects = [];
   const tabs = [];
   const balanceButtons = [];
-  const store = new Map(options.noToken ? [] : [["assemblea-gh-token", "test-token"]]);
   let context,
     remote = serialize(options.remote || initial),
     writes = 0;
@@ -54,13 +53,7 @@ function setup(options = {}) {
       querySelector() {
         return element("legend");
       },
-      showModal() {
-        this.open = true;
-        if (options.cancelToken && this === $("#gh")) {
-          this.returnValue = "no";
-          this.onclose();
-        }
-      },
+      showModal() { this.open = true; },
       close() {
         this.open = false;
         if (this.onclose) this.onclose();
@@ -88,11 +81,7 @@ function setup(options = {}) {
   context = {
     window: {
       ACCESSO: { verificata: () => !options.unauthenticated, esci() {} },
-      LIVE: {
-        nas: !!options.nas,
-        url: "https://firebase.test/",
-        github: { repo: "test/repo", ramo: "main", cartella: "area-riservata/assemblea" },
-      },
+      LIVE: { nas: true, basePath: "" },
     },
     document: {
       querySelector: $,
@@ -119,11 +108,6 @@ function setup(options = {}) {
         redirects.push(url);
       },
     },
-    localStorage: {
-      getItem: (k) => store.get(k),
-      setItem: (k, v) => store.set(k, v),
-      removeItem: (k) => store.delete(k),
-    },
     TextDecoder,
     TextEncoder,
     Uint8Array,
@@ -146,12 +130,8 @@ function setup(options = {}) {
     },
     fetch: async (url, opts) => {
       requests.push({ url, opts });
-      assert.match(
-        url,
-        options.nas ? /^\/api\/content\/dati\.js$/ : /^https:\/\/api\.github\.com\//,
-        "expected content service only",
-      );
-      if (options.denied) return { status: 401, ok: false };
+      assert.match(url, /^\/api\/content\/dati\.js$/, "expected NAS content API only");
+      if (options.denied) return { status: 401, ok: false, text: async () => "Sessione scaduta" };
       if (opts.method === "PUT") {
         writes++;
         if (options.duringSave) {
@@ -177,7 +157,6 @@ function setup(options = {}) {
     $,
     requests,
     scripts,
-    store,
     listeners,
     redirects,
     tabs,
@@ -198,11 +177,11 @@ function setup(options = {}) {
       input.value = value;
       input.oninput();
     },
-    save: () => $("#salva-gh").onclick(),
+    save: () => $("#salva-dati").onclick(),
   };
 }
 
-test("setup loads without Firebase login, streams, polling or presence", async () => {
+test("setup loads without live streams, polling or presence", async () => {
   for (const script of ["assemblea.js", "presenza.js"]) assert.equal(html.includes('src="core/' + script + '"'), false);
   assert.ok(html.includes('src="../../assets/js/shared/accesso.js"'));
   for (const id of ["login-form", "pubblica", "inizia", "ripristina"])
@@ -213,19 +192,18 @@ test("setup loads without Firebase login, streams, polling or presence", async (
   assert.equal(t.scripts.length, 1);
   assert.equal(t.$("#app").hidden, false);
   assert.equal(t.$("#fassemblea_titolo").value, "Assemblea");
-  assert.equal(t.$("#salva-gh").disabled, true);
+  assert.equal(t.$("#salva-dati").disabled, true);
 });
 
-test("NAS setup saves through the local content API without a GitHub token", async () => {
-  const t = setup({ nas: true, noToken: true });
+test("NAS setup publishes through the local content API", async () => {
+  const t = setup();
   await flush();
   t.editTitle("Titolo NAS");
   await t.save();
   assert.equal(t.saved().assemblea.titolo, "Titolo NAS");
   assert.equal(t.requests.length, 2);
   assert.ok(t.requests.every((request) => request.url === "/api/content/dati.js"));
-  assert.equal(t.store.size, 0);
-  assert.equal(t.$("#salva-gh").textContent, "Salva dati base");
+  assert.equal(t.$("#salva-dati").textContent, "Salva dati base");
   assert.equal(t.$("#save-destination").textContent, "Destinazione: NAS · dati.js");
 });
 
@@ -521,20 +499,20 @@ test("setup requires an already verified session before loading any data", async
   assert.equal(t.requests.length, 0);
 });
 
-test("saving commits only local differences to GitHub and preserves remote edits and comments", async () => {
+test("saving merges only local differences with the latest NAS content", async () => {
   const remote = { ...initial, assemblea: { ...initial.assemblea, data: "Nuova data" } };
   const t = setup({ remote });
   await flush();
   t.editTitle("Nuovo titolo");
-  assert.equal(t.$("#salva-gh").disabled, false);
+  assert.equal(t.$("#salva-dati").disabled, false);
   await t.save();
   assert.equal(t.requests.length, 2);
   assert.equal(t.saved().assemblea.titolo, "Nuovo titolo");
   assert.equal(t.saved().assemblea.data, "Nuova data");
   const body = JSON.parse(t.requests[1].opts.body);
-  assert.equal(body.branch, "main");
+  assert.equal(body.sha, "sha-0");
   assert.match(Buffer.from(body.content, "base64").toString(), /commento da conservare/);
-  assert.equal(t.$("#salva-gh").disabled, true);
+  assert.equal(t.$("#salva-dati").disabled, true);
   let prevented = false;
   t.listeners.beforeunload({
     preventDefault() {
@@ -557,12 +535,12 @@ test("edits made during commit stay dirty and can be saved separately", async ()
   await t.save();
   assert.equal(t.saved().assemblea.titolo, "Primo titolo");
   assert.equal(t.$("#fassemblea_titolo").value, "Ancora diverso");
-  assert.equal(t.$("#salva-gh").disabled, false);
+  assert.equal(t.$("#salva-dati").disabled, false);
   await t.save();
   assert.equal(t.saved().assemblea.titolo, "Ancora diverso");
 });
 
-test("GitHub conflicts retry the read and commit without Firebase writes", async () => {
+test("NAS content conflicts retry the read and commit", async () => {
   const t = setup({ conflicts: 1 });
   await flush();
   t.editTitle("Titolo ritentato");
@@ -571,24 +549,15 @@ test("GitHub conflicts retry the read and commit without Firebase writes", async
   assert.equal(t.saved().assemblea.titolo, "Titolo ritentato");
 });
 
-test("failed GitHub authentication retains edits and forgets invalid tokens", async () => {
+test("failed NAS authorization retains edits and shows the server error", async () => {
   const t = setup({ denied: true });
   await flush();
   t.editTitle("Da conservare");
   await t.save();
   assert.equal(t.$("#stato").textContent, "Errore");
-  assert.equal(t.store.has("assemblea-gh-token"), false);
+  assert.match(t.$("#stato").textContent, /Errore/);
   assert.equal(t.$("#fassemblea_titolo").value, "Da conservare");
-  assert.equal(t.$("#salva-gh").disabled, false);
-});
-
-test("cancelled token prompt makes no requests and restores the save button", async () => {
-  const t = setup({ noToken: true, cancelToken: true });
-  await flush();
-  t.editTitle("Modifica");
-  await t.save();
-  assert.equal(t.requests.length, 0);
-  assert.equal(t.$("#salva-gh").disabled, false);
+  assert.equal(t.$("#salva-dati").disabled, false);
 });
 
 test("static loading failures are visible and do not enable saving", async () => {
@@ -622,7 +591,7 @@ test("pending JSON text survives navigation and render without changing the draf
   assert.equal(prevented, true);
   t.$("#json-discard").onclick();
   assert.equal(t.data().assemblea.titolo, "Bozza da conservare");
-  assert.equal(t.$("#salva-gh").disabled, false);
+  assert.equal(t.$("#salva-dati").disabled, false);
 });
 
 test("cancelling JSON discard, stale application and draft discard never overwrites either buffer", async () => {
@@ -675,7 +644,7 @@ test("exhausted conflicts retain the draft and JSON typed during an in-flight sa
   assert.equal(t.$("#json-text").value, '{"pending":');
   t.$("#json-discard").onclick();
   assert.equal(t.data().assemblea.titolo, "Non perdere");
-  assert.equal(t.$("#salva-gh").disabled, false);
+  assert.equal(t.$("#salva-dati").disabled, false);
   assert.equal(t.saved().assemblea.titolo, initial.assemblea.titolo);
 });
 
@@ -701,15 +670,15 @@ test("documentation embeds and full-page links open their contextual guide ancho
 test("saving never announces success before the write response", async () => {
   let t;
   t = setup({ duringSave() {
-    assert.equal(t.$("#stato").textContent, "Salvo su GitHub…");
-    assert.equal(t.$("#salva-gh").disabled, true);
-    assert.equal(t.$("#salva-gh").textContent, "Salvataggio in corso…");
+    assert.equal(t.$("#stato").textContent, "Pubblicazione in corso…");
+    assert.equal(t.$("#salva-dati").disabled, true);
+    assert.equal(t.$("#salva-dati").textContent, "Salvataggio in corso…");
   } });
   await flush();
   t.editTitle("Salvataggio verificato");
-  assert.equal(t.$("#save-destination").textContent, "Destinazione: GitHub · dati.js");
+  assert.equal(t.$("#save-destination").textContent, "Destinazione: NAS · dati.js");
   await t.save();
-  assert.match(t.$("#stato").textContent, /^Salvato su GitHub/);
+  assert.equal(t.$("#stato").textContent, "Pubblicato");
 });
 
 const { spawnSync } = require("node:child_process");
@@ -784,7 +753,7 @@ test("setup tabs, seven balance panels and wizard steps fit all six viewports", 
           check(assembly.width >= workspaceWidth * .6, width + ': assembly form uses workspace');
         }
         check(d.querySelectorAll('.primary-tabs button').length === 4, 'four primary tabs');
-        for (const selector of ['[data-tab="generale"]','[data-tab="ordine"]','[data-tab="bilancio"]','[data-tab="soci"]','#salva-gh','#annulla']) {
+        for (const selector of ['[data-tab="generale"]','[data-tab="ordine"]','[data-tab="bilancio"]','[data-tab="soci"]','#salva-dati','#annulla']) {
           const r = $(selector).getBoundingClientRect();
           check(r.width >= 44 && r.height >= 44, selector + ' touch target ' + r.width + '×' + r.height + ' errors=' + w.errors.join(','));
         }

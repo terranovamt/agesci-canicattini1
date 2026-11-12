@@ -1,34 +1,26 @@
 /* Stato dell'assemblea, separato dalla posizione live e dalle modifiche. */
 (function () {
   const url = (window.LIVE?.url || "").replace(/\/$/, "");
-  const provider = window.LIVE?.nas ? "NAS" : "Firebase";
   async function leggi() {
-    if (!url) throw new Error(provider + " non configurato");
+    if (!url) throw new Error("NAS non configurato");
     const r = await fetch(url + "/assemblea/stato.json", { cache: "no-store" });
-    if (!r.ok) throw new Error("Impossibile leggere lo stato assemblea (" + provider + " " + r.status + ")");
+    if (!r.ok) throw new Error("Impossibile leggere lo stato assemblea (NAS " + r.status + ")");
     const s = await r.json();
     if (s !== null && typeof s?.attiva !== "boolean") throw new Error("Stato assemblea non valido");
     return s;
   }
-  async function salva(attiva, chiave, patch) {
-    if (!url) throw new Error(provider + " non configurato");
-    const data = { assemblea: { k: chiave, stato: { attiva } } };
+  async function salva(attiva, patch) {
+    if (!url) throw new Error("NAS non configurato");
+    const data = { assemblea: { stato: { attiva } } };
     if (attiva) {
-      data.live = { k: chiave, stato: { pos: 0, max: 0 } };
+      data.live = { stato: { pos: 0, max: 0 } };
       data.modifiche = {
-        k: chiave,
         patch: patch === undefined ? null : JSON.stringify(patch),
         t: { ".sv": "timestamp" },
       };
     }
     const r = await fetch(url + "/.json", { method: "PATCH", body: JSON.stringify(data) });
-    if (!r.ok && window.LIVE?.nas) throw new Error(await r.text());
-    if (!r.ok)
-      throw new Error(
-        r.status === 401 || r.status === 403
-          ? "Chiave non valida o regole Firebase non aggiornate (nodo assemblea)"
-          : "Impossibile salvare lo stato assemblea (Firebase " + r.status + ")",
-      );
+    if (!r.ok) throw new Error(await r.text());
   }
   function osserva(onState, onError) {
     let running = false;

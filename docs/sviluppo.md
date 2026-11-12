@@ -1,6 +1,6 @@
 # Sviluppo: struttura del codice
 
-[README](../README.md) · [Assemblea](assemblea.md) · [Contenuti](contenuti.md) · [Firebase](firebase.md) · [Sviluppo](sviluppo.md) · [Struttura repository](struttura-repository.md)
+[README](../README.md) · [Assemblea](assemblea.md) · [Sviluppo](sviluppo.md) · [Struttura repository](struttura-repository.md)
 
 Dove si trovano layout, stili e script della presentazione.
 
@@ -43,7 +43,7 @@ con titolo e countdown compatti; il layout orizzontale resta invariato.
 File comuni:
 
 - `index.html`: pagina e ordine di caricamento di stili e script.
-- `../config/site.js`: Firebase, limite degli spettatori, repository per "Salva su GitHub";
+- `../config/site.js`: URL API NAS e limite della presentazione;
   `dati.js`: tutti i contenuti (anche le slide del Progetto Educativo).
 - `../../assets/css/theme.css`: tema condiviso da sito e assemblea;
   `../../assets/js/shared/accesso.js` e `assemblea.js`: servizi condivisi di
@@ -53,18 +53,15 @@ File comuni:
 - `core/base.js`: funzioni di supporto; `core/differenze-testo.js`:
   confronto parola per parola dei testi.
 - `core/motore.js`: navigazione, caricamento di `dati.js`, alias dei tipi.
-- `core/pdf.js`: esportazione PDF; `core/live.js`: regia e spettatori
-  (Firebase); `core/modifiche.js`: modifiche live sopra `dati.js`;
+- `core/pdf.js`: esportazione PDF; `core/live.js`: sincronizzazione NAS tra regia
+  e spettatori; `core/modifiche.js`: modifiche live sopra `dati.js`;
   `core/avvio.js`: avvio, caricato per ultimo.
 - `regia.html`, `core/regia.js`, `core/regia.css`: dashboard regia;
   `core/vista.js`: modalità in onda / anteprima / schermo usate dalla dashboard;
   `core/presenza.js`: conteggio dei dispositivi collegati.
 - `setup.html`, `core/setup.js`, `core/setup.css`: pagina di setup;
-  nessuna richiesta Firebase o polling; il login avviene nell'area riservata
-  e `ACCESSO.verificata()` controlla localmente la sessione della scheda.
-  Questo controllo UI non protegge i dati pubblici: i commit richiedono un
-  token GitHub autorizzato. Usa solo gli helper puri di
-  `core/modifiche.js` per unire le modifiche locali al file GitHub;
+  login nell'area riservata e salvataggio dei contenuti tramite API NAS.
+  `core/modifiche.js` fornisce gli helper puri per unire le modifiche locali;
   `core/salva-dati.js` riscrive `dati.js` mantenendo i commenti.
 - `guida.html`: guida illustrata; `manifest.webmanifest`: avvio a schermo intero
   dalla schermata Home.

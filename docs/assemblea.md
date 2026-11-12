@@ -1,40 +1,29 @@
 # Assemblea: avvio, regia e pubblico
 
-[README](../README.md) · [Assemblea](assemblea.md) · [Contenuti](contenuti.md) · [Firebase](firebase.md) · [Sviluppo](sviluppo.md)
+[README](../README.md) · [Assemblea](assemblea.md) · [Sviluppo](sviluppo.md)
 
 Come si apre e chiude l'assemblea e come si usano dashboard regia, schermo e telefoni.
 
 ## Aprire e chiudere l'assemblea
 
-1. Entra nell'area riservata con la chiave e apri **Setup dati.js**.
-   La chiave viene verificata una volta per sessione della scheda; il setup
-   controlla la sessione localmente senza richieste Firebase.
-   Prepara i contenuti e premi **Salva su GitHub (dati.js)** con un token GitHub.
-   Attendi la pubblicazione su GitHub Pages.
-2. Apri la regia dall'area riservata con la chiave e premi il grande
+1. Accedi all'area riservata con il codice censimento e la password, poi apri
+   **Setup Assemblea**. Prepara i contenuti e premi **Salva dati base**:
+   il server NAS salva la bozza con la sessione autorizzata.
+2. Apri la regia dall'area riservata e premi il grande
    **Avvia live** in alto, sopra le anteprime.
-   Con una sola scrittura Firebase mantiene le modifiche live esistenti,
-   azzera la posizione e attiva l'assemblea;
+   Il server mantiene le modifiche live esistenti, azzera la posizione e
+   attiva l'assemblea;
    se la scrittura fallisce non avvia nulla e mostra l'errore.
-   la regia riparte dalla slide QR senza ricaricare la presentazione.
-   Il pulsante indica subito l'avvio in corso; alla conferma Firebase la
-   dashboard passa in onda senza attendere il controllo periodico.
-   La home manda tutti alla presentazione entro circa 10 secondi, senza
-   aumentare la frequenza delle richieste Firebase.
+   la regia riparte dalla slide QR senza ricaricare la presentazione e passa
+   in onda alla conferma del server. Chi apre la home entra entro circa 10 secondi.
 3. Durante il live la dashboard mostra **Termina assemblea**, anche prima dell'ultima slide.
    Dopo la conferma salva lo stato inattivo: home e link alla presentazione
    tornano alla pagina del gruppo entro 10 secondi. Il bottone della home
    torna all'area riservata. I contenuti preparati non vengono cancellati.
 
-Lo stato è in `assemblea/stato/attiva`, separato dalla posizione `live/stato`:
-gli aggiornamenti della regia non possono riattivare un'assemblea terminata.
-Il setup resta sempre raggiungibile da `/setup`, senza accessi Firebase.
-Con rete assente in regia viene
-mostrato un errore e il controllo riprova automaticamente.
-**Aggiorna le regole Firebase** dal file del repository: il nodo
-`assemblea` richiede la stessa chiave degli altri due nodi; il nodo `presenza`
-(conteggio dispositivi della dashboard) non richiede chiave ma accetta solo
-`{t, r}` con l'ora del server.
+Lo stato dell'assemblea è separato dalla posizione live: gli aggiornamenti
+della regia non possono riattivare un'assemblea terminata. Con rete assente
+in regia viene mostrato un errore e il controllo riprova automaticamente.
 
 ## Durante l'assemblea
 
@@ -46,30 +35,17 @@ mostrato un errore e il controllo riprova automaticamente.
 - due grandi pulsanti **‹ Indietro** / **Avanti ›**, più Inizio e Ordine del giorno;
   tastiera e clicker: `→ ↓ spazio PagGiù` avanti, `← ↑ PagSu` indietro;
 - l'elenco delle slide: un clic ci salta sopra;
-- stato: assemblea attiva, pubblico allineato alla regia, Firebase raggiungibile;
-- pannello **Firebase**: dispositivi collegati (pubblico, regia ed eventuali setup
-  legacy ancora aperti), tempo
-  di risposta e connessioni **stimate della presentazione**, su 100, con
-  percentuale. La barra diventa arancione al 70% e rossa al 90%.
-  Le presenze non misurano tutte le connessioni al database (ad esempio la
-  console Firebase o altri client), quindi non coincidono con il dato ufficiale.
-  Il budget operativo di download indicato per il progetto è **360 MB/giorno**,
-  da confrontare con la quota vigente del servizio in console. Il consumo
-  reale di download e lo spazio totale (su 1 GB) sono disponibili
-  **solo nella console Firebase**: le API
-  pubbliche del Realtime Database non espongono queste metriche.
-  La dashboard non inventa consumi né mostra le dimensioni di pochi nodi
-  come se fossero l'intero database. Per integrarle servirebbe un backend
-  autorizzato a leggere Google Cloud Monitoring, senza credenziali nel sito,
-  oppure un login Google OAuth nel browser con i permessi di lettura sul
-  progetto. La chiave condivisa dell'assemblea non autorizza queste API;
+- stato: assemblea attiva, pubblico allineato alla regia e server raggiungibile;
+- pannello **Server**: flussi SSE, dispositivi della presentazione, visitatori
+  del sito, CPU e memoria del backend e del NAS, ritardo dell'event loop e
+  volume dati. **Apri monitor** mostra i dettagli e gli avvisi del server;
 - **Avvia live** quando l'assemblea è inattiva, **Termina assemblea** durante
   il live e **PDF** sull'ultima slide.
 
 Il pannello **Presenti e ufficio di presidenza** permette di inserire il
 numero dei presenti nella slide quorum e i nomi del presidente e degli
 scrutatori nelle slide di composizione, senza aprire il setup.
-**Pubblica live** salva i campi modificati nella patch Firebase:
+**Pubblica live** salva i campi modificati nella patch live sul NAS:
 regia e proiettore si aggiornano subito, i telefoni entro circa
 10 secondi. Il numero deve essere un intero non negativo; lasciare il campo
 vuoto indica che non è ancora noto. Il segretario e gli altri contenuti

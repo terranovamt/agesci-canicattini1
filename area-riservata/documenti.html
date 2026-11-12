@@ -30,29 +30,6 @@
           </div>
           <button id="reload-documents" type="button" class="secondary">Ricarica</button>
         </section>
-        <p id="nas-session" class="hint" hidden>
-          Accesso con la sessione dell’area riservata del NAS: non serve alcun token.
-        </p>
-        <details id="github-credentials" class="credentials">
-          <summary>Accesso GitHub <span id="token-state" class="token-state"></span></summary>
-          <label for="document-token">Token con permesso Contents: Read and write</label>
-          <input
-            id="document-token"
-            type="password"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="github_pat_…"
-            aria-describedby="token-memory"
-          />
-          <p id="token-memory" class="hint">
-            Il token resta solo in questo browser (localStorage, condiviso con il setup assemblea) e viene memorizzato
-            dopo la prima pubblicazione riuscita. Su dispositivi condivisi usa “Dimentica token”.
-          </p>
-          <div class="actions">
-            <button id="connect-github" type="button">Usa token e ricarica</button>
-            <button id="forget-token" type="button" class="secondary">Dimentica token</button>
-          </div>
-        </details>
       </div>
       <div class="documents-workspace">
         <nav
@@ -133,7 +110,7 @@
               required
               aria-describedby="upload-hint"
             />
-            <p id="upload-hint" class="hint">PDF pubblico, inferiore a 100 MiB (limite GitHub).</p>
+            <p id="upload-hint" class="hint">PDF pubblico, inferiore a 20 MiB (limite NAS).</p>
             <label for="document-title">Titolo nella pagina pubblica</label>
             <input
               id="document-title"
