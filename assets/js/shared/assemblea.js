@@ -1,6 +1,15 @@
 /* Stato dell'assemblea, separato dalla posizione live e dalle modifiche. */
 (function () {
   const url = (window.LIVE?.url || "").replace(/\/$/, "");
+  const api = ((window.LIVE?.basePath || "").replace(/\/$/, "")) + "/api/vote";
+  async function aggiornaVotazioni(path) {
+    const r = await fetch(api + "/" + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!r.ok) throw new Error((await r.text()) || "Impossibile aggiornare le votazioni (NAS " + r.status + ")");
+  }
   async function leggi() {
     if (!url) throw new Error("NAS non configurato");
     const r = await fetch(url + "/assemblea/stato.json", { cache: "no-store" });
@@ -11,6 +20,7 @@
   }
   async function salva(attiva, patch) {
     if (!url) throw new Error("NAS non configurato");
+    await aggiornaVotazioni(attiva ? "session/reset" : "close");
     const data = { assemblea: { stato: { attiva } } };
     if (attiva) {
       data.live = { stato: { pos: 0, max: 0 } };

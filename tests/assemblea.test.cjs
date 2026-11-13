@@ -9,15 +9,18 @@ function load(fetch) {
   vm.runInNewContext(source, c);
   return c.window.ASSEMBLEA;
 }
-test("starting saves content, resets live and activates in one atomic request", async () => {
+test("starting resets votes before activating with the live position reset", async () => {
   const requests = [];
   const a = load(async (url, opts) => {
     requests.push([url, opts]);
     return { ok: true };
   });
   await a.salva(true, { anno_esercizio: 2027 });
-  assert.equal(requests.length, 1);
-  const [url, opts] = requests[0],
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0][0], "/api/vote/session/reset");
+  assert.equal(requests[0][1].method, "POST");
+  assert.deepEqual(JSON.parse(requests[0][1].body), {});
+  const [url, opts] = requests[1],
     body = JSON.parse(opts.body);
   assert.equal(url, "https://nas.test/api/state/.json");
   assert.equal(opts.method, "PATCH");
@@ -26,14 +29,27 @@ test("starting saves content, resets live and activates in one atomic request", 
   assert.equal(body.modifiche.patch, '{"anno_esercizio":2027}');
   assert.deepEqual(body.modifiche.t, { ".sv": "timestamp" });
 });
-test("ending changes only lifecycle state, not content or live position", async () => {
-  let body;
+test("ending closes all votes and changes only lifecycle state", async () => {
+  const requests = [];
   const a = load(async (_, o) => {
-    body = JSON.parse(o.body);
+    requests.push(o);
     return { ok: true };
   });
   await a.salva(false);
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].method, "POST");
+  assert.equal(requests[0].body, "{}");
+  const body = JSON.parse(requests[1].body);
   assert.deepEqual(body, { assemblea: { stato: { attiva: false } } });
+});
+test("a failed vote lifecycle update prevents changing the assembly state", async () => {
+  const requests = [];
+  const a = load(async (url) => {
+    requests.push(url);
+    return { ok: false, status: 503, text: async () => "Votazioni non disponibili" };
+  });
+  await assert.rejects(a.salva(false), /Votazioni non disponibili/);
+  assert.deepEqual(requests, ["/api/vote/close"]);
 });
 test("financial slide icons use the existing WebP assets", () => {
   const data = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/dati.js"), "utf8");

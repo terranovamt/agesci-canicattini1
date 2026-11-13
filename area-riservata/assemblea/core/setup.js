@@ -807,7 +807,8 @@
       pdf.disabled = rigenera.disabled = true;
       try {
         const r = await fetch((window.LIVE.basePath || "") + "/api/vote/codes", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nuovi ? { anno: sociYear, rigenera: true } : { anno: sociYear }),
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ anno: sociYear, codici: [...codiciVisibili], ...(nuovi ? { rigenera: true } : {}) }),
         });
         if (!r.ok) throw new Error((await r.text()) || "Errore " + r.status);
         const { righe } = await r.json();

@@ -12,6 +12,7 @@ const CODE = /^\d{6}$/;
 function createVotes(db, people) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS vote_codes (person_id INTEGER PRIMARY KEY, code TEXT NOT NULL UNIQUE);
+    CREATE TABLE IF NOT EXISTS vote_roster (person_id INTEGER PRIMARY KEY);
     CREATE TABLE IF NOT EXISTS vote_polls (
       id INTEGER PRIMARY KEY AUTOINCREMENT, slide TEXT NOT NULL UNIQUE, question TEXT NOT NULL,
       mode TEXT NOT NULL, options TEXT NOT NULL, live INTEGER NOT NULL DEFAULT 0,
@@ -34,7 +35,8 @@ function createVotes(db, people) {
     else item.count++;
     fail(401, "Codice di voto non valido");
   };
-  const total = () => db.prepare("SELECT count(*) AS n FROM vote_codes").get().n;
+  const total = () => db.prepare(`SELECT count(*) AS n FROM vote_roster r
+    JOIN vote_codes c ON c.person_id=r.person_id`).get().n;
   const latest = () => db.prepare("SELECT * FROM vote_polls ORDER BY open DESC, updated DESC LIMIT 1").get();
   const tallies = poll => {
     const options = JSON.parse(poll.options), counts = options.map(() => 0);
@@ -54,7 +56,9 @@ function createVotes(db, people) {
   };
   const voter = code => {
     if (typeof code !== "string" || !CODE.test(code)) return null;
-    return db.prepare(`SELECT p.id, p.name FROM vote_codes c JOIN people p ON p.id=c.person_id WHERE c.code=?`).get(code) || null;
+    return db.prepare(`SELECT p.id, p.name FROM vote_codes c
+      JOIN vote_roster r ON r.person_id=c.person_id
+      JOIN people p ON p.id=c.person_id WHERE c.code=?`).get(code) || null;
   };
   const staff = (sessionId, request) => {
     const current = people.user(sessionId(request));
@@ -114,20 +118,28 @@ function createVotes(db, people) {
       if (route === "/api/vote/codes" && method === "POST") {
         const current = staff(sessionId, request);
         if (!current.admin) fail(403, "Operazione riservata all'amministratore");
-        const value = await body(request, 1024);
+        const value = await body(request, 512 * 1024);
         const year = text(value?.anno, 8, "Anno");
+        if (!Array.isArray(value.codici) || value.codici.length < 1 || value.codici.length > 5000)
+          fail(400, "Elenco dei censiti non valido");
+        const codes = value.codici.map(code => text(code, 80, "Codice socio"));
+        const selected = new Set(codes);
+        if (selected.size !== codes.length) fail(400, "Elenco dei censiti duplicato");
         db.exec("BEGIN IMMEDIATE");
         try {
-          if (value.rigenera === true) db.exec("DELETE FROM vote_codes");
+          if (value?.rigenera === true) db.exec("DELETE FROM vote_codes; DELETE FROM vote_roster");
           const rows = db.prepare(`SELECT p.id, p.name, p.census_code AS code, c.data FROM member_censuses c
             JOIN people p ON p.id=c.person_id WHERE c.year=? AND p.census_code!=? ORDER BY p.name`)
-            .all(year, require("./people.cjs").ADMIN_CODE);
+            .all(year, require("./people.cjs").ADMIN_CODE)
+            .filter(row => selected.has(row.code));
+          if (rows.length !== selected.size) fail(409, "L'elenco dei censiti è cambiato: ricarica Setup Censiti");
           const result = rows.map(row => {
             let personal = db.prepare("SELECT code FROM vote_codes WHERE person_id=?").get(row.id)?.code;
             if (!personal) {
               personal = freshCode();
               db.prepare("INSERT INTO vote_codes(person_id,code) VALUES(?,?)").run(row.id, personal);
             }
+            db.prepare("INSERT OR IGNORE INTO vote_roster(person_id) VALUES(?)").run(row.id);
             return { nome: row.name, codice: row.code, personale: personal, branca: JSON.parse(row.data).branch || "" };
           });
           db.exec("COMMIT");
@@ -136,6 +148,20 @@ function createVotes(db, people) {
           db.exec("ROLLBACK");
           throw error;
         }
+        return true;
+      }
+      if (route === "/api/vote/session/reset" && method === "POST") {
+        staff(sessionId, request);
+        await body(request, 1024);
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          db.exec("DELETE FROM vote_cast; DELETE FROM vote_tally; DELETE FROM vote_polls");
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+        send(response, 200, { ok: true });
         return true;
       }
       if (route === "/api/vote/open" && method === "POST") {

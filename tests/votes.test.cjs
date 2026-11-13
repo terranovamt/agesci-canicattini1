@@ -65,14 +65,32 @@ test("secret votes: codes, one vote per member, tallies without links, results a
   await app.import(csv([{ "CODICE SOCIO": "100001", NOME: "Anna", COGNOME: "Uno" }, { "CODICE SOCIO": "100002", NOME: "Bruno", COGNOME: "Due" }, { "CODICE SOCIO": "100003", NOME: "Carla", COGNOME: "Tre" }]));
   const poll = { slide: "votazione-test", domanda: "Approvi?", modalita: "scelta", opzioni: ["Favorevole", "Contrario", "Astenuto"], live: true };
   assert.equal((await app.request("vote/open", "POST", poll)).status, 409);
-  const codes = await (await app.request("vote/codes", "POST", { anno: "2026" })).json();
-  assert.equal(codes.righe.length, 3);
-  assert.ok(codes.righe.every(r => /^\d{6}$/.test(r.personale)));
-  assert.equal(new Set(codes.righe.map(r => r.personale)).size, 3);
-  const again = await (await app.request("vote/codes", "POST", { anno: "2026" })).json();
-  assert.deepEqual(again.righe.map(r => r.personale), codes.righe.map(r => r.personale));
-  const [a, b] = codes.righe.map(r => r.personale);
-  assert.equal((await app.request("vote/codes", "POST", { anno: "2026" }, "https://foreign.invalid")).status, 403);
+  const firstBatch = await (await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["100001", "100002"],
+  })).json();
+  assert.equal(firstBatch.righe.length, 2);
+  assert.equal(firstBatch.totale, 2);
+  assert.ok(firstBatch.righe.every(r => /^\d{6}$/.test(r.personale)));
+  assert.equal(new Set(firstBatch.righe.map(r => r.personale)).size, 2);
+  const secondBatch = await (await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["100003"],
+  })).json();
+  assert.equal(secondBatch.righe.length, 1);
+  assert.equal(secondBatch.totale, 3);
+  assert.equal((await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["999999"],
+  })).status, 409);
+  const again = await (await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["100001", "100002", "100003"],
+  })).json();
+  const allCodes = [...firstBatch.righe, ...secondBatch.righe];
+  assert.deepEqual(again.righe.map(r => r.personale), allCodes.map(r => r.personale));
+  assert.equal(again.totale, 3);
+  const byMember = new Map(again.righe.map(row => [row.codice, row.personale]));
+  const a = byMember.get("100001"), b = byMember.get("100002");
+  assert.equal((await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["100001", "100002", "100003"],
+  }, "https://foreign.invalid")).status, 403);
 
   assert.equal((await app.request("vote/open", "POST", poll)).status, 200);
   const state = await (await app.request("vote/state")).json();
@@ -89,7 +107,7 @@ test("secret votes: codes, one vote per member, tallies without links, results a
   assert.equal((await (await app.request("vote/identify", "POST", { code: a })).json()).haVotato, true);
 
   await app.request("vote/close", "POST", {});
-  assert.equal((await app.request("vote/cast", "POST", { code: codes.righe[2].personale, poll: state.poll.id, scelta: 2 })).status, 409);
+  assert.equal((await app.request("vote/cast", "POST", { code: byMember.get("100003"), poll: state.poll.id, scelta: 2 })).status, 409);
   const closed = (await (await app.request("vote/state")).json()).poll;
   assert.equal(closed.aperta, false); assert.deepEqual(closed.conteggi, [2, 0, 0]);
   const results = (await (await app.request("vote/results?slide=votazione-test")).json()).poll;
@@ -109,4 +127,20 @@ test("secret votes: codes, one vote per member, tallies without links, results a
   assert.deepEqual((await (await app.request("vote/results?slide=nom")).json()).poll.conteggi, [0, 1]);
   const report = (await (await app.request("vote/report")).json()).polls;
   assert.equal(report.length, 2); assert.deepEqual(report[0].conteggi, [2, 0, 0]); assert.deepEqual(report[1].conteggi, [0, 1]);
+
+  assert.equal((await app.request("vote/session/reset", "POST", {})).status, 200);
+  assert.equal((await (await app.request("vote/state")).json()).poll, null);
+  assert.deepEqual((await (await app.request("vote/report")).json()).polls, []);
+  assert.equal((await app.request("vote/open", "POST", poll)).status, 200);
+  const restarted = (await (await app.request("vote/state")).json()).poll;
+  assert.equal(restarted.totale, 3);
+  assert.equal(restarted.ricevuti, 0);
+  assert.deepEqual(restarted.conteggi, [0, 0, 0]);
+  assert.equal((await app.request("vote/cast", "POST", { code: a, poll: restarted.id, scelta: 0 })).status, 200);
+  const regenerated = await (await app.request("vote/codes", "POST", {
+    anno: "2026", codici: ["100001"], rigenera: true,
+  })).json();
+  assert.equal(regenerated.righe.length, 1);
+  assert.equal(regenerated.totale, 1);
+  assert.equal((await app.request("vote/identify", "POST", { code: b })).status, 401);
 });

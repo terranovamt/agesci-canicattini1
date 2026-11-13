@@ -265,9 +265,9 @@ test("voting-code PDFs follow the visible census filters without narrowing globa
 
   const voteRequests = t.requests.filter((request) => request.url === "/api/vote/codes");
   assert.deepEqual(voteRequests.map((request) => JSON.parse(request.opts.body)), [
-    { anno: "2025" },
-    { anno: "2025" },
-    { anno: "2025", rigenera: true },
+    { anno: "2025", codici: ["A1", "S1"] },
+    { anno: "2025", codici: ["S1"] },
+    { anno: "2025", codici: ["S1"], rigenera: true },
   ]);
   search.value = "nessun risultato";
   search.oninput();
@@ -287,6 +287,10 @@ test("voting-code PDFs follow the visible census filters without narrowing globa
   assert.ok(find((node) => node.tagName === "TD" && node.textContent === "CO.CA."));
   await pdf().onclick();
   assert.deepEqual(pdfCalls[3].map((row) => row.codice), ["C1"]);
+  assert.deepEqual(JSON.parse(t.requests.filter((request) => request.url === "/api/vote/codes").at(-1).opts.body), {
+    anno: "2025",
+    codici: ["C1"],
+  });
 });
 
 test("NAS setup publishes through the local content API", async () => {
