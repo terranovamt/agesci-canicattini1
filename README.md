@@ -87,6 +87,7 @@ destinazione. Raggruppamento per anno di nascita e progressioni sono manuali.
 | [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | backend NAS, DDNS Sky WiFi, auto-deployment, calendari DSM e backup          |
 | [docs/sviluppo-ia.md](docs/sviluppo-ia.md)                         | architettura NAS, comandi verificati, invarianti e checklist per lo sviluppo con IA |
 | [docs/soci.md](docs/soci.md)                                     | importazione AGESCI, schede, filtri, campi educativi, macro e documenti |
+| [docs/canzoniere.md](docs/canzoniere.md)                           | modello SQLite, API pubbliche e admin, ChordPro e scorrimento |
 
 ## Indirizzi
 

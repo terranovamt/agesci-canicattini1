@@ -18,6 +18,10 @@ test("local demo provides fictional data, working logins, branch scope and edita
     assert.equal((await fetch(app.origin + "/agesci-canicattini1/area-riservata/")).status, 200);
     assert.equal((await fetch(app.origin + "/agesci-canicattini1/api/activities")).status, 401);
     await request("auth/login", "POST", { code: "23816938", password: app.password });
+    const songs = await request("canzoniere/songs");
+    assert.equal(songs.total, 2);
+    assert.deepEqual(songs.songs.map(song => song.slug), ["il-ponte-di-carta-demo", "la-lanterna-demo"]);
+    assert.ok((await request("canzoniere/songs/la-lanterna-demo")).text.includes("[G]"));
     const data = await request("activities");
     assert.equal(data.members.length, 82);
     assert.ok(data.events.length >= 150, "a full year of meetings and outings across three branches");

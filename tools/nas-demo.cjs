@@ -64,6 +64,44 @@ async function startNasDemo() {
   });
   try {
     await request("auth/login", "POST", { code: "23816938", password: app.password });
+    await request("canzoniere/albums", "POST", {
+      slug: "sentieri-inventati",
+      title: "Sentieri inventati",
+      author: "Esempi creati per la demo",
+      year: new Date().getFullYear(),
+    });
+    await request("canzoniere/songs", "POST", {
+      slug: "la-lanterna-demo",
+      title: "La lanterna demo",
+      author: "Esempio inventato",
+      albumSlug: "sentieri-inventati",
+      text: "[G]La lanterna [D]segna il sentiero\n[Em]passo dopo [C]passo",
+      key: "G",
+      bpm: 96,
+      meter: "4/4",
+      capo: 0,
+      barsPerLine: 2,
+      notes: "",
+      source: "Esempio inventato per dati locali fittizi",
+      rights: "da verificare",
+      tagSlugs: ["uscita", "eg"],
+    });
+    await request("canzoniere/songs", "POST", {
+      slug: "il-ponte-di-carta-demo",
+      title: "Il ponte di carta demo",
+      author: "Esempio inventato",
+      albumSlug: "sentieri-inventati",
+      text: "[Am]Costruiamo un [F]ponte di carta\n[C]tra la riva [G]e la citta",
+      key: "Am",
+      bpm: null,
+      meter: "3/4",
+      capo: 0,
+      barsPerLine: 2,
+      notes: "",
+      source: "Esempio inventato per dati locali fittizi",
+      rights: "da verificare",
+      tagSlugs: ["giochi", "lc"],
+    });
     const { people } = await request("people");
     for (const [index, branch] of ["L/C", "E/G", "R/S"].entries()) {
       const code = String(7654321 + index);
@@ -264,14 +302,21 @@ async function startNasDemo() {
     }
     // Libro soci simulato per provare le votazioni: censiti 2026 con codici di voto
     const census = "\uFEFFsep=,\r\nANNO SCOUT,CODICE SOCIO,NOME,COGNOME,BRANCA,ORDINALE,DATA NASCITA,EMAIL,CELLULARE,RESP.GENITORIALE DATI,STATUS SOCIO,CODICE STATUS SOCIO,GRUPPO,CODICE AREA\r\n" +
-      Array.from({ length: 40 }, (_, n) => {
+      (await request("members")).members.filter(member => member.kind === "ragazzo").slice(0, 40).map((member, n) => {
         const cell = value => '="' + value + '"';
-        return [2026, 500001 + n, names[n], surnames[n % surnames.length], ["Branca L/C", "Branca E/G", "Branca R/S"][n % 3],
-          "R2053", "1/1/2010", `socio${n + 1}@example.invalid`, "000 000", "", "Attivo", "A", "Demo", "x"].map(cell).join(",") + ",";
+        const [year, month, day] = (member.profile.birthDate || "2010-01-01").split("-");
+        const branch = { "L/C": "Branca L/C", "E/G": "Branca E/G", "R/S": "Branca R/S" }[member.branch];
+        return [2026, member.code, member.profile.givenName, member.profile.surname, branch,
+          "R2053", `${Number(day)}/${Number(month)}/${year}`, `socio${n + 1}@example.test`, "000 000", "",
+          "Attivo", "A", "Demo", "x"].map(cell).join(",") + ",";
       }).join("\r\n");
     const preview = await request("members/import", "POST", { csv: census });
     await request("members/import", "POST", { csv: census, confirm: true, version: preview.version });
-    await request("vote/codes", "POST", { anno: "2026" });
+    await request("vote/codes", "POST", {
+      anno: "2026",
+      codici: (await request("members")).members.filter(member => member.kind === "ragazzo")
+        .slice(0, 40).map(member => member.code),
+    });
     for (const code of ["7654321", "7654322", "7654323"]) {
       await request("auth/login", "POST", { code, password: app.password, confirmation: app.password, temporary: "Canicattini1" });
     }
@@ -288,8 +333,8 @@ if (require.main === module) {
     console.log("DEMO locale: " + app.origin + "/agesci-canicattini1/area-riservata/");
     console.log("Codici: 23816938 amministratore | 7654321 L/C | 7654322 E/G | 7654323 R/S");
     console.log("Password per tutti gli account demo: " + app.password);
-    console.log("Libro soci simulato: 40 censiti 2026 (codici 500001-500040); i codici di voto si scaricano dai Censiti.");
-    console.log("Un anno di vita scout, 82 soci con identita inventate, attivita, quote, torneo e percorsi.");
+    console.log("Libro soci simulato: 40 censimenti 2026 su soci demo esistenti; i codici di voto si scaricano dai Censiti.");
+    console.log("Un anno di vita scout, 82 soci con identita inventate, attivita, quote, torneo, percorsi e due brani demo inventati.");
     console.log("Dati inventati in SQLite temporaneo. Alla chiusura vengono eliminati.");
     console.log("Nessuna connessione al NAS. Premi Ctrl+C per terminare.");
     let stopping = false;

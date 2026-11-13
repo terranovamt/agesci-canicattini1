@@ -9,6 +9,7 @@ const { createMonitor } = require("./monitor.cjs");
 const { createPeople, validatePassword } = require("./people.cjs");
 const { createMembers } = require("./members.cjs");
 const { createActivities } = require("./activities.cjs");
+const { createCanzoniere } = require("./canzoniere.cjs");
 const { createVotes } = require("./votes.cjs");
 const documents = require("../assets/js/documents-model.js");
 
@@ -108,6 +109,7 @@ async function createNasServer({
   const people = await createPeople(database, password, censusCodes);
   const members = createMembers(database, people);
   const activities = createActivities(database, people);
+  const canzoniere = createCanzoniere(database, people);
   const votes = createVotes(database, people);
   const streams = new Map();
   const presence = new Map();
@@ -221,6 +223,7 @@ async function createNasServer({
         return send(response, authorized(request) ? 204 : 401, "", "text/plain; charset=utf-8");
       if (await people.handle(url.pathname, request, response,
         { body, send, cookie, sessionId, rateLimit, clearLimit: (key) => attempts.delete(key), ip, seconds: SESSION_SECONDS })) return;
+      if (await canzoniere.handle(url.pathname, request, response, { body, send, sessionId, url })) return;
       if (await members.handle(url.pathname, request, response, { body, send, sessionId })) return;
       if (await activities.handle(url.pathname, request, response, { body, send, sessionId })) return;
       if (await votes.handle(url.pathname, request, response, { body, send, sessionId, ip })) return;

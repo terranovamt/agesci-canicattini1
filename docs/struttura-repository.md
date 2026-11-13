@@ -40,7 +40,7 @@ pubblicazione GitHub Pages restano separati.
 │       └── 2026-2028.html          Testo dell'edizione, con URL stabile nel tempo
 ├── assets/                        Risorse condivise dal sito
 │   ├── css/                       Tema, home, PEG e gestione documenti
-│   ├── js/                        Logica delle pagine, calendari, documenti e soci
+│   ├── js/                        Logica delle pagine, calendari, documenti, soci e Canzoniere
 │   │   └── shared/                Accesso e stato assemblea usati da più sezioni
 │   ├── img/                       Loghi, icone, QR, texture e foto di gruppo
 │   ├── peg/                       Fotografie del progetto educativo
@@ -54,7 +54,9 @@ pubblicazione GitHub Pages restano separati.
 │   ├── index.json                 Metadati dei documenti
 │   └── pdf/                       PDF pubblicati
 ├── server/                        Backend Node 24, SQLite e immagine Docker
-│   └── members.cjs                Anagrafe e censimenti nel database esistente
+│   ├── nas.cjs                    Gateway HTTP, sessioni e dispatch delle API
+│   ├── members.cjs                Anagrafe e censimenti nel database esistente
+│   └── canzoniere.cjs             Modello SQLite e API pubbliche/admin del Canzoniere
 ├── deploy/
 │   └── synology/                  Container, Nginx e aggiornamento dal branch NAS
 ├── docs/                          Documentazione tecnica e operativa, audit

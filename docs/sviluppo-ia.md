@@ -23,8 +23,10 @@ procedura.
   giornaliero, mai chi/cosa); le azioni tracciate sono nella mappa `tracked` di
   `assets/js/nas-telemetry.js` e si leggono in Statistiche. Le letture pubbliche di
   configurazione, dati delle slide, calendari e documenti passano dal backend
-  quando richiesto da `deploy/synology/nginx.conf`; il resto delle pagine è
-  servito staticamente.
+  quando richiesto da   `deploy/synology/nginx.conf`; il resto delle pagine è
+  servito staticamente. `server/canzoniere.cjs` gestisce il modello SQLite,
+  le letture pubbliche e le scritture riservate all'admin, condividendo
+  `assets/js/canzoniere-model.js` con i client.
 - **Sviluppo locale:** `tools/nas-dev.cjs` avvia il gateway e il backend con
   database di test temporaneo; `tools/nas-demo.cjs` aggiunge dati fittizi e
   account demo. `tools/build-site.cjs`
