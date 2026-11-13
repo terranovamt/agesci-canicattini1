@@ -114,8 +114,16 @@ test("public Canzoniere has an index and a slug-based song detail page", () => {
     assert.match(html, /<script src="[^"]*canzoniere(?:-song)?\.js" defer><\/script>/);
   }
   assert.match(read("canzoniere/index.html"), /id="song-list"[^>]*aria-busy="true"/);
-  assert.match(read("canzoniere/canzone.html"), /id="song-detail"[^>]*aria-busy="true"/);
+  const songPage = read("canzoniere/canzone.html");
+  assert.match(songPage, /id="song-detail"[^>]*aria-busy="true"/);
+  for (const id of ["auto-scroll", "scroll-correction", "playlist-controls", "playlist-previous",
+    "playlist-next", "print-chords", "print-song", "playlist-print", "add-song-to-playlist"])
+    assert.match(songPage, new RegExp(`id="${id}"`));
+  assert.match(read("canzoniere/index.html"), /id="personal-playlist-items"/);
+  assert.match(read("canzoniere/index.html"), /id="quick-presets"/);
+  assert.match(read("canzoniere/index.html"), /id="published-playlists"/);
   assert.match(read("assets/css/canzoniere.css"), /prefers-reduced-motion:\s*reduce/);
+  assert.match(read("assets/css/canzoniere.css"), /@media print/);
   assert.doesNotMatch(read("canzoniere/index.html") + read("canzoniere/canzone.html"), /<script[^>]+(?:src|href)="https?:/);
 });
 

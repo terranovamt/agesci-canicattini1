@@ -23,6 +23,8 @@ test("local demo provides fictional data, working logins, branch scope and edita
     assert.equal(songs.total, 2);
     assert.deepEqual(songs.songs.map(song => song.slug), ["il-ponte-di-carta-demo", "la-lanterna-demo"]);
     assert.ok((await request("canzoniere/songs/la-lanterna-demo")).text.includes("[G]"));
+    const playlists = await request("canzoniere/playlists");
+    assert.deepEqual(playlists.map(playlist => playlist.slug), ["passeggiata-demo"]);
     const data = await request("activities");
     assert.equal(data.members.length, 82);
     assert.ok(data.events.length >= 150, "a full year of meetings and outings across three branches");

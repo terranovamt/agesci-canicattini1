@@ -95,13 +95,24 @@ Wake Lock quando il browser lo supporta. Gli input di ricerca e i risultati
 sono creati con API DOM e `textContent`; i caricamenti segnalano `aria-busy`,
 e gli skeleton rispettano `prefers-reduced-motion`.
 
+Lo scorrimento automatico calcola i secondi per riga dal BPM e da
+`barsPerLine`, con correzione 50–200%, countdown di tre secondi e velocita'
+predefinita senza BPM. Tocco o scorrimento manuale mettono in pausa. La
+scaletta personale conserva in `localStorage` soltanto gli slug, con errori
+di lettura/scrittura comunicati (chiave `agesci-canicattini1.canzoniere.playlist.v1`);
+il link `canzone.html?slugs=...` contiene solo gli slug, senza titoli o testi.
+Le scalette pubblicate si aprono con `canzone.html?playlist=...`. La scheda
+supporta la navigazione sequenziale e l'avanzamento automatico tra le canzoni.
+La home mostra i preset rapidi e le scalette pubblicate; la stampa offre
+l'opzione di includere gli accordi.
+
 ## Verifica locale
 
 ```sh
-node --test tests/canzoniere.test.cjs tests/canzoniere-pages.test.cjs
+node --test tests/canzoniere.test.cjs tests/canzoniere-pages.test.cjs tests/canzoniere-playlist-store.test.cjs tests/canzoniere-scroll.test.cjs
 node tools/nas-demo.cjs
 ```
 
-La demo usa un SQLite temporaneo e aggiunge solo due esempi inventati; non
-connette il NAS e rimuove il database alla chiusura. Il caricamento automatico,
-le scalette lato browser e l'area admin vengono completati nelle fasi successive.
+La demo usa un SQLite temporaneo, due esempi inventati e una scaletta pubblicata;
+non connette il NAS e rimuove il database alla chiusura. L'area admin resta da
+completare nella fase successiva.

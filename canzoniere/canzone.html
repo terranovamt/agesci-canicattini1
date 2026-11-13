@@ -26,6 +26,21 @@
     </header>
     <main id="contenuto">
       <p class="song-back-link"><a class="text-link" href="./">← Torna al Canzoniere</a></p>
+      <section id="playlist-controls" class="playlist-player-controls" aria-labelledby="playlist-title" hidden>
+        <div>
+          <p class="eyebrow">Modalità sequenziale</p>
+          <h2 id="playlist-title">Scaletta</h2>
+          <p id="playlist-position" role="status" aria-live="polite"></p>
+        </div>
+        <div class="playlist-actions">
+          <button id="playlist-previous" class="button button-secondary" type="button" disabled>
+            Canzone precedente
+          </button>
+          <button id="playlist-next" class="button button-secondary" type="button">
+            Canzone successiva
+          </button>
+        </div>
+      </section>
       <section id="song-detail" class="song-detail-card" aria-labelledby="song-title" aria-busy="true">
         <div id="song-loading" class="song-loading" aria-hidden="true">
           <div class="loading-skeleton song-detail-skeleton"></div>
@@ -67,14 +82,34 @@
             <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
               Schermo sempre acceso
             </button>
+            <button id="add-song-to-playlist" class="button button-secondary" type="button">
+              Aggiungi alla scaletta
+            </button>
+            <label class="song-toggle">
+              <input id="print-chords" type="checkbox" checked />
+              <span>Stampa accordi</span>
+            </label>
+            <button id="print-song" class="button button-secondary" type="button">Stampa</button>
             <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
           </fieldset>
-          <div id="song-score" class="song-score" role="group" aria-label="Testo e accordi"></div>
+          <div class="scroll-controls" aria-label="Scorrimento automatico">
+            <button id="auto-scroll" class="button button-primary" type="button" aria-pressed="false" disabled>
+              Avvia scorrimento
+            </button>
+            <label class="scroll-correction" for="scroll-correction">
+              Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
+              <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
+            </label>
+            <p id="scroll-speed" class="scroll-speed"></p>
+            <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
+          </div>
+          <div id="song-score" class="song-score" role="group" aria-label="Testo e accordi" tabindex="0"></div>
           <section id="song-extra" class="song-extra" aria-label="Informazioni aggiuntive" hidden>
             <p id="song-notes"></p>
             <p id="song-source"></p>
           </section>
         </div>
+        <div id="playlist-print" class="playlist-print" hidden aria-hidden="true"></div>
         <p id="song-status" class="song-status" role="status" aria-live="polite">Caricamento della canzone…</p>
         <button id="song-retry" class="button button-secondary" type="button" hidden>Riprova</button>
       </section>
@@ -86,6 +121,8 @@
     <script src="../assets/js/site-menu.js" defer></script>
     <script src="../assets/js/nas-telemetry.js" defer></script>
     <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere-playlist-store.js" defer></script>
+    <script src="../assets/js/canzoniere-scroll.js" defer></script>
     <script src="../assets/js/canzoniere-song.js" defer></script>
   </body>
 </html>

@@ -92,6 +92,74 @@
           </button>
           <button id="songs-retry" class="button button-secondary" type="button" hidden>Riprova</button>
         </div>
+        <section class="playlist-panel" aria-labelledby="personal-playlist-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Sul tuo dispositivo</p>
+              <h2 id="personal-playlist-title">La tua scaletta</h2>
+            </div>
+            <p class="section-description">Salvata solo in questo browser; il link condiviso contiene gli slug delle canzoni.</p>
+          </div>
+          <p id="personal-playlist-status" class="song-status" role="status" aria-live="polite">
+            Aggiungi una canzone per creare la tua scaletta.
+          </p>
+          <ol id="personal-playlist-items" class="playlist-items" aria-busy="false"></ol>
+          <div class="playlist-actions">
+            <button id="share-playlist" class="button button-secondary" type="button" disabled>
+              Prepara link da condividere
+            </button>
+            <a id="open-playlist" class="button button-primary" href="canzone.html" hidden>
+              Una canzone dopo l’altra
+            </a>
+            <button id="clear-playlist" class="button button-secondary" type="button" disabled>
+              Svuota scaletta
+            </button>
+          </div>
+          <div id="share-playlist-controls" class="share-playlist-controls" hidden>
+            <label for="share-playlist-link">Link con i soli slug delle canzoni</label>
+            <div>
+              <input id="share-playlist-link" type="url" readonly />
+              <button id="copy-playlist-link" class="button button-secondary" type="button">Copia link</button>
+            </div>
+          </div>
+        </section>
+        <section class="playlist-generator" aria-labelledby="playlist-generator-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Componi insieme</p>
+              <h2 id="playlist-generator-title">Genera una scaletta</h2>
+            </div>
+            <p class="section-description">Scegli un momento o un preset, poi rigenera finché la selezione ti convince.</p>
+          </div>
+          <div class="generator-controls">
+            <div>
+              <label for="playlist-moment">Momento</label>
+              <select id="playlist-moment" disabled>
+                <option value="">Scegli un momento</option>
+              </select>
+            </div>
+            <button id="generate-moment" class="button button-primary" type="button" disabled>Genera</button>
+            <button id="regenerate-playlist" class="button button-secondary" type="button" hidden>Rigenera</button>
+          </div>
+          <div id="quick-presets" class="quick-presets" role="group" aria-label="Preset rapidi"></div>
+          <p id="generated-playlist-status" class="song-status" role="status" aria-live="polite"></p>
+          <ol id="generated-playlist-items" class="playlist-items"></ol>
+          <button id="use-generated-playlist" class="button button-secondary" type="button" hidden>
+            Aggiungi alla tua scaletta
+          </button>
+        </section>
+        <section class="published-playlist-section" aria-labelledby="published-playlist-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Scelte del gruppo</p>
+              <h2 id="published-playlist-title">Scalette pubblicate</h2>
+            </div>
+          </div>
+          <p id="published-playlist-status" class="song-status" role="status" aria-live="polite">
+            Caricamento delle scalette…
+          </p>
+          <ul id="published-playlists" class="published-playlists" aria-busy="true" aria-label="Scalette pubblicate"></ul>
+        </section>
         <noscript>
           <p>Attiva JavaScript per consultare le canzoni pubblicate.</p>
         </noscript>
@@ -101,6 +169,7 @@
     <script src="../assets/js/site-menu.js" defer></script>
     <script src="../assets/js/nas-telemetry.js" defer></script>
     <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere-playlist-store.js" defer></script>
     <script src="../assets/js/canzoniere.js" defer></script>
   </body>
 </html>

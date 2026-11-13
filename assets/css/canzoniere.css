@@ -145,6 +145,16 @@ body.canzoniere-page .canzoniere-section h1 {
   padding: 8px 14px;
 }
 
+.song-card-add {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 8px 14px;
+}
+
+.playlist-items[aria-busy="true"] {
+  opacity: .65;
+}
+
 .song-list-actions {
   display: flex;
   flex-wrap: wrap;
@@ -315,8 +325,9 @@ body.canzoniere-page .canzoniere-section h1 {
 
 .song-score {
   max-width: 100%;
+  max-height: min(65vh, 720px);
   padding: 16px;
-  overflow-x: auto;
+  overflow: auto;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg) 72%, var(--w));
   color: var(--vd);
@@ -382,6 +393,245 @@ body.canzoniere-page .canzoniere-section h1 {
   margin-top: 10px;
 }
 
+.playlist-panel,
+.playlist-generator,
+.published-playlist-section {
+  padding: clamp(16px, 3vw, 24px);
+  margin: 26px 0 0;
+  border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w));
+  border-radius: var(--radius-lg);
+  background: var(--w);
+  box-shadow: var(--shadow-card);
+}
+
+.playlist-panel .section-heading,
+.playlist-generator .section-heading,
+.published-playlist-section .section-heading {
+  margin-bottom: 12px;
+}
+
+.playlist-panel .section-heading h2,
+.playlist-generator .section-heading h2,
+.published-playlist-section .section-heading h2 {
+  margin: 0;
+  color: var(--vd);
+  font: 700 clamp(24px, 3vw, 32px)/1.15 Georgia, "Times New Roman", serif;
+}
+
+.playlist-items,
+.published-playlists {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+
+.playlist-item,
+.published-playlists li {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--vl) 38%, var(--w));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 60%, var(--w));
+}
+
+.playlist-item > a,
+.published-playlists li > a,
+.playlist-item > span:not(.playlist-item-position) {
+  min-width: 0;
+  flex: 1;
+  color: var(--v);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.playlist-item-position {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--v) 9%, var(--w));
+  color: var(--v);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.playlist-item .playlist-remove {
+  min-height: 40px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.playlist-actions,
+.generator-controls,
+.quick-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-playlist-controls {
+  display: grid;
+  gap: 6px;
+  max-width: 820px;
+  margin-top: 12px;
+}
+
+.share-playlist-controls > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.share-playlist-controls label,
+.generator-controls label,
+.scroll-correction {
+  color: var(--v2);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.share-playlist-controls input {
+  min-width: 0;
+  min-height: 44px;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--vl);
+  border-radius: var(--radius-sm);
+  background: var(--w);
+  color: var(--vd);
+  font: 13px/1.4 ui-monospace, monospace;
+}
+
+.generator-controls {
+  margin-bottom: 12px;
+}
+
+.generator-controls > div {
+  display: grid;
+  min-width: min(100%, 220px);
+  gap: 4px;
+}
+
+.generator-controls select {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--vl);
+  border-radius: var(--radius-sm);
+  background: var(--w);
+  color: var(--vd);
+  font: inherit;
+}
+
+.quick-presets {
+  margin: 12px 0;
+}
+
+.quick-presets .button {
+  min-height: 44px;
+}
+
+.playlist-player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 0 0 12px;
+  border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w));
+  border-radius: var(--radius-lg);
+  background: var(--w);
+  box-shadow: var(--shadow-card);
+}
+
+.playlist-player-controls h2 {
+  margin: 0;
+  color: var(--vd);
+  font: 700 clamp(20px, 3vw, 28px)/1.15 Georgia, "Times New Roman", serif;
+}
+
+.playlist-player-controls .eyebrow,
+.playlist-player-controls p {
+  margin: 0 0 4px;
+}
+
+.playlist-player-controls #playlist-position {
+  color: var(--v2);
+  font-size: 13px;
+}
+
+.scroll-controls {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px;
+  margin: 0 0 16px;
+  border: 1px solid color-mix(in srgb, var(--vl) 48%, var(--w));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg) 70%, var(--w));
+}
+
+.scroll-controls > .button {
+  min-height: 44px;
+}
+
+.scroll-correction {
+  display: grid;
+  gap: 4px;
+}
+
+.scroll-correction output {
+  color: var(--v);
+}
+
+.scroll-correction input {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--v);
+}
+
+.scroll-speed,
+.scroll-controls .song-controls-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--v2);
+  font-size: 13px;
+}
+
+.scroll-controls .song-controls-status {
+  grid-column: 1 / -1;
+}
+
+.playlist-print {
+  display: none;
+}
+
+.playlist-print-song {
+  break-inside: avoid;
+  margin: 0 0 24px;
+}
+
+.playlist-print-song h2 {
+  margin: 0 0 3px;
+  color: var(--vd);
+  font: 700 24px/1.2 Georgia, "Times New Roman", serif;
+}
+
+.playlist-print-song p {
+  margin: 0 0 8px;
+  color: var(--v2);
+}
+
 body.canzoniere-dark {
   --vd: #f5effa;
   --v: #c4a8f4;
@@ -419,6 +669,19 @@ body.canzoniere-dark .song-filters :is(input, select) {
 body.canzoniere-dark .song-score {
   background: #1c1722;
   color: var(--vd);
+}
+
+body.canzoniere-dark .playlist-panel,
+body.canzoniere-dark .playlist-generator,
+body.canzoniere-dark .published-playlist-section,
+body.canzoniere-dark .playlist-player-controls {
+  border-color: #51445d;
+}
+
+body.canzoniere-dark .playlist-item,
+body.canzoniere-dark .published-playlists li {
+  border-color: #51445d;
+  background: #211a2a;
 }
 
 @media (max-width: 920px) {
@@ -472,9 +735,29 @@ body.canzoniere-dark .song-score {
     width: 100%;
   }
 
+  .scroll-controls {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .scroll-controls > .button,
+  .playlist-actions .button {
+    width: 100%;
+  }
+
   .song-score {
     padding: 12px 8px;
     font-size: var(--song-font-size, 18px);
+  }
+
+  .playlist-player-controls {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  .playlist-player-controls .playlist-actions {
+    width: 100%;
   }
 }
 
@@ -484,5 +767,75 @@ body.canzoniere-dark .song-score {
   .song-detail-skeleton::before,
   .song-detail-skeleton::after {
     animation: none;
+  }
+}
+
+@page {
+  margin: 16mm;
+}
+
+@media print {
+  body.canzoniere-page {
+    display: block;
+    background: #fff;
+    color: #000;
+  }
+
+  body.canzoniere-page :is(.site-header, .site-footer, .skip-link, .song-back-link,
+    .playlist-panel, .playlist-generator, .published-playlist-section, .playlist-player-controls,
+    .song-controls, .scroll-controls, #song-status, #song-retry) {
+    display: none !important;
+  }
+
+  body.canzoniere-page main#contenuto {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  body.canzoniere-page .song-detail-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  body.canzoniere-page .song-score {
+    max-height: none;
+    padding: 0;
+    overflow: visible;
+    background: #fff;
+    color: #000;
+    font-size: 18px !important;
+  }
+
+  body.canzoniere-page .song-line {
+    break-inside: avoid;
+  }
+
+  body.canzoniere-page .song-detail-heading h1 {
+    font-size: 30px;
+  }
+
+  body.canzoniere-page #playlist-print[hidden] {
+    display: none;
+  }
+
+  body.canzoniere-page.print-playlist #song-content {
+    display: none !important;
+  }
+
+  body.canzoniere-page.print-playlist #playlist-print {
+    display: block !important;
+  }
+
+  body.canzoniere-page:not(.print-without-chords) .song-score .song-line.has-chords .chord-line {
+    display: block !important;
+  }
+
+  body.canzoniere-page.print-without-chords .chord-line {
+    display: none !important;
   }
 }

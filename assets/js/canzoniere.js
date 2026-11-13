@@ -11,9 +11,34 @@
   const more = document.getElementById("songs-more");
   const retry = document.getElementById("songs-retry");
   const clear = document.getElementById("clear-song-filters");
+  const personalStatus = document.getElementById("personal-playlist-status");
+  const personalItems = document.getElementById("personal-playlist-items");
+  const shareButton = document.getElementById("share-playlist");
+  const shareControls = document.getElementById("share-playlist-controls");
+  const shareInput = document.getElementById("share-playlist-link");
+  const copyShareButton = document.getElementById("copy-playlist-link");
+  const openPlaylist = document.getElementById("open-playlist");
+  const clearPlaylist = document.getElementById("clear-playlist");
+  const momentFilter = document.getElementById("playlist-moment");
+  const generateMomentButton = document.getElementById("generate-moment");
+  const regenerateButton = document.getElementById("regenerate-playlist");
+  const quickPresets = document.getElementById("quick-presets");
+  const generatedStatus = document.getElementById("generated-playlist-status");
+  const generatedItems = document.getElementById("generated-playlist-items");
+  const useGeneratedButton = document.getElementById("use-generated-playlist");
+  const publishedStatus = document.getElementById("published-playlist-status");
+  const publishedList = document.getElementById("published-playlists");
+  const playlistStore = window.CANZONIERE_PLAYLIST_STORE;
   const apiRoot = new URL("../api/canzoniere/", window.location.href);
   const pageSize = 24;
+  const storedPlaylist = playlistStore.read();
   let catalog = null;
+  let personalSlugs = storedPlaylist.slugs;
+  let storageError = storedPlaylist.error;
+  let generatedSlugs = [];
+  let lastGenerator = null;
+  let personalRequest = 0;
+  let personalMessage = "";
   let offset = 0;
   let requestId = 0;
   let activeController = null;
@@ -57,7 +82,8 @@
   }
 
   function populateFilters(data) {
-    if (!Array.isArray(data.tags) || !Array.isArray(data.albums))
+    if (!Array.isArray(data.tags) || !Array.isArray(data.albums) ||
+        !Array.isArray(data.presets) || !Array.isArray(data.playlists))
       throw new Error("Catalogo del Canzoniere non valido.");
     catalog = data;
     const selected = {
@@ -84,6 +110,21 @@
     [tagFilter, branchFilter, albumFilter].forEach((select) => {
       select.disabled = false;
     });
+    momentFilter.replaceChildren();
+    addOption(momentFilter, "Scegli un momento", "");
+    data.tags
+      .filter((tag) => tag.category === "momento")
+      .sort((a, b) => a.name.localeCompare(b.name, "it"))
+      .forEach((tag) => addOption(momentFilter, tag.name, tag.slug));
+    momentFilter.disabled = momentFilter.options.length < 2;
+    generateMomentButton.disabled = momentFilter.disabled;
+    renderQuickPresets(data.presets);
+    renderPublishedPlaylists(data.playlists);
+    renderPersonalPlaylist();
+    if (storedPlaylist.error) {
+      personalStatus.textContent = "Non è stato possibile leggere la scaletta salvata in questo browser.";
+      console.error("Lettura scaletta locale non riuscita", storedPlaylist.error);
+    }
   }
 
   function updateLocation() {
@@ -148,7 +189,196 @@
     open.href = link.href;
     open.textContent = "Apri la canzone";
     article.append(open);
+
+    const add = document.createElement("button");
+    add.className = "button button-secondary song-card-add";
+    add.type = "button";
+    add.dataset.playlistSlug = song.slug;
+    add.disabled = personalSlugs.includes(song.slug);
+    add.textContent = add.disabled ? "Già nella tua scaletta" : "Aggiungi alla scaletta";
+    add.addEventListener("click", () => addToPersonalPlaylist(song.slug));
+    article.append(add);
     return article;
+  }
+
+  function updateCardButtons() {
+    list.querySelectorAll(".song-card-add").forEach((button) => {
+      button.disabled = personalSlugs.includes(button.dataset.playlistSlug);
+      button.textContent = button.disabled ? "Già nella tua scaletta" : "Aggiungi alla scaletta";
+    });
+  }
+
+  function persistPersonalPlaylist(slugs, message) {
+    if (slugs.length > 100) {
+      personalStatus.textContent = "La scaletta può contenere al massimo 100 canzoni.";
+      return;
+    }
+    const result = playlistStore.write(slugs);
+    personalSlugs = [...slugs];
+    storageError = result.error;
+    personalMessage = message;
+    if (!result.ok) console.error("Salvataggio scaletta locale non riuscito", result.error);
+    updateCardButtons();
+    renderPersonalPlaylist();
+  }
+
+  function addToPersonalPlaylist(slug) {
+    if (personalSlugs.includes(slug)) return;
+    persistPersonalPlaylist([...personalSlugs, slug], "Canzone aggiunta alla scaletta.");
+  }
+
+  async function renderPersonalPlaylist() {
+    const request = ++personalRequest;
+    personalItems.replaceChildren();
+    personalItems.setAttribute("aria-busy", "true");
+    shareButton.disabled = personalSlugs.length === 0;
+    clearPlaylist.disabled = personalSlugs.length === 0;
+    openPlaylist.hidden = personalSlugs.length === 0;
+    shareControls.hidden = true;
+    if (personalSlugs.length)
+      openPlaylist.href = playlistStore.shareUrl(personalSlugs, window.location.href);
+    if (!personalSlugs.length) {
+      personalItems.setAttribute("aria-busy", "false");
+      personalStatus.textContent = storageError
+        ? "La scaletta non è disponibile in questo browser: " + storageError.message
+        : personalMessage || "Aggiungi una canzone per creare la tua scaletta.";
+      personalMessage = "";
+      updateCardButtons();
+      return;
+    }
+
+    personalStatus.textContent = "Caricamento della scaletta locale…";
+    try {
+      const params = new URLSearchParams({ slugs: personalSlugs.join(","), limit: "100" });
+      const response = await getJson("songs?" + params.toString());
+      if (request !== personalRequest) return;
+      if (!Array.isArray(response.songs)) throw new Error("Scaletta locale non valida.");
+      const songs = new Map(response.songs.map((song) => [song.slug, song]));
+      personalSlugs.forEach((slug, index) => {
+        const row = document.createElement("li");
+        row.className = "playlist-item";
+        const song = songs.get(slug);
+        const label = song ? song.title : "Canzone non disponibile";
+        const link = document.createElement(song ? "a" : "span");
+        link.textContent = label;
+        if (song) link.href = "canzone.html?slug=" + encodeURIComponent(slug);
+        const position = document.createElement("span");
+        position.className = "playlist-item-position";
+        position.textContent = String(index + 1);
+        const remove = document.createElement("button");
+        remove.className = "button button-secondary playlist-remove";
+        remove.type = "button";
+        remove.setAttribute("aria-label", "Rimuovi " + label + " dalla scaletta");
+        remove.textContent = "Rimuovi";
+        remove.addEventListener("click", () => {
+          persistPersonalPlaylist(personalSlugs.filter((item) => item !== slug), "Canzone rimossa dalla scaletta.");
+        });
+        row.append(position, link, remove);
+        personalItems.append(row);
+      });
+      const link = playlistStore.shareUrl(personalSlugs, window.location.href);
+      openPlaylist.href = link;
+      personalStatus.textContent = storageError
+        ? "Scaletta disponibile finché questa pagina resta aperta: " + storageError.message
+        : personalMessage || personalSlugs.length + " canzoni nella scaletta di questo browser.";
+      personalMessage = "";
+      updateCardButtons();
+    } catch (error) {
+      if (request !== personalRequest) return;
+      personalStatus.textContent = error.message;
+      updateCardButtons();
+      console.error("Caricamento scaletta locale non riuscito", error);
+    } finally {
+      if (request === personalRequest) personalItems.setAttribute("aria-busy", "false");
+    }
+  }
+
+  function renderQuickPresets(presets) {
+    quickPresets.replaceChildren();
+    if (!presets.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "Nessun preset rapido pubblicato.";
+      quickPresets.append(empty);
+      return;
+    }
+    presets.forEach((preset) => {
+      const button = document.createElement("button");
+      button.className = "button button-secondary";
+      button.type = "button";
+      button.textContent = preset.title;
+      button.addEventListener("click", () => generatePlaylist(preset));
+      quickPresets.append(button);
+    });
+  }
+
+  function renderPublishedPlaylists(playlists) {
+    publishedList.replaceChildren();
+    publishedList.setAttribute("aria-busy", "false");
+    if (!playlists.length) {
+      publishedStatus.textContent = "Non ci sono ancora scalette pubblicate.";
+      return;
+    }
+    publishedStatus.textContent = playlists.length + " scalette pubblicate.";
+    playlists.forEach((playlist) => {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = "canzone.html?playlist=" + encodeURIComponent(playlist.slug);
+      link.textContent = playlist.title;
+      const count = document.createElement("span");
+      count.textContent = playlist.songSlugs.length + " canzoni";
+      item.append(link, count);
+      publishedList.append(item);
+    });
+  }
+
+  function shuffled(items) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index--) {
+      const target = Math.floor(Math.random() * (index + 1));
+      [result[index], result[target]] = [result[target], result[index]];
+    }
+    return result;
+  }
+
+  function renderGeneratedPlaylist(songs) {
+    generatedItems.replaceChildren();
+    generatedSlugs = songs.map((song) => song.slug);
+    songs.forEach((song, index) => {
+      const item = document.createElement("li");
+      const position = document.createElement("span");
+      position.className = "playlist-item-position";
+      position.textContent = String(index + 1);
+      const link = document.createElement("a");
+      link.href = "canzone.html?slug=" + encodeURIComponent(song.slug);
+      link.textContent = song.title;
+      item.append(position, link);
+      generatedItems.append(item);
+    });
+    useGeneratedButton.hidden = !songs.length;
+  }
+
+  async function generatePlaylist(preset) {
+    lastGenerator = preset;
+    regenerateButton.hidden = false;
+    useGeneratedButton.hidden = true;
+    generatedStatus.textContent = "Composizione della scaletta…";
+    generatedItems.replaceChildren();
+    try {
+      const params = new URLSearchParams({ limit: "100", offset: "0" });
+      if (preset.songSlugs?.length) params.set("slugs", preset.songSlugs.join(","));
+      else (preset.tagSlugs || []).forEach((slug) => params.append("tag", slug));
+      const response = await getJson("songs?" + params.toString());
+      if (!Array.isArray(response.songs)) throw new Error("Risultati del generatore non validi.");
+      const candidates = preset.songSlugs?.length ? response.songs : shuffled(response.songs);
+      const songs = candidates.slice(0, preset.limit || 12);
+      renderGeneratedPlaylist(songs);
+      generatedStatus.textContent = songs.length
+        ? "Proposta di " + songs.length + " canzoni per «" + preset.title + "». Puoi rigenerarla o aggiungerla alla tua scaletta."
+        : "Nessuna canzone disponibile per «" + preset.title + "».";
+    } catch (error) {
+      generatedStatus.textContent = error.message;
+      console.error("Generazione scaletta non riuscita", error);
+    }
   }
 
   function filters() {
@@ -235,6 +465,59 @@
   });
   more.addEventListener("click", () => load(false));
   retry.addEventListener("click", () => load(true));
+  shareButton.addEventListener("click", async () => {
+    try {
+      shareInput.value = playlistStore.shareUrl(personalSlugs, window.location.href);
+      shareControls.hidden = false;
+      shareInput.focus();
+      shareInput.select();
+      if (!navigator.clipboard?.writeText) {
+        personalStatus.textContent = "Link pronto: copialo dal campo qui sopra.";
+        return;
+      }
+      await navigator.clipboard.writeText(shareInput.value);
+      personalStatus.textContent = "Link copiato negli appunti.";
+    } catch (error) {
+      personalStatus.textContent = "Non è stato possibile copiare il link. Puoi copiarlo dal campo qui sopra.";
+      console.error("Copia link scaletta non riuscita", error);
+    }
+  });
+  copyShareButton.addEventListener("click", async () => {
+    try {
+      shareInput.focus();
+      shareInput.select();
+      if (!navigator.clipboard?.writeText) {
+        personalStatus.textContent = "Seleziona e copia il link dal campo qui sopra.";
+        return;
+      }
+      await navigator.clipboard.writeText(shareInput.value);
+      personalStatus.textContent = "Link copiato negli appunti.";
+    } catch (error) {
+      personalStatus.textContent = "Non è stato possibile copiare il link. Puoi copiarlo dal campo qui sopra.";
+      console.error("Copia link scaletta non riuscita", error);
+    }
+  });
+  clearPlaylist.addEventListener("click", () => persistPersonalPlaylist([], "Scaletta svuotata."));
+  generateMomentButton.addEventListener("click", () => {
+    const tag = catalog?.tags.find((item) => item.slug === momentFilter.value);
+    if (!tag) {
+      generatedStatus.textContent = "Scegli un momento per generare la scaletta.";
+      return;
+    }
+    generatePlaylist({ title: tag.name, tagSlugs: [tag.slug], songSlugs: [], limit: 12 });
+  });
+  regenerateButton.addEventListener("click", () => {
+    if (lastGenerator) generatePlaylist(lastGenerator);
+  });
+  useGeneratedButton.addEventListener("click", () => {
+    if (!generatedSlugs.length) return;
+    const next = [...new Set([...personalSlugs, ...generatedSlugs])];
+    if (next.length > 100) {
+      generatedStatus.textContent = "La scaletta personale può contenere al massimo 100 canzoni.";
+      return;
+    }
+    persistPersonalPlaylist(next, "Scaletta generata aggiunta alla tua scaletta.");
+  });
   window.addEventListener("popstate", () => {
     applyLocation();
     load(true);

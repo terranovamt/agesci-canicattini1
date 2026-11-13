@@ -102,6 +102,13 @@ async function startNasDemo() {
       rights: "da verificare",
       tagSlugs: ["giochi", "lc"],
     });
+    await request("canzoniere/playlists", "POST", {
+      slug: "passeggiata-demo",
+      title: "Passeggiata demo",
+      description: "Scaletta inventata per la demo locale",
+      songSlugs: ["la-lanterna-demo", "il-ponte-di-carta-demo"],
+      published: true,
+    });
     const { people } = await request("people");
     for (const [index, branch] of ["L/C", "E/G", "R/S"].entries()) {
       const code = String(7654321 + index);
@@ -334,7 +341,7 @@ if (require.main === module) {
     console.log("Codici: 23816938 amministratore | 7654321 L/C | 7654322 E/G | 7654323 R/S");
     console.log("Password per tutti gli account demo: " + app.password);
     console.log("Libro soci simulato: 40 censimenti 2026 su soci demo esistenti; i codici di voto si scaricano dai Censiti.");
-    console.log("Un anno di vita scout, 82 soci con identita inventate, attivita, quote, torneo, percorsi e due brani demo inventati.");
+    console.log("Un anno di vita scout, 82 soci inventati, attivita, quote, torneo, percorsi, due brani inventati e una scaletta demo pubblicata.");
     console.log("Dati inventati in SQLite temporaneo. Alla chiusura vengono eliminati.");
     console.log("Nessuna connessione al NAS. Premi Ctrl+C per terminare.");
     let stopping = false;
