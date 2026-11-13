@@ -15,9 +15,11 @@
   `--vl`, `--g`, `--r` e `--bg`.
 - Identità ricavata dagli asset e dal codice: viola `#462678`, viola scuro
   `#211638`, giallo `#FDC500`; Montserrat nella presentazione e negli strumenti,
-  con Georgia/serif per alcuni titoli della home e della presentazione. Asset
-  esistenti, da non modificare: `assets/img/logo-grande.png`,
-  `assets/img/logo.png` e `assets/img/texture.svg`.
+  con Georgia/serif per alcuni titoli della home e della presentazione.
+  Asset di identità: `assets/img/emblema-2colori-noname.svg` per le icone,
+  `assets/img/emblema-2colori-canicattini1.png`/`.webp` per il logo con nome,
+  `assets/img/emblema-negativo-noname.png`/`.webp` per la variante bianca e
+  `assets/img/texture.svg`.
   Le specifiche di brand non compilate nella richiesta sono state quindi
   dedotte esclusivamente da questi riferimenti presenti nel repository.
 

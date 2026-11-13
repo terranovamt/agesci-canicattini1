@@ -23,7 +23,10 @@ const h = (s) => {
     const source = image.getAttribute("src") || "";
     image.setAttribute(
       "src",
-      source.replace(/^(\.\.\/\.\.\/assets\/img\/(?:casa|cc|coca|eg|lc|rs|logo|logo-grande))\.png$/, "$1.webp"),
+      source.replace(
+        /^(\.\.\/\.\.\/assets\/img\/(?:casa|cc|coca|eg|lc|rs|emblema-negativo-noname|emblema-2colori-canicattini1))\.png$/,
+        "$1.webp",
+      ),
     );
     image.decoding = "async";
   });

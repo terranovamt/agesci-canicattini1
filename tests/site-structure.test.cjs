@@ -44,7 +44,7 @@ test("shared HTML fragments render relative links, escape parameters and reject 
   for (const [page, prefix] of [["index.html", ""], ["area-riservata/index.html", "../"], ["peg/edizioni/2026-2028.html", "../../"]]) {
     const html = renderHtml('<!-- include:brand --><!-- include:footer --><!-- include:menu-toggle -->', page);
     assert.ok(html.includes('href="' + (prefix || "./") + '"'));
-    assert.ok(html.includes('src="' + prefix + 'assets/img/logo-grande.webp"'));
+    assert.ok(html.includes('src="' + prefix + 'assets/img/emblema-2colori-canicattini1.webp"'));
     assert.match(html, /id="menu-toggle"/);
     assert.doesNotMatch(html, /<!-- include:|\{\{/);
   }

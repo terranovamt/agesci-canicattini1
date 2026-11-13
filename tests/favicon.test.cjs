@@ -16,10 +16,11 @@ test("all site pages use the home favicon", () => {
   ];
   const icons = pages.map((page) => {
     const html = fs.readFileSync(path.join(docs, page), "utf8");
-    const icon = html.match(/<link rel="icon" href="([^"]+)"\s*\/?>/);
+    const icon = html.match(/<link rel="icon" href="([^"]+)"[^>]*\/?>/);
     assert.ok(icon, page + " has a favicon");
     return path.resolve(docs, path.dirname(page), icon[1]);
   });
   icons.forEach((icon) => assert.equal(icon, icons[0]));
+  assert.equal(icons[0], path.join(docs, "assets", "img", "emblema-2colori-noname.svg"));
   assert.ok(fs.existsSync(icons[0]));
 });

@@ -7,9 +7,9 @@
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "assets/img/logo-grande.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "assets/img/emblema-2colori-noname.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ]
 }

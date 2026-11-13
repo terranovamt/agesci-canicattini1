@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   brand.className = 'reserved-brand';
   brand.setAttribute('aria-label', 'Home capi · Canicattini 1');
   const logo = document.createElement('img');
-  logo.src = header.querySelector('img')?.src || base + '/assets/img/logo-grande.webp';
+  logo.src = header.querySelector('img')?.src || base + '/assets/img/emblema-2colori-canicattini1.webp';
   logo.alt = '';
   const heading = document.createElement('div');
   const name = document.createElement('strong');

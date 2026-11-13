@@ -8,7 +8,7 @@ const photo = (g, s) => (r) => {
         'image-set(url("../../assets/img/foto-gruppo.avif") type("image/avif"), url("../../assets/img/foto-gruppo.webp") type("image/webp"))';
   }
   if (g)
-    r.innerHTML = `<div class="gr"><h1>${s.testo || "Grazie"}</h1><div class="bb"></div><img src="../../assets/img/logo-grande.webp" decoding="async"></div>`;
+    r.innerHTML = `<div class="gr"><h1>${s.testo || "Grazie"}</h1><div class="bb"></div><img src="../../assets/img/emblema-2colori-canicattini1.webp" decoding="async"></div>`;
   cnt.className = "w";
   return { steps: 0, show() {} };
 };

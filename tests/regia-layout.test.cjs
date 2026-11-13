@@ -13,7 +13,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
   const dir = fs.mkdtempSync(path.join(root, '.regia-layout-'));
   const css = ['assets/css/nas.css', 'assets/css/theme.css', 'area-riservata/assemblea/core/regia.css', 'assets/css/section-nav.css']
     .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
-  const logo = fs.readFileSync(path.join(root, 'assets/img/logo-grande.webp')).toString('base64');
+  const logo = fs.readFileSync(path.join(root, 'assets/img/emblema-2colori-canicattini1.webp')).toString('base64');
   const source = fs.readFileSync(path.join(assemblea, 'core/regia.js'), 'utf8').replace(
     /\r?\n  avvia\(\);\r?\n\}\)\(\);/,
     'window.TEST = { disegna, mostraStato, collega: v => { V = v } };\n})();'
@@ -21,7 +21,7 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
   const html = fs.readFileSync(path.join(assemblea, 'regia.html'), 'utf8')
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
     .replace(/<link\b[^>]*>/g, '')
-    .replace('../../assets/img/logo-grande.webp', `data:image/webp;base64,${logo}`)
+    .replace('../../assets/img/emblema-2colori-canicattini1.webp', `data:image/webp;base64,${logo}`)
     .replace('</head>', `<style>${css}</style></head>`)
     .replace('</body>', `<script>
       window.addEventListener('error', event => {
