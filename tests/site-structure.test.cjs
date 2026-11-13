@@ -18,7 +18,7 @@ const files = (directory) =>
     );
 const pages = [
   ...fs.readdirSync(root).filter((file) => file.endsWith(".html")),
-  ...["area-riservata", "assemblea", "documenti", "peg"].flatMap((directory) =>
+  ...["area-riservata", "assemblea", "canzoniere", "documenti", "peg"].flatMap((directory) =>
     files(directory).filter((file) => file.endsWith(".html")),
   ),
 ];
@@ -73,6 +73,8 @@ test("static build publishes only site files and refuses to overwrite source dir
       "assets/fonts/montserrat-latin.woff2",
       "assets/img/foto-gruppo.avif",
       "area-riservata/statistiche.html",
+      "canzoniere/index.html",
+      "canzoniere/canzone.html",
     ])
       assert.ok(fs.existsSync(path.join(directory, file)), file);
     assert.match(home, /<footer class="site-footer">/);
@@ -97,6 +99,24 @@ test("the root contains only the home HTML page", () => {
 test("public assembly contains only its document page, not legacy tools", () => {
   assert.deepEqual(fs.readdirSync(path.join(root, "assemblea")), ["index.html"]);
   for (const page of retiredPages) assert.ok(!fs.existsSync(path.join(root, page)), page);
+});
+
+test("public Canzoniere has an index and a slug-based song detail page", () => {
+  assert.deepEqual(fs.readdirSync(path.join(root, "canzoniere")).sort(), ["canzone.html", "index.html"]);
+  const home = read("index.html");
+  assert.match(home, /href="canzoniere\/">Apri il Canzoniere/);
+  for (const page of ["canzoniere/index.html", "canzoniere/canzone.html"]) {
+    const html = read(page);
+    assert.match(html, /class="brand"/);
+    assert.match(html, /class="site-footer"/);
+    assert.match(html, /id="menu-toggle"/);
+    assert.match(html, /<script src="[^"]*canzoniere-model\.js" defer><\/script>/);
+    assert.match(html, /<script src="[^"]*canzoniere(?:-song)?\.js" defer><\/script>/);
+  }
+  assert.match(read("canzoniere/index.html"), /id="song-list"[^>]*aria-busy="true"/);
+  assert.match(read("canzoniere/canzone.html"), /id="song-detail"[^>]*aria-busy="true"/);
+  assert.match(read("assets/css/canzoniere.css"), /prefers-reduced-motion:\s*reduce/);
+  assert.doesNotMatch(read("canzoniere/index.html") + read("canzoniere/canzone.html"), /<script[^>]+(?:src|href)="https?:/);
 });
 
 test("canonical directories have no obsolete or case-duplicate entries", () => {

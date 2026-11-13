@@ -15,6 +15,7 @@ const publicEntries = [
   "calendars",
   "documents",
   "documenti",
+  "canzoniere",
   "area-riservata",
   "assemblea",
   "peg",

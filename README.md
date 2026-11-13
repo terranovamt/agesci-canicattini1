@@ -100,6 +100,7 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Chi                          | Indirizzo                                                      |
 | ---------------------------- | -------------------------------------------------------------- |
 | Home / pubblico              | `.../` sotto il prefisso `/agesci-canicattini1/`                |
+| Canzoniere                   | `.../canzoniere/` (pubblico, ricerca e scheda canzone)          |
 | Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
 | Libro soci                   | `.../area-riservata/soci.html` (amministratore e capi assegnati) |

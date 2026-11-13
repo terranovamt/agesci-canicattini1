@@ -122,6 +122,8 @@ test("NAS gateway serves pages, config, QR and PDFs only under the site prefix",
       "/config/site.js",
       "/assets/img/qr-live.png",
       "/area-riservata/statistiche.html",
+      "/canzoniere/",
+      "/canzoniere/canzone.html?slug=la-lanterna-demo",
       "/documents/index.json",
       "/healthz",
     ])

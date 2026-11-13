@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Canzoniere · AGESCI Canicattini 1</title>
+    <meta
+      name="description"
+      content="Cerca le canzoni del gruppo scout AGESCI Canicattini 1 per titolo, autore, album, momento e branca."
+    />
+    <meta name="theme-color" content="#462678" />
+    <link rel="icon" href="../assets/img/emblema-2colori-noname.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <link rel="stylesheet" href="../assets/css/home.css" />
+    <link rel="stylesheet" href="../assets/css/canzoniere.css" />
+  </head>
+  <body class="docs-page canzoniere-page">
+    <a class="skip-link" href="#contenuto">Vai al contenuto</a>
+    <header class="site-header">
+      <!-- include:brand -->
+      <!-- include:menu-toggle -->
+      <nav id="main-nav" aria-label="Navigazione principale">
+        <a href="../peg/">Il PEG</a>
+        <a href="../#eventi">Eventi</a>
+        <a href="./" aria-current="page">Canzoniere</a>
+        <a href="../documenti/">Documenti</a>
+        <a class="nav-access" href="../area-riservata/">Area riservata</a>
+      </nav>
+    </header>
+    <main id="contenuto">
+      <section class="content-section canzoniere-section" aria-labelledby="titolo-canzoniere">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Canta insieme</p>
+            <h1 id="titolo-canzoniere">Canzoniere</h1>
+          </div>
+          <p class="section-description">
+            Cerca per titolo, autore o testo, poi filtra per momento, branca e album. La consultazione è pubblica.
+          </p>
+        </div>
+        <form id="song-filters" class="song-filters" role="search" aria-label="Cerca nel Canzoniere">
+          <div class="song-filter-search">
+            <label for="song-search">Cerca titolo, autore o testo</label>
+            <input id="song-search" type="search" autocomplete="off" placeholder="Es. ingresso, autore…" />
+          </div>
+          <div>
+            <label for="song-tag">Momento o tag</label>
+            <select id="song-tag" disabled>
+              <option value="">Tutti i tag</option>
+            </select>
+          </div>
+          <div>
+            <label for="song-branch">Branca</label>
+            <select id="song-branch" disabled>
+              <option value="">Tutte le branche</option>
+              <option value="L/C">L/C</option>
+              <option value="E/G">E/G</option>
+              <option value="R/S">R/S</option>
+            </select>
+          </div>
+          <div>
+            <label for="song-album">Album</label>
+            <select id="song-album" disabled>
+              <option value="">Tutti gli album</option>
+            </select>
+          </div>
+          <div class="song-filter-actions">
+            <button id="clear-song-filters" class="button button-secondary" type="button">Azzera filtri</button>
+          </div>
+        </form>
+        <p id="song-status" class="song-status" role="status" aria-live="polite">Caricamento del Canzoniere…</p>
+        <div
+          id="song-list"
+          class="song-grid"
+          role="list"
+          aria-busy="true"
+          aria-label="Risultati del Canzoniere"
+        >
+          <article class="loading-skeleton song-skeleton" aria-hidden="true"></article>
+          <article class="loading-skeleton song-skeleton" aria-hidden="true"></article>
+          <article class="loading-skeleton song-skeleton" aria-hidden="true"></article>
+        </div>
+        <div class="song-list-actions">
+          <button
+            id="songs-more"
+            class="button button-secondary"
+            type="button"
+            aria-controls="song-list"
+            hidden
+          >
+            Carica altre canzoni
+          </button>
+          <button id="songs-retry" class="button button-secondary" type="button" hidden>Riprova</button>
+        </div>
+        <noscript>
+          <p>Attiva JavaScript per consultare le canzoni pubblicate.</p>
+        </noscript>
+      </section>
+    </main>
+    <!-- include:footer {"caption":"Canzoniere pubblico"} -->
+    <script src="../assets/js/site-menu.js" defer></script>
+    <script src="../assets/js/nas-telemetry.js" defer></script>
+    <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere.js" defer></script>
+  </body>
+</html>

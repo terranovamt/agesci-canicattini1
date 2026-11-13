@@ -9,7 +9,7 @@ procedura.
 ## Architettura e responsabilità
 
 - **Sito e interfacce:** le pagine sono in `index.html`, `area-riservata/`,
-  `assemblea/`, `documenti/` e `peg/`. Gli script e gli stili condivisi sono
+`assemblea/`, `canzoniere/`, `documenti/` e `peg/`. Gli script e gli stili condivisi sono
   in `assets/`; configurazione client in `config/site.js`. I contenuti delle
   slide sono in `area-riservata/assemblea/dati.js`; motore, setup, regia,
   rendering e sincronizzazione live sono separati in `core/` e `slides/`

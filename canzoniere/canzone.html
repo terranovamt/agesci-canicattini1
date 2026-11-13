@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Canzone · Canzoniere · AGESCI Canicattini 1</title>
+    <meta name="description" content="Leggi una canzone del Canzoniere pubblico AGESCI Canicattini 1." />
+    <meta name="theme-color" content="#462678" />
+    <link rel="icon" href="../assets/img/emblema-2colori-noname.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <link rel="stylesheet" href="../assets/css/home.css" />
+    <link rel="stylesheet" href="../assets/css/canzoniere.css" />
+  </head>
+  <body class="docs-page canzoniere-page song-page">
+    <a class="skip-link" href="#contenuto">Vai al contenuto</a>
+    <header class="site-header">
+      <!-- include:brand -->
+      <!-- include:menu-toggle -->
+      <nav id="main-nav" aria-label="Navigazione principale">
+        <a href="../peg/">Il PEG</a>
+        <a href="../#eventi">Eventi</a>
+        <a href="./" aria-current="page">Canzoniere</a>
+        <a href="../documenti/">Documenti</a>
+        <a class="nav-access" href="../area-riservata/">Area riservata</a>
+      </nav>
+    </header>
+    <main id="contenuto">
+      <p class="song-back-link"><a class="text-link" href="./">← Torna al Canzoniere</a></p>
+      <section id="song-detail" class="song-detail-card" aria-labelledby="song-title" aria-busy="true">
+        <div id="song-loading" class="song-loading" aria-hidden="true">
+          <div class="loading-skeleton song-detail-skeleton"></div>
+          <div class="loading-skeleton song-detail-skeleton"></div>
+          <div class="loading-skeleton song-detail-skeleton"></div>
+        </div>
+        <div id="song-content" hidden>
+          <header class="song-detail-heading">
+            <p class="eyebrow">Canzoniere</p>
+            <h1 id="song-title"></h1>
+            <p id="song-byline" class="song-byline"></p>
+            <dl id="song-meta" class="song-meta"></dl>
+            <ul id="song-tags" class="song-tags" aria-label="Tag della canzone"></ul>
+          </header>
+          <fieldset class="song-controls" aria-label="Controlli di lettura">
+            <label class="song-toggle">
+              <input id="show-chords" type="checkbox" checked aria-controls="song-score" />
+              <span>Mostra accordi</span>
+            </label>
+            <div class="transpose-controls" role="group" aria-label="Trasposizione">
+              <span class="control-label">Tonalità <output id="song-key">—</output></span>
+              <button id="transpose-down" class="button button-secondary" type="button" aria-label="Abbassa di un semitono">
+                −
+              </button>
+              <output id="transpose-value" aria-live="polite">Originale</output>
+              <button id="transpose-up" class="button button-secondary" type="button" aria-label="Alza di un semitono">
+                +
+              </button>
+              <button id="transpose-original" class="button button-secondary" type="button">Originale</button>
+            </div>
+            <label class="font-control" for="song-font-size">
+              Dimensione testo <output id="font-size-value" for="song-font-size">20 px</output>
+              <input id="song-font-size" type="range" min="16" max="32" step="2" value="20" />
+            </label>
+            <label class="song-toggle">
+              <input id="dark-mode" type="checkbox" />
+              <span>Modalità scura</span>
+            </label>
+            <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
+              Schermo sempre acceso
+            </button>
+            <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
+          </fieldset>
+          <div id="song-score" class="song-score" role="group" aria-label="Testo e accordi"></div>
+          <section id="song-extra" class="song-extra" aria-label="Informazioni aggiuntive" hidden>
+            <p id="song-notes"></p>
+            <p id="song-source"></p>
+          </section>
+        </div>
+        <p id="song-status" class="song-status" role="status" aria-live="polite">Caricamento della canzone…</p>
+        <button id="song-retry" class="button button-secondary" type="button" hidden>Riprova</button>
+      </section>
+      <noscript>
+        <p>Attiva JavaScript per leggere la canzone pubblicata.</p>
+      </noscript>
+    </main>
+    <!-- include:footer {"caption":"Canzoniere pubblico"} -->
+    <script src="../assets/js/site-menu.js" defer></script>
+    <script src="../assets/js/nas-telemetry.js" defer></script>
+    <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere-song.js" defer></script>
+  </body>
+</html>

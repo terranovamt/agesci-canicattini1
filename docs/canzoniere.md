@@ -80,14 +80,28 @@ non mantiene i permessi admin. Le scritture senza sessione o di utenti non
 admin restituiscono 403. Si applicano inoltre il controllo same-origin del
 backend e le revisioni ottimistiche; revisioni obsolete restituiscono 409.
 
+## Pagine pubbliche
+
+`canzoniere/index.html` e' l'elenco pubblico mobile-first, raggiungibile da
+`/agesci-canicattini1/canzoniere/` e dalla navigazione della home. Cerca nel
+titolo, nell'autore e nel testo, filtra per un tag, branca e album e carica
+risultati successivi a blocchi; i dati arrivano solo dalle API, mai da testi
+inclusi nell'HTML. `canzoniere/canzone.html?slug=...` e' la scheda pubblica.
+
+La scheda visualizza gli accordi sopra le posizioni ChordPro, permette di
+nasconderli, trasporre tonalita' e accordi con ripristino all'originale,
+regolare la dimensione del testo, attivare il tema scuro e richiedere il
+Wake Lock quando il browser lo supporta. Gli input di ricerca e i risultati
+sono creati con API DOM e `textContent`; i caricamenti segnalano `aria-busy`,
+e gli skeleton rispettano `prefers-reduced-motion`.
+
 ## Verifica locale
 
 ```sh
-node --test tests/canzoniere.test.cjs
+node --test tests/canzoniere.test.cjs tests/canzoniere-pages.test.cjs
 node tools/nas-demo.cjs
 ```
 
 La demo usa un SQLite temporaneo e aggiunge solo due esempi inventati; non
-connette il NAS e rimuove il database alla chiusura. Le pagine pubbliche, il
-player, le scalette lato browser e l'area admin vengono completati nelle fasi
-successive.
+connette il NAS e rimuove il database alla chiusura. Il caricamento automatico,
+le scalette lato browser e l'area admin vengono completati nelle fasi successive.

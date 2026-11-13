@@ -34,6 +34,9 @@ pubblicazione GitHub Pages restano separati.
 │   └── index.html                 Quattro schede dei documenti preparatori
 ├── documenti/                     Archivio pubblico di tutti i documenti
 │   └── index.html                 Ricerca per anno e testo
+├── canzoniere/                    Canzoniere pubblico
+│   ├── index.html                 Ricerca e filtri per canzoni
+│   └── canzone.html               Scheda pubblica selezionata tramite slug
 ├── peg/                           Progetto Educativo di Gruppo
 │   ├── index.html                 Ingresso che rimanda all'edizione corrente
 │   └── edizioni/

@@ -8,7 +8,8 @@ const { renderHtml } = require('../tools/site-layout.cjs');
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const chrome = require('./helpers/chrome.cjs');
-const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'peg/edizioni/2026-2028.html',
+const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'canzoniere/index.html',
+  'canzoniere/canzone.html', 'peg/edizioni/2026-2028.html',
   '404.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'area-riservata/persone.html',
   'area-riservata/soci.html', 'area-riservata/attivita.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
   'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html', 'area-riservata/assemblea/index.html'];

@@ -94,7 +94,7 @@ async function startNasDev({ basePath = "", censusCodes = "" } = {}) {
         pathname === "/" ||
         ["/index.html", "/manifest.webmanifest"].includes(pathname) ||
         pathname === "/design-system/area-riservata-responsive.html" ||
-        /^\/(?:assets|area-riservata|assemblea|documenti|peg|calendars)\//.test(pathname);
+        /^\/(?:assets|area-riservata|assemblea|canzoniere|documenti|peg|calendars)\//.test(pathname);
       let file = path.resolve(root, "." + pathname);
       if (!allowed || (!file.startsWith(root + path.sep) && file !== root)) {
         response.writeHead(404);
@@ -110,6 +110,7 @@ async function startNasDev({ basePath = "", censusCodes = "" } = {}) {
           "assets",
           "area-riservata",
           "assemblea",
+          "canzoniere",
           "documenti",
           "peg",
           "calendars",
