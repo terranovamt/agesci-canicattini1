@@ -36,7 +36,7 @@
     [i, k] = clamp(i, k);
     if (cur && si === i && sk === k) return;
     const was = INST; if (istantaneo) INST = true;
-    try { go(i, k) } finally { INST = was }
+    try { go(i, k, true) } finally { INST = was }
   };
   const __start = start;
   start = data => { __start(data); if (pending) { const p = pending; pending = null; vai(...p) } };
@@ -44,8 +44,7 @@
   /* blocca click, tastiera e swipe originali: comanda solo la dashboard */
   const KEYS = { ArrowRight: 'next', ArrowDown: 'next', PageDown: 'next', ' ': 'next', Enter: 'next', ArrowLeft: 'prev', ArrowUp: 'prev', PageUp: 'prev' };
   ['click', 'keydown', 'touchstart', 'touchend', 'wheel'].forEach(ev => addEventListener(ev, e => {
-    if (ev === 'click' && e.target.closest?.('[data-live-control]')) return;
-    if (ev === 'keydown' && e.target.closest?.('[data-live-control]') && ['Enter', ' '].includes(e.key)) return;
+    if (e.target.closest?.('[data-live-control]')) return;
     e.stopImmediatePropagation();
     if (ev === 'keydown' && KEYS[e.key]) { e.preventDefault(); if (V === 'schermo') send({ tipo: 'cmd', c: KEYS[e.key] }) }
     if (ev === 'click' && V === 'schermo') {
@@ -64,8 +63,8 @@
 
   if (V === 'principale') {
     const __go = go;
-    go = (i, k) => {
-      __go(i, k);
+    go = (i, k, sincronizzata) => {
+      __go(i, k, sincronizzata);
       send({ tipo: 'pos', i: si, k: sk });
       try { API.onchange && API.onchange(stato()) } catch (e) { }
     };

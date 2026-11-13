@@ -1,18 +1,27 @@
 /* Motore della presentazione: navigazione, caricamento di dati.js, adattamento dei titoli. */
 
 /* ---- motore ---- */
-let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null; const nav = h('<div id="nav"></div>'),
+let BN = 0, D, scenes = [], si = 0, sk = 0, cur = null, saved = null;
+let votoSlideId = null, posizioneVotoInAttesa = null, listenerVotoRegistrato = false;
+const nav = h('<div id="nav"></div>'),
   bH = h('<button class="nb" title="Prima slide (H)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></button>'),
   bM = h('<button class="nb" title="Ordine del giorno (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>'),
   bB = h('<button class="nb" title="Torna alla slide da cui eri partito (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span></span></button>');
 nav.append(bH, bM, bB); st.append(nav); bH.style.display = bM.style.display = bB.style.display = 'none';
 const odgIdx = () => Math.max(0, scenes.findIndex(s => s.tipo === 'slide_ordine_del_giorno'));
-const home = () => { const i = Math.min(1, scenes.length - 1); if (scenes.length && si !== i) { saved = { i: si, k: sk }; go(i, 0) } };
-const menu = () => { const t = odgIdx(); if (si !== t) { saved = { i: si, k: sk }; go(t, 0); go(t, cur.steps) } };
-const jump = id => { const t = scenes.findIndex(s => s.id === id); if (t < 0) return; saved = { i: si, k: sk }; go(t, 0) };
-const back = () => { if (saved) { const q = saved; saved = null; go(q.i, q.k) } };
+const home = () => { if (votoSlideId !== null) return; const i = Math.min(1, scenes.length - 1); if (scenes.length && si !== i) { saved = { i: si, k: sk }; go(i, 0) } };
+const menu = () => { if (votoSlideId !== null) return; const t = odgIdx(); if (si !== t) { saved = { i: si, k: sk }; go(t, 0); go(t, cur.steps) } };
+const jump = id => { if (votoSlideId !== null) return; const t = scenes.findIndex(s => s.id === id); if (t < 0) return; saved = { i: si, k: sk }; go(t, 0) };
+const back = () => { if (votoSlideId !== null) return; if (saved) { const q = saved; saved = null; go(q.i, q.k) } };
 bH.onclick = e => { e.stopPropagation(); home() }; bM.onclick = e => { e.stopPropagation(); menu() }; bB.onclick = e => { e.stopPropagation(); back() };
-function go(i, k) {
+function go(i, k, sincronizzata = false) {
+  if (votoSlideId !== null) {
+    const voto = scenes.findIndex(s => s.id === votoSlideId);
+    if (voto < 0) return;
+    if (sincronizzata && (i !== voto || k !== 0)) posizioneVotoInAttesa = { i, k };
+    if (cur && cur.i === voto && si === voto && sk === 0) return;
+    i = voto; k = 0;
+  }
   if (!cur || cur.i !== i) {
     const old = cur, r = h('<div class="slide"></div>'); st.insertBefore(r, HD);
     cur = { i, r, ...scenes[i].f(r, D) };
@@ -32,11 +41,40 @@ function go(i, k) {
   bB.style.display = saved && i !== saved.i ? 'flex' : 'none'; if (saved) bB.lastChild.textContent = 'Slide ' + (saved.i + 1); bH.style.display = i !== Math.min(1, scenes.length - 1) ? 'flex' : 'none'; bM.style.display = i !== odgIdx() ? 'flex' : 'none'; prog.style.width = ((i + 1) / scenes.length * 100) + '%';
   [...pm.children].forEach(e => { const j = +e.dataset.i; e.classList.toggle('nx', j === i + 1 && k >= cur.steps) }); cnt.textContent = (i + 1) + ' / ' + scenes.length; history.replaceState(null, '', '#' + i + '.' + k)
 }
-const next = () => { if (sk < cur.steps) go(si, sk + 1); else if (si < scenes.length - 1) go(si + 1, 0) };
-const prev = () => { if (sk > 0) go(si, sk - 1); else if (si > 0) { const n = si - 1; go(n, 0); go(n, cur.steps) } };
-addEventListener('keydown', e => { if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() } if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) prev(); if (e.key === 'h') home(); if (e.key === 'm') menu(); if (e.key === 'r') back(); if (e.key === 'f') toggleFullscreen() });
-addEventListener('click', e => e.clientX < innerWidth * .2 ? prev() : next());
-let tx; addEventListener('touchstart', e => tx = e.touches[0].clientX); addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) { e.preventDefault(); d < 0 ? next() : prev() } });
+function impostaBloccoVotazione(poll) {
+  const live = window.LIVE || {};
+  if (live.ruolo !== 'pubblico' && live.vista !== 'schermo') return;
+  if (poll && poll.aperta) {
+    const slideId = typeof poll.slide === 'string' ? poll.slide : '';
+    const voto = scenes.findIndex(s => s.id === slideId);
+    if (!slideId || voto < 0) {
+      console.error('Votazione attiva senza una slide disponibile:', poll.slide);
+      votoSlideId = null;
+      posizioneVotoInAttesa = null;
+      document.documentElement.classList.remove('votazione-attiva');
+      return;
+    }
+    if (votoSlideId !== slideId) posizioneVotoInAttesa = null;
+    votoSlideId = slideId;
+    document.documentElement.classList.add('votazione-attiva');
+    if (!cur || cur.i !== voto || si !== voto || sk !== 0) go(voto, 0);
+    return;
+  }
+  if (votoSlideId !== null) {
+    const posizione = posizioneVotoInAttesa;
+    votoSlideId = null;
+    posizioneVotoInAttesa = null;
+    document.documentElement.classList.remove('votazione-attiva');
+    if (posizione) go(posizione.i, posizione.k);
+  }
+}
+const next = () => { if (votoSlideId !== null) return; if (sk < cur.steps) go(si, sk + 1); else if (si < scenes.length - 1) go(si + 1, 0) };
+const prev = () => { if (votoSlideId !== null) return; if (sk > 0) go(si, sk - 1); else if (si > 0) { const n = si - 1; go(n, 0); go(n, cur.steps) } };
+addEventListener('keydown', e => { if (e.target.closest?.('[data-live-control]') || votoSlideId !== null) return; if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next() } if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) prev(); if (e.key === 'h') home(); if (e.key === 'm') menu(); if (e.key === 'r') back(); if (e.key === 'f') toggleFullscreen() });
+addEventListener('click', e => { if (e.target.closest?.('[data-live-control]') || votoSlideId !== null) return; e.clientX < innerWidth * .2 ? prev() : next() });
+let tx, touchControl = false;
+addEventListener('touchstart', e => { touchControl = !!e.target.closest?.('[data-live-control]') || votoSlideId !== null; if (!touchControl) tx = e.touches[0].clientX });
+addEventListener('touchend', e => { const control = touchControl || e.target.closest?.('[data-live-control]') || votoSlideId !== null; touchControl = false; if (control) return; const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) { e.preventDefault(); d < 0 ? next() : prev() } });
 
 /* nomi vecchi -> nomi nuovi (i vecchi dati.js continuano a funzionare) */
 const ALIAS = { titolo: 'slide_titolo', sezione: 'slide_divisore_sezione', regolamento: 'slide_testo_articoli', testo: 'slide_testo_articoli', odg: 'slide_ordine_del_giorno', odg_stato: 'slide_avanzamento_odg', quorum: 'slide_quorum_convocazioni', organo: 'slide_composizione_organo', bilancio_cassa: 'slide_rendiconto_entrate_uscite', confronto: 'slide_rendiconto_scontrino_esito', andamento: 'slide_rendiconto_andamento_avanzo', patrimonio_barre: 'slide_patrimonio_barre', patrimonio_ciambella: 'slide_patrimonio_ciambella', foto: 'slide_foto_gruppo', grazie: 'slide_grazie' };
@@ -52,7 +90,15 @@ function start(data) {
   scenes = D.slide.filter(x => !x.nascosta && T[x.tipo]).map(x => { const o = { f: T[x.tipo](x), ph: x.tipo === 'slide_foto_gruppo' || x.tipo === 'slide_grazie', id: x.id, tipo: x.tipo, x }; if (ST[x.tipo]) { o.b = base; base += ST[x.tipo](D) + 1 } return o }); BN = base;
   pm.innerHTML = ''; const nP = (D.slide.find(q => q.tipo === 'slide_ordine_del_giorno') || { punti: [] }).punti.length;
   scenes.forEach((sc, i) => { if (sc.tipo === 'slide_ordine_del_giorno' || sc.tipo === 'slide_avanzamento_odg') { const n = sc.tipo === 'slide_ordine_del_giorno' ? '1' : (sc.x.completati >= nP ? '✓' : String((sc.x.completati || 0) + 1)); const e = h(`<div class="pmk" style="left:${(i + 1) / scenes.length * 100}%"><b>${n}</b></div>`); e.dataset.i = i; pm.append(e) } });
-  const [a, b] = location.hash.slice(1).split('.').map(Number); go(Math.min(a || 0, scenes.length - 1), b || 0); INST = false
+  const [a, b] = location.hash.slice(1).split('.').map(Number); go(Math.min(a || 0, scenes.length - 1), b || 0);
+  if (window.VOTO) {
+    if (!listenerVotoRegistrato) {
+      VOTO.on(impostaBloccoVotazione);
+      listenerVotoRegistrato = true;
+    }
+    else impostaBloccoVotazione(VOTO.poll);
+  }
+  INST = false
 }
 /* carica dati.js e lo ricontrolla ogni 2 secondi: se cambia, la presentazione si ricostruisce restando dov'eri */
 let last = null;

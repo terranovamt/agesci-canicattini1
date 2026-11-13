@@ -29,5 +29,5 @@ bP.onclick = e => { e.stopPropagation(); exportPdf() };
 
 /* il bottone PDF si vede solo sull'ultima slide */
 const _go = go;
-go = (i, k) => { _go(i, k); bP.style.display = i === scenes.length - 1 ? 'flex' : 'none' };
+go = (i, k, sincronizzata) => { _go(i, k, sincronizzata); bP.style.display = si === scenes.length - 1 ? 'flex' : 'none' };
 addEventListener('keydown', e => { if (e.key === 'p' && !e.ctrlKey && !e.metaKey && si === scenes.length - 1) exportPdf() });

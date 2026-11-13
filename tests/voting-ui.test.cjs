@@ -48,9 +48,11 @@ test("voting UI uses the identified poll, separates choice from confirmation and
     window: { LIVE: { ruolo: "pubblico", basePath: "" } },
     document,
     AbortController,
+    requestAnimationFrame: callback => queueMicrotask(callback),
     fetch: async (url, options) => {
-      const request = { url, body: options && JSON.parse(options.body) };
+      const request = { url, body: options && options.body ? JSON.parse(options.body) : undefined };
       requests.push(request);
+      if (url.endsWith("/state")) return { ok: true, json: async () => ({ poll }) };
       return { ok: true, text: async () => JSON.stringify(url.endsWith("/identify")
         ? { nome: "Ada", poll, haVotato: false }
         : { ok: true }) };
@@ -62,7 +64,7 @@ test("voting UI uses the identified poll, separates choice from confirmation and
 
   const openButton = find(document.body, element => element.id === "vt-btn");
   const dialog = find(document.body, element => element.id === "vt-box");
-  openButton.onclick();
+  await openButton.onclick();
   const codeInput = find(dialog, element => element.tagName === "INPUT");
   codeInput.value = "123456";
   await find(dialog, element => element.textContent === "Continua").onclick();
@@ -116,8 +118,10 @@ test("voting UI exits the confirmation screen when the server reports an existin
     window: { LIVE: { ruolo: "pubblico", basePath: "" } },
     document,
     AbortController,
+    requestAnimationFrame: callback => queueMicrotask(callback),
     fetch: async (url, options) => {
-      requests.push({ url, body: options && JSON.parse(options.body) });
+      requests.push({ url, body: options && options.body ? JSON.parse(options.body) : undefined });
+      if (url.endsWith("/state")) return { ok: true, json: async () => ({ poll }) };
       if (url.endsWith("/identify")) {
         return { ok: true, text: async () => JSON.stringify({ nome: "Ada", poll, haVotato: false }) };
       }
@@ -130,7 +134,7 @@ test("voting UI exits the confirmation screen when the server reports an existin
 
   const openButton = find(document.body, element => element.id === "vt-btn");
   const dialog = find(document.body, element => element.id === "vt-box");
-  openButton.onclick();
+  await openButton.onclick();
   const codeInput = find(dialog, element => element.tagName === "INPUT");
   codeInput.value = "123456";
   await find(dialog, element => element.textContent === "Continua").onclick();
@@ -159,8 +163,19 @@ test("voting requests show cancellable loading and never overlap", async () => {
     opzioni: ["Favorevole", "Contrario", "Astenuto"], aperta: true };
   let identifyCalls = 0;
   let castCalls = 0;
+  let stateCalls = 0;
+  let stateSignal;
   let identifySignal;
   let castSignal;
+  let stateStarted;
+  let notifyStateStarted;
+  let identifyStarted;
+  let notifyIdentifyStarted;
+  let castStarted;
+  let notifyCastStarted;
+  stateStarted = new Promise(resolve => { notifyStateStarted = resolve; });
+  identifyStarted = new Promise(resolve => { notifyIdentifyStarted = resolve; });
+  castStarted = new Promise(resolve => { notifyCastStarted = resolve; });
   const document = {
     head: new Element("head"),
     body: new Element("body"),
@@ -172,19 +187,31 @@ test("voting requests show cancellable loading and never overlap", async () => {
     window: { LIVE: { ruolo: "pubblico", basePath: "" } },
     document,
     AbortController,
+    requestAnimationFrame: callback => queueMicrotask(callback),
     fetch: (url, options) => {
+      if (url.endsWith("/state")) {
+        stateCalls++;
+        if (stateCalls > 1) return Promise.resolve({ ok: true, json: async () => ({ poll }) });
+        stateSignal = options.signal;
+        notifyStateStarted();
+        return new Promise((resolve, reject) => {
+          stateSignal.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })), { once: true });
+        });
+      }
       if (url.endsWith("/identify")) {
         identifyCalls++;
         if (identifyCalls > 1) {
           return Promise.resolve({ ok: true, text: async () => JSON.stringify({ nome: "Ada", poll, haVotato: false }) });
         }
         identifySignal = options.signal;
+        notifyIdentifyStarted();
         return new Promise((resolve, reject) => {
           identifySignal.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })), { once: true });
         });
       }
       castCalls++;
       castSignal = options.signal;
+      notifyCastStarted();
       return new Promise((resolve, reject) => {
         castSignal.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })), { once: true });
       });
@@ -196,12 +223,24 @@ test("voting requests show cancellable loading and never overlap", async () => {
 
   const openButton = find(document.body, element => element.id === "vt-btn");
   const dialog = find(document.body, element => element.id === "vt-box");
-  openButton.onclick();
+  const opening = openButton.onclick();
+  assert.match(text(dialog), /Verifico che la votazione sia ancora aperta/);
+  await stateStarted;
+  assert.equal(stateCalls, 1);
+  await openButton.onclick();
+  assert.equal(stateCalls, 1, "a second click does not start another state request");
+  find(dialog, element => element.textContent === "Annulla").onclick();
+  assert.equal(stateSignal.aborted, true);
+  await opening;
+  assert.equal(dialog.hidden, true);
+
+  await openButton.onclick();
   const input = find(dialog, element => element.tagName === "INPUT");
   input.value = "123456";
   const continueButton = find(dialog, element => element.textContent === "Continua");
   const firstIdentification = continueButton.onclick();
   assert.match(text(dialog), /Verifica del codice/);
+  await identifyStarted;
   assert.equal(identifyCalls, 1);
   await continueButton.onclick();
   assert.equal(identifyCalls, 1, "a second click does not start another request");
@@ -216,6 +255,7 @@ test("voting requests show cancellable loading and never overlap", async () => {
   const confirmation = find(dialog, element => element.textContent === "Conferma il voto");
   const voteRequest = confirmation.onclick();
   assert.match(text(dialog), /Invio del voto/);
+  await castStarted;
   assert.equal(castCalls, 1);
   find(dialog, element => element.textContent === "Annulla invio").onclick();
   assert.equal(castSignal.aborted, true);

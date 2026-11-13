@@ -369,12 +369,14 @@ test("rotation control is limited to mobile touch devices", () => {
 
 test("mobile selectors reach their own handlers without running original navigation", () => {
   const { listeners } = viewer(true);
-  listeners.click({
+  const event = {
     target: { closest: (selector) => selector === "[data-live-control]" },
+    key: "ArrowRight",
     stopImmediatePropagation() {
       throw new Error("selector was intercepted");
     },
-  });
+  };
+  for (const name of ["click", "keydown", "touchstart", "touchend"]) listeners[name](event);
 });
 
 test("rotation delegates layout and preserves the current slide position", () => {

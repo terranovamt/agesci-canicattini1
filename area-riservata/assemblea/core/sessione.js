@@ -23,9 +23,9 @@
   fine.style.display = 'none';
   nav.append(fine);
   const originalGo = go;
-  go = (i, k) => {
-    originalGo(i, k);
-    fine.style.display = i === scenes.length - 1 ? 'flex' : 'none';
+  go = (i, k, sincronizzata) => {
+    originalGo(i, k, sincronizzata);
+    fine.style.display = si === scenes.length - 1 ? 'flex' : 'none';
   };
   fine.onclick = async e => {
     e.stopPropagation();

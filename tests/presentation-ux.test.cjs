@@ -45,14 +45,17 @@ test("ODG items are ordered, keyboard-operable controls without slide bubbling",
   const base = read("core/base.js");
   const live = read("core/live.js");
   const vista = read("core/vista.js");
+  const motore = read("core/motore.js");
   for (const source of [landscape, portrait]) {
     assert.match(source, /<ol class="(?:odg|odp)-list"/);
     assert.match(source, /<button type="button"/);
     assert.match(source, /tabIndex = i < k \? 0 : -1/);
   }
   assert.match(base, /ev\.stopPropagation\(\)/);
-  assert.match(live, /ev === "keydown" && e\.target\.closest\?\.\("\[data-live-control\]"\)/);
-  assert.match(vista, /e\.target\.closest\?\.\('\[data-live-control\]'\)/);
+  assert.match(live, /if \(e\.target\.closest\?\.\("\[data-live-control\]"\)\) return;/);
+  assert.match(live, /html\.votazione-attiva #lv-bar\{display:none!important\}/);
+  assert.match(vista, /if \(e\.target\.closest\?\.\('\[data-live-control\]'\)\) return;/);
+  assert.match(motore, /e\.target\.closest\?\.\('\[data-live-control\]'\)/);
 });
 
 test("preview context stays outside the slide stage and off the projector view", () => {
@@ -66,6 +69,9 @@ test("preview context stays outside the slide stage and off the projector view",
 
 test("six viewports: static/live stage, QR, controls, keyboard and resize preserve navigation", { timeout: 90000 }, async (t) => {
   const profile = fs.mkdtempSync(path.join(process.cwd(), ".presentation-chrome-"));
+  const chromeExecutable = process.env.CHROME_BIN || (process.platform === "win32"
+    ? path.join(process.env.PROGRAMFILES || "C:\\Program Files", "Google", "Chrome", "Application", "chrome.exe")
+    : "/usr/bin/google-chrome");
   const scripts = [
     "core/base.js", "slides/landscape/qr_live.js", "slides/landscape/ordine_del_giorno.js",
     "core/motore.js", "slides/portrait/base.js", "slides/portrait/ordine_del_giorno.js", "core/live.js",
@@ -78,6 +84,7 @@ test("six viewports: static/live stage, QR, controls, keyboard and resize preser
     <div id="prog"></div><div id="cnt"></div><div id="pm"></div></div><div id="msg"></div>
     <script>
       window.LIVE={ruolo:"${mode === "live" ? "pubblico" : "locale"}",vista:${mode === "preview" ? '"anteprima"' : 'null'},url:"/mock",limite:"massimo"};
+      window.VOTO={poll:null,config(){},on(fn){window.voteLockListener=fn;fn(this.poll);return()=>{window.voteLockListener=null}}};
       window.EventSource=class {constructor(){window.stream=this;this.handlers={}}addEventListener(n,f){this.handlers[n]=f}};
       window.fetch=async()=>({ok:true,json:async()=>({pos:2000,max:2000})});
       let pdfBusy=false;async function exportPdf(){}
@@ -111,7 +118,7 @@ test("six viewports: static/live stage, QR, controls, keyboard and resize preser
     });
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const chrome = spawn("/usr/bin/google-chrome", [
+  const chrome = spawn(chromeExecutable, [
     "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
     "--no-first-run", "--no-default-browser-check", "--remote-debugging-pipe", `--user-data-dir=${profile}`,
   ], { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] });
@@ -155,6 +162,26 @@ test("six viewports: static/live stage, QR, controls, keyboard and resize preser
           await send("Emulation.setTouchEmulationEnabled", { enabled: width <= 1180, maxTouchPoints: 5 }, sessionId);
           await send("Page.navigate", { url: `http://127.0.0.1:${server.address().port}/fixture-${mode}` }, sessionId);
           await evaluate(`new Promise((resolve,reject)=>{let n=0;const wait=()=>window.ready?resolve(true):++n>200?reject(Error("fixture not ready")):setTimeout(wait,20);wait()})`);
+          const protectedControl = await evaluate(`(()=> {
+            const button=document.createElement("button");button.dataset.liveControl="";
+            document.body.append(button);
+            const before=[si,sk];
+            button.dispatchEvent(new MouseEvent("click",{bubbles:true,clientX:innerWidth*.8}));
+            const afterClick=[si,sk];
+            button.dispatchEvent(new KeyboardEvent("keydown",{bubbles:true,key:"ArrowRight"}));
+            const afterKey=[si,sk];
+            const start=new Event("touchstart",{bubbles:true});
+            Object.defineProperty(start,"touches",{value:[{clientX:100}]});
+            button.dispatchEvent(start);
+            const end=new Event("touchend",{bubbles:true,cancelable:true});
+            Object.defineProperty(end,"changedTouches",{value:[{clientX:0}]});
+            button.dispatchEvent(end);
+            const afterTouch=[si,sk];button.remove();
+            return {before,afterClick,afterKey,afterTouch};
+          })()`);
+          assert.deepEqual(protectedControl.afterClick, protectedControl.before, "control clicks must not advance the presentation");
+          assert.deepEqual(protectedControl.afterKey, protectedControl.before, "control keys must not advance the presentation");
+          assert.deepEqual(protectedControl.afterTouch, protectedControl.before, "control touches must not swipe the presentation");
           const metrics = await evaluate(`(async()=>{
             INST=true;go(0,0);await document.fonts.ready;fit();
             await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -230,6 +257,30 @@ test("six viewports: static/live stage, QR, controls, keyboard and resize preser
               return getComputedStyle(document.getElementById("lv-bar")).pointerEvents;
             })()`);
             assert.equal(idleFocus, "auto", "keyboard-focused public controls remain usable when idle");
+          }
+          if (mode === "static" && width === 1920) {
+            const lock = await evaluate(`(()=> {
+              const open={id:1,slide:"odg",aperta:true};
+              window.LIVE.ruolo="pubblico";window.VOTO.poll=open;window.voteLockListener(open);
+              const forced=[si,sk];next();prev();const local=[si,sk];go(2,0,true);const remote=[si,sk];
+              window.VOTO.poll={...open,aperta:false};window.voteLockListener(window.VOTO.poll);
+              const resumed=[si,sk];
+              window.LIVE.ruolo="locale";window.LIVE.vista="anteprima";window.VOTO.poll=open;window.voteLockListener(open);
+              const preview=[si,sk];
+              const screenPoll={...open,slide:"qr"};
+              window.LIVE.vista="schermo";window.VOTO.poll=screenPoll;window.voteLockListener(screenPoll);
+              const screen=[si,sk];window.VOTO.poll={...screenPoll,aperta:false};window.voteLockListener(window.VOTO.poll);
+              const screenUnlocked=[si,sk];
+              return {forced,local,remote,resumed,preview,screen,screenUnlocked,lockClass:document.documentElement.classList.contains("votazione-attiva")};
+            })()`);
+            assert.deepEqual(lock.forced, [1, 0], "opening a poll forces its slide");
+            assert.deepEqual(lock.local, [1, 0], "local navigation is locked during the poll");
+            assert.deepEqual(lock.remote, [1, 0], "remote navigation is deferred during the poll");
+            assert.deepEqual(lock.resumed, [2, 0], "the latest remote position resumes after closing the poll");
+            assert.deepEqual(lock.preview, [2, 0], "preview remains navigable");
+            assert.deepEqual(lock.screen, [0, 0], "the public screen locks to the poll slide");
+            assert.deepEqual(lock.screenUnlocked, [0, 0]);
+            assert.equal(lock.lockClass, false);
           }
         });
       }

@@ -46,8 +46,8 @@
       }
       if (inviato === body && enc(si, sk) !== p) pub();
     };
-    go = (i, k) => {
-      __go(i, k);
+    go = (i, k, sincronizzata) => {
+      __go(i, k, sincronizzata);
       clearTimeout(t);
       t = setTimeout(pub, 150);
     };
@@ -79,6 +79,7 @@
   const css = document.createElement("style");
   css.textContent = `
     #nav,#cnt{display:none!important}
+    html.votazione-attiva #lv-bar{display:none!important}
     #lv-bar [hidden]{display:none!important}
     #lv-bar{position:fixed;left:0;right:0;bottom:0;height:calc(76px + env(safe-area-inset-bottom,0px));display:flex;
       align-items:flex-end;justify-content:center;gap:6px;padding:0 max(10px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
@@ -141,7 +142,7 @@
   mobile.addEventListener("change", deviceUi);
 
   /* ogni spostamento, da qualunque parte arrivi (swipe, menu, salti), passa da qui */
-  go = (i, k) => {
+  go = (i, k, sincronizzata = false) => {
     const l = dec(lim);
     i = Math.max(0, Math.min(i, scenes.length - 1));
     if (i > l.i || (i === l.i && k > l.k)) {
@@ -152,7 +153,7 @@
       ui();
       return;
     }
-    __go(i, k);
+    __go(i, k, sincronizzata);
     ui();
   };
   function ui() {
@@ -195,10 +196,10 @@
       return;
     }
     const here = enc(si, sk);
-    if (pend || here === old || here > lim) {
+    if ((window.VOTO && VOTO.poll && VOTO.poll.aperta) || pend || here === old || here > lim) {
       const d = dec(lim);
       pend = false;
-      go(d.i, d.k);
+      go(d.i, d.k, true);
     }
     ui();
   }
@@ -232,8 +233,7 @@
       ev,
       (e) => {
         if (bar.contains(e.target)) return;
-        if (ev === "click" && e.target.closest?.("[data-live-control]")) return;
-        if (ev === "keydown" && e.target.closest?.("[data-live-control]") && ["Enter", " "].includes(e.key)) return;
+        if (e.target.closest?.("[data-live-control]")) return;
         e.stopImmediatePropagation();
         if (!cur) return;
         if (ev === "keydown") {
