@@ -101,6 +101,18 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
   assert.equal(M.transposeChordPro("{key: Am}\n[Am]nota", 2), "{key: Bm}\n[Bm]nota");
   assert.equal(M.transposeChordPro("{key:Am}\n[Am]nota", 0), "{key:Am}\n[Am]nota");
   assert.equal(M.transposeChordPro("[N.C.]pausa", 5), "[N.C.]pausa");
+  assert.equal(M.importChordText("C     G\nHello, world"), "[C]Hello,[G] world");
+  assert.equal(M.importChordText("[Am]Testo già in ChordPro"), "[Am]Testo già in ChordPro");
+  assert.match(M.formatChordPro({
+    title: "Titolo demo",
+    author: "Autore demo",
+    key: "C",
+    bpm: 90,
+    meter: "4/4",
+    capo: 0,
+    rights: "da verificare",
+    text: "[C]Testo",
+  }), /\{title: Titolo demo\}[\s\S]*\[C\]Testo/);
   assert.equal(M.matchesSearch({ title: "Canzióne di prova" }, "canzione"), true);
   assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }), 4);
   assert.equal(M.secondsPerLine({ bpm: 120, meter: "6/8", barsPerLine: 2 }), 6);

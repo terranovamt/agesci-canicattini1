@@ -127,6 +127,26 @@ test("public Canzoniere has an index and a slug-based song detail page", () => {
   assert.doesNotMatch(read("canzoniere/index.html") + read("canzoniere/canzone.html"), /<script[^>]+(?:src|href)="https?:/);
 });
 
+test("admin Canzoniere exposes guarded CRUD, import preview, backup and rollback surfaces", () => {
+  const page = read("area-riservata/canzoniere.html");
+  const controller = read("assets/js/canzoniere-admin.js");
+  assert.match(page, /name="robots" content="noindex"/);
+  assert.match(page, /class="reserved-header"/);
+  for (const id of ["admin-songs-panel", "admin-tags-panel", "admin-albums-panel",
+    "admin-presets-panel", "admin-playlists-panel", "admin-backup-panel",
+    "admin-song-form", "admin-chordpro-preview", "admin-import-preview",
+    "admin-import-confirm", "admin-backup-json", "admin-backup-chordpro"])
+    assert.match(page, new RegExp(`id="${id}"`));
+  assert.match(page, /accept="\.txt,\.cho,\.pro,text\/plain"/);
+  assert.match(controller, /!window\.ACCESSO\?\.verificata\(\)/);
+  assert.match(controller, /!window\.NAS\?\.user\?\.admin/);
+  assert.match(controller, /window\.confirm\(/);
+  assert.match(controller, /state\[kind\] = snapshot/);
+  assert.match(controller, /M\.importChordText/);
+  assert.match(controller, /M\.formatChordPro/);
+  assert.doesNotMatch(controller, /innerHTML/);
+});
+
 test("canonical directories have no obsolete or case-duplicate entries", () => {
   const directories = fs
     .readdirSync(root, { withFileTypes: true })

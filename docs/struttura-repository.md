@@ -17,6 +17,7 @@ pubblicazione GitHub Pages restano separati.
 ├── area-riservata/                 Accesso e gestione del sito
 │   ├── index.html                 Login e dashboard
 │   ├── documenti.html             Gestione e pubblicazione dei PDF
+│   ├── canzoniere.html            Gestione amministrativa del Canzoniere
 │   ├── persone.html               Account e reset password (amministratore)
 │   ├── soci.html                  Libro soci, censimenti, percorsi e macro
 │   └── assemblea/                 Strumenti e applicazione assemblea

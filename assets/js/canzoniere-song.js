@@ -64,47 +64,6 @@
     document.getElementById("song-meta").append(term, description);
   }
 
-  function renderScore(target, sourceSong, semitones, showChords) {
-    const source = model.transposeChordPro(sourceSong.text, semitones);
-    const lines = model.parseChordPro(source);
-    target.replaceChildren();
-    let printableLines = 0;
-    lines.forEach((line) => {
-      if (line.directive) return;
-      const row = document.createElement("div");
-      row.className = "song-line";
-      const chordLine = document.createElement("div");
-      chordLine.className = "chord-line";
-      const lyricLine = document.createElement("div");
-      lyricLine.className = "lyric-line";
-      lyricLine.textContent = line.lyric || "\u00a0";
-      if (line.chords.length) {
-        row.classList.add("has-chords");
-        const groups = new Map();
-        line.chords.forEach((chord) => {
-          const current = groups.get(chord.position) || [];
-          current.push(chord.chord);
-          groups.set(chord.position, current);
-        });
-        let lineWidth = line.lyric.length;
-        for (const [position, chords] of groups) {
-          const label = chords.join(" / ");
-          const marker = textNode("span", label, "chord-marker");
-          marker.style.left = position + "ch";
-          chordLine.append(marker);
-          lineWidth = Math.max(lineWidth, position + label.length);
-        }
-        chordLine.style.width = Math.max(1, lineWidth) + "ch";
-        lyricLine.style.width = Math.max(1, lineWidth) + "ch";
-      }
-      row.append(chordLine, lyricLine);
-      target.append(row);
-      printableLines++;
-    });
-    if (!printableLines) target.append(textNode("p", "Testo non disponibile.", "empty-song-text"));
-    target.dataset.chords = showChords ? "on" : "off";
-  }
-
   function renderSongInfo(data) {
     song = data;
     document.title = (playlistMode ? playlistTitle + " · " : "") +
@@ -145,7 +104,8 @@
     retry.hidden = true;
     status.textContent = "";
     detail.setAttribute("aria-busy", "false");
-    renderScore(score, song, transposition, document.getElementById("show-chords").checked);
+    window.CANZONIERE_VIEW.renderScore(score, song, transposition,
+      document.getElementById("show-chords").checked);
     renderKey();
     document.getElementById("auto-scroll").disabled = false;
     scrollPlayer.resetForSong();
@@ -264,7 +224,7 @@
         if (item.author) section.append(textNode("p", "di " + item.author));
         const printedScore = document.createElement("div");
         printedScore.className = "song-score";
-        renderScore(printedScore, item, transposition, true);
+        window.CANZONIERE_VIEW.renderScore(printedScore, item, transposition, true);
         section.append(printedScore);
         printList.append(section);
       });
@@ -354,17 +314,20 @@
   document.getElementById("transpose-down").addEventListener("click", () => {
     transposition = Math.max(-12, transposition - 1);
     renderKey();
-    renderScore(score, song, transposition, document.getElementById("show-chords").checked);
+    window.CANZONIERE_VIEW.renderScore(score, song, transposition,
+      document.getElementById("show-chords").checked);
   });
   document.getElementById("transpose-up").addEventListener("click", () => {
     transposition = Math.min(12, transposition + 1);
     renderKey();
-    renderScore(score, song, transposition, document.getElementById("show-chords").checked);
+    window.CANZONIERE_VIEW.renderScore(score, song, transposition,
+      document.getElementById("show-chords").checked);
   });
   document.getElementById("transpose-original").addEventListener("click", () => {
     transposition = 0;
     renderKey();
-    renderScore(score, song, transposition, document.getElementById("show-chords").checked);
+    window.CANZONIERE_VIEW.renderScore(score, song, transposition,
+      document.getElementById("show-chords").checked);
   });
   document.getElementById("song-font-size").addEventListener("input", (event) => {
     const size = Number(event.currentTarget.value);

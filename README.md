@@ -103,6 +103,7 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Canzoniere                   | `.../canzoniere/` (pubblico, ricerca e scheda canzone)          |
 | Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
+| Gestione Canzoniere          | `.../area-riservata/canzoniere.html` (solo amministratore)     |
 | Libro soci                   | `.../area-riservata/soci.html` (amministratore e capi assegnati) |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |

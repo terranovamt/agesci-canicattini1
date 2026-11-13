@@ -16,6 +16,7 @@ test("local demo provides fictional data, working logins, branch scope and edita
   };
   try {
     assert.equal((await fetch(app.origin + "/agesci-canicattini1/area-riservata/")).status, 200);
+    assert.equal((await fetch(app.origin + "/agesci-canicattini1/area-riservata/canzoniere.html")).status, 200);
     assert.equal((await fetch(app.origin + "/agesci-canicattini1/canzoniere/")).status, 200);
     assert.equal((await fetch(app.origin + "/agesci-canicattini1/api/activities")).status, 401);
     await request("auth/login", "POST", { code: "23816938", password: app.password });

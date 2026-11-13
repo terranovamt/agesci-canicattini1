@@ -122,6 +122,53 @@
     });
   }
 
+  function importChordText(source) {
+    if (typeof source !== "string") throw new TypeError("Il testo da importare deve essere una stringa");
+    const text = source.replace(/\r\n?/g, "\n");
+    if (text.length > 100000) throw new RangeError("Il testo da importare supera 100000 caratteri");
+    if (/\[[^\]\r\n]+\]/.test(text)) return text;
+    const lines = text.split("\n");
+    const chordLine = (line) => {
+      const tokens = [...line.matchAll(/\S+/g)];
+      return tokens.length > 0 && tokens.length <= 20 && tokens.every((token) => chordParts(token[0]));
+    };
+    const inlineChords = (chords, lyric) => {
+      let output = "";
+      let cursor = 0;
+      for (const token of chords.matchAll(/\S+/g)) {
+        const position = Math.min(token.index, lyric.length);
+        output += lyric.slice(cursor, position) + "[" + token[0] + "]";
+        cursor = position;
+      }
+      return output + lyric.slice(cursor);
+    };
+    const result = [];
+    for (let index = 0; index < lines.length; index++) {
+      if (chordLine(lines[index]) && index + 1 < lines.length && !chordLine(lines[index + 1])) {
+        result.push(inlineChords(lines[index], lines[++index]));
+      } else result.push(lines[index]);
+    }
+    return result.join("\n");
+  }
+
+  function formatChordPro(song, albumTitle = "") {
+    const directiveValue = (value) => String(value ?? "").replace(/[{}\r\n]/g, " ").trim();
+    const lines = [
+      ["title", song.title],
+      ["artist", song.author],
+      ["album", albumTitle],
+      ["key", song.key],
+      ["tempo", song.bpm],
+      ["time", song.meter],
+      ["capo", song.capo],
+      ["comment", song.source ? "Fonte: " + song.source : ""],
+      ["comment", song.rights ? "Diritti: " + song.rights : ""],
+      ["comment", song.notes ? "Note: " + song.notes : ""],
+    ].filter(([, value]) => value !== undefined && value !== null && value !== "");
+    const header = lines.map(([name, value]) => "{" + name + ": " + directiveValue(value) + "}");
+    return header.join("\n") + "\n\n" + String(song.text || "").replace(/\r\n?/g, "\n");
+  }
+
   function transposeChordPro(source, semitones, preferFlats) {
     if (typeof source !== "string") throw new TypeError("Il testo ChordPro deve essere una stringa");
     if (!Number.isInteger(semitones)) throw new RangeError("La trasposizione deve essere un numero intero di semitoni");
@@ -171,6 +218,8 @@
     DEFAULT_TAGS,
     METERS,
     beatsPerBar,
+    formatChordPro,
+    importChordText,
     matchesSearch,
     normalizeSearch,
     parseChordPro,

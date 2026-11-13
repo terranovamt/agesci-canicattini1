@@ -106,6 +106,14 @@ supporta la navigazione sequenziale e l'avanzamento automatico tra le canzoni.
 La home mostra i preset rapidi e le scalette pubblicate; la stampa offre
 l'opzione di includere gli accordi.
 
+`area-riservata/canzoniere.html` e' l'interfaccia amministrativa, raggiungibile
+dalla dashboard dei capi. Il server resta l'autorita' per ogni scrittura: i
+controlli UI sono solo un aiuto, non sostituiscono il 403 server-side.
+L'editor offre anteprima ChordPro, import locale con anteprima/conferma,
+gestione di tag/album/preset/scalette e backup JSON; ogni canzone puo' essere
+esportata in `.cho`. Una scrittura ottimistica ripristina lo snapshot locale
+se l'API rifiuta l'operazione.
+
 ## Verifica locale
 
 ```sh

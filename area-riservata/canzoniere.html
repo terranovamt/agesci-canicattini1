@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Gestione Canzoniere · Canicattini 1</title>
+    <link rel="icon" href="../assets/img/emblema-2colori-noname.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <link rel="stylesheet" href="../assets/css/home.css" />
+    <link rel="stylesheet" href="../assets/css/nas.css" />
+    <link rel="stylesheet" href="../assets/css/section-nav.css" />
+    <link rel="stylesheet" href="../assets/css/canzoniere.css" />
+    <link rel="stylesheet" href="../assets/css/canzoniere-admin.css" />
+  </head>
+  <body class="reserved-page canzoniere-admin-page">
+    <a class="skip-link" href="#canzoniere-admin">Vai alla gestione Canzoniere</a>
+    <header class="reserved-header">
+      <a href="./">← Area riservata</a>
+      <h1>Gestione Canzoniere</h1>
+      <a href="../canzoniere/">Pagina pubblica ↗</a>
+    </header>
+    <p id="canzoniere-admin-access-status" class="admin-access-status" role="status" aria-live="polite">
+      Verifica della sessione amministrativa…
+    </p>
+    <main id="canzoniere-admin" class="canzoniere-admin" aria-busy="true" hidden>
+      <div class="admin-status-bar">
+        <p id="canzoniere-admin-status" role="status" aria-live="polite">Caricamento dati…</p>
+        <button id="canzoniere-admin-reload" class="button button-secondary" type="button">Ricarica</button>
+      </div>
+      <nav id="admin-section-nav" class="section-nav admin-section-nav" data-section-nav aria-label="Gestione Canzoniere">
+        <button type="button" data-section-target="admin-songs-panel">Canzoni</button>
+        <button type="button" data-section-target="admin-tags-panel">Tag</button>
+        <button type="button" data-section-target="admin-albums-panel">Album</button>
+        <button type="button" data-section-target="admin-presets-panel">Preset</button>
+        <button type="button" data-section-target="admin-playlists-panel">Scalette</button>
+        <button type="button" data-section-target="admin-backup-panel">Backup</button>
+      </nav>
+
+      <section id="admin-songs-panel" class="admin-panel" data-section-panel aria-labelledby="admin-songs-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Archivio pubblico</p>
+            <h2 id="admin-songs-title">Canzoni</h2>
+          </div>
+          <button id="admin-new-song" class="button button-primary" type="button">Nuova canzone</button>
+        </div>
+        <label for="admin-song-search">Cerca per titolo, autore o testo</label>
+        <input id="admin-song-search" type="search" autocomplete="off" placeholder="Filtra l’elenco…" />
+        <p id="admin-songs-status" class="admin-panel-status" role="status" aria-live="polite">Caricamento canzoni…</p>
+        <div id="admin-songs-list" class="admin-record-list" aria-busy="true">
+          <article class="loading-skeleton admin-record-skeleton" aria-hidden="true"></article>
+          <article class="loading-skeleton admin-record-skeleton" aria-hidden="true"></article>
+          <article class="loading-skeleton admin-record-skeleton" aria-hidden="true"></article>
+        </div>
+        <form id="admin-song-form" class="admin-form" hidden>
+          <div class="admin-form-heading">
+            <h3 id="admin-song-form-title">Nuova canzone</h3>
+            <button id="admin-song-cancel" class="button button-secondary" type="button">Annulla</button>
+          </div>
+          <div class="admin-field-grid">
+            <div class="admin-field-wide">
+              <label for="admin-song-title">Titolo</label>
+              <input id="admin-song-title" type="text" maxlength="200" required />
+            </div>
+            <div>
+              <label for="admin-song-author">Autore</label>
+              <input id="admin-song-author" type="text" maxlength="200" />
+            </div>
+            <div>
+              <label for="admin-song-album">Album</label>
+              <select id="admin-song-album">
+                <option value="">Nessun album</option>
+              </select>
+            </div>
+            <div>
+              <label for="admin-song-key">Tonalità</label>
+              <input id="admin-song-key" type="text" maxlength="16" placeholder="Es. Am" />
+            </div>
+            <div>
+              <label for="admin-song-bpm">BPM</label>
+              <input id="admin-song-bpm" type="number" min="20" max="300" step="1" />
+            </div>
+            <div>
+              <label for="admin-song-meter">Tempo</label>
+              <select id="admin-song-meter">
+                <option value="4/4">4/4</option>
+                <option value="3/4">3/4</option>
+                <option value="6/8">6/8</option>
+              </select>
+            </div>
+            <div>
+              <label for="admin-song-capo">Capotasto</label>
+              <input id="admin-song-capo" type="number" min="0" max="12" step="1" value="0" />
+            </div>
+            <div>
+              <label for="admin-song-bars">Battute per riga</label>
+              <input id="admin-song-bars" type="number" min="1" max="16" step="1" value="2" required />
+            </div>
+            <div>
+              <label for="admin-song-rights">Diritti</label>
+              <select id="admin-song-rights" required>
+                <option value="da verificare">Da verificare</option>
+                <option value="pubblico dominio">Pubblico dominio</option>
+                <option value="autorizzato">Autorizzato</option>
+              </select>
+            </div>
+            <div class="admin-field-wide">
+              <label for="admin-song-source">Fonte</label>
+              <input id="admin-song-source" type="text" maxlength="1000" />
+            </div>
+            <div class="admin-field-wide">
+              <label for="admin-song-notes">Note</label>
+              <textarea id="admin-song-notes" rows="3" maxlength="4000"></textarea>
+            </div>
+            <fieldset id="admin-song-tags" class="admin-field-wide admin-checklist">
+              <legend>Tag</legend>
+            </fieldset>
+            <div class="admin-field-wide">
+              <label for="admin-song-text">Testo ChordPro</label>
+              <textarea
+                id="admin-song-text"
+                rows="12"
+                maxlength="100000"
+                spellcheck="false"
+                placeholder="[Am]Testo con [G]accordi"
+                required
+              ></textarea>
+            </div>
+            <section class="admin-field-wide chordpro-preview" aria-labelledby="admin-chordpro-preview-title">
+              <h4 id="admin-chordpro-preview-title">Anteprima live</h4>
+              <div id="admin-chordpro-preview" class="song-score" aria-label="Anteprima accordi e testo"></div>
+            </section>
+            <details class="admin-field-wide import-panel">
+              <summary>Importa testo o file .txt / .cho / .pro</summary>
+              <p class="admin-hint">Il file resta nel browser: controlla l’anteprima prima di inserirlo nell’editor.</p>
+              <label for="admin-import-file">Scegli un file</label>
+              <input id="admin-import-file" type="file" accept=".txt,.cho,.pro,text/plain" />
+              <label for="admin-import-text">Oppure incolla il testo</label>
+              <textarea id="admin-import-text" rows="6" maxlength="100000" spellcheck="false"></textarea>
+              <div class="admin-actions">
+                <button id="admin-import-preview" class="button button-secondary" type="button">
+                  Mostra anteprima
+                </button>
+                <button id="admin-import-confirm" class="button button-secondary" type="button" disabled>
+                  Conferma import nell’editor
+                </button>
+              </div>
+              <p id="admin-import-status" class="admin-panel-status" role="status" aria-live="polite"></p>
+              <div id="admin-import-preview-box" class="song-score" aria-label="Anteprima import" hidden></div>
+            </details>
+          </div>
+          <div class="admin-form-actions">
+            <button id="admin-song-save" class="button button-primary" type="submit">Salva canzone</button>
+            <button id="admin-song-export" class="button button-secondary" type="button" hidden>Esporta .cho</button>
+            <p id="admin-song-form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-tags-panel" class="admin-panel" data-section-panel aria-labelledby="admin-tags-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Momenti e branche</p>
+            <h2 id="admin-tags-title">Tag</h2>
+          </div>
+          <button id="admin-new-tag" class="button button-primary" type="button">Nuovo tag</button>
+        </div>
+        <div id="admin-tags-list" class="admin-record-list"></div>
+        <form id="admin-tag-form" class="admin-form" hidden>
+          <div class="admin-form-heading">
+            <h3 id="admin-tag-form-title">Nuovo tag</h3>
+            <button id="admin-tag-cancel" class="button button-secondary" type="button">Annulla</button>
+          </div>
+          <label for="admin-tag-name">Nome</label>
+          <input id="admin-tag-name" type="text" maxlength="80" required />
+          <label for="admin-tag-category">Categoria</label>
+          <select id="admin-tag-category" required>
+            <option value="momento">Momento</option>
+            <option value="branca">Branca</option>
+            <option value="altro">Altro</option>
+          </select>
+          <div class="admin-form-actions">
+            <button class="button button-primary" type="submit">Salva tag</button>
+            <p id="admin-tag-form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-albums-panel" class="admin-panel" data-section-panel aria-labelledby="admin-albums-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Raccolte</p>
+            <h2 id="admin-albums-title">Album</h2>
+          </div>
+          <button id="admin-new-album" class="button button-primary" type="button">Nuovo album</button>
+        </div>
+        <div id="admin-albums-list" class="admin-record-list"></div>
+        <form id="admin-album-form" class="admin-form" hidden>
+          <div class="admin-form-heading">
+            <h3 id="admin-album-form-title">Nuovo album</h3>
+            <button id="admin-album-cancel" class="button button-secondary" type="button">Annulla</button>
+          </div>
+          <label for="admin-album-title">Titolo</label>
+          <input id="admin-album-title" type="text" maxlength="200" required />
+          <label for="admin-album-author">Autore</label>
+          <input id="admin-album-author" type="text" maxlength="200" />
+          <label for="admin-album-year">Anno</label>
+          <input id="admin-album-year" type="number" min="1900" max="2200" step="1" />
+          <label for="admin-album-notes">Note</label>
+          <textarea id="admin-album-notes" rows="3" maxlength="2000"></textarea>
+          <div class="admin-form-actions">
+            <button class="button button-primary" type="submit">Salva album</button>
+            <p id="admin-album-form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-presets-panel" class="admin-panel" data-section-panel aria-labelledby="admin-presets-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Generatore pubblico</p>
+            <h2 id="admin-presets-title">Preset rapidi</h2>
+          </div>
+          <button id="admin-new-preset" class="button button-primary" type="button">Nuovo preset</button>
+        </div>
+        <div id="admin-presets-list" class="admin-record-list"></div>
+        <form id="admin-preset-form" class="admin-form" hidden>
+          <div class="admin-form-heading">
+            <h3 id="admin-preset-form-title">Nuovo preset</h3>
+            <button id="admin-preset-cancel" class="button button-secondary" type="button">Annulla</button>
+          </div>
+          <label for="admin-preset-title">Titolo</label>
+          <input id="admin-preset-title" type="text" maxlength="120" required />
+          <label for="admin-preset-limit">Numero massimo di canzoni</label>
+          <input id="admin-preset-limit" type="number" min="1" max="50" step="1" value="12" required />
+          <fieldset id="admin-preset-tags" class="admin-checklist">
+            <legend>Tag da includere</legend>
+          </fieldset>
+          <fieldset id="admin-preset-songs" class="admin-checklist">
+            <legend>Canzoni fisse (facoltative)</legend>
+          </fieldset>
+          <div class="admin-form-actions">
+            <button class="button button-primary" type="submit">Salva preset</button>
+            <p id="admin-preset-form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-playlists-panel" class="admin-panel" data-section-panel aria-labelledby="admin-playlists-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Pubblicazione</p>
+            <h2 id="admin-playlists-title">Scalette</h2>
+          </div>
+          <button id="admin-new-playlist" class="button button-primary" type="button">Nuova scaletta</button>
+        </div>
+        <div id="admin-playlists-list" class="admin-record-list"></div>
+        <form id="admin-playlist-form" class="admin-form" hidden>
+          <div class="admin-form-heading">
+            <h3 id="admin-playlist-form-title">Nuova scaletta</h3>
+            <button id="admin-playlist-cancel" class="button button-secondary" type="button">Annulla</button>
+          </div>
+          <label for="admin-playlist-title">Titolo</label>
+          <input id="admin-playlist-title" type="text" maxlength="160" required />
+          <label for="admin-playlist-description">Descrizione</label>
+          <textarea id="admin-playlist-description" rows="3" maxlength="2000"></textarea>
+          <div class="admin-playlist-picker">
+            <label for="admin-playlist-song-picker">Aggiungi una canzone alla scaletta</label>
+            <div class="admin-actions">
+              <select id="admin-playlist-song-picker">
+                <option value="">Scegli una canzone</option>
+              </select>
+              <button id="admin-playlist-add-song" class="button button-secondary" type="button">Aggiungi</button>
+            </div>
+            <p class="admin-hint">L’ordine qui sotto è l’ordine di riproduzione pubblico.</p>
+            <ol id="admin-playlist-song-order" class="admin-playlist-order"></ol>
+          </div>
+          <label class="admin-check">
+            <input id="admin-playlist-published" type="checkbox" />
+            Pubblica la scaletta
+          </label>
+          <div class="admin-form-actions">
+            <button class="button button-primary" type="submit">Salva scaletta</button>
+            <p id="admin-playlist-form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-backup-panel" class="admin-panel" data-section-panel aria-labelledby="admin-backup-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Copia locale</p>
+            <h2 id="admin-backup-title">Backup ed esportazione</h2>
+          </div>
+        </div>
+        <p class="admin-hint">Il backup JSON include canzoni, testi, tag, album, preset e scalette. L’esportazione .cho contiene una singola canzone.</p>
+        <div class="admin-actions">
+          <button id="admin-backup-json" class="button button-primary" type="button">Scarica backup JSON</button>
+          <label class="admin-backup-select" for="admin-backup-song">
+            Esporta in ChordPro
+            <select id="admin-backup-song">
+              <option value="">Scegli una canzone</option>
+            </select>
+          </label>
+          <button id="admin-backup-chordpro" class="button button-secondary" type="button" disabled>
+            Scarica .cho
+          </button>
+        </div>
+        <p id="admin-backup-status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <noscript><p>Attiva JavaScript per gestire il Canzoniere.</p></noscript>
+    <script src="../config/site.js" defer></script>
+    <script src="../assets/js/nas-nav.js" defer></script>
+    <script src="../assets/js/nas-telemetry.js" defer></script>
+    <script src="../assets/js/shared/accesso.js" defer></script>
+    <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere-view.js" defer></script>
+    <script src="../assets/js/canzoniere-admin.js" defer></script>
+    <script src="../assets/js/shared/section-nav.js" defer></script>
+  </body>
+</html>

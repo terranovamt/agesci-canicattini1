@@ -11,7 +11,8 @@ const chrome = require('./helpers/chrome.cjs');
 const pages = ['index.html', 'documenti/index.html', 'assemblea/index.html', 'canzoniere/index.html',
   'canzoniere/canzone.html', 'peg/edizioni/2026-2028.html',
   '404.html', 'area-riservata/index.html', 'area-riservata/documenti.html', 'area-riservata/persone.html',
-  'area-riservata/soci.html', 'area-riservata/attivita.html', 'area-riservata/statistiche.html', 'area-riservata/assemblea/setup.html',
+  'area-riservata/soci.html', 'area-riservata/attivita.html', 'area-riservata/statistiche.html',
+  'area-riservata/canzoniere.html', 'area-riservata/assemblea/setup.html',
   'area-riservata/assemblea/regia.html', 'area-riservata/assemblea/guida.html', 'area-riservata/assemblea/index.html'];
 const viewports = [
   [1920, 1080], [1366, 768], [820, 1180], [390, 844], [1180, 820], [844, 390],
@@ -24,6 +25,7 @@ const applicationRoots = {
   'area-riservata/persone.html': '#people-app',
   'area-riservata/soci.html': '#members-app',
   'area-riservata/attivita.html': '#activities-app',
+  'area-riservata/canzoniere.html': '#canzoniere-admin',
   'area-riservata/statistiche.html': '#statistics-data',
   'area-riservata/assemblea/setup.html': '#app',
   'area-riservata/assemblea/regia.html': '#app',
@@ -61,7 +63,7 @@ function fixture(file) {
       ${read('assets/js/nas-nav.js')}
       ${read('assets/js/shared/section-nav.js')}
       ${file === 'area-riservata/assemblea/index.html' ? read('area-riservata/assemblea/core/base.js') : ''}
-      const allowed = ['riservata', 'documents-app', 'members-app', 'activities-app', 'people-app', 'statistics-data', 'app'];
+      const allowed = ['riservata', 'documents-app', 'members-app', 'activities-app', 'people-app', 'statistics-data', 'canzoniere-admin', 'app'];
       allowed.forEach(id => { const node = document.getElementById(id); if (node) node.hidden = false; });
       document.querySelectorAll('header [hidden], #esci').forEach(node => { node.hidden = false; });
       for (const id of ['login', 'accesso', 'avviso']) {

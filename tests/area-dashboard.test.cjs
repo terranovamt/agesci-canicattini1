@@ -406,6 +406,9 @@ test("dashboard presents one operational layout without tabs or duplicate docume
   assert.match(documentsTool, /<h2>Gestione documenti<\/h2>[\s\S]*Caricamento e organizzazione dei materiali del gruppo/);
   assert.match(documentsTool, /href="documenti.html">Carica o gestisci documenti/);
   assert.doesNotMatch(documentsTool, /\bhidden\b/);
+  assert.match(html, /id="dashboard-canzoniere-tool"[^>]*hidden/);
+  assert.match(html, /href="canzoniere.html">Apri gestione Canzoniere/);
+  assert.match(dashboard, /canzoniereTool\.hidden = !user\?\.admin/);
   assert.doesNotMatch(html, /winter-camp-panel|winter-camp-tool|Campo invernale/);
   assert.doesNotMatch(html, /id="people-tool"|id="people-access-tool"|id="activities-tool"/);
   assert.match(html, /id="dashboard-documents-title">Documenti pubblicati/);
