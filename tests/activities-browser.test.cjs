@@ -89,12 +89,42 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await wait("document.getElementById('event-dialog')?.open");
         assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), false,
           "activity data appear only in Program");
+        const initialAttendance = await page.evaluate(`(() => ({
+          fee: ACTIVITIES_MODEL.cents(document.querySelector('#event-form [name=fee]').value),
+          status: document.querySelector('#event-attendance select').value,
+          paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value)
+        }))()`);
         await click("#event-attendance [data-person-action]");
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
-        assert.match(await page.evaluate("document.querySelector('#event-attendance [data-person-action]').textContent"), /Assente/);
-        await click("#event-attendance [data-person-action]");
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "presente");
-        assert.match(await page.evaluate("document.querySelector('#event-attendance [data-person-action]').textContent"), /Presente/);
+        const firstClick = await page.evaluate(`(() => ({
+          status: document.querySelector('#event-attendance .activity-person').dataset.status,
+          paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
+          label: document.querySelector('#event-attendance [data-person-status]').textContent
+        }))()`);
+        if (initialAttendance.fee > 0) {
+          if (initialAttendance.status === 'presente' && initialAttendance.paid >= initialAttendance.fee) {
+            assert.deepEqual(firstClick, { status: 'presente', paid: 0, label: 'Presenza' });
+            await click("#event-attendance [data-person-action]");
+            assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
+          } else if (initialAttendance.status === 'presente') {
+            assert.equal(firstClick.status, 'assente');
+          } else {
+            assert.deepEqual(firstClick, { status: 'presente', paid: initialAttendance.fee, label: 'Presenza e quota' });
+            await click("#event-attendance [data-person-action]");
+            assert.deepEqual(await page.evaluate(`(() => ({
+              status: document.querySelector('#event-attendance .activity-person').dataset.status,
+              paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
+              label: document.querySelector('#event-attendance [data-person-status]').textContent
+            }))()`), { status: 'presente', paid: 0, label: 'Presenza' });
+            await click("#event-attendance [data-person-action]");
+            assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
+          }
+        } else {
+          const expected = initialAttendance.status === 'presente' ? 'assente' : 'presente';
+          assert.equal(firstClick.status, expected);
+          await click("#event-attendance [data-person-action]");
+          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"),
+            initialAttendance.status === 'presente' ? 'presente' : 'assente');
+        }
         await shot(label + "-correzioni-presenze");
         await click('[data-event-view="programma"]');
         assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), true,
@@ -366,9 +396,12 @@ test("branch chiefs land on today's program, including the last camp day, across
           await wait("!document.getElementById('paths-panel').hidden");
           assert.equal(await page.evaluate(`(() => {
             const panel = document.getElementById('paths-panel');
-            return panel.textContent.includes('Percorso senza squadriglia') ||
-              panel.textContent.includes('Senza squadriglia');
-          })()`), false, "paths without an assigned squadron are omitted");
+            const group = [...panel.querySelectorAll('.activity-path-unit')].find(item =>
+              item.textContent.includes('Senza squadriglia'));
+            return !!group && [...group.querySelectorAll('.path-row')].some(row =>
+              row.textContent.includes('Socio Senza squadriglia') &&
+              row.textContent.includes('Percorso senza squadriglia'));
+          })()`), true, "paths without an assigned squadron remain visible and updatable");
           assert.equal(await page.evaluate(`(() => {
             const group = document.querySelector('#paths-members .activity-path-unit[data-branch="E/G"]');
             const summary = group?.querySelector(':scope > summary');
@@ -413,6 +446,70 @@ test("branch chiefs land on today's program, including the last camp day, across
     }
   });
 
+test("E/G attendance rows follow patrol role order", { skip: !chrome, timeout: 120000 }, async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-role-attendance-"));
+  const app = await startNasDev({ basePath: "/agesci-canicattini1", censusCodes: "7654321" });
+  let page;
+  try {
+    page = await browser(directory);
+    const base = app.origin + "/agesci-canicattini1/area-riservata/";
+    const wait = async expression => {
+      for (let attempt = 0; attempt < 200; attempt++) {
+        if (await page.evaluate(expression)) return;
+        await delay(25);
+      }
+      throw new Error("Timed out waiting for: " + expression);
+    };
+    const go = async route => {
+      await page.send("Page.navigate", { url: base + route });
+      await wait("document.readyState === 'complete' && !!window.ACCESSO");
+    };
+    await go("");
+    await page.evaluate(`ACCESSO.entra(${JSON.stringify(app.password)}, '23816938')`);
+    const fixture = await page.evaluate(`(async () => {
+      const chief = (await ACCESSO.request('people')).people.find(person => person.code === '7654321');
+      await ACCESSO.request('people/' + chief.id, 'PATCH', {serviceBranch:'E/G'});
+      const roles = [
+        ['491101', 'Capo', 'Capo squadriglia'],
+        ['491102', 'Vice', 'Vice capo squadriglia'],
+        ['491103', 'Squadrigliere', 'Squadrigliere'],
+        ['491104', 'Senza ruolo', ''],
+      ];
+      for (const [code, surname, role] of roles) {
+        const created = await ACCESSO.request('members', 'POST', {code, branch:'E/G',
+          profile:{givenName:'Socio', surname}, values:{squadriglia:'Aironi'}});
+        if (role) await ACCESSO.request('members/' + created.member.id, 'PATCH', {
+          revision:created.member.revision, branch:'E/G', profile:created.member.profile,
+          values:{...created.member.values['E/G'], ruolo:role},
+        });
+      }
+      const event = await ACCESSO.request('activities/events', 'POST', {
+        branch:'E/G', kind:'uscita', title:'Ordinamento delle presenze',
+        date:'2027-01-05', attendance:[], tasks:[], program:[],
+      });
+      await ACCESSO.request('auth/view-as', 'POST', {personId:chief.id});
+      return event.id;
+    })()`);
+    await go(`attivita.html?event=${fixture}&presenze=1`);
+    await wait(`document.getElementById('event-dialog')?.open &&
+      document.querySelector('#event-attendance .activity-attendance-role-heading')?.textContent === 'Capo squadriglia'`);
+    const headings = await page.evaluate(`(() => {
+      const group = [...document.querySelectorAll('.activity-attendance-group')]
+        .find(item => item.dataset.unit === 'Aironi');
+      return group && [...group.querySelectorAll('.activity-attendance-role-heading')]
+        .map(heading => heading.textContent);
+    })()`);
+    assert.deepEqual(headings,
+      ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere', 'Ruolo da assegnare'],
+      "E/G presences are grouped in patrol role order");
+    assert.deepEqual(page.errors, []);
+  } finally {
+    if (page) await page.stop();
+    await app.stop();
+    await fs.rm(directory, { recursive:true, force:true, maxRetries:10, retryDelay:100 });
+  }
+});
+
 async function browser(directory) {
   const child = spawn(chrome, ["--headless", "--no-sandbox", "--disable-gpu",
     "--disable-dev-shm-usage", "--remote-debugging-port=0", "--user-data-dir=" + directory, "about:blank"],
@@ -453,12 +550,19 @@ async function browser(directory) {
       return result.result.value;
     },
     async stop() {
-      if (child.exitCode === null) {
-        const closed = new Promise(resolve => child.once("exit", resolve));
-        await send("Browser.close");
-        await closed;
+      try {
+        if (child.exitCode === null) {
+          const closed = new Promise(resolve => child.once("exit", resolve));
+          try {
+            await send("Browser.close");
+          } finally {
+            if (child.exitCode === null) child.kill();
+            await closed;
+          }
+        }
+      } finally {
+        socket.close();
       }
-      socket.close();
     },
   };
 }
@@ -607,9 +711,11 @@ test("login autofill, education dates, activities and progression work on four s
         await expand("#event-settings");
         await fill('#event-form [name=fee]', "10.25");
         await click('[data-event-view="quote"]');
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-due]') === null"), true);
-        assert.equal(await page.evaluate("document.getElementById('event-totals').textContent.includes('20,50')"), true,
-          "the quota is due by both members before any payment, including unrecorded attendance");
+        assert.deepEqual(await page.evaluate(`(() => {
+          const totals = document.getElementById('event-totals').textContent;
+          return [totals.includes('10,25'), totals.includes('20,50')];
+        })()`), [true, false],
+        "only present members owe the quota; unrecorded attendance is not due");
         await click("#event-attendance [data-person-action]");
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25");
         await fill('#event-attendance [data-paid]', "5");
@@ -834,10 +940,21 @@ test("login autofill, education dates, activities and progression work on four s
         await fill('#event-form [name=fee]', "25.00");
         await click('[data-event-view="quote"]');
         await click("#event-attendance [data-person-action]");
-        await page.evaluate(`{
+        const paymentState = await page.evaluate(`(() => {
           const paid = document.querySelector('#event-attendance [data-paid]');
+          const row = paid.closest('.activity-person'), select = row.querySelector('select');
           paid.value = '10'; paid.dispatchEvent(new Event('input',{bubbles:true}));
-        }`);
+          const partial = { status: select.value, balance: row.dataset.balanceState };
+          paid.value = '25'; paid.dispatchEvent(new Event('input',{bubbles:true}));
+          return { partial, complete: {
+            status: select.value, label: row.querySelector('[data-person-status]').textContent,
+            balance: row.dataset.balanceState,
+          }};
+        })()`);
+        assert.deepEqual(paymentState.partial, { status: '', balance: 'advance' });
+        assert.deepEqual(paymentState.complete, {
+          status: 'presente', label: 'Presenza e quota', balance: 'paid',
+        });
         await click('#event-form button[type=submit]');
         await wait("!document.getElementById('event-dialog').open");
         const campId = await page.evaluate("ACCESSO.request('activities').then(data => data.events.find(item => item.title === 'Campo invernale')?.id)");

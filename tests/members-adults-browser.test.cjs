@@ -67,6 +67,12 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
           {id:1,title:'Uscita confermata',date:'2026-10-10',branch:'E/G',kind:'Uscita',status:'presente',due:true,feeCents:1000,paidCents:400},
           {id:2,title:'Uscita assente',date:'2026-09-10',branch:'E/G',kind:'Uscita',status:'assente',due:false,feeCents:1000,paidCents:0},
         ]};
+        if(route === 'members' && method === 'POST') return {member:{
+          id:99, code:'', name:value.profile.givenName + ' ' + value.profile.surname,
+          kind:value.branch === 'Adulti' ? 'capo' : 'ragazzo', branch:value.branch, revision:1,
+          profile:{...value.profile, guardianContacts:[]}, censuses:[], values:{[value.branch]:{}},
+          assignmentHistory:[],
+        }};
         if(method === 'PATCH') {
           const member = snapshot.members.find(member => route === 'members/' + member.id);
           member.profile = value.profile;
@@ -167,15 +173,21 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
           $('member-form').elements['profile:email'].value = 'valid@example.invalid';
           $('member-form').requestSubmit(); await wait();
           $('new-member').click();
+          const createForm = $('member-create-form');
+          createForm.elements.givenName.value = 'Nuovo';
+          createForm.elements.surname.value = 'Adulto';
+          createForm.elements.branch.value = 'Adulti';
+          createForm.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
+          await wait();
           const form = $('member-form');
-          assert(!$('member-panel-activities').hidden && !$('member-activities-context').hidden &&
-            $('member-activities').hidden, 'new member starts on contextual activities');
-          form.elements.branch.value = 'Adulti'; form.elements.branch.onchange();
-          assert(sections().length === 3 && form.elements.branch.selectedOptions[0].textContent === 'Co.Ca.', 'new adult sections');
-          form.elements.branch.value = 'L/C'; form.elements.branch.onchange();
-          assert(sections().length === 3 && !form.elements['extra:anno'].disabled &&
-            !$('member-panel-guardians').hidden, 'new youth sections');
+          assert(!$('member-create-dialog').open && $('member-dialog').open &&
+            $('member-tab-profile').getAttribute('aria-selected') === 'true' &&
+            form.elements.code.value === '' && !form.elements.code.readOnly, 'new member opens its full editable card');
+          assert(JSON.stringify(sections()) === JSON.stringify(['activities','profile','contacts','censuses']) &&
+            form.elements.branch.value === 'Adulti' && form.elements.branch.selectedOptions[0].textContent === 'Co.Ca.',
+            'new adult card shows its applicable sections');
           document.querySelector('[data-close=member-dialog]').click();
+          $('reload-members').click(); await wait();
           const macroCalls = () => calls.filter(call => call.route === 'members/macro').length;
           const impossible = 'Non e previsto un passaggio alla branca successiva per R/S o Co.Ca.';
           const blockedFor = (branch, error) => {

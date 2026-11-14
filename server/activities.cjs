@@ -4,6 +4,7 @@ const M = require("../assets/js/soci-model.js");
 const AM = require("../assets/js/activities-model.js");
 const TM = require("../assets/js/tournament-model.js");
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
+const hiddenAttendance = Symbol("hiddenAttendance");
 const branches = ["L/C", "E/G", "R/S"];
 const kinds = { "L/C": ["riunione", "caccia"], "E/G": ["riunione", "uscita"], "R/S": ["riunione", "route"] };
 const object = value => value && typeof value === "object" && !Array.isArray(value);
@@ -91,22 +92,36 @@ function createActivities(db, people) {
     id INTEGER PRIMARY KEY, category TEXT NOT NULL, branch TEXT NOT NULL,
     data TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1
   )`);
-  const record = row => {
+  const nonFrequentMemberIds = () => new Set(db.prepare("SELECT person_id,data FROM member_profiles").all()
+    .filter(row => M.isNonFrequentante({ profile: JSON.parse(row.data) })).map(row => row.person_id));
+  const record = (row, excludedMemberIds = null) => {
     const data = JSON.parse(row.data);
+    let excludedAttendance = [];
     if (row.category === "events") {
       data.feeCents ??= 0;
       data.endDate ??= data.date;
       data.program ??= [];
       data.materials ??= [];
       data.shopping ??= [];
-      data.attendance = data.attendance.map(person => ({
-        ...person, due: data.feeCents > 0, paidCents: person.paidCents ?? 0,
-      }));
+      const excluded = excludedMemberIds || nonFrequentMemberIds();
+      const attendance = Array.isArray(data.attendance) ? data.attendance : [];
+      excludedAttendance = attendance.filter(person => excluded.has(person.personId));
+      data.attendance = attendance.filter(person => !excluded.has(person.personId)).map(person => {
+        const paidCents = person.paidCents ?? 0;
+        return { ...person, due: data.feeCents > 0 && person.status === "presente" && paidCents < data.feeCents,
+          paidCents };
+      });
       data.totals = AM.totals(data);
     }
-    return { ...data, id: row.id, branch: row.branch, revision: row.revision };
+    const result = { ...data, id: row.id, branch: row.branch, revision: row.revision };
+    if (excludedAttendance.length) Object.defineProperty(result, hiddenAttendance, { value: excludedAttendance });
+    return result;
   };
-  const all = category => db.prepare("SELECT * FROM activities WHERE category=? ORDER BY id DESC").all(category).map(record);
+  const all = category => {
+    const excluded = category === "events" ? nonFrequentMemberIds() : null;
+    return db.prepare("SELECT * FROM activities WHERE category=? ORDER BY id DESC").all(category)
+      .map(row => record(row, excluded));
+  };
   const roster = () => {
     const year = db.prepare("SELECT max(year) AS year FROM member_censuses").get().year || String(new Date().getFullYear());
     return db.prepare(`SELECT p.id,p.name,p.kind,m.branch,m.data AS profileData,v.data AS valuesData FROM people p
@@ -160,11 +175,13 @@ function createActivities(db, people) {
       }
       if (route === "/api/activities" && request.method === "GET") {
         const allowed = current.admin ? branches : [current.serviceBranch];
+        const visibleMembers = roster().filter(person => allowed.includes(person.branch));
+        const visibleMemberIds = new Set(visibleMembers.map(person => person.id));
         send(response, 200, {
           branches: allowed,
-          members: roster().filter(person => allowed.includes(person.branch)),
+          members: visibleMembers,
           events: all("events").filter(item => allowed.includes(item.branch)),
-          paths: all("paths").filter(item => allowed.includes(item.branch)),
+          paths: all("paths").filter(item => allowed.includes(item.branch) && visibleMemberIds.has(item.personId)),
         });
         return true;
       }
@@ -239,7 +256,8 @@ function createActivities(db, people) {
           const previous = existing?.attendance.find(person => person.personId === item.personId);
           if (Object.hasOwn(item, "due") && typeof item.due !== "boolean") fail(400, "Quota dovuta non valida");
           const paidCents = amount(Object.hasOwn(item, "paidCents") ? item.paidCents : previous?.paidCents ?? 0);
-          return { personId: item.personId, name: member.name, status: item.status, due: feeCents > 0, paidCents,
+          return { personId: item.personId, name: member.name, status: item.status,
+            due: feeCents > 0 && item.status === "presente" && paidCents < feeCents, paidCents,
             unit: previous?.unit ?? member.unit ?? "" };
         });
         if (existing?.attendance.some(person => person.paidCents > 0 && !seen.has(person.personId)))
@@ -248,7 +266,8 @@ function createActivities(db, people) {
         const savedTournament = Object.hasOwn(value, "tournament") ? value.tournament : existing?.tournament;
         if (savedTournament && (branch !== "L/C" || value.kind !== "riunione"))
           fail(400, "Il torneo delle sestiglie è disponibile solo per le riunioni L/C");
-        data = { kind: value.kind, title: text(value.title), date, endDate, feeCents, attendance,
+        data = { kind: value.kind, title: text(value.title), date, endDate, feeCents,
+          attendance: [...attendance, ...(existing?.[hiddenAttendance] || [])],
           tasks: steps(value.tasks), program: schedule,
           materials: checklist(value.materials ?? existing?.materials ?? []),
           shopping: checklist(value.shopping ?? existing?.shopping ?? [], true) };

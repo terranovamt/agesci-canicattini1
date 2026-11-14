@@ -12,6 +12,7 @@
     filterDisclosure.open = shouldOpen;
   });
   const profileForm = $('member-form');
+  const createMemberForm = $('member-create-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
   const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'guardians', 'censuses'];
@@ -273,7 +274,7 @@
       const nameCell = node('td'), name = node('button', member.name, 'member-name');
       name.type = 'button'; name.onclick = () => openMember(member);
       row.onclick = event => { if (!event.target.closest('button, label, input, a')) openMember(member); };
-      nameCell.append(name, node('span', member.code, 'member-code'));
+      nameCell.append(name, node('span', member.code || 'Codice da assegnare', 'member-code'));
       if (M.isNonFrequentante(member)) nameCell.append(node('span', 'Non frequentante', 'member-code'));
       const branchCell = node('td'), branchBadge = node('span', M.branchLabel(member.branch) || 'Da assegnare', 'member-badge');
       if (M.branchColors[member.branch]) branchBadge.style.setProperty('--branch-color', M.branchColors[member.branch]);
@@ -690,6 +691,7 @@
       item.append(chip); list.append(item);
     };
     add(M.branchLabel(member.branch) || 'Da assegnare');
+    if (!member.code) add('Codice da assegnare', 'profile', true);
     if (M.isNonFrequentante(member)) add('Non frequentante');
     const years = age(member);
     if (years !== null && years !== undefined) add(years + ' anni');
@@ -717,7 +719,7 @@
     $('member-error').textContent = '';
     $('member-title').textContent = member ? member.name : 'Nuovo socio';
     profileForm.elements.code.value = member?.code || '';
-    profileForm.elements.code.readOnly = !!member;
+    profileForm.elements.code.readOnly = !!member && (!window.NAS.user.admin || !!member.code);
     profileForm.elements.branch.value = member?.branch || 'L/C';
     profileForm.elements.branch.disabled = !!member && (!window.NAS.user.admin || member.revision > 0);
     const profile = { ...member?.profile };
@@ -959,7 +961,34 @@
   $('select-results').onclick = () => { results().filter(member => !M.isNonFrequentante(member))
     .forEach(member => selected.add(member.id)); render(); };
   $('clear-selection').onclick = () => { selected.clear(); render(); };
-  $('new-member').onclick = () => openMember(null);
+  $('new-member').onclick = () => {
+    createMemberForm.reset();
+    createMemberForm.elements.branch.value = 'L/C';
+    $('member-create-error').textContent = '';
+    $('member-create-dialog').showModal();
+    createMemberForm.elements.givenName.focus();
+  };
+  createMemberForm.onsubmit = event => {
+    event.preventDefault();
+    if (busy || !createMemberForm.reportValidity()) return;
+    const payload = {
+      branch: createMemberForm.elements.branch.value,
+      profile: {
+        givenName: createMemberForm.elements.givenName.value.trim(),
+        surname: createMemberForm.elements.surname.value.trim(),
+      },
+    };
+    run(async () => {
+      const result = await A.request('members', 'POST', payload);
+      if (!result?.member) throw new Error('Risposta di creazione socio non valida.');
+      data.members = [result.member, ...data.members];
+      createMemberForm.reset();
+      $('member-create-dialog').close();
+      render();
+      unitBoard.update(data);
+      openMember(result.member, 'profile');
+    }, $('member-create-error'), '');
+  };
   $('open-import').onclick = () => {
     $('import-error').textContent = '';
     $('import-section-nav').dispatchEvent(new CustomEvent('section-select', { detail: preview ? 'import-review-panel' : 'import-source-panel' }));
@@ -974,7 +1003,9 @@
   for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('cancel', event => { if (!canClose(dialog)) event.preventDefault(); });
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   branchOptions(filters.elements.branch, ['', 'Tutte le branche']);
-  branchOptions(profileForm.elements.branch); branchOptions($('field-form').elements.branch);
+  branchOptions(profileForm.elements.branch);
+  branchOptions(createMemberForm.elements.branch);
+  branchOptions($('field-form').elements.branch);
   const admin = !!window.NAS?.user?.admin;
   $('members-primary-actions').hidden = !admin;
   $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !admin;

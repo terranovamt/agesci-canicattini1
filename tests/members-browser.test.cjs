@@ -48,6 +48,14 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       window.ACCESSO = { request: async (route, method = 'GET', value) => {
         window.calls.push(structuredClone({route, method, value}));
         if (route === 'activities') return { paths: [], events: [], members: [], branches: ['L/C', 'E/G', 'R/S'] };
+        if (route === 'members' && method === 'POST') {
+          const member = { id: Math.max(...snapshot.members.map(item => item.id)) + 1, code: '',
+            name: value.profile.givenName + ' ' + value.profile.surname,
+            kind: value.branch === 'Adulti' ? 'capo' : 'ragazzo', branch: value.branch, revision: 1,
+            profile: { ...value.profile, guardianContacts: [] }, censuses: [], values: { [value.branch]: {} },
+            assignmentHistory: [] };
+          return structuredClone({ member });
+        }
         if (method === 'PATCH' && !route.includes('/transfers/')) {
           const member = snapshot.members.find(m => m.id === Number(route.split('/')[1]));
           member.profile = value.profile; member.branch = value.branch;
@@ -427,8 +435,19 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.confirm = window.calls.find(call => call.route === 'members/import' && call.value.confirm).value;
           results.clearedCsv = $('import-csv').value === '';
           $('new-member').click();
+          const createForm = $('member-create-form');
+          results.newMinimalFields = $('member-create-dialog').open &&
+            ['givenName', 'surname', 'branch'].every(name => createForm.elements[name].required) &&
+            createForm.querySelectorAll('input,select').length === 3;
+          createForm.elements.givenName.value = 'Nuovo';
+          createForm.elements.surname.value = 'Socio';
+          createForm.elements.branch.value = 'E/G';
+          createForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          await settle();
           results.newEditableCode = !form.elements.code.readOnly;
-          form.elements.code.value = '012349';
+          results.newMemberCreated = !$('member-create-dialog').open && $('member-dialog').open &&
+            form.elements.code.value === '' && $('member-tab-profile').getAttribute('aria-selected') === 'true' &&
+            [...document.querySelectorAll('#member-section-nav [role=tab]')].filter(tab => !tab.hidden).length === 6;
           form.elements['profile:givenName'].value = 'Bozza';
           let closePrompt = '';
           window.confirm = text => { closePrompt = text; return false; };
@@ -436,6 +455,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.dirtyCloseProtected = $('member-dialog').open && closePrompt.includes('senza salvare');
           window.confirm = text => { window.confirmations.push(text); return true; };
           document.querySelector('[data-close=member-dialog]').click();
+          $('reload-members').click(); await settle();
           [...document.querySelectorAll('#members-list .member-name')].find(button => button.textContent === 'Persona Locale').click();
           results.onlyLcMoment = !form.elements['extra:pista'] && !!form.elements['extra:progressione'] &&
             $('member-assignment').textContent.includes('Nota precedente');
@@ -534,7 +554,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.quickFilterTargets, true, JSON.stringify(results));
       assert.equal(results.dialogFits, true, JSON.stringify(results));
       for (const key of ["loaded", "glance", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
-        "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newEditableCode", "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
+        "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newMinimalFields", "newEditableCode", "newMemberCreated",
+        "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "filterDisclosureInitial", "filterCount", "filterCountReset", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "docsWithoutSelection", "docsAllResults", "docsSideBySide", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",

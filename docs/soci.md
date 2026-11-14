@@ -98,11 +98,19 @@ una presente ma vuota li azzera. L'import non elimina record duplicati.
 ## Schede, ricerche ed estrazioni
 
 Nella scheda anagrafica dei ragazzi, **Non frequentante** esclude il socio
-dai conteggi e dalle nuove attività, dai percorsi operativi e dall'assegnazione
-a sestiglie o squadriglie e dalle selezioni per documenti e passaggi. La scheda
-e lo storico restano consultabili; il flag non modifica né cancella i censimenti
-AGESCI, quindi il ragazzo resta incluso nei conteggi ufficiali dei censiti per
-l'assemblea.
+dalle attività e dalle quote, dai percorsi operativi e dall'assegnazione a
+sestiglie o squadriglie e dalle selezioni per documenti e passaggi. Le presenze
+e i versamenti gia registrati restano conservati, ma non sono mostrati nelle
+attività della branca. La scheda e lo storico soci restano consultabili; il flag
+non modifica né cancella i censimenti AGESCI, quindi il ragazzo resta incluso
+nei conteggi ufficiali dei censiti per l'assemblea.
+
+Per creare un socio sono richiesti solo **Nome**, **Cognome** e **Branca**.
+Dopo l'inserimento si apre la scheda completa con le sezioni applicabili;
+codice socio, contatti e altri dati si possono completare in seguito. Finche
+non si assegna il codice AGESCI la scheda usa un identificativo locale; inserire
+il codice reale prima del prossimo import per collegare l'importazione alla
+scheda esistente.
 
 Aprire il nome di un socio per consultare lo storico e modificare i dati
 consentiti. Le modifiche manuali non riscrivono lo storico ufficiale. Gli
@@ -245,17 +253,23 @@ ritorno esplicito all'elenco e mantengono titolo e salvataggio raggiungibili
 mentre si scorre il contenuto.
 
 Per un'attivita a pagamento impostare **Quota per socio**, oppure zero per
-un'attivita gratuita. La quota e dovuta automaticamente da tutti i soci
-nell'elenco dell'attivita, anche assenti, giustificati o con presenza ancora
-da registrare: non c'e una casella da attivare per ogni socio.
-La regola vale anche per le attivita gia salvate; eventuali vecchie spunte
-individuali non modificano piu l'importo dovuto.
-**Versato totale** contiene l'importo complessivamente
-ricevuto dal socio, inclusi gli acconti: aggiornarlo al nuovo totale, non al
-singolo incremento. Toccando una riga in Quote si apre il versamento e viene
-proposto il totale a saldo, conservando gli acconti; modificare l'importo
-se serve, poi usare **Salva attivita**. I pagamenti non sono azzerati cambiando
-presenza o quota.
+un'attivita gratuita. Il **Totale atteso** conta soltanto i soci segnati come
+presenti: assenti, giustificati e ancora da registrare non hanno una quota
+dovuta. I non frequentanti restano nel Libro soci ma non compaiono in attivita,
+quote, percorsi o squadriglie. Gli acconti ricevuti prima della presenza sono
+separati dal totale atteso finche la presenza non viene registrata.
+
+Con una quota maggiore di zero il primo clic su una presenza non registrata
+segna **Presenza e quota**, completando il totale atteso anche se era stato
+versato solo un acconto. Il clic successivo passa a **Presenza** e azzera il
+versato; quello dopo segna **Assenza**, senza quota attesa. Inserendo il totale
+completo nel versato, la presenza passa automaticamente a **Presenza e quota**.
+Un acconto parziale resta registrato come acconto fino al saldo; gli importi
+versati da soci assenti restano evidenziati come eccesso da verificare.
+**Versato totale** e' sempre l'importo complessivamente ricevuto, acconti
+inclusi; aggiornarlo al nuovo totale, non al singolo incremento. Toccando una
+riga in Quote si apre il versamento e viene proposto il totale a saldo;
+modificare l'importo se serve, poi usare **Salva attivita**.
 
 Gli importi sono salvati come centesimi interi e accettano massimo due
 decimali. Il riepilogo mostra in riga **Totale atteso**, **Incassato**,

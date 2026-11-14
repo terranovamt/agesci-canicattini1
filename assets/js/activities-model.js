@@ -12,14 +12,17 @@
   }
   function totals(event) {
     return event.attendance.reduce((result, person) => {
-      const expected = event.feeCents || 0;
+      const fee = event.feeCents || 0;
+      const present = Object.hasOwn(person, 'status') ? person.status === 'presente' : person.due === true;
+      const expected = present ? fee : 0;
       const paid = person.paidCents || 0;
       result.expected += expected;
       result.paid += paid;
       result.remaining += Math.max(0, expected - paid);
-      result.excess += Math.max(0, paid - expected);
+      if (person.status === '' && fee > 0) result.advance += paid;
+      else result.excess += Math.max(0, paid - expected);
       return result;
-    }, { expected: 0, paid: 0, remaining: 0, excess: 0 });
+    }, { expected: 0, paid: 0, remaining: 0, excess: 0, advance: 0 });
   }
   function materialSummary(program = [], materials = [], shopping = []) {
     const groups = new Map();

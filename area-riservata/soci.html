@@ -210,6 +210,24 @@
       <button id="save-unit" type="submit" class="button button-primary">Crea</button>
     </form>
   </dialog>
+  <dialog id="member-create-dialog" class="members-dialog" aria-labelledby="member-create-title">
+    <form id="member-create-form">
+      <div class="members-dialog-heading">
+        <div><p class="eyebrow">Nuovo socio</p><h2 id="member-create-title">Dati iniziali</h2></div>
+        <button class="button button-secondary" type="button" data-close="member-create-dialog">Annulla</button>
+      </div>
+      <p>Per creare la scheda bastano nome, cognome e branca. Gli altri dati si completano dopo.</p>
+      <div class="members-form-grid">
+        <label>Nome<input name="givenName" required maxlength="120" autocomplete="given-name"></label>
+        <label>Cognome<input name="surname" required maxlength="120" autocomplete="family-name"></label>
+        <label>Branca<select name="branch" required></select></label>
+      </div>
+      <p id="member-create-error" role="alert"></p>
+      <div class="members-dialog-actions">
+        <button class="button button-primary" type="submit">Inserisci e apri scheda</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="member-dialog" class="members-dialog" aria-labelledby="member-title">
     <form id="member-form">
       <div class="members-dialog-heading"><div><p class="eyebrow">Scheda personale</p><h2 id="member-title"></h2><p id="member-outstanding" role="status" aria-live="polite" hidden></p></div><button class="button button-secondary" type="button" data-close="member-dialog">Torna all’elenco</button></div>
@@ -247,9 +265,10 @@
       <section id="member-panel-profile" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-profile" hidden>
         <h3>Dati personali</h3>
         <div class="members-form-grid">
-          <label>Codice socio<input name="code" required pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
+          <label>Codice socio (facoltativo)<input name="code" pattern="[0-9]{5,9}" minlength="5" maxlength="9" inputmode="numeric"></label>
           <label>Branca<select name="branch" required></select></label>
         </div>
+        <p class="members-note">Se il codice non è ancora disponibile, puoi assegnarlo in seguito da questa scheda.</p>
         <div id="member-profile" class="members-form-grid"></div>
       </section>
       <section id="member-panel-contacts" class="member-section-panel" role="tabpanel" aria-labelledby="member-tab-contacts" aria-label="Indirizzo e contatti" hidden>

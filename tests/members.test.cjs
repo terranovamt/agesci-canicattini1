@@ -753,6 +753,24 @@ test("profiles, custom fields, templates and bulk macros validate and rollback a
   assert.equal((await app.snapshot()).members.some(m => m.code === newMember.code), false);
   assert.equal((await app.request("members", "POST", newMember)).status, 201);
   assert.equal((await app.request("members", "POST", newMember)).status, 409);
+  assert.equal((await app.request("members", "POST", {
+    branch: "E/G", profile: { givenName: "Locale", surname: "Senza codice" },
+  })).status, 201);
+  const manualMember = (await app.snapshot()).members.find(member => member.name === "Locale Senza codice");
+  assert.ok(manualMember);
+  assert.equal(manualMember.code, "");
+  const assignedCode = await app.request("members/" + manualMember.id, "PATCH", {
+    code: "012350",
+    branch: manualMember.branch,
+    profile: manualMember.profile,
+    values: manualMember.values[manualMember.branch],
+    revision: manualMember.revision,
+  });
+  assert.equal(assignedCode.status, 200);
+  assert.equal((await assignedCode.json()).member.code, "012350");
+  assert.equal((await app.request("members", "POST", {
+    branch: "E/G", profile: { givenName: "Solo nome" },
+  })).status, 400);
   const db = new DatabaseSync(path.join(directory, "site.sqlite"));
   assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
   db.close();

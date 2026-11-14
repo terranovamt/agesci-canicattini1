@@ -3,6 +3,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { once } = require("node:events");
+const { DatabaseSync } = require("node:sqlite");
 const { test } = require("node:test");
 const { createNasServer } = require("../server/nas.cjs");
 
@@ -40,9 +41,34 @@ test("nonfrequentanti stay in the member register but are excluded from future a
   assert.equal((await r("activities")).members.some(member => member.id === active.id), true);
   await r("activities/events", "POST", { branch: "E/G", kind: "riunione", title: "Prova",
     date: "2026-11-15", attendance: [{ personId: inactive.id, status: "" }] }, 400);
+  const pastEvent = await r("activities/events", "POST", {
+    branch: "E/G", kind: "riunione", title: "Presenza prima della sospensione", date: "2026-11-15",
+    feeCents: 1000, attendance: [{ personId: active.id, status: "presente", paidCents: 400 }], tasks: [],
+  });
+  const pastPath = await r("activities/paths", "POST", {
+    branch: "E/G", kind: "badge", personId: active.id, title: "Percorso prima della sospensione",
+    steps: [], closed: false,
+  });
+  const inactiveProfile = { ...active.profile, nonFrequentante: true };
+  await r("members/" + active.id, "PATCH", {
+    code: active.code, branch: active.branch, profile: inactiveProfile,
+    values: active.values[active.branch] || {}, revision: active.revision,
+  });
+  const activityData = await r("activities");
+  const hiddenEvent = activityData.events.find(event => event.id === pastEvent.id);
+  assert.equal(activityData.paths.some(path => path.id === pastPath.id), false);
+  assert.deepEqual(hiddenEvent.attendance, []);
+  assert.deepEqual(hiddenEvent.totals, { expected: 0, paid: 0, remaining: 0, excess: 0, advance: 0 });
+  await r("activities/events/" + pastEvent.id, "PATCH", {
+    ...hiddenEvent, title: "Aggiornata senza esporre il socio", attendance: [],
+  });
+  const db = new DatabaseSync(path.join(directory, "site.sqlite"));
+  const saved = JSON.parse(db.prepare("SELECT data FROM activities WHERE id=?").get(pastEvent.id).data);
+  assert.deepEqual(saved.attendance.map(person => [person.personId, person.paidCents]), [[active.id, 400]]);
+  db.close();
 });
 
-test("the quota is due by everyone regardless of attendance or legacy flags, without resetting payments", async () => {
+test("the quota is expected only from present members; absences and advances stay separate", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-fees-"));
   const app = await start(directory);
   try {
@@ -56,19 +82,20 @@ test("the quota is due by everyone regardless of attendance or legacy flags, wit
     }
     let event = await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
       title: "Quota per tutti", date: "2026-11-10", feeCents: 1000, attendance, tasks: [] });
-    assert.ok(event.attendance.every(person => person.due));
-    assert.deepEqual(event.totals, { expected: 4000, paid: 2100, remaining: 2400, excess: 500 });
+    assert.deepEqual(event.attendance.map(person => person.due), [true, false, false, false]);
+    assert.deepEqual(event.totals, { expected: 1000, paid: 2100, remaining: 500, excess: 1500, advance: 100 });
     const absent = (await r("activities/members/" + attendance[1].personId)).events[0];
     assert.equal(absent.status, "assente");
-    assert.equal(absent.due, true);
+    assert.equal(absent.due, false);
     assert.equal(absent.paidCents, 1500);
     event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 0 });
     assert.ok(event.attendance.every(person => !person.due));
-    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 2100 });
+    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 2100, advance: 0 });
     event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 2000,
       attendance: event.attendance.map(person => ({ ...person, due: false, status: "" })) });
     assert.deepEqual(event.attendance.map(person => person.paidCents), [500, 1500, 0, 100]);
-    assert.deepEqual(event.totals, { expected: 8000, paid: 2100, remaining: 5900, excess: 0 });
+    assert.ok(event.attendance.every(person => !person.due));
+    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 0, advance: 2100 });
     assert.deepEqual((await r("activities")).events.find(item => item.id === event.id).totals, event.totals);
   } finally {
     await app.close();
@@ -228,7 +255,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/events/" + event.id, "PATCH", events[0], 409);
     event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 1025,
       attendance: [{ personId: ids["L/C"], status: "presente", due: true, paidCents: 500 }] });
-    assert.deepEqual(event.totals, { expected: 1025, paid: 500, remaining: 525, excess: 0 });
+    assert.deepEqual(event.totals, { expected: 1025, paid: 500, remaining: 525, excess: 0, advance: 0 });
     for (const invalid of [-1, 0.1, "100", 100000001, null]) {
       await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: invalid }, 400);
       await r("activities/events/" + event.id, "PATCH", { ...event,
@@ -243,7 +270,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
       attendance: [{ personId: ids["L/C"], status: "assente" }] });
     assert.equal(event.feeCents, 1025);
     assert.equal(event.attendance[0].paidCents, 500);
-    assert.equal(event.attendance[0].due, true);
+    assert.equal(event.attendance[0].due, false);
     let history = await r("activities/members/" + ids["L/C"]);
     assert.equal(history.events.length, 1);
     assert.equal(history.events[0].status, "assente");
@@ -251,7 +278,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     assert.equal(Object.hasOwn(history.events[0], "attendance"), false, "member history must not expose other participants");
     event = await r("activities/events/" + event.id, "PATCH", { ...event,
       attendance: [{ ...event.attendance[0], status: "presente", paidCents: 1500 }] });
-    assert.deepEqual(event.totals, { expected: 1025, paid: 1500, remaining: 0, excess: 475 });
+    assert.deepEqual(event.totals, { expected: 1025, paid: 1500, remaining: 0, excess: 475, advance: 0 });
     history = await r("activities/members/" + ids["L/C"]);
     assert.equal(history.events[0].status, "presente");
     await r("activities/members/999999", "GET", undefined, 404);
@@ -309,7 +336,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     assert.equal(restored.events.length, 3);
     assert.equal(restored.events.find(item => item.id === event.id).tasks[0].done, true);
     assert.deepEqual(restored.events.find(item => item.id === event.id).totals,
-      { expected: 1025, paid: 1500, remaining: 0, excess: 475 });
+      { expected: 1025, paid: 1500, remaining: 0, excess: 475, advance: 0 });
     assert.equal((await r("activities/members/" + ids["L/C"])).events[0].paidCents, 1500);
     assert.equal(restored.paths.find(item => item.id === hunt.id).closed, true);
     assert.equal(restored.paths.find(item => item.id === nextHunt.id).closed, false);

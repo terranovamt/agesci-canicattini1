@@ -5,11 +5,13 @@ const M = require("../assets/js/soci-model.js");
 const { ADMIN_CODE } = require("./people.cjs");
 const { createMemberUnits } = require("./member-units.cjs");
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
+const MANUAL_MEMBER_CODE_PREFIX = "manual-";
 const object = value => value && typeof value === "object" && !Array.isArray(value);
 const text = (value, max = 500) => {
   if (typeof value !== "string" || value.length > max || value.includes("\0")) fail(400, "Testo non valido o troppo lungo");
   return value.trim();
 };
+const optionalCode = value => value === undefined || value === null || value === "" ? "" : text(value, 9);
 const branchValue = value => {
   if (!M.branches.includes(value)) fail(400, "Branca non valida");
   return value;
@@ -149,7 +151,8 @@ function createMembers(db, people) {
     if (!row || (!includeAdmin && row.census_code === ADMIN_CODE)) fail(404, "Socio non trovato");
     const profile = db.prepare("SELECT * FROM member_profiles WHERE person_id=?").get(id);
     return {
-      id: row.id, code: row.census_code, name: row.name, kind: row.kind,
+      id: row.id, code: row.census_code.startsWith(MANUAL_MEMBER_CODE_PREFIX) ? "" : row.census_code,
+      name: row.name, kind: row.kind,
       branch: profile?.branch || (row.kind === "capo" ? "Adulti" : ""),
       revision: profile?.revision || 0, profile: profile ? withGuardians(JSON.parse(profile.data)) : {},
       censuses: db.prepare("SELECT year,data FROM member_censuses WHERE person_id=? ORDER BY year DESC").all(id)
@@ -314,11 +317,14 @@ function createMembers(db, people) {
         const value = await body(request, 64000);
         admin();
         const branch = branchValue(value?.branch), profile = validateProfile(value.profile);
-        if (typeof value.code !== "string" || !/^\d{5,9}$/.test(value.code)) fail(400, "Codice socio non valido");
-        if (db.prepare("SELECT id FROM people WHERE census_code=?").get(value.code)) fail(409, "Codice socio gia' presente");
+        if (!profile.givenName || !profile.surname) fail(400, "Nome e cognome sono obbligatori");
+        const requestedCode = optionalCode(value.code);
+        if (requestedCode && !/^\d{5,9}$/.test(requestedCode)) fail(400, "Codice socio non valido");
+        const censusCode = requestedCode || MANUAL_MEMBER_CODE_PREFIX + crypto.randomUUID();
+        if (db.prepare("SELECT id FROM people WHERE census_code=?").get(censusCode)) fail(409, "Codice socio gia' presente");
         const id = transaction(() => {
           const result = db.prepare("INSERT INTO people(census_code,name,kind) VALUES(?,?,?)")
-            .run(value.code, [profile.givenName, profile.surname].filter(Boolean).join(" "), branch === "Adulti" ? "capo" : "ragazzo");
+            .run(censusCode, [profile.givenName, profile.surname].join(" "), branch === "Adulti" ? "capo" : "ragazzo");
           const member = get(Number(result.lastInsertRowid));
           writeValues(member, branch, value.values || {});
           writeProfile(member, branch, profile);
@@ -471,6 +477,20 @@ function createMembers(db, people) {
         access(member.branch);
         requireRevision(member, value?.revision);
         const branch = branchValue(value.branch), profile = validateProfile(value.profile);
+        const storedCode = db.prepare("SELECT census_code FROM people WHERE id=?").get(member.id)?.census_code;
+        const submittedCode = value.code === undefined ? member.code : optionalCode(value.code);
+        let censusCode = storedCode;
+        if (storedCode.startsWith(MANUAL_MEMBER_CODE_PREFIX)) {
+          if (submittedCode) {
+            admin();
+            if (!/^\d{5,9}$/.test(submittedCode)) fail(400, "Codice socio non valido");
+            if (db.prepare("SELECT id FROM people WHERE census_code=? AND id!=?").get(submittedCode, member.id))
+              fail(409, "Codice socio gia' presente");
+            censusCode = submittedCode;
+          }
+        } else if (submittedCode !== member.code) {
+          fail(400, "Il codice socio non e' modificabile");
+        }
         if (branch !== member.branch) {
           if (!user().admin) fail(403, "Usa il passaggio con conferma della branca di destinazione");
           if (member.revision)
@@ -479,8 +499,8 @@ function createMembers(db, people) {
         transaction(() => {
           writeValues(member, branch, value.values);
           writeProfile(member, branch, profile);
-          db.prepare("UPDATE people SET name=? WHERE id=?")
-            .run([profile.givenName, profile.surname].filter(Boolean).join(" "), member.id);
+          db.prepare("UPDATE people SET census_code=?,name=? WHERE id=?")
+            .run(censusCode, [profile.givenName, profile.surname].filter(Boolean).join(" "), member.id);
         });
         send(response, 200, { member: get(member.id) }); return true;
       }

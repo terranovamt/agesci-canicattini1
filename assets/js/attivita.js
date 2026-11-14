@@ -77,7 +77,7 @@
     });
   }
   function roster() { return data.members.filter(member => member.branch === branch() && !M.isNonFrequentante(member)); }
-  function pathRoster() { return roster().filter(member => String(member.unit || '').trim()); }
+  function pathRoster() { return roster(); }
   function pathFilterMatch(item) {
     const selectedState = pathFilter.state, kind = pathFilter.kind;
     const hidden = !selectedState && !pathMember() && ['Conquistato', 'Conclusa'].includes(state(item));
@@ -149,10 +149,12 @@
   }
   function totals(target, event) {
     const sums = AM.totals(event);
-    target.replaceChildren(...[
+    const values = [
       ['Totale atteso', sums.expected], ['Incassato', sums.paid],
       ['Da ricevere', sums.remaining], ['In eccesso', sums.excess],
-    ].map(([label, amount]) => {
+    ];
+    if (sums.advance) values.splice(2, 0, ['Acconti', sums.advance]);
+    target.replaceChildren(...values.map(([label, amount]) => {
       const item = node('p', label + ': ');
       item.append(node('strong', AM.money(amount))); return item;
     }));
@@ -832,10 +834,12 @@
     if (branch() !== 'L/C') return;
     const events = data.events.filter(item => item.branch === 'L/C' && item.kind === 'riunione')
       .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+    const activeMemberIds = new Set(roster().map(member => member.id));
     const rows = new Map();
     for (const event of events) {
       if (!event.tournament) continue;
-      for (const score of TM.standings(event.tournament.members, event.attendance, event.tournament.presentations)) {
+      const members = event.tournament.members.filter(person => activeMemberIds.has(person.personId));
+      for (const score of TM.standings(members, event.attendance, event.tournament.presentations)) {
         if (!rows.has(score.unit)) rows.set(score.unit, {
           unit: score.unit,
           values: Object.fromEntries([...TM.categories.map(item => [item.key, []]), ['total', []]]),
@@ -954,24 +958,37 @@
     const filter = $('event-member-filter').value;
     let visible = 0;
     [...$('event-attendance').querySelectorAll('.activity-person')].forEach((row, index) => {
-      const person = attendance[index], expected = feeCents;
+      const person = attendance[index], expected = person.status === 'presente' ? feeCents : 0;
       const remaining = Math.max(0, expected - person.paidCents);
-      const excess = Math.max(0, person.paidCents - expected);
+      const advance = person.status === '' && feeCents > 0 ? person.paidCents : 0;
+      const excess = advance ? 0 : Math.max(0, person.paidCents - expected);
+      const noFeeDue = ['assente', 'giustificato'].includes(person.status);
       row.dataset.status = person.status;
-      row.dataset.balanceState = remaining ? 'unpaid' : excess ? 'excess' : 'paid';
+      row.dataset.balanceState = remaining ? 'unpaid' : excess ? 'excess' : advance ? 'advance' : 'paid';
       row.querySelector('[data-person-status]').textContent = eventView === 'quote'
-        ? remaining ? AM.money(remaining) + ' da ricevere' : excess ? AM.money(excess) + ' in più'
-          : 'Saldato'
-        : person.status ? (person.status === 'presente' ? '✓ ' : person.status === 'assente' ? '− ' : '') +
-          person.status[0].toUpperCase() + person.status.slice(1) : '○ Da registrare';
+        ? noFeeDue ? person.paidCents ? 'Assente · ' + AM.money(person.paidCents) + ' in più' : 'Assente · nessuna quota'
+          : !person.status ? advance ? 'Acconto ' + AM.money(advance) : 'Da registrare'
+            : remaining ? AM.money(remaining) + ' da ricevere' : excess ? AM.money(excess) + ' in più'
+              : feeCents > 0 ? 'Presenza e quota' : 'Saldato'
+        : person.status === 'presente' ? feeCents > 0
+          ? person.paidCents >= feeCents ? 'Presenza e quota' : 'Presenza'
+          : '✓ Presente'
+          : person.status ? (person.status === 'assente' ? '− ' : '') +
+            person.status[0].toUpperCase() + person.status.slice(1) : '○ Da registrare';
       const action = row.querySelector('[data-person-action]');
+      const payment = row.querySelector('.activity-payment');
+      const paymentVisible = !noFeeDue || person.paidCents > 0;
+      payment.hidden = !paymentVisible;
+      if (!paymentVisible) payment.open = false;
       if (eventView === 'quote') {
         action.removeAttribute('aria-pressed');
         action.setAttribute('aria-expanded', String(row.querySelector('.activity-payment').open));
         action.setAttribute('aria-controls', row.querySelector('.activity-payment').id);
+        action.disabled = !paymentVisible;
       } else {
         action.setAttribute('aria-pressed', String(person.status === 'presente'));
         action.removeAttribute('aria-expanded'); action.removeAttribute('aria-controls');
+        action.disabled = false;
       }
       row.querySelector('[data-balance]').replaceChildren(
         ...[['Atteso', expected], ['Ricevuto', person.paidCents], ['Da ricevere', remaining], ['Versato in più', excess]]
@@ -1084,10 +1101,11 @@
     const savedUnits = new Map((item?.tournament?.members || []).map(person => [person.personId, person.unit]));
     const person = entry => {
       const current = data.members.find(member => member.id === entry.personId);
-      return { ...entry, unit: savedUnits.get(entry.personId) ?? entry.unit ?? current?.unit ?? '' };
+      return { ...entry, unit: savedUnits.get(entry.personId) ?? entry.unit ?? current?.unit ?? '',
+        role: current?.role ?? entry.role ?? '' };
     };
     const persons = [...attendance.map(person), ...roster().filter(member => !attendance.some(entry => entry.personId === member.id))
-      .map(member => ({ personId: member.id, name: member.name, status: '', unit: member.unit }))];
+      .map(member => ({ personId: member.id, name: member.name, status: '', unit: member.unit, role: member.role }))];
     const grouped = branch() === 'R/S' ? [['', persons]] : [...persons.reduce((groups, person) => {
       const unit = person.unit || (branch() === 'L/C' ? 'Senza sestiglia' : 'Senza squadriglia');
       if (!groups.has(unit)) groups.set(unit, []);
@@ -1102,62 +1120,122 @@
       container.style.setProperty('--unit-color', color);
       container.style.setProperty('--unit-color-secondary', color2);
       container.append(node('summary', unit || 'Soci'));
-      const rows = group.map(person => {
-      const row = node('section', undefined, 'activity-person');
-      row.dataset.personId = person.personId; row.dataset.name = person.name.toLocaleLowerCase('it');
-      row.dataset.unit = person.unit || '';
-      const action = button('', () => {
-        if (eventView === 'quote') {
-          payment.open = !payment.open;
-          action.setAttribute('aria-expanded', String(payment.open));
-          if (payment.open) {
+      const createPersonRow = person => {
+        const row = node('section', undefined, 'activity-person');
+        row.dataset.personId = person.personId;
+        row.dataset.name = person.name.toLocaleLowerCase('it');
+        row.dataset.unit = person.unit || '';
+        row.dataset.role = person.role || '';
+        const action = button('', () => {
+          if (eventView === 'quote') {
+            payment.open = !payment.open;
+            action.setAttribute('aria-expanded', String(payment.open));
+            if (payment.open) {
+              try {
+                const previous = AM.cents(paid.value), expected = AM.cents(eventForm.elements.fee.value);
+                if (!paid.dataset.edited && expected > previous) {
+                  paid.value = ((previous + Math.max(0, expected - previous)) / 100).toFixed(2);
+                  paid.dataset.edited = 'suggested';
+                }
+              } catch (error) { $('event-error').textContent = error.message; }
+              updateAttendance(); paid.focus(); paid.select();
+            }
+          } else {
             try {
-              const previous = AM.cents(paid.value), expected = AM.cents(eventForm.elements.fee.value);
-              if (!paid.dataset.edited && expected > previous) {
-                paid.value = ((previous + Math.max(0, expected - previous)) / 100).toFixed(2);
-                paid.dataset.edited = 'suggested';
+              const expected = AM.cents(eventForm.elements.fee.value);
+              const received = AM.cents(paid.value);
+              if (!expected) {
+                select.value = select.value === 'presente' ? 'assente' : 'presente';
+              } else if (select.value !== 'presente') {
+                select.value = 'presente';
+                if (received < expected) {
+                  paid.value = (expected / 100).toFixed(2);
+                  paid.dataset.edited = 'manual';
+                }
+              } else if (received >= expected) {
+                paid.value = '0.00';
+                paid.dataset.edited = 'manual';
+              } else {
+                select.value = 'assente';
               }
-            } catch (error) { $('event-error').textContent = error.message; }
-            updateAttendance(); paid.focus(); paid.select();
+              select.onchange();
+            } catch (error) {
+              $('event-error').textContent = error.message;
+            }
           }
-        } else {
-          select.value = select.value === 'presente' ? 'assente' : 'presente';
-          select.onchange();
-        }
-        updateEventSaveState();
-      });
-      action.className = 'activity-person-action'; action.dataset.personAction = '';
-      const status = node('span', undefined, 'activity-person-status'); status.dataset.personStatus = '';
-      action.append(node('span', person.name), status);
-      const label = node('label', 'Presenza'), select = node('select');
-      select.name = 'attendance-' + person.personId; select.dataset.personId = person.personId;
-      options(select, [['', 'Da registrare'], ['presente', 'Presente'], ['assente', 'Assente'], ['giustificato', 'Giustificato']]);
-      select.value = person.status; label.append(select);
-      select.onchange = updateAttendance;
-      const paidLabel = node('label', 'Versato totale (€)'), paid = node('input');
-      paid.type = 'number'; paid.name = 'paid-' + person.personId; paid.dataset.paid = '';
-      paid.min = '0'; paid.max = String(AM.maxCents / 100); paid.step = '0.01'; paid.inputMode = 'decimal'; paid.required = true;
-      paid.value = ((person.paidCents || 0) / 100).toFixed(2);
-      paid.oninput = () => { paid.dataset.edited = 'manual'; updateAttendance(); };
-      paidLabel.append(paid);
-      const controls = node('details', undefined, 'activity-presence-options');
-      const more = node('summary', '⋯'); more.setAttribute('aria-label', 'Assenza o altra presenza: ' + person.name);
-      const profile = memberLink(person); profile.textContent = 'Scheda socio →';
-      profile.className = 'activity-person-profile';
-      controls.append(more, label, profile);
-      const payment = node('details', undefined, 'activity-payment');
-      payment.id = 'activity-payment-' + person.personId;
-      payment.append(node('summary', 'Dettagli del versamento'));
-      payment.addEventListener('toggle', () => {
-        action.setAttribute('aria-expanded', String(payment.open)); updateAttendance();
-      });
-      const paymentControls = node('div', undefined, 'activity-person-controls');
-      paymentControls.append(paidLabel);
-      const balance = node('div', undefined, 'activity-fee-balance'); balance.dataset.balance = '';
-      payment.append(paymentControls, balance, node('p', 'Il versato è il totale ricevuto, acconti inclusi.', 'members-note'));
-      row.append(action, controls, payment); return row;
-      });
-      container.append(...rows); return container;
+          updateEventSaveState();
+        });
+        action.className = 'activity-person-action';
+        action.dataset.personAction = '';
+        const status = node('span', undefined, 'activity-person-status');
+        status.dataset.personStatus = '';
+        action.append(node('span', person.name), status);
+        const label = node('label', 'Presenza'), select = node('select');
+        select.name = 'attendance-' + person.personId; select.dataset.personId = person.personId;
+        options(select, [['', 'Da registrare'], ['presente', 'Presente'], ['assente', 'Assente'], ['giustificato', 'Giustificato']]);
+        select.value = person.status; label.append(select);
+        select.onchange = updateAttendance;
+        const paidLabel = node('label', 'Versato totale (€)'), paid = node('input');
+        paid.type = 'number'; paid.name = 'paid-' + person.personId; paid.dataset.paid = '';
+        paid.min = '0'; paid.max = String(AM.maxCents / 100); paid.step = '0.01'; paid.inputMode = 'decimal'; paid.required = true;
+        paid.value = ((person.paidCents || 0) / 100).toFixed(2);
+        paid.oninput = () => {
+          paid.dataset.edited = 'manual';
+          let fee, received;
+          try {
+            fee = AM.cents(eventForm.elements.fee.value);
+            received = AM.cents(paid.value);
+          } catch (error) {
+            updateAttendance();
+            return;
+          }
+          if (fee > 0 && received >= fee) select.value = 'presente';
+          updateAttendance();
+        };
+        paidLabel.append(paid);
+        const controls = node('details', undefined, 'activity-presence-options');
+        const more = node('summary', '⋯'); more.setAttribute('aria-label', 'Assenza o altra presenza: ' + person.name);
+        const profile = memberLink(person); profile.textContent = 'Scheda socio →';
+        profile.className = 'activity-person-profile';
+        controls.append(more, label, profile);
+        const payment = node('details', undefined, 'activity-payment');
+        payment.id = 'activity-payment-' + person.personId;
+        payment.append(node('summary', 'Dettagli del versamento'));
+        payment.addEventListener('toggle', () => {
+          action.setAttribute('aria-expanded', String(payment.open)); updateAttendance();
+        });
+        const paymentControls = node('div', undefined, 'activity-person-controls');
+        paymentControls.append(paidLabel);
+        const balance = node('div', undefined, 'activity-fee-balance'); balance.dataset.balance = '';
+        payment.append(paymentControls, balance, node('p', 'Il versato è il totale ricevuto, acconti inclusi.', 'members-note'));
+        row.append(action, controls, payment);
+        return row;
+      };
+      const orderedGroup = branch() === 'E/G'
+        ? group.slice().sort((a, b) => {
+          const roles = M.unitRoles('E/G'), left = roles.indexOf(a.role), right = roles.indexOf(b.role);
+          return (left < 0 ? roles.length : left) - (right < 0 ? roles.length : right) ||
+            a.name.localeCompare(b.name, 'it');
+        })
+        : group;
+      if (branch() !== 'E/G') {
+        container.append(...orderedGroup.map(createPersonRow));
+        return container;
+      }
+      const roleGroups = new Map();
+      for (const person of orderedGroup) {
+        const role = M.unitRoles('E/G').includes(person.role) ? person.role : 'Ruolo da assegnare';
+        if (!roleGroups.has(role)) roleGroups.set(role, []);
+        roleGroups.get(role).push(person);
+      }
+      for (const role of [...M.unitRoles('E/G'), 'Ruolo da assegnare']) {
+        const members = roleGroups.get(role);
+        if (!members?.length) continue;
+        const lane = node('section', undefined, 'activity-attendance-role-group');
+        lane.append(node('h4', role, 'activity-attendance-role-heading'), ...members.map(createPersonRow));
+        container.append(lane);
+      }
+      return container;
     }));
     if (!persons.length) $('event-attendance').append(node('p', 'Nessun socio disponibile: aggiungilo dal Libro soci.', 'members-note'));
     $('event-tasks').replaceChildren();
