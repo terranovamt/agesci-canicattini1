@@ -80,6 +80,15 @@ test("NAS redirects every direct index.html URL to its clean directory URL", () 
 
 test("NAS image copies only public site directories, not development tools or secrets", () => {
   const dockerfile = read("deploy/synology/Dockerfile");
+  const entries = read("tools/build-site.cjs").match(/const publicEntries = \[([\s\S]*?)\];/);
+  assert.ok(entries, "public build entries must be declared");
+  for (const [, directory] of entries[1].matchAll(/"([^"]+)"/g)) {
+    if (!fs.statSync(path.join(root, directory)).isDirectory()) continue;
+    assert.ok(
+      dockerfile.split(/\r?\n/).includes(`COPY ${directory}/ ${directory}/`),
+      `${directory} is missing from the static site build context`,
+    );
+  }
   assert.match(dockerfile, /RUN node tools\/build-site.cjs \/site/);
   assert.match(dockerfile, /COPY --from=static-site \/site\//);
   assert.doesNotMatch(dockerfile, /COPY\s+\.\s|USER\s+root/);

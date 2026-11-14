@@ -6,6 +6,7 @@ COPY config/ config/
 COPY calendars/ calendars/
 COPY documents/ documents/
 COPY documenti/ documenti/
+COPY canzoniere/ canzoniere/
 COPY area-riservata/ area-riservata/
 COPY assemblea/ assemblea/
 COPY peg/ peg/
