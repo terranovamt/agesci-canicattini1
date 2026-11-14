@@ -55,53 +55,66 @@
             <dl id="song-meta" class="song-meta"></dl>
             <ul id="song-tags" class="song-tags" aria-label="Tag della canzone"></ul>
           </header>
-          <fieldset class="song-controls" aria-label="Controlli di lettura">
-            <label class="song-toggle">
-              <input id="show-chords" type="checkbox" checked aria-controls="song-score" />
-              <span>Mostra accordi</span>
-            </label>
-            <div class="transpose-controls" role="group" aria-label="Trasposizione">
-              <span class="control-label">Tonalità <output id="song-key">—</output></span>
-              <button id="transpose-down" class="button button-secondary" type="button" aria-label="Abbassa di un semitono">
-                −
+          <div id="song-settings-panel" class="song-settings-panel" hidden>
+            <fieldset class="song-controls" aria-label="Controlli di lettura">
+              <label class="song-toggle">
+                <input id="show-chords" type="checkbox" checked aria-controls="song-score" />
+                <span>Mostra accordi</span>
+              </label>
+              <div class="transpose-controls" role="group" aria-label="Trasposizione">
+                <span class="control-label">Tonalità <output id="song-key">—</output></span>
+                <button id="transpose-down" class="button button-secondary" type="button" aria-label="Abbassa di un semitono">
+                  −
+                </button>
+                <output id="transpose-value" aria-live="polite">Originale</output>
+                <button id="transpose-up" class="button button-secondary" type="button" aria-label="Alza di un semitono">
+                  +
+                </button>
+                <button id="transpose-original" class="button button-secondary" type="button">Originale</button>
+              </div>
+              <label class="font-control" for="song-font-size">
+                Dimensione testo <output id="font-size-value" for="song-font-size">20 px</output>
+                <input id="song-font-size" type="range" min="16" max="32" step="2" value="20" />
+              </label>
+              <label class="song-toggle">
+                <input id="dark-mode" type="checkbox" />
+                <span>Modalità scura</span>
+              </label>
+              <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
+                Schermo sempre acceso
               </button>
-              <output id="transpose-value" aria-live="polite">Originale</output>
-              <button id="transpose-up" class="button button-secondary" type="button" aria-label="Alza di un semitono">
-                +
-              </button>
-              <button id="transpose-original" class="button button-secondary" type="button">Originale</button>
+              <label class="song-toggle">
+                <input id="print-chords" type="checkbox" checked />
+                <span>Stampa accordi</span>
+              </label>
+              <button id="print-song" class="button button-secondary" type="button">Stampa</button>
+              <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
+            </fieldset>
+            <div class="scroll-settings">
+              <label class="scroll-correction" for="scroll-correction">
+                Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
+                <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
+              </label>
+              <p id="scroll-speed" class="scroll-speed"></p>
+              <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
             </div>
-            <label class="font-control" for="song-font-size">
-              Dimensione testo <output id="font-size-value" for="song-font-size">20 px</output>
-              <input id="song-font-size" type="range" min="16" max="32" step="2" value="20" />
-            </label>
-            <label class="song-toggle">
-              <input id="dark-mode" type="checkbox" />
-              <span>Modalità scura</span>
-            </label>
-            <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
-              Schermo sempre acceso
-            </button>
-            <button id="add-song-to-playlist" class="button button-secondary" type="button">
-              Aggiungi alla scaletta
-            </button>
-            <label class="song-toggle">
-              <input id="print-chords" type="checkbox" checked />
-              <span>Stampa accordi</span>
-            </label>
-            <button id="print-song" class="button button-secondary" type="button">Stampa</button>
-            <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
-          </fieldset>
+          </div>
           <div class="scroll-controls" aria-label="Scorrimento automatico">
             <button id="auto-scroll" class="button button-primary" type="button" aria-pressed="false" disabled>
               Avvia scorrimento
             </button>
-            <label class="scroll-correction" for="scroll-correction">
-              Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
-              <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
-            </label>
-            <p id="scroll-speed" class="scroll-speed"></p>
-            <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
+            <button
+              id="song-settings-toggle"
+              class="button button-secondary song-settings-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="song-settings-panel"
+              aria-label="Apri impostazioni"
+              hidden
+            >
+              <span class="song-settings-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span>Impostazioni</span>
+            </button>
           </div>
           <div id="song-score" class="song-score" role="group" aria-label="Testo e accordi" tabindex="0"></div>
           <section id="song-extra" class="song-extra" aria-label="Informazioni aggiuntive" hidden>

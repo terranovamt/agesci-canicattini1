@@ -38,7 +38,19 @@
             Cerca per titolo, autore o testo, poi filtra per momento, branca e album. La consultazione è pubblica.
           </p>
         </div>
-        <form id="song-filters" class="song-filters" role="search" aria-label="Cerca nel Canzoniere">
+        <button
+          id="song-filter-toggle"
+          class="song-filter-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="song-filters"
+          hidden
+        >
+          <span class="song-filter-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>Filtri e ricerca</span>
+          <span id="song-filter-count" class="song-filter-count" aria-live="polite"></span>
+        </button>
+        <form id="song-filters" class="song-filters" role="search" aria-label="Cerca nel Canzoniere" hidden>
           <div class="song-filter-search">
             <label for="song-search">Cerca titolo, autore o testo</label>
             <input id="song-search" type="search" autocomplete="off" placeholder="Es. ingresso, autore…" />
@@ -103,6 +115,22 @@
           <p id="personal-playlist-status" class="song-status" role="status" aria-live="polite">
             Aggiungi una canzone per creare la tua scaletta.
           </p>
+          <form id="playlist-add-form" class="playlist-add-form" role="search" aria-label="Aggiungi canzoni alla tua scaletta">
+            <label for="playlist-song-search">Cerca una canzone da aggiungere</label>
+            <div class="playlist-add-search">
+              <input
+                id="playlist-song-search"
+                type="search"
+                autocomplete="off"
+                placeholder="Titolo o autore…"
+              />
+              <button class="button button-secondary" type="submit">Cerca</button>
+            </div>
+            <p id="playlist-add-status" class="playlist-add-status" role="status" aria-live="polite">
+              Cerca un titolo o un autore per aggiungere una canzone.
+            </p>
+            <ul id="playlist-add-results" class="playlist-add-results" aria-busy="false"></ul>
+          </form>
           <ol id="personal-playlist-items" class="playlist-items" aria-busy="false"></ol>
           <div class="playlist-actions">
             <button id="share-playlist" class="button button-secondary" type="button" disabled>

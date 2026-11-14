@@ -86,14 +86,20 @@ backend e le revisioni ottimistiche; revisioni obsolete restituiscono 409.
 `/agesci-canicattini1/canzoniere/` e dalla navigazione della home. Cerca nel
 titolo, nell'autore e nel testo, filtra per un tag, branca e album e carica
 risultati successivi a blocchi; i dati arrivano solo dalle API, mai da testi
-inclusi nell'HTML. `canzoniere/canzone.html?slug=...` e' la scheda pubblica.
+inclusi nell'HTML. Su telefono i filtri si aprono dal menu dedicato e i
+risultati sono righe compatte cliccabili; non hanno pulsanti separati per
+aprire o aggiungere una canzone. La ricerca nella sezione "La tua scaletta"
+permette di aggiungere canzoni senza uscire dalla gestione della scaletta.
+`canzoniere/canzone.html?slug=...` e' la scheda pubblica.
 
 La scheda visualizza gli accordi sopra le posizioni ChordPro, permette di
 nasconderli, trasporre tonalita' e accordi con ripristino all'originale,
 regolare la dimensione del testo, attivare il tema scuro e richiedere il
 Wake Lock quando il browser lo supporta. Gli input di ricerca e i risultati
 sono creati con API DOM e `textContent`; i caricamenti segnalano `aria-busy`,
-e gli skeleton rispettano `prefers-reduced-motion`.
+e gli skeleton rispettano `prefers-reduced-motion`. Su telefono il testo segue
+subito il titolo; le impostazioni restano nel menu in basso e il pulsante di
+scorrimento rimane fisso per avviare o mettere in pausa.
 
 Lo scorrimento automatico calcola i secondi per riga dal BPM e da
 `barsPerLine`, con correzione 50–200%, countdown di tre secondi e velocita'
@@ -122,5 +128,4 @@ node tools/nas-demo.cjs
 ```
 
 La demo usa un SQLite temporaneo, due esempi inventati e una scaletta pubblicata;
-non connette il NAS e rimuove il database alla chiusura. L'area admin resta da
-completare nella fase successiva.
+non connette il NAS e rimuove il database alla chiusura.

@@ -69,6 +69,8 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   const ids = [
     "song-list",
     "song-filters",
+    "song-filter-toggle",
+    "song-filter-count",
     "song-search",
     "song-tag",
     "song-branch",
@@ -79,6 +81,10 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
     "clear-song-filters",
     "personal-playlist-status",
     "personal-playlist-items",
+    "playlist-add-form",
+    "playlist-song-search",
+    "playlist-add-status",
+    "playlist-add-results",
     "share-playlist",
     "share-playlist-controls",
     "share-playlist-link",
@@ -105,6 +111,7 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   let releaseSecondPage;
   const allSongs = Array.from({ length: 26 }, (_, number) => song(number));
   let savedSlugs = [];
+  const filterMedia = { matches: true, addEventListener() {} };
   const catalogResponse = new Promise((resolve) => {
     releaseCatalog = resolve;
   });
@@ -118,14 +125,15 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
       return new Promise((resolve) => {
         releaseSecondPage = resolve;
       });
+    const limit = Number(url.searchParams.get("limit")) || 24;
     const slugs = url.searchParams.get("slugs")?.split(",");
     const selected = slugs ? allSongs.filter((item) => slugs.includes(item.slug)) : allSongs;
     return Promise.resolve({
       ok: true,
       json: async () => ({
-        songs: selected.slice(offset, offset + 24),
+        songs: selected.slice(offset, offset + limit),
         total: selected.length,
-        hasMore: offset + 24 < selected.length,
+        hasMore: offset + limit < selected.length,
       }),
     });
   };
@@ -133,6 +141,7 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
     location: { href: "http://localhost/agesci-canicattini1/canzoniere/", search: "", pathname: "/agesci-canicattini1/canzoniere/" },
     history: { replaceState() {} },
     addEventListener() {},
+    matchMedia: () => filterMedia,
     setTimeout,
     clearTimeout,
     CANZONIERE_PLAYLIST_STORE: {
@@ -164,6 +173,11 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
 
   assert.equal(elements["song-list"].children.length, 3);
   assert.equal(elements["song-list"]["aria-busy"], "true");
+  assert.equal(elements["song-filters"].hidden, true);
+  assert.equal(elements["song-filter-toggle"].hidden, false);
+  elements["song-filter-toggle"].listeners.get("click")();
+  assert.equal(elements["song-filters"].hidden, false);
+  assert.equal(elements["song-filter-toggle"].attributes["aria-expanded"], "true");
   releaseCatalog({
     ok: true,
   json: async () => ({
@@ -179,12 +193,21 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   assert.equal(elements["song-list"]["aria-busy"], "false");
   assert.equal(elements["song-status"].textContent, "Mostrate 24 di 26 canzoni.");
   assert.equal(elements["song-list"].children[0].children[0].children[0].textContent, "Canzone <b>demo</b>");
+  assert.equal(elements["song-list"].querySelectorAll(".song-card-add").length, 0);
+  assert.equal(elements["song-list"].querySelectorAll(".song-card-open").length, 0);
   assert.equal(elements["songs-more"].hidden, false);
-  const addFirstSong = elements["song-list"].querySelectorAll(".song-card-add")[0];
+  assert.match(elements["song-list"].children[0].children[0].href, /canzone\.html\?slug=demo-0/);
+  elements["playlist-song-search"].value = "Canzone";
+  await elements["playlist-add-form"].listeners.get("submit")({ preventDefault() {} });
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(requests.some((url) => url.searchParams.get("q") === "Canzone"));
+  const addFirstSong = elements["playlist-add-results"].children[0].children[1];
   addFirstSong.listeners.get("click")();
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(savedSlugs, ["demo-0"]);
+  assert.equal(elements["playlist-add-results"].children[0].children[1].disabled, true);
   assert.equal(elements["personal-playlist-items"].children.length, 1);
   assert.match(elements["open-playlist"].href, /canzone\.html\?slugs=demo-0/);
   assert.match(elements["published-playlists"].children[0].children[0].href, /canzone\.html\?playlist=pubblicata-demo/);
@@ -214,4 +237,18 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   assert.equal(elements["song-list"]["aria-busy"], "false");
   assert.equal(elements["songs-more"].hidden, true);
   assert.ok(requests.some((url) => url.searchParams.get("limit") === "24" && url.searchParams.get("offset") === "24"));
+});
+
+test("mobile song reading keeps lyrics first and places controls behind the bottom settings menu", () => {
+  const html = fs.readFileSync(require.resolve("../canzoniere/canzone.html"), "utf8");
+  const css = fs.readFileSync(require.resolve("../assets/css/canzoniere.css"), "utf8");
+  const mobileStyles = css.split("@media (max-width: 640px) {")[1];
+
+  assert.doesNotMatch(html, /add-song-to-playlist|Aggiungi alla scaletta/);
+  assert.match(html, /id="song-settings-panel" class="song-settings-panel" hidden/);
+  assert.match(html, /id="song-settings-toggle"[\s\S]*?aria-controls="song-settings-panel"/);
+  assert.match(mobileStyles, /\.song-detail-heading\s*\{\s*order:\s*1;/);
+  assert.match(mobileStyles, /#song-score\s*\{\s*order:\s*2;/);
+  assert.match(mobileStyles, /\.song-settings-panel\s*\{\s*order:\s*3;/);
+  assert.match(mobileStyles, /\.scroll-controls\s*\{\s*position:\s*fixed/);
 });

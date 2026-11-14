@@ -3,6 +3,8 @@
   if (!list) return;
 
   const form = document.getElementById("song-filters");
+  const filterToggle = document.getElementById("song-filter-toggle");
+  const filterCount = document.getElementById("song-filter-count");
   const search = document.getElementById("song-search");
   const tagFilter = document.getElementById("song-tag");
   const branchFilter = document.getElementById("song-branch");
@@ -13,6 +15,10 @@
   const clear = document.getElementById("clear-song-filters");
   const personalStatus = document.getElementById("personal-playlist-status");
   const personalItems = document.getElementById("personal-playlist-items");
+  const playlistAddForm = document.getElementById("playlist-add-form");
+  const playlistSongSearch = document.getElementById("playlist-song-search");
+  const playlistAddStatus = document.getElementById("playlist-add-status");
+  const playlistAddResults = document.getElementById("playlist-add-results");
   const shareButton = document.getElementById("share-playlist");
   const shareControls = document.getElementById("share-playlist-controls");
   const shareInput = document.getElementById("share-playlist-link");
@@ -31,6 +37,7 @@
   const playlistStore = window.CANZONIERE_PLAYLIST_STORE;
   const apiRoot = new URL("../api/canzoniere/", window.location.href);
   const pageSize = 24;
+  const filterMedia = window.matchMedia("(max-width: 640px)");
   const storedPlaylist = playlistStore.read();
   let catalog = null;
   let personalSlugs = storedPlaylist.slugs;
@@ -42,7 +49,11 @@
   let offset = 0;
   let requestId = 0;
   let activeController = null;
+  let playlistSearchController = null;
+  let playlistSearchRequest = 0;
+  let playlistSearchResults = [];
   let loading = false;
+  let filterPanelOpen = false;
   let searchTimer = 0;
 
   function skeleton(count) {
@@ -73,12 +84,26 @@
     select.append(option);
   }
 
+  function syncFilterPanel() {
+    const compact = filterMedia.matches;
+    filterToggle.hidden = !compact;
+    form.hidden = compact && !filterPanelOpen;
+    filterToggle.setAttribute("aria-expanded", String(compact && filterPanelOpen));
+  }
+
+  function updateFilterCount() {
+    const count = [search.value.trim(), tagFilter.value, branchFilter.value, albumFilter.value]
+      .filter(Boolean).length;
+    filterCount.textContent = count ? count + " attivi" : "";
+  }
+
   function applyLocation() {
     const params = new URLSearchParams(window.location.search);
     search.value = params.get("q") || "";
     tagFilter.value = params.get("tag") || "";
     branchFilter.value = params.get("branch") || "";
     albumFilter.value = params.get("album") || "";
+    updateFilterCount();
   }
 
   function populateFilters(data) {
@@ -142,12 +167,12 @@
     const article = document.createElement("article");
     article.className = "song-card";
     article.setAttribute("role", "listitem");
-    const heading = document.createElement("h2");
     const link = document.createElement("a");
+    link.className = "song-card-link";
     link.href = "canzone.html?slug=" + encodeURIComponent(song.slug);
-    link.textContent = song.title;
-    heading.append(link);
-    article.append(heading);
+    const heading = document.createElement("h2");
+    heading.textContent = song.title;
+    link.append(heading);
 
     const details = [];
     if (song.author) details.push("di " + song.author);
@@ -157,7 +182,7 @@
       const byline = document.createElement("p");
       byline.className = "song-card-byline";
       byline.textContent = details.join(" · ");
-      article.append(byline);
+      link.append(byline);
     }
 
     const metadata = [song.key, song.bpm ? song.bpm + " BPM" : "", song.meter]
@@ -167,7 +192,7 @@
       const summary = document.createElement("p");
       summary.className = "song-card-meta";
       summary.textContent = metadata;
-      article.append(summary);
+      link.append(summary);
     }
 
     if (song.tagSlugs?.length) {
@@ -181,31 +206,10 @@
         item.textContent = tag.name;
         tags.append(item);
       });
-      if (tags.children.length) article.append(tags);
+      if (tags.children.length) link.append(tags);
     }
-
-    const open = document.createElement("a");
-    open.className = "button button-secondary song-card-open";
-    open.href = link.href;
-    open.textContent = "Apri la canzone";
-    article.append(open);
-
-    const add = document.createElement("button");
-    add.className = "button button-secondary song-card-add";
-    add.type = "button";
-    add.dataset.playlistSlug = song.slug;
-    add.disabled = personalSlugs.includes(song.slug);
-    add.textContent = add.disabled ? "Già nella tua scaletta" : "Aggiungi alla scaletta";
-    add.addEventListener("click", () => addToPersonalPlaylist(song.slug));
-    article.append(add);
+    article.append(link);
     return article;
-  }
-
-  function updateCardButtons() {
-    list.querySelectorAll(".song-card-add").forEach((button) => {
-      button.disabled = personalSlugs.includes(button.dataset.playlistSlug);
-      button.textContent = button.disabled ? "Già nella tua scaletta" : "Aggiungi alla scaletta";
-    });
   }
 
   function persistPersonalPlaylist(slugs, message) {
@@ -218,13 +222,70 @@
     storageError = result.error;
     personalMessage = message;
     if (!result.ok) console.error("Salvataggio scaletta locale non riuscito", result.error);
-    updateCardButtons();
+    renderPlaylistAddResults();
     renderPersonalPlaylist();
   }
 
   function addToPersonalPlaylist(slug) {
     if (personalSlugs.includes(slug)) return;
     persistPersonalPlaylist([...personalSlugs, slug], "Canzone aggiunta alla scaletta.");
+  }
+
+  function renderPlaylistAddResults() {
+    playlistAddResults.replaceChildren();
+    playlistSearchResults.forEach((song) => {
+      const item = document.createElement("li");
+      const label = document.createElement("span");
+      label.textContent = song.author ? song.title + " · " + song.author : song.title;
+      const add = document.createElement("button");
+      add.className = "button button-secondary";
+      add.type = "button";
+      add.disabled = personalSlugs.includes(song.slug);
+      add.textContent = add.disabled ? "Già nella scaletta" : "Aggiungi";
+      add.addEventListener("click", () => addToPersonalPlaylist(song.slug));
+      item.append(label, add);
+      playlistAddResults.append(item);
+    });
+  }
+
+  async function searchPlaylistSongs(event) {
+    event.preventDefault();
+    playlistSearchController?.abort();
+    const request = ++playlistSearchRequest;
+    const query = playlistSongSearch.value.trim();
+    playlistSearchResults = [];
+    playlistAddResults.replaceChildren();
+    if (!query) {
+      playlistAddStatus.textContent = "Inserisci un titolo o un autore da cercare.";
+      playlistAddResults.setAttribute("aria-busy", "false");
+      return;
+    }
+
+    const controller = new AbortController();
+    playlistSearchController = controller;
+    playlistAddResults.setAttribute("aria-busy", "true");
+    playlistAddStatus.textContent = "Ricerca delle canzoni…";
+    try {
+      const params = new URLSearchParams({ q: query, limit: "12", offset: "0" });
+      const page = await getJson("songs?" + params.toString(), controller.signal);
+      if (request !== playlistSearchRequest) return;
+      if (!Array.isArray(page.songs) || !Number.isSafeInteger(page.total))
+        throw new Error("Risultati di ricerca non validi.");
+      playlistSearchResults = page.songs;
+      renderPlaylistAddResults();
+      playlistAddStatus.textContent = page.total
+        ? "Mostrate " + page.songs.length + " di " + page.total + " canzoni."
+        : "Nessuna canzone trovata.";
+    } catch (error) {
+      if (request !== playlistSearchRequest || error.name === "AbortError") return;
+      playlistAddStatus.textContent = error.message;
+      console.error("Ricerca canzoni per la scaletta non riuscita", error);
+    } finally {
+      if (request === playlistSearchRequest) {
+        playlistAddResults.setAttribute("aria-busy", "false");
+        playlistSearchController = null;
+      }
+    }
   }
 
   async function renderPersonalPlaylist() {
@@ -243,7 +304,6 @@
         ? "La scaletta non è disponibile in questo browser: " + storageError.message
         : personalMessage || "Aggiungi una canzone per creare la tua scaletta.";
       personalMessage = "";
-      updateCardButtons();
       return;
     }
 
@@ -282,11 +342,9 @@
         ? "Scaletta disponibile finché questa pagina resta aperta: " + storageError.message
         : personalMessage || personalSlugs.length + " canzoni nella scaletta di questo browser.";
       personalMessage = "";
-      updateCardButtons();
     } catch (error) {
       if (request !== personalRequest) return;
       personalStatus.textContent = error.message;
-      updateCardButtons();
       console.error("Caricamento scaletta locale non riuscito", error);
     } finally {
       if (request === personalRequest) personalItems.setAttribute("aria-busy", "false");
@@ -443,25 +501,54 @@
     }
   }
 
+  filterToggle.addEventListener("click", () => {
+    filterPanelOpen = !filterPanelOpen;
+    syncFilterPanel();
+    if (filterPanelOpen) search.focus();
+  });
+  filterMedia.addEventListener("change", () => {
+    filterPanelOpen = false;
+    syncFilterPanel();
+  });
+  syncFilterPanel();
+  updateFilterCount();
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     window.clearTimeout(searchTimer);
     load(true);
   });
   search.addEventListener("input", () => {
+    updateFilterCount();
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => load(true), 250);
   });
   [tagFilter, branchFilter, albumFilter].forEach((select) => {
-    select.addEventListener("change", () => load(true));
+    select.addEventListener("change", () => {
+      updateFilterCount();
+      load(true);
+    });
   });
   clear.addEventListener("click", () => {
     search.value = "";
     tagFilter.value = "";
     branchFilter.value = "";
     albumFilter.value = "";
+    updateFilterCount();
     load(true);
     search.focus();
+  });
+  playlistAddForm.addEventListener("submit", searchPlaylistSongs);
+  playlistSongSearch.addEventListener("input", () => {
+    playlistSearchController?.abort();
+    playlistSearchRequest++;
+    playlistSearchController = null;
+    playlistSearchResults = [];
+    playlistAddResults.replaceChildren();
+    playlistAddResults.setAttribute("aria-busy", "false");
+    playlistAddStatus.textContent = playlistSongSearch.value.trim()
+      ? "Premi Cerca per visualizzare i risultati."
+      : "Cerca un titolo o un autore per aggiungere una canzone.";
   });
   more.addEventListener("click", () => load(false));
   retry.addEventListener("click", () => load(true));

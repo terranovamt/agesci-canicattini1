@@ -116,10 +116,13 @@ test("public Canzoniere has an index and a slug-based song detail page", () => {
   assert.match(read("canzoniere/index.html"), /id="song-list"[^>]*aria-busy="true"/);
   const songPage = read("canzoniere/canzone.html");
   assert.match(songPage, /id="song-detail"[^>]*aria-busy="true"/);
-  for (const id of ["auto-scroll", "scroll-correction", "playlist-controls", "playlist-previous",
-    "playlist-next", "print-chords", "print-song", "playlist-print", "add-song-to-playlist"])
+  for (const id of ["auto-scroll", "scroll-correction", "song-settings-panel", "song-settings-toggle",
+    "playlist-controls", "playlist-previous", "playlist-next", "print-chords", "print-song", "playlist-print"])
     assert.match(songPage, new RegExp(`id="${id}"`));
+  assert.doesNotMatch(songPage, /add-song-to-playlist|Aggiungi alla scaletta/);
   assert.match(read("canzoniere/index.html"), /id="personal-playlist-items"/);
+  assert.match(read("canzoniere/index.html"), /id="song-filter-toggle"/);
+  assert.match(read("canzoniere/index.html"), /id="playlist-add-form"/);
   assert.match(read("canzoniere/index.html"), /id="quick-presets"/);
   assert.match(read("canzoniere/index.html"), /id="published-playlists"/);
   assert.match(read("assets/css/canzoniere.css"), /prefers-reduced-motion:\s*reduce/);

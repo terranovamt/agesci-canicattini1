@@ -9,6 +9,10 @@
   const status = document.getElementById("song-status");
   const retry = document.getElementById("song-retry");
   const score = document.getElementById("song-score");
+  const settingsPanel = document.getElementById("song-settings-panel");
+  const settingsToggle = document.getElementById("song-settings-toggle");
+  const autoScrollButton = document.getElementById("auto-scroll");
+  const settingsMedia = window.matchMedia("(max-width: 640px)");
   const playlistControls = document.getElementById("playlist-controls");
   const playlistTitleNode = document.getElementById("playlist-title");
   const playlistPosition = document.getElementById("playlist-position");
@@ -31,6 +35,7 @@
   let currentIndex = 0;
   let wakeLock = null;
   let wakeLockRequested = false;
+  let settingsOpen = false;
 
   async function getJson(path) {
     let response;
@@ -167,26 +172,6 @@
     document.getElementById("song-controls-status").textContent = message;
   }
 
-  function addCurrentSongToPlaylist() {
-    const saved = playlistStore.read();
-    if (saved.error) {
-      updatePersonalSongStatus("Impossibile leggere la scaletta locale: " + saved.error.message);
-      console.error("Lettura scaletta locale non riuscita", saved.error);
-      return;
-    }
-    if (saved.slugs.includes(song.slug)) {
-      updatePersonalSongStatus("Questa canzone è già nella tua scaletta.");
-      return;
-    }
-    const result = playlistStore.write([...saved.slugs, song.slug]);
-    if (!result.ok) {
-      updatePersonalSongStatus("Impossibile salvare la scaletta locale: " + result.error.message);
-      console.error("Salvataggio scaletta locale non riuscito", result.error);
-      return;
-    }
-    updatePersonalSongStatus("Canzone aggiunta alla scaletta di questo browser.");
-  }
-
   async function loadPlaylistSong(index) {
     currentIndex = index;
     detail.setAttribute("aria-busy", "true");
@@ -300,13 +285,41 @@
 
   const scrollPlayer = window.CANZONIERE_SCROLL.createScrollPlayer({
     score,
-    button: document.getElementById("auto-scroll"),
+    button: autoScrollButton,
     correction: document.getElementById("scroll-correction"),
     speedLabel: document.getElementById("scroll-speed"),
     status: document.getElementById("scroll-status"),
     getSong: () => song,
     onEnd: advancePlaylist,
   });
+
+  function syncSettingsVisibility() {
+    const compact = settingsMedia.matches;
+    settingsPanel.hidden = compact && !settingsOpen;
+    settingsToggle.hidden = !compact;
+    settingsToggle.setAttribute("aria-expanded", String(compact && settingsOpen));
+    settingsToggle.setAttribute("aria-label", settingsOpen ? "Chiudi impostazioni" : "Apri impostazioni");
+  }
+
+  settingsToggle.addEventListener("click", () => {
+    settingsOpen = !settingsOpen;
+    syncSettingsVisibility();
+    if (settingsOpen) {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      settingsPanel.scrollIntoView({ block: "start", behavior });
+    }
+  });
+  settingsMedia.addEventListener("change", () => {
+    settingsOpen = false;
+    syncSettingsVisibility();
+  });
+  autoScrollButton.addEventListener("click", () => {
+    if (settingsMedia.matches && autoScrollButton.getAttribute("aria-pressed") === "true") {
+      settingsOpen = false;
+      syncSettingsVisibility();
+    }
+  });
+  syncSettingsVisibility();
 
   document.getElementById("show-chords").addEventListener("change", (event) => {
     score.dataset.chords = event.currentTarget.checked ? "on" : "off";
@@ -340,7 +353,6 @@
   document.getElementById("dark-mode").addEventListener("change", (event) => {
     document.body.classList.toggle("canzoniere-dark", event.currentTarget.checked);
   });
-  document.getElementById("add-song-to-playlist").addEventListener("click", addCurrentSongToPlaylist);
   document.getElementById("wake-lock").addEventListener("click", async () => {
     if (wakeLockRequested) {
       wakeLockRequested = false;
