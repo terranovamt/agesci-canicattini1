@@ -9,16 +9,16 @@ test("euro input uses exact cents and rejects negative, fractional or non-finite
     assert.throws(() => M.cents(input), Error, input);
 });
 
-test("the expected fee includes only present members and keeps advances separate from excess payments", () => {
+test("fees and received amounts are counted only for present members", () => {
   assert.deepEqual(M.totals({ feeCents: 1025, attendance: [
     { status: "presente", due: true, paidCents: 500 },
     { status: "presente", due: true, paidCents: 1500 },
     { status: "assente", due: false, paidCents: 100 },
     { status: "presente", due: true, paidCents: 0 },
     { status: "", due: false, paidCents: 250 },
-  ] }), { expected: 3075, paid: 2350, remaining: 1550, excess: 575, advance: 250 });
+  ] }), { expected: 3075, paid: 2000, remaining: 1550, excess: 475, advance: 0 });
   assert.deepEqual(M.totals({ feeCents: 0, attendance: [{ status: "assente", due: true, paidCents: 250 }] }),
-    { expected: 0, paid: 250, remaining: 0, excess: 250, advance: 0 });
+    { expected: 0, paid: 0, remaining: 0, excess: 0, advance: 0 });
 });
 
 test("material totals normalize names, use the maximum for reused items and the sum otherwise", () => {

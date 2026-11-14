@@ -31,6 +31,8 @@
   const NATURAL_PITCH = Object.freeze({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 });
   const SHARP_NOTES = Object.freeze(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]);
   const FLAT_NOTES = Object.freeze(["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]);
+  const ITALIAN_TO_ENGLISH = Object.freeze({ DO: "C", RE: "D", MI: "E", FA: "F", SOL: "G", LA: "A", SI: "B" });
+  const ENGLISH_TO_ITALIAN = Object.freeze({ C: "Do", D: "Re", E: "Mi", F: "Fa", G: "Sol", A: "La", B: "Si" });
 
   function normalizeSearch(value) {
     return String(value ?? "")
@@ -45,6 +47,24 @@
     return normalizeSearch(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
 
+  function noteParts(value) {
+    const italian = /^(Do|Re|Mi|Fa|Sol|La|Si)([#b\u266f\u266d]?)(.*)$/i.exec(value);
+    if (italian) return {
+      notation: "it",
+      root: ITALIAN_TO_ENGLISH[italian[1].toUpperCase()],
+      accidental: italian[2].replace("\u266f", "#").replace("\u266d", "b"),
+      suffix: italian[3],
+    };
+    const english = /^([A-G])([#b\u266f\u266d]?)(.*)$/i.exec(value);
+    if (!english) return null;
+    return {
+      notation: "en",
+      root: english[1].toUpperCase(),
+      accidental: english[2].replace("\u266f", "#").replace("\u266d", "b"),
+      suffix: english[3],
+    };
+  }
+
   function chordParts(value) {
     if (typeof value !== "string" || !value.trim() || value.length > 32) return null;
     const chord = value.trim();
@@ -52,15 +72,20 @@
 
     let main = chord;
     let bass = "";
+    let bassNotation = "";
     const slash = chord.lastIndexOf("/");
-    if (slash > 0 && /^[A-G][#b]?$/i.test(chord.slice(slash + 1))) {
-      main = chord.slice(0, slash);
-      bass = chord.slice(slash + 1);
+    if (slash > 0) {
+      const bassParts = noteParts(chord.slice(slash + 1));
+      if (bassParts && !bassParts.suffix) {
+        main = chord.slice(0, slash);
+        bass = bassParts.root + bassParts.accidental;
+        bassNotation = bassParts.notation;
+      }
     }
 
-    const rootMatch = /^([A-G])([#b]?)(.*)$/i.exec(main);
-    if (!rootMatch || /[\[\]\r\n]/.test(rootMatch[3])) return null;
-    return { chord, root: rootMatch[1].toUpperCase(), accidental: rootMatch[2], suffix: rootMatch[3], bass };
+    const root = noteParts(main);
+    if (!root || /[\[\]\r\n]/.test(root.suffix)) return null;
+    return { chord, ...root, bass, bassNotation };
   }
 
   function pitch(note) {
@@ -74,6 +99,13 @@
     return (preferFlats ? FLAT_NOTES : SHARP_NOTES)[index];
   }
 
+  function noteNameInNotation(value, preferFlats, notation) {
+    const english = noteName(value, preferFlats);
+    if (notation !== "it") return english;
+    const match = /^([A-G])([#b]?)$/.exec(english);
+    return ENGLISH_TO_ITALIAN[match[1]] + match[2];
+  }
+
   function transposeChord(chord, semitones, preferFlats) {
     if (!Number.isInteger(semitones)) throw new RangeError("La trasposizione deve essere un numero intero di semitoni");
     const parts = chordParts(chord);
@@ -81,8 +113,8 @@
     const flats = preferFlats ?? /b/.test(chord);
     const rootPitch = pitch(parts.root + parts.accidental);
     const bassPitch = parts.bass ? pitch(parts.bass) : null;
-    return noteName(rootPitch + semitones, flats) + parts.suffix +
-      (parts.bass ? "/" + noteName(bassPitch + semitones, flats) : "");
+    return noteNameInNotation(rootPitch + semitones, flats, parts.notation) + parts.suffix +
+      (parts.bass ? "/" + noteNameInNotation(bassPitch + semitones, flats, parts.bassNotation) : "");
   }
 
   function transposeKey(key, semitones, preferFlats) {
@@ -182,6 +214,29 @@
         "{key: " + transposeKey(key.trim(), semitones, preferFlats) + "}");
   }
 
+  function translateChordSymbol(chord, notation) {
+    const parts = chordParts(chord);
+    if (!parts || parts.noChord) return chord;
+    const note = (root, accidental) => notation === "it"
+      ? ENGLISH_TO_ITALIAN[root] + accidental
+      : root + accidental;
+    const bass = parts.bass ? /^([A-G])([#b]?)$/.exec(parts.bass) : null;
+    return note(parts.root, parts.accidental) + parts.suffix +
+      (bass ? "/" + note(bass[1], bass[2]) : "");
+  }
+
+  function translateChordPro(source, notation) {
+    if (typeof source !== "string") throw new TypeError("Il testo ChordPro deve essere una stringa");
+    if (!["it", "en"].includes(notation)) throw new RangeError("La notazione deve essere italiana o inglese");
+    return source
+      .replace(/\[([^\]\r\n]+)\]/g, (marker, chord) => {
+        const parts = chordParts(chord);
+        return parts ? "[" + translateChordSymbol(chord, notation) + "]" : marker;
+      })
+      .replace(/\{key:\s*([^}]+)\}/gi, (directive, key) =>
+        "{key: " + translateChordSymbol(key.trim(), notation) + "}");
+  }
+
   function matchesSearch(song, query) {
     const needle = normalizeSearch(query);
     if (!needle) return true;
@@ -225,6 +280,7 @@
     parseChordPro,
     slugify,
     secondsPerLine,
+    translateChordPro,
     transposeChord,
     transposeChordPro,
     transposeKey,

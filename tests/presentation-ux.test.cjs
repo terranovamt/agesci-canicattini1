@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const { test } = require("node:test");
 const { spawn } = require("node:child_process");
@@ -68,7 +69,7 @@ test("preview context stays outside the slide stage and off the projector view",
 });
 
 test("six viewports: static/live stage, QR, controls, keyboard and resize preserve navigation", { timeout: 90000 }, async (t) => {
-  const profile = fs.mkdtempSync(path.join(process.cwd(), ".presentation-chrome-"));
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), ".presentation-chrome-"));
   const chromeExecutable = process.env.CHROME_BIN || (process.platform === "win32"
     ? path.join(process.env.PROGRAMFILES || "C:\\Program Files", "Google", "Chrome", "Application", "chrome.exe")
     : "/usr/bin/google-chrome");

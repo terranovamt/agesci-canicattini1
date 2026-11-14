@@ -108,7 +108,8 @@ function createActivities(db, people) {
       excludedAttendance = attendance.filter(person => excluded.has(person.personId));
       data.attendance = attendance.filter(person => !excluded.has(person.personId)).map(person => {
         const paidCents = person.paidCents ?? 0;
-        return { ...person, due: data.feeCents > 0 && person.status === "presente" && paidCents < data.feeCents,
+        const status = paidCents > 0 ? "presente" : person.status;
+        return { ...person, status, due: data.feeCents > 0 && status === "presente" && paidCents < data.feeCents,
           paidCents };
       });
       data.totals = AM.totals(data);
@@ -256,8 +257,13 @@ function createActivities(db, people) {
           const previous = existing?.attendance.find(person => person.personId === item.personId);
           if (Object.hasOwn(item, "due") && typeof item.due !== "boolean") fail(400, "Quota dovuta non valida");
           const paidCents = amount(Object.hasOwn(item, "paidCents") ? item.paidCents : previous?.paidCents ?? 0);
-          return { personId: item.personId, name: member.name, status: item.status,
-            due: feeCents > 0 && item.status === "presente" && paidCents < feeCents, paidCents,
+          if (feeCents === 0 && paidCents > (previous?.paidCents ?? 0))
+            fail(400, "Questa attività non prevede una quota");
+          if (paidCents > 0 && ["assente", "giustificato"].includes(item.status))
+            fail(400, "Non puoi registrare una quota per un socio assente o giustificato");
+          const status = paidCents > 0 ? "presente" : item.status;
+          return { personId: item.personId, name: member.name, status,
+            due: feeCents > 0 && status === "presente" && paidCents < feeCents, paidCents,
             unit: previous?.unit ?? member.unit ?? "" };
         });
         if (existing?.attendance.some(person => person.paidCents > 0 && !seen.has(person.personId)))

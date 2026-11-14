@@ -68,7 +68,7 @@ test("nonfrequentanti stay in the member register but are excluded from future a
   db.close();
 });
 
-test("the quota is expected only from present members; absences and advances stay separate", async () => {
+test("payments require presence and a payment added without presence records attendance", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-fees-"));
   const app = await start(directory);
   try {
@@ -78,24 +78,43 @@ test("the quota is expected only from present members; absences and advances sta
     for (const [index, status] of ["presente", "assente", "giustificato", ""].entries()) {
       const { member } = await r("members", "POST", { code: "91000" + index, branch: "L/C",
         profile: { givenName: "Socio", surname: "Quota " + index } }, 201);
-      attendance.push({ personId: member.id, status, due: false, paidCents: [500, 1500, 0, 100][index] });
+      attendance.push({ personId: member.id, status, due: false, paidCents: index === 0 ? 500 : 0 });
     }
     let event = await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
       title: "Quota per tutti", date: "2026-11-10", feeCents: 1000, attendance, tasks: [] });
     assert.deepEqual(event.attendance.map(person => person.due), [true, false, false, false]);
-    assert.deepEqual(event.totals, { expected: 1000, paid: 2100, remaining: 500, excess: 1500, advance: 100 });
+    assert.deepEqual(event.totals, { expected: 1000, paid: 500, remaining: 500, excess: 0, advance: 0 });
+    await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
+      title: "Senza quota", date: "2026-11-11", feeCents: 0,
+      attendance: [{ personId: attendance[0].personId, status: "presente", paidCents: 1 }] }, 400);
+    await r("activities/events/" + event.id, "PATCH", { ...event, attendance: [
+      ...event.attendance.slice(0, 1),
+      { ...event.attendance[1], paidCents: 1500 },
+      ...event.attendance.slice(2),
+    ] }, 400);
     const absent = (await r("activities/members/" + attendance[1].personId)).events[0];
     assert.equal(absent.status, "assente");
     assert.equal(absent.due, false);
-    assert.equal(absent.paidCents, 1500);
+    assert.equal(absent.paidCents, 0);
+    event = await r("activities/events/" + event.id, "PATCH", { ...event, attendance: [
+      ...event.attendance.slice(0, 3),
+      { ...event.attendance[3], paidCents: 100 },
+    ] });
+    assert.equal(event.attendance[3].status, "presente");
+    assert.equal(event.attendance[3].due, true);
+    assert.deepEqual(event.totals, { expected: 2000, paid: 600, remaining: 1400, excess: 0, advance: 0 });
     event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 0 });
     assert.ok(event.attendance.every(person => !person.due));
-    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 2100, advance: 0 });
+    assert.deepEqual(event.totals, { expected: 0, paid: 600, remaining: 0, excess: 600, advance: 0 });
+    await r("activities/events/" + event.id, "PATCH", { ...event, attendance: [
+      { ...event.attendance[0], paidCents: 501 },
+      ...event.attendance.slice(1),
+    ] }, 400);
     event = await r("activities/events/" + event.id, "PATCH", { ...event, feeCents: 2000,
       attendance: event.attendance.map(person => ({ ...person, due: false, status: "" })) });
-    assert.deepEqual(event.attendance.map(person => person.paidCents), [500, 1500, 0, 100]);
-    assert.ok(event.attendance.every(person => !person.due));
-    assert.deepEqual(event.totals, { expected: 0, paid: 2100, remaining: 0, excess: 0, advance: 2100 });
+    assert.deepEqual(event.attendance.map(person => person.status), ["presente", "", "", "presente"]);
+    assert.deepEqual(event.attendance.map(person => person.paidCents), [500, 0, 0, 100]);
+    assert.deepEqual(event.totals, { expected: 4000, paid: 600, remaining: 3400, excess: 0, advance: 0 });
     assert.deepEqual((await r("activities")).events.find(item => item.id === event.id).totals, event.totals);
   } finally {
     await app.close();
@@ -264,16 +283,18 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/events/" + event.id, "PATCH", { ...event,
       attendance: [{ ...event.attendance[0], due: "true" }] }, 400);
     await r("activities/events/" + event.id, "PATCH", { ...event, attendance: [] }, 400);
-    // Older clients must not erase saved payments when editing attendance.
+    // Older clients may omit the amount, but cannot leave a paid participant absent.
     const { feeCents, ...legacy } = event;
+    await r("activities/events/" + event.id, "PATCH", { ...legacy,
+      attendance: [{ personId: ids["L/C"], status: "assente" }] }, 400);
     event = await r("activities/events/" + event.id, "PATCH", { ...legacy,
-      attendance: [{ personId: ids["L/C"], status: "assente" }] });
+      attendance: [{ personId: ids["L/C"], status: "presente" }] });
     assert.equal(event.feeCents, 1025);
     assert.equal(event.attendance[0].paidCents, 500);
-    assert.equal(event.attendance[0].due, false);
+    assert.equal(event.attendance[0].due, true);
     let history = await r("activities/members/" + ids["L/C"]);
     assert.equal(history.events.length, 1);
-    assert.equal(history.events[0].status, "assente");
+    assert.equal(history.events[0].status, "presente");
     assert.equal(history.events[0].paidCents, 500);
     assert.equal(Object.hasOwn(history.events[0], "attendance"), false, "member history must not expose other participants");
     event = await r("activities/events/" + event.id, "PATCH", { ...event,

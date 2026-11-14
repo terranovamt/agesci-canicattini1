@@ -147,8 +147,9 @@ questa guida, nei test o nella memoria dell'assistente.
   selezione cambia solo il gruppo renderizzato e i dati non selezionati restano
   intatti.
 - La scheda socio mantiene nel DOM le sezioni Attività, Percorso, Anagrafica,
-  Contatti, Genitori e Censimenti, nell'ordine indicato e con apertura su
-  Attività. Sono pannelli distinti: non riunire gli ultimi tre in Anagrafica.
+  Contatti, Scheda Medica, Genitori e Censimenti, nell'ordine indicato e con
+  apertura su Attività. Sono pannelli distinti: non riunire le sezioni in
+  Anagrafica.
   Non ricreare i campi al cambio sezione: valori e bozze devono sopravvivere;
   il salvataggio resta esplicito. Un pannello nascosto per navigazione non
   rende inapplicabili i suoi campi e non deve escluderli dal salvataggio.
@@ -373,9 +374,11 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   revisioni ottimistiche. Zero tappe completate significa Definito, alcune
   In lavorazione, tutte (non vuote) Conquistato. La stagione L/C puo essere
   conclusa esplicitamente dopo tutte le prede; non blocca l'avvio di specialita.
-  La scheda Percorso raggruppa i soci per sestiglia/squadriglia e apre il
-  profilo individuale nella scheda Percorso; le tappe si aggiornano con un
-  tocco e si salvano subito, senza uscire dal profilo. A specialita o brevetto
+  La scheda Percorso raggruppa i soci per sestiglia/squadriglia, ordina E/G
+  per ruolo e apre il profilo individuale nella scheda Percorso; i filtri tipo
+  offrono Specialita per L/C e Brevetto/Specialita per E/G anche senza record
+  di quel tipo. Le tappe si aggiornano con un tocco e si salvano subito, senza
+  uscire dal profilo. A specialita o brevetto
   completati, Assegna registra il riconoscimento nei dati educativi del socio;
   la caccia si conclude con un'azione separata.
   Nel programma l'aggiunta del momento e disponibile una volta per giornata.
@@ -384,9 +387,10 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   la scheda socio carica `/api/activities/members/ID` (solo dati di quel
   socio, perimetro di branca invariato), con link `attivita.html?event=ID`.
   `activities-model.js` condivide parsing euro e totali fra UI e server:
-  denaro solo in centesimi interi, quota automatica per tutti i soci
-  nell'elenco dell'attivita indipendentemente dalla presenza, versato totale
-  comprensivo degli acconti. Il residuo somma i debiti individuali senza
+  denaro solo in centesimi interi, quota attesa e versamenti conteggiati solo
+  per i presenti. Un importo positivo inserito da Quote rende presente il
+  socio; il server normalizza i dati storici pagati e rifiuta versamenti per
+  assenti o giustificati. Il residuo somma i debiti individuali senza
   compensarli con eccessi di altri soci. I vecchi client non devono cancellare
   quote e versamenti omessi dal payload. Lo storico UI e isolato in
   `member-activities.js`, con retry ed esclusione delle risposte obsolete.

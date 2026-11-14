@@ -15,12 +15,11 @@
       const fee = event.feeCents || 0;
       const present = Object.hasOwn(person, 'status') ? person.status === 'presente' : person.due === true;
       const expected = present ? fee : 0;
-      const paid = person.paidCents || 0;
+      const paid = present ? person.paidCents || 0 : 0;
       result.expected += expected;
       result.paid += paid;
       result.remaining += Math.max(0, expected - paid);
-      if (person.status === '' && fee > 0) result.advance += paid;
-      else result.excess += Math.max(0, paid - expected);
+      result.excess += Math.max(0, paid - expected);
       return result;
     }, { expected: 0, paid: 0, remaining: 0, excess: 0, advance: 0 });
   }

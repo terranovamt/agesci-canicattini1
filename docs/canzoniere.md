@@ -40,7 +40,9 @@ da framework. `parseChordPro` restituisce righe con testo, simboli di accordo
 e posizioni in UTF-16, senza generare HTML; le direttive `{nome: valore}`
 sono restituite separatamente. `transposeChord` e `transposeChordPro`
 traspongono radice e basso degli accordi, lasciando intatte le etichette non
-riconosciute. La tonalita' usa la stessa trasposizione.
+riconosciute. Sono riconosciute le note italiane e inglesi; `translateChordPro`
+converte gli accordi e la direttiva di tonalita' tra le due notazioni senza
+modificare testo, suffissi o bassi. La tonalita' usa la stessa trasposizione.
 
 `secondsPerLine(song, correctionPercent)` applica
 `(battiti per battuta × battute per riga) × 60 / BPM`. Per `6/8` il modello
@@ -115,7 +117,9 @@ l'opzione di includere gli accordi.
 `area-riservata/canzoniere.html` e' l'interfaccia amministrativa, raggiungibile
 dalla dashboard dei capi. Il server resta l'autorita' per ogni scrittura: i
 controlli UI sono solo un aiuto, non sostituiscono il 403 server-side.
-L'editor offre anteprima ChordPro, import locale con anteprima/conferma,
+L'editor offre anteprima ChordPro, conversione rapida ITA ⇄ EN degli accordi,
+import locale con anteprima/conferma e aree di testo con altezza limitata e
+scorrimento interno su telefono,
 gestione di tag/album/preset/scalette e backup JSON; ogni canzone puo' essere
 esportata in `.cho`. Una scrittura ottimistica ripristina lo snapshot locale
 se l'API rifiuta l'operazione.

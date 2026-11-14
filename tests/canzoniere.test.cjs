@@ -98,6 +98,19 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
   assert.equal(M.transposeChord("Bb", 2), "C");
   assert.equal(M.transposeKey("Am", 2), "Bm");
   assert.equal(M.transposeChordPro("[Bb]Piano [F#m7/C#]alto", 2), "[C]Piano [G#m7/D#]alto");
+  assert.equal(M.transposeChord("Dom", 2), "Rem");
+  assert.equal(M.transposeChord("Fa#m7/Do#", 2), "Sol#m7/Re#");
+  assert.equal(M.translateChordPro("[Do]Sole [Rem7] [Fa#m7/Do#]\n{key: Sib}", "en"),
+    "[C]Sole [Dm7] [F#m7/C#]\n{key: Bb}");
+  assert.equal(M.translateChordPro("[C]Sole [Dm7] [F#m7/C#]\n{key: Bb}", "it"),
+    "[Do]Sole [Rem7] [Fa#m7/Do#]\n{key: Sib}");
+  assert.deepEqual(M.parseChordPro("[Do]Sole [Fa#m7/Do#]alto")[0], {
+    lyric: "Sole alto",
+    chords: [
+      { chord: "Do", position: 0 },
+      { chord: "Fa#m7/Do#", position: 5 },
+    ],
+  });
   assert.equal(M.transposeChordPro("{key: Am}\n[Am]nota", 2), "{key: Bm}\n[Bm]nota");
   assert.equal(M.transposeChordPro("{key:Am}\n[Am]nota", 0), "{key:Am}\n[Am]nota");
   assert.equal(M.transposeChordPro("[N.C.]pausa", 5), "[N.C.]pausa");
@@ -119,6 +132,23 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
   assert.equal(M.secondsPerLine({ bpm: null, meter: "3/4", barsPerLine: 2 }), M.DEFAULT_SECONDS_PER_LINE);
   assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 50), 2);
   assert.throws(() => M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 201), RangeError);
+});
+
+test("admin song editor wires chord translation and bounds mobile text areas", async () => {
+  const [html, css, script] = await Promise.all([
+    fs.readFile(path.join(__dirname, "../area-riservata/canzoniere.html"), "utf8"),
+    fs.readFile(path.join(__dirname, "../assets/css/canzoniere-admin.css"), "utf8"),
+    fs.readFile(path.join(__dirname, "../assets/js/canzoniere-admin.js"), "utf8"),
+  ]);
+  assert.match(html, /id="admin-song-translate-chords"[^>]*aria-label="Converti gli accordi tra notazione italiana e inglese"/);
+  assert.match(script, /M\.translateChordPro\(field\.value, notation\)/);
+  assert.match(script, /addEventListener\("click", translateSongChords\)/);
+  const textareaRules = /#admin-song-form textarea\s*\{([^}]+)\}/s.exec(css)?.[1];
+  assert.ok(textareaRules);
+  assert.match(textareaRules, /width:\s*100%/);
+  assert.match(textareaRules, /max-width:\s*100%/);
+  assert.match(textareaRules, /max-height:\s*min\(45vh,\s*360px\)/);
+  assert.match(textareaRules, /overflow:\s*auto/);
 });
 
 test("Canzoniere migration preserves the existing SQLite database and runs only once", async () => {

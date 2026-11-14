@@ -171,14 +171,16 @@ function createMembers(db, people) {
       .run(member.id, branch, JSON.stringify(cleanProfile(profile)));
   };
   const validateProfile = value => {
-    if (!object(value) || Object.keys(value).some(key => key !== "guardianContacts" && !Object.hasOwn(M.profileFields, key))) fail(400, "Campi anagrafici non validi");
+    if (!object(value) || Object.keys(value).some(key =>
+      key !== "guardianContacts" && key !== "medicalNotes" && !Object.hasOwn(M.profileFields, key)))
+      fail(400, "Campi anagrafici non validi");
     const profile = Object.fromEntries(Object.entries(value).filter(([key]) => key !== "guardianContacts" && !M.ignoredProfileFields.includes(key))
       .map(([key, value]) => {
         if (key === "nonFrequentante") {
           if (typeof value !== "boolean") fail(400, "Stato di frequenza non valido");
           return [key, value];
         }
-        return [key, text(value, key === "guardians" ? 12000 : 500)];
+        return [key, text(value, key === "guardians" ? 12000 : key === "medicalNotes" ? 4000 : 500)];
       }));
     if (Object.hasOwn(value, "guardianContacts")) {
       if (!Array.isArray(value.guardianContacts) || value.guardianContacts.length > 20)

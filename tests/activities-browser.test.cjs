@@ -85,6 +85,16 @@ test("demo screens expose navigation, individual paths, clear attendance and com
           const free = [...document.querySelectorAll('#events-list article')].find(row=>row.textContent.includes('DEMO - Gratis'));
           return [...free.querySelectorAll('button,a')].some(control=>control.checkVisibility() && control.textContent.trim()==='Quote');
         })()`), false);
+        await go("attivita.html?event=" + context.free.id + "&vista=presenze");
+        await wait("document.getElementById('event-dialog')?.open");
+        assert.deepEqual(await page.evaluate(`(() => ({
+          actions: [...document.querySelector('#event-attendance .activity-person')
+            .querySelectorAll('[data-attendance-action]')].filter(button=>!button.hidden)
+            .map(button=>button.textContent.trim()),
+          quoteHidden: document.querySelector('[data-event-view="quote"]').hidden,
+          paymentHidden: document.querySelector('#event-attendance .activity-payment').hidden,
+        }))()`), { actions: ["Presente", "Assente"], quoteHidden: true, paymentHidden: true },
+        "free activities skip fee entry and expose only attendance actions");
         await go("attivita.html?event=" + context.meeting.id + "&vista=presenze");
         await wait("document.getElementById('event-dialog')?.open");
         assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), false,
@@ -94,36 +104,34 @@ test("demo screens expose navigation, individual paths, clear attendance and com
           status: document.querySelector('#event-attendance select').value,
           paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value)
         }))()`);
-        await click("#event-attendance [data-person-action]");
-        const firstClick = await page.evaluate(`(() => ({
-          status: document.querySelector('#event-attendance .activity-person').dataset.status,
-          paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
-          label: document.querySelector('#event-attendance [data-person-status]').textContent
-        }))()`);
+        assert.deepEqual(await page.evaluate(`[...document.querySelector('#event-attendance .activity-person')
+          .querySelectorAll('[data-attendance-action]')]
+          .filter(button=>!button.hidden)
+          .map(button=>button.textContent.trim())`),
+        initialAttendance.fee > 0
+          ? ["Presente + quota pagata", "Presente senza quota", "Assente"]
+          : ["Presente", "Assente"]);
         if (initialAttendance.fee > 0) {
-          if (initialAttendance.status === 'presente' && initialAttendance.paid >= initialAttendance.fee) {
-            assert.deepEqual(firstClick, { status: 'presente', paid: 0, label: 'Presenza' });
-            await click("#event-attendance [data-person-action]");
-            assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
-          } else if (initialAttendance.status === 'presente') {
-            assert.equal(firstClick.status, 'assente');
-          } else {
-            assert.deepEqual(firstClick, { status: 'presente', paid: initialAttendance.fee, label: 'Presenza e quota' });
-            await click("#event-attendance [data-person-action]");
-            assert.deepEqual(await page.evaluate(`(() => ({
-              status: document.querySelector('#event-attendance .activity-person').dataset.status,
-              paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
-              label: document.querySelector('#event-attendance [data-person-status]').textContent
-            }))()`), { status: 'presente', paid: 0, label: 'Presenza' });
-            await click("#event-attendance [data-person-action]");
-            assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
-          }
+          await click('#event-attendance [data-attendance-action="paid"]');
+          assert.deepEqual(await page.evaluate(`(() => ({
+            status: document.querySelector('#event-attendance .activity-person').dataset.status,
+            paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
+            label: document.querySelector('#event-attendance [data-person-status]').textContent
+          }))()`), { status: 'presente', paid: initialAttendance.fee, label: 'Presenza e quota' });
+          await page.evaluate("window.confirm = () => true");
+          await click('#event-attendance [data-attendance-action="present"]');
+          assert.deepEqual(await page.evaluate(`(() => ({
+            status: document.querySelector('#event-attendance .activity-person').dataset.status,
+            paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
+            label: document.querySelector('#event-attendance [data-person-status]').textContent
+          }))()`), { status: 'presente', paid: 0, label: 'Presenza' });
+          await click('#event-attendance [data-attendance-action="absent"]');
+          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
         } else {
-          const expected = initialAttendance.status === 'presente' ? 'assente' : 'presente';
-          assert.equal(firstClick.status, expected);
-          await click("#event-attendance [data-person-action]");
-          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"),
-            initialAttendance.status === 'presente' ? 'presente' : 'assente');
+          await click('#event-attendance [data-attendance-action="present"]');
+          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "presente");
+          await click('#event-attendance [data-attendance-action="absent"]');
+          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
         }
         await shot(label + "-correzioni-presenze");
         await click('[data-event-view="programma"]');
@@ -152,12 +160,43 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await wait("document.getElementById('member-paths')?.textContent.includes('Stagione di caccia')");
         assert.equal(await page.evaluate("document.getElementById('member-paths').textContent.includes('Percorso di un altro socio')"), false);
         assert.deepEqual(await page.evaluate("[...document.querySelectorAll('#member-section-nav [role=tab]')].map(tab=>tab.textContent.trim())"),
-          ["Attività","Percorso","Anagrafica","Contatti","Genitori","Censimenti"]);
+          ["Attività","Percorso","Anagrafica","Contatti","Scheda Medica","Genitori","Censimenti"]);
         await click("#member-tab-profile");
+        const originalGivenName = await page.evaluate("document.querySelector('#member-form [name=\"profile:givenName\"]').value");
         await page.evaluate(`document.querySelector('#member-form [name="profile:givenName"]').value='Bozza personale'`);
-        for (const id of ["contacts","guardians","censuses","education"]) {
+        for (const id of ["contacts","medical","guardians","censuses","education"]) {
           await click("#member-tab-" + id);
           assert.equal(await page.evaluate("document.querySelector('#member-form [name=\"profile:givenName\"]').value"), "Bozza personale");
+        }
+        if (label === "telefono") {
+          await page.evaluate(`{
+            const field = document.querySelector('#member-form [name="profile:givenName"]');
+            field.value = ${JSON.stringify(originalGivenName)};
+            field.dispatchEvent(new Event('input', {bubbles:true}));
+          }`);
+          await click("#member-tab-medical");
+          await page.evaluate(`{
+            const field = document.querySelector('#member-medical textarea');
+            field.value = "Nota sanitaria demo";
+            field.dispatchEvent(new Event('input', {bubbles:true}));
+          }`);
+          await click("#member-save");
+          await wait("!document.getElementById('member-dialog').open");
+          assert.equal(await page.evaluate(`ACCESSO.request('members').then(data =>
+            data.members.find(member => member.id === ${context.member.id}).profile.medicalNotes)`),
+          "Nota sanitaria demo", "the medical tab saves notes to the member profile");
+          await page.evaluate(`{
+            const filters = document.getElementById('members-filters');
+            filters.elements.search.value = "Nota sanitaria demo";
+            filters.oninput();
+          }`);
+          assert.equal(await page.evaluate("!document.querySelector('#members-list .member-name')"), true,
+            "medical notes are not searchable in the general member list");
+          await page.evaluate(`{
+            const filters = document.getElementById('members-filters');
+            filters.elements.search.value = "";
+            filters.oninput();
+          }`);
         }
         if (width >= 1000)
           assert.ok(await page.evaluate("document.getElementById('member-dialog').getBoundingClientRect().width") >= Math.min(1100,width*.8));
@@ -342,7 +381,7 @@ test("branch chiefs land on today's program, including the last camp day, across
           }`);
           assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
           await page.evaluate("document.getElementById('event-live-attendance').click()");
-          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance [data-person-action]')"), true);
+          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance [data-attendance-action]')"), true);
           await page.evaluate("document.getElementById('event-dialog').close()");
           for (const href of dashboard.urls.filter(href => href.includes("#"))) {
             await go(href);
@@ -705,7 +744,7 @@ test("login autofill, education dates, activities and progression work on four s
         await fill('#event-form [name=title]', "Incontro " + branch + " " + label);
         await fill('#event-form [name=date]', "2025-11-15");
         await click('[data-event-view="presenze"]');
-        await click("#event-attendance [data-person-action]");
+        await click('#event-attendance [data-attendance-action="present"]');
         assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
         await click('[data-event-view="programma"]');
         await expand("#event-settings");
@@ -716,10 +755,10 @@ test("login autofill, education dates, activities and progression work on four s
           return [totals.includes('10,25'), totals.includes('20,50')];
         })()`), [true, false],
         "only present members owe the quota; unrecorded attendance is not due");
-        await click("#event-attendance [data-person-action]");
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25");
+        await click("#event-attendance .activity-payment > summary");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "0.00");
         await fill('#event-attendance [data-paid]', "5");
-        await click("#event-attendance .activity-person:nth-of-type(2) [data-person-action]");
+        await click("#event-attendance .activity-person:nth-of-type(2) .activity-payment > summary");
         await page.evaluate(`{
           const row = document.querySelectorAll('#event-attendance .activity-person')[1];
           const paid = row.querySelector('[data-paid]'); paid.value='15';
@@ -744,9 +783,9 @@ test("login autofill, education dates, activities and progression work on four s
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "5.00");
         const memberUrl = await page.evaluate("document.querySelector('#event-attendance a.activity-person-profile').href");
         await click('[data-event-view="quote"]');
-        await click("#event-attendance [data-person-action]");
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "10.25",
-          "suggest the cumulative balance, not another full payment on top of the advance");
+        await click("#event-attendance .activity-payment > summary");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "5.00",
+          "opening a payment editor must not invent or alter a payment");
         await fill('#event-attendance [data-paid]', "5");
         await shot(label + "-12-quote-" + branch.replace("/", ""));
         await expand("#event-filters");
@@ -869,6 +908,29 @@ test("login autofill, education dates, activities and progression work on four s
         assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('#paths-filters > [role="group"] > .path-filter-label')]
           .map(label=>label.textContent.trim())`), ["Stato di avanzamento", "Tipo di percorso"],
         `${branch}: path filters distinguish progress from path type`);
+        assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('.path-filter-kind .members-filter-chip')]
+          .map(button=>button.textContent.trim().replace(/\\s+\\d+$/, ''))`),
+        branch === "L/C" ? ["Specialità"] : ["Brevetto", "Specialità"],
+        `${branch}: path type choices are available independently of existing records`);
+        if (branch === "E/G") {
+          assert.equal(await page.evaluate(`(async () => {
+            const data = await ACCESSO.request('activities'), roles = SOCI_MODEL.unitRoles('E/G');
+            return [...document.querySelectorAll('#paths-members .activity-path-unit')].every(group => {
+              const rows = [...group.querySelectorAll('.path-member-link')].map(link => ({
+                name: link.textContent,
+                role: data.members.find(member => member.name === link.textContent)?.role || '',
+              }));
+              const order = role => {
+                const index = roles.indexOf(role);
+                return index < 0 ? roles.length : index;
+              };
+              return rows.every((row, index) => !index ||
+                order(rows[index - 1].role) < order(row.role) ||
+                order(rows[index - 1].role) === order(row.role) &&
+                  rows[index - 1].name.localeCompare(row.name, 'it') <= 0);
+            });
+          })()`), true, "E/G members sort by squad role within each unit");
+        }
         assert.equal(await page.evaluate("document.getElementById('paths-filter-disclosure').open"),
           width > 1024, `${label}: filters default closed only on mobile and tablet`);
         if (width <= 1024) {
@@ -939,7 +1001,7 @@ test("login autofill, education dates, activities and progression work on four s
         await expand("#event-settings");
         await fill('#event-form [name=fee]', "25.00");
         await click('[data-event-view="quote"]');
-        await click("#event-attendance [data-person-action]");
+        await click("#event-attendance .activity-payment > summary");
         const paymentState = await page.evaluate(`(() => {
           const paid = document.querySelector('#event-attendance [data-paid]');
           const row = paid.closest('.activity-person'), select = row.querySelector('select');
@@ -951,7 +1013,7 @@ test("login autofill, education dates, activities and progression work on four s
             balance: row.dataset.balanceState,
           }};
         })()`);
-        assert.deepEqual(paymentState.partial, { status: '', balance: 'advance' });
+        assert.deepEqual(paymentState.partial, { status: 'presente', balance: 'unpaid' });
         assert.deepEqual(paymentState.complete, {
           status: 'presente', label: 'Presenza e quota', balance: 'paid',
         });
@@ -981,7 +1043,7 @@ test("login autofill, education dates, activities and progression work on four s
         await fill('#event-form [name=title]', "Riunione torneo di prova");
         await fill('#event-form [name=date]', "2026-11-20");
         await click('[data-event-view="presenze"]');
-        await click("#event-attendance [data-person-action]");
+        await click('#event-attendance [data-attendance-action="present"]');
         await expand("#event-attendance .activity-person:nth-of-type(2) .activity-presence-options");
         await fill("#event-attendance .activity-person:nth-of-type(2) select", "assente", "change");
         await click('[data-event-view="torneo"]');

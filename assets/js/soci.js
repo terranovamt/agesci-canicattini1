@@ -15,7 +15,7 @@
   const createMemberForm = $('member-create-form');
   let data, busy = false, editing = null, drafts = {}, educationBranch = '', preview = null, formSnapshot = '';
   let memberSection = 0;
-  const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'guardians', 'censuses'];
+  const allMemberSections = ['activities', 'education', 'profile', 'contacts', 'medical', 'guardians', 'censuses'];
   let memberSections = allMemberSections;
   let pathLoadToken = 0;
   let memberPaths = [], memberPathSaving = false;
@@ -143,7 +143,10 @@
       const current = census(member), years = age(member);
       if (!f.showSuspended.checked && M.longSuspended(member, data.currentYear)) return false;
       if (f.birthYear.value && member.profile.birthDate?.slice(0, 4) !== f.birthYear.value) return false;
-      if (query && ![member.name, member.code, ...Object.values(member.profile).filter(v => typeof v === 'string'),
+      const searchableProfile = Object.entries(member.profile)
+        .filter(([key, value]) => key !== 'medicalNotes' && typeof value === 'string')
+        .map(([, value]) => value);
+      if (query && ![member.name, member.code, ...searchableProfile,
         ...(member.profile.guardianContacts || []).flatMap(contact => Object.values(contact))]
         .join(' ').toLocaleLowerCase('it').includes(query)) return false;
       if (f.branch.value && member.branch !== f.branch.value) return false;
@@ -741,6 +744,8 @@
         return field;
       }));
     }
+    $('member-medical').replaceChildren(input('Informazioni sanitarie necessarie durante le attività',
+      'profile:medicalNotes', profile.medicalNotes, { long: true, max: 4000 }));
     $('member-guardian-source').querySelector('input,textarea').readOnly = true;
     guardianNextIndex = 0;
     $('member-guardians').replaceChildren();
@@ -810,7 +815,7 @@
     event.preventDefault();
     educationDraft();
     const branch = profileForm.elements.branch.value;
-    const profileTargets = ['member-profile', 'member-contacts'];
+    const profileTargets = ['member-profile', 'member-contacts', 'member-medical'];
     const hasGuardianSection = memberSections.includes('guardians');
     if (hasGuardianSection) profileTargets.push('member-guardian-type', 'member-guardian-source');
     const profile = { ...editing?.profile, ...Object.fromEntries(profileTargets

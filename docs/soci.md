@@ -105,6 +105,12 @@ attività della branca. La scheda e lo storico soci restano consultabili; il fla
 non modifica né cancella i censimenti AGESCI, quindi il ragazzo resta incluso
 nei conteggi ufficiali dei censiti per l'assemblea.
 
+La scheda contiene anche la tab **Scheda Medica**, con un campo libero fino a
+4000 caratteri per le sole informazioni sanitarie necessarie durante le
+attivita. Il dato resta nel profilo SQLite, e' visibile ai responsabili
+autorizzati della branca e non viene incluso negli export CSV o sovrascritto
+dall'import AGESCI; non entra nella ricerca generale del Libro soci.
+
 Per creare un socio sono richiesti solo **Nome**, **Cognome** e **Branca**.
 Dopo l'inserimento si apre la scheda completa con le sezioni applicabili;
 codice socio, contatti e altri dati si possono completare in seguito. Finche
@@ -256,20 +262,18 @@ Per un'attivita a pagamento impostare **Quota per socio**, oppure zero per
 un'attivita gratuita. Il **Totale atteso** conta soltanto i soci segnati come
 presenti: assenti, giustificati e ancora da registrare non hanno una quota
 dovuta. I non frequentanti restano nel Libro soci ma non compaiono in attivita,
-quote, percorsi o squadriglie. Gli acconti ricevuti prima della presenza sono
-separati dal totale atteso finche la presenza non viene registrata.
+quote, percorsi o squadriglie. Un versamento e' registrato solo per un socio
+presente; se inserisci un importo positivo da **Quote**, la presenza viene
+registrata automaticamente, anche con un versamento parziale.
 
-Con una quota maggiore di zero il primo clic su una presenza non registrata
-segna **Presenza e quota**, completando il totale atteso anche se era stato
-versato solo un acconto. Il clic successivo passa a **Presenza** e azzera il
-versato; quello dopo segna **Assenza**, senza quota attesa. Inserendo il totale
-completo nel versato, la presenza passa automaticamente a **Presenza e quota**.
-Un acconto parziale resta registrato come acconto fino al saldo; gli importi
-versati da soci assenti restano evidenziati come eccesso da verificare.
-**Versato totale** e' sempre l'importo complessivamente ricevuto, acconti
-inclusi; aggiornarlo al nuovo totale, non al singolo incremento. Toccando una
-riga in Quote si apre il versamento e viene proposto il totale a saldo;
-modificare l'importo se serve, poi usare **Salva attivita**.
+Per ogni socio, **Presenze** offre azioni rapide: **Presente + quota pagata**,
+**Presente senza quota** e **Assente**. Se l'attivita non prevede una quota,
+restano solo **Presente** e **Assente** e la vista **Quote** non compare.
+Per inserire un versamento apri **Dettagli del versamento** e aggiorna
+**Versato totale**, che indica l'importo complessivamente ricevuto, non il
+singolo incremento. Usare **Presente senza quota** o **Assente** quando sono
+gia registrati versamenti richiede conferma per azzerarli. Poi usare
+**Salva attivita**.
 
 Gli importi sono salvati come centesimi interi e accettano massimo due
 decimali. Il riepilogo mostra in riga **Totale atteso**, **Incassato**,

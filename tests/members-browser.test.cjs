@@ -21,6 +21,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       members: [
         { id: 1, code: "012345", name: '<img src=x onerror=alert(1)> Esempio', kind: "ragazzo", branch: "E/G", revision: 1,
           profile: { givenName: '<img src=x onerror=alert(1)>', surname: "Esempio", birthDate: "2012-03-02", email: "test@example.invalid",
+            medicalNotes: "Nota sanitaria di prova",
             guardians: "Esempio Responsabile [C.F.ABCDEF80A01H501U] - Nato/a a: Comune Esempio il: 1/1/1980 e-mail: guardian@example.invalid Cellulare: 000123" },
           censuses: [{ year: "2026", branch: "E/G", status: "Attivo" }], values: { "E/G": { squadriglia: "Aquile" } } },
         { id: 2, code: "012346", name: "Persona Locale", kind: "ragazzo", branch: "L/C", revision: 1,
@@ -197,6 +198,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.resetHiddenWithoutFilters = $('members-active-filters').hidden && !resetFilters.getClientRects().length &&
             !$('members-filters').contains(resetFilters) && filters.search.checkVisibility();
           results.searchVisible = filters.search.checkVisibility() && filters.search.getBoundingClientRect().height >= 40;
+          filters.search.value = 'Nota sanitaria di prova'; $('members-filters').oninput();
+          results.medicalNotesNotSearchable = !$('members-list').querySelector('.member-name');
           filters.search.value = 'Esempio'; $('members-filters').oninput();
           results.filterCount = $('members-filter-count').textContent === '1 attivo';
           const chipRect = document.querySelector('[data-filter-key="search"]').getBoundingClientRect();
@@ -274,10 +277,10 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.dialog = $('member-dialog').open;
           results.glance = $('member-glance').children.length >= 3 && $('member-glance').getBoundingClientRect().top < innerHeight / 2;
           const memberTabs = [...document.querySelectorAll('#member-section-nav [role="tab"]')];
-          results.sectionNavigation = memberTabs.map(tab => tab.textContent.trim()).join('|') === 'Attività|Percorso|Anagrafica|Contatti|Genitori|Censimenti' &&
+          results.sectionNavigation = memberTabs.map(tab => tab.textContent.trim()).join('|') === 'Attività|Percorso|Anagrafica|Contatti|Scheda Medica|Genitori|Censimenti' &&
             memberTabs.filter(tab => tab.getAttribute('aria-selected') === 'true').length === 1 &&
             memberTabs[0].getAttribute('aria-selected') === 'true' && !$('member-panel-activities').hidden &&
-            document.querySelectorAll('#member-dialog [role=tabpanel]').length === 6 &&
+            document.querySelectorAll('#member-dialog [role=tabpanel]').length === 7 &&
             $('member-panel-activities').contains($('member-activities')) &&
             !$('member-panel-profile').contains($('member-activities')) &&
             ['contacts', 'guardians', 'censuses'].every(section =>
@@ -292,6 +295,15 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           memberTabs[2].click();
           results.activeSectionClear = memberTabs[2].getAttribute('aria-selected') === 'true' &&
             !$('member-panel-profile').hidden && $('member-panel-activities').hidden;
+          memberTabs[4].click();
+          const medicalTabVisible = !$('member-panel-medical').hidden &&
+            memberTabs[4].getAttribute('aria-selected') === 'true';
+          const medicalNotes = form.elements['profile:medicalNotes'];
+          medicalNotes.value = 'Informazione sanitaria di prova';
+          memberTabs[2].click();
+          results.medicalTabAndDraft = medicalNotes.tagName === 'TEXTAREA' && medicalNotes.maxLength === 4000 &&
+            medicalTabVisible && $('member-panel-medical').hidden &&
+            medicalNotes.value === 'Informazione sanitaria di prova';
           memberTabs[0].click();
           const dialogRect = $('member-dialog').getBoundingClientRect();
           results.dialogFits = dialogRect.left >= 0 && dialogRect.right <= innerWidth &&
@@ -385,7 +397,8 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           form.elements['profile:email'].value = 'test@example.invalid';
           memberTabs[0].click();
           form.requestSubmit(); await settle();
-          results.saved = window.calls.find(call => call.method === 'PATCH').value;
+          results.saved = window.calls.filter(call => call.method === 'PATCH' && call.route.startsWith('members/')).at(-1).value;
+          results.savedMedicalNotes = results.saved.profile.medicalNotes === 'Informazione sanitaria di prova';
           results.realOperationSuccess = $('members-status').textContent === 'Operazione completata.' &&
             $('members-status').dataset.tone === 'success' && getComputedStyle($('members-status')).color === 'rgb(49, 95, 69)';
           results.closedAfterSave = !$('member-dialog').open;
@@ -447,7 +460,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
           results.newEditableCode = !form.elements.code.readOnly;
           results.newMemberCreated = !$('member-create-dialog').open && $('member-dialog').open &&
             form.elements.code.value === '' && $('member-tab-profile').getAttribute('aria-selected') === 'true' &&
-            [...document.querySelectorAll('#member-section-nav [role=tab]')].filter(tab => !tab.hidden).length === 6;
+            [...document.querySelectorAll('#member-section-nav [role=tab]')].filter(tab => !tab.hidden).length === 7;
           form.elements['profile:givenName'].value = 'Bozza';
           let closePrompt = '';
           window.confirm = text => { closePrompt = text; return false; };
@@ -556,6 +569,7 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       for (const key of ["loaded", "glance", "adminDiagnostics", "adminBranchSelector", "safeName", "dialog", "history", "emptyText", "missingContact", "closedAfterSave", "safeDocument",
         "printed", "preview", "autoAnalyzed", "noNativeConfirm", "clearedCsv", "newMinimalFields", "newEditableCode", "newMemberCreated",
         "sectionNavigation", "saveAvailable", "draftSurvivesNavigation", "activeSectionClear",
+        "medicalTabAndDraft", "medicalNotesNotSearchable", "savedMedicalNotes",
         "contextualUnitLabels", "assignmentHistory", "assignmentNoDirections", "onlyLcMoment", "noDuplicateFilters", "selectionBar", "allSectionsReachable",
         "usefulScrollArea", "noInitialSuccess", "lowHeightControls", "filterDisclosureInitial", "filterCount", "filterCountReset", "noReloadSuccess", "realOperationSuccess", "shortFullscreen", "sectionContentsReachable", "emailType", "dirtyCloseProtected",
         "noLegacyPistaDocument", "docsWithoutSelection", "docsAllResults", "docsSideBySide", "quickActionOnlyPassage", "macroRoute", "macroNoInputs", "passageConfirmed", "macroClosed", "pendingBadge",

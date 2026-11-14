@@ -294,6 +294,28 @@
     VIEW.renderScore($("admin-chordpro-preview"), { text: $("admin-song-text").value }, 0, true);
   }
 
+  function translateSongChords() {
+    const field = $("admin-song-text");
+    const hasItalianChords = /(?:\[(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?|\{key:\s*(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?)/i
+      .test(field.value);
+    const notation = hasItalianChords ? "en" : "it";
+    try {
+      const translated = M.translateChordPro(field.value, notation);
+      if (translated === field.value) {
+        setFormStatus("admin-song-form-status", "Nessun accordo ChordPro riconosciuto da convertire.");
+        return;
+      }
+      field.value = translated;
+      previewSong();
+      setFormStatus("admin-song-form-status",
+        notation === "en" ? "Accordi convertiti in notazione inglese." : "Accordi convertiti in notazione italiana.",
+        "success");
+    } catch (error) {
+      setFormStatus("admin-song-form-status", "Conversione degli accordi non riuscita: " + error.message, "error");
+      console.error("Conversione accordi non riuscita", error);
+    }
+  }
+
   function chordProImport(source) {
     return M.importChordText(source);
   }
@@ -733,6 +755,7 @@
     $("admin-song-form").addEventListener("submit", saveSong);
     $("admin-song-cancel").addEventListener("click", () => closeForm("songs"));
     $("admin-song-text").addEventListener("input", previewSong);
+    $("admin-song-translate-chords").addEventListener("click", translateSongChords);
     $("admin-import-file").addEventListener("change", readImportFile);
     $("admin-import-text").addEventListener("input", invalidateImportPreview);
     $("admin-import-preview").addEventListener("click", previewImport);

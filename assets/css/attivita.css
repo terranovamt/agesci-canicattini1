@@ -161,22 +161,25 @@
 #event-attendance .activity-person[data-status="presente"] { background: #e7f4eb; border-color: #398258; }
 #event-attendance .activity-person[data-status="assente"] { background: #fff1ef; border-color: #b3564e; }
 #event-form[data-view="presenze"] #event-attendance .activity-person { display: grid; grid-template-columns: minmax(0, 1fr) 44px; column-gap: 8px; align-items: start; }
+#event-form[data-view="presenze"] .activity-person-summary { grid-column: 1; grid-row: 1; }
+#event-form[data-view="presenze"] .activity-person-quick-actions { grid-column: 1 / -1; }
 #event-form[data-view="presenze"] .activity-presence-options { border: 0; }
+#event-form[data-view="presenze"] .activity-presence-options:not([open]) { grid-column: 2; grid-row: 1; }
 #event-form[data-view="presenze"] .activity-presence-options > summary { display: flex; align-items: center; justify-content: center; width: 44px; height: 48px; padding: 0; list-style: none; font-size: 1.3rem; }
 #event-form[data-view="presenze"] .activity-presence-options[open] { grid-column: 1 / -1; }
 #event-form[data-view="presenze"] .activity-presence-options[open] > summary { margin-left: auto; }
-#event-form[data-view="quote"] .activity-payment > summary { display: none; }
-.activity-person-action { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 56px; min-width: 44px; width: 100%; padding: 8px 0; border: 0; border-radius: 6px; background: transparent; color: #30243b; font: inherit; font-size: .9rem; text-align: left; cursor: pointer; }
-.activity-person-action:focus-visible { outline: 3px solid #50336a; outline-offset: 2px; }
-.activity-person-action > span:first-child { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
+.activity-person-summary { display: flex; min-width: 0; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; color: #30243b; font-size: .9rem; }
+.activity-person-summary > strong { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
 .activity-person-status { flex: none; max-width: 46%; color: #625269; font-size: .76rem; text-align: right; }
-.activity-person[data-status="presente"] .activity-person-action { color: #26563b; }
 .activity-person[data-status="presente"] .activity-person-status { color: #26563b; font-weight: 700; }
 .activity-person[data-status="assente"] .activity-person-status { color: #862c26; font-weight: 700; }
 #event-form[data-view="quote"] .activity-person[data-balance-state="unpaid"] .activity-person-status,
 #event-form[data-view="quote"] .activity-person[data-balance-state="excess"] .activity-person-status { color: #79500d; }
 #event-form[data-view="presenze"] .activity-payment,
 #event-form[data-view="quote"] .activity-presence-options { display: none; }
+.activity-person-quick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.activity-person-quick-actions button { flex: 1 1 130px; min-height: 44px; padding: 7px 10px; font-size: .76rem; }
+#event-form[data-view="quote"] .activity-person-quick-actions { display: none; }
 .activity-presence-options > summary, .activity-payment > summary { min-height: 44px; box-sizing: border-box; font-size: .76rem; color: #625269; }
 .activity-presence-options label { padding-bottom: 10px; }
 .activity-person-profile { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 6px; color: #50336a; font-size: .85rem; }

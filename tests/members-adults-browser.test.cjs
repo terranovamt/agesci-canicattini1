@@ -29,7 +29,7 @@ test("adult labels and classification preserve the internal AGESCI branch", () =
   assert.equal(parsed.members[0].census.branch, "Adulti");
 });
 
-test("three member tabs navigate accessibly while adult sheets skip youth controls and preserve saved data", { skip: !chrome }, () => {
+test("member sections navigate accessibly while adult sheets skip youth controls and preserve saved data", { skip: !chrome }, () => {
   const directory = fs.mkdtempSync(path.join(root, ".members-adults-browser-"));
   try {
     const members = ["Adulti", "L/C", "E/G", "R/S", "Adulti", "Adulti", "E/G"].map((branch, index) => ({
@@ -110,29 +110,31 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
           assert(filter.value === '' && document.activeElement.dataset.branch === 'Adulti', 'summary toggle focus');
           for(let id = 1; id <= 6; id++) {
             open(id);
-            assert(JSON.stringify(sections()) === JSON.stringify(['activities','education','profile']), 'adult sections ' + id);
+            assert(JSON.stringify(sections()) === JSON.stringify(['activities','profile','contacts','medical','censuses']), 'adult sections ' + id);
             assert(!$('member-panel-activities').hidden && $('member-tab-activities').getAttribute('aria-selected') === 'true', 'open on activities');
             assert(!$('member-activities-context').hidden, 'adult activities context');
-            assert($('member-section-progress').textContent.startsWith('Sezione 1 di 3'), 'adult progress');
+            assert($('member-section-progress').textContent.startsWith('Sezione 1 di 5'), 'adult progress');
             for(const section of ['member-panel-guardians','member-education']) {
               assert($(section).hidden, 'hidden youth controls');
               assert([...$(section).querySelectorAll('input,select,textarea,button')].every(control => control.disabled), 'disabled hidden inputs');
             }
             assert(tabs().filter(tab => tab.tabIndex === 0).length === 1, 'single roving focus');
             $('member-section-next').click();
-            assert(document.activeElement.id === 'member-tab-education' && !$('member-education-context').hidden, 'next focus');
+            assert(document.activeElement.id === 'member-tab-profile', 'next focus');
             key(document.activeElement, 'ArrowRight');
-            assert(document.activeElement.id === 'member-tab-profile' && $('member-section-next').hidden, 'last tab');
+            assert(document.activeElement.id === 'member-tab-contacts', 'contacts focus');
+            key(document.activeElement, 'ArrowRight');
+            assert(document.activeElement.id === 'member-tab-medical', 'medical focus');
+            key(document.activeElement, 'ArrowRight');
+            assert(document.activeElement.id === 'member-tab-censuses' && $('member-section-next').hidden, 'last tab');
             key(document.activeElement, 'ArrowRight');
             assert(document.activeElement.id === 'member-tab-activities', 'wrap right');
-            key(document.activeElement, 'ArrowLeft');
-            assert(document.activeElement.id === 'member-tab-profile', 'wrap left');
             key(document.activeElement, 'Home');
             assert(document.activeElement.id === 'member-tab-activities' && $('member-section-back').disabled, 'Home focus');
             key(document.activeElement, 'End');
-            assert(document.activeElement.id === 'member-tab-profile', 'End focus');
+            assert(document.activeElement.id === 'member-tab-censuses', 'End focus');
             $('member-section-back').click();
-            assert(document.activeElement.id === 'member-tab-education', 'back focus');
+            assert(document.activeElement.id === 'member-tab-medical', 'back focus');
             if(id === 1) assert($('member-censuses').textContent.includes('Co.Ca.') && !$('member-censuses').textContent.includes('Adulti'), 'census label');
             $('member-form').elements['profile:email'].value = 'updated@example.invalid';
             assert($('member-form').checkValidity(), 'adult hidden inputs must not block save');
@@ -145,17 +147,16 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
           assert(!calls.some(call => call.route.startsWith('activities/')), 'adult history permission preserved');
           open(7);
           await wait();
-          assert(JSON.stringify(sections()) === JSON.stringify(['activities','education','profile']), 'youth sections restored');
-          assert($('member-section-progress').textContent.startsWith('Sezione 1 di 3'), 'youth progress');
+          assert(JSON.stringify(sections()) === JSON.stringify(['activities','education','profile','contacts','medical','guardians','censuses']), 'youth sections restored');
+          assert($('member-section-progress').textContent.startsWith('Sezione 1 di 7'), 'youth progress');
           assert(!$('member-panel-activities').hidden && !$('member-activities').hidden &&
             $('member-activities-list').children.length === 1 &&
             $('member-activities-list').textContent.includes('Uscita confermata') &&
             $('member-outstanding').textContent.includes('6.00'), 'participations and fees open first');
           $('member-activities-all').click();
           assert($('member-activities-list').children.length === 2, 'history filter preserved');
-          key($('member-tab-activities'), 'End');
-          assert(document.activeElement.id === 'member-tab-profile' && !$('member-panel-profile').hidden &&
-            !$('member-panel-guardians').hidden, 'youth guardian context');
+          $('member-tab-guardians').click();
+          assert(!$('member-panel-guardians').hidden, 'youth guardian context');
           assert(!$('member-form').elements['guardian:0:fullName'].disabled, 'youth guardians editable');
           $('member-form').elements['profile:phone'].value = '123456';
           key($('member-tab-activities'), 'ArrowRight');
@@ -183,7 +184,7 @@ test("three member tabs navigate accessibly while adult sheets skip youth contro
           assert(!$('member-create-dialog').open && $('member-dialog').open &&
             $('member-tab-profile').getAttribute('aria-selected') === 'true' &&
             form.elements.code.value === '' && !form.elements.code.readOnly, 'new member opens its full editable card');
-          assert(JSON.stringify(sections()) === JSON.stringify(['activities','profile','contacts','censuses']) &&
+          assert(JSON.stringify(sections()) === JSON.stringify(['activities','profile','contacts','medical','censuses']) &&
             form.elements.branch.value === 'Adulti' && form.elements.branch.selectedOptions[0].textContent === 'Co.Ca.',
             'new adult card shows its applicable sections');
           document.querySelector('[data-close=member-dialog]').click();

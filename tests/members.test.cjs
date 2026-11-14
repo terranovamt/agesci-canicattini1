@@ -105,6 +105,30 @@ test("guardian parsing separates AGESCI contacts without guessing names or mergi
   assert.deepEqual(M.parseGuardians(""), { contacts: [], unparsed: [] });
 });
 
+test("medical notes persist in the member profile and survive census imports", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-medical-notes-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  const created = await app.request("members", "POST", {
+    code: "012345",
+    branch: "E/G",
+    profile: { givenName: "Persona", surname: "Esempio", medicalNotes: "Nota sanitaria di prova" },
+  });
+  assert.equal(created.status, 201, await created.clone().text());
+  const member = (await created.json()).member;
+  assert.equal(member.profile.medicalNotes, "Nota sanitaria di prova");
+  await app.import(csv());
+  const imported = (await app.snapshot()).members.find(row => row.id === member.id);
+  assert.equal(imported.profile.medicalNotes, "Nota sanitaria di prova");
+  const tooLong = await app.request("members/" + member.id, "PATCH", {
+    code: member.code, branch: member.branch,
+    profile: { ...imported.profile, medicalNotes: "x".repeat(4001) },
+    values: imported.values[member.branch], revision: imported.revision,
+  });
+  assert.equal(tooLong.status, 400, await tooLong.text());
+});
+
 test("catalog schema upgrades standard fields while retaining custom definitions and legacy values", () => {
   const db = new DatabaseSync(":memory:");
   try {
