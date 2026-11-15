@@ -42,7 +42,7 @@ test("local demo provides fictional data, working logins, branch scope and edita
       "history goes back nearly a year");
     assert.ok(historical.every(event => event.endDate <= today &&
       event.attendance.every(person => person.status)));
-    assert.ok(historical.every(event => event.program.every(moment => moment.time < moment.endTime)));
+    assert.ok(historical.every(event => event.program.every(moment => moment.time && !Object.hasOwn(moment, "endTime"))));
     assert.ok(historical.some(event => event.totals.remaining > 0 && event.totals.excess > 0),
       "older outings include debts, partial payments and excess payments");
     assert.ok(data.paths.some(path => path.kind === "hunt" && path.closed));
@@ -50,6 +50,8 @@ test("local demo provides fictional data, working logins, branch scope and edita
     assert.ok(data.paths.some(path => path.steps.every(step => step.done)));
     assert.ok(data.paths.some(path => path.steps.every(step => !step.done)));
     const meeting = data.events.find(event => event.branch === "L/C" && event.kind === "riunione");
+    assert.equal(meeting.startTime, "15:30");
+    assert.equal(meeting.endTime, "17:30");
     assert.equal(meeting.tournament.members.length, 30);
     assert.equal(meeting.tournament.members[0].eye, null);
     for (const event of data.events.filter(event => event.tournament)) {
@@ -60,7 +62,7 @@ test("local demo provides fictional data, working logins, branch scope and edita
       }
     }
     assert.equal(meeting.tournament.presentations.length, 6);
-    assert.deepEqual(meeting.totals, { expected: 30000, paid: 2700, remaining: 27500, excess: 200 });
+    assert.deepEqual(meeting.totals, { expected: 4000, paid: 2700, remaining: 1500, excess: 200, advance: 0 });
     assert.equal(meeting.program[0].materials[0].quantity, 6);
     assert.ok(data.events.some(event => event.endDate > event.date && event.program.some(moment => moment.date === event.endDate)));
     for (const [index, branch, expectedMembers] of [["L/C", 30], ["E/G", 35], ["R/S", 17]].map(([branch, count], index) =>

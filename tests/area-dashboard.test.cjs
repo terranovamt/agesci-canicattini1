@@ -281,11 +281,11 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.ok(get("dashboard-branch-tools").children.some(link => link.textContent === label));
       assert.equal(get("dashboard-event-panel").attributes["data-active"], "true");
       assert.equal(get("dashboard-event-title").textContent, "Ultimo giorno di campo");
-      assert.equal(get("dashboard-event-moment").textContent, "09:00 · Gioco");
+      assert.equal(get("dashboard-event-moment").textContent, "09:00–10:00 · Gioco");
       assert.match(get("dashboard-event-place").textContent, /Prato/);
       assert.match(get("dashboard-event-description").textContent, /Preparare le squadre/);
       assert.match(get("dashboard-event-materials").textContent, /Corde/);
-      assert.match(get("dashboard-event-next").textContent, /10:00–10:15 · Cerchio/);
+      assert.match(get("dashboard-event-next").textContent, /10:00 · Cerchio/);
       assert.equal(get("dashboard-event-action").textContent, "Attività in corso");
       assert.equal(get("dashboard-attendance-action").textContent, "Presenze");
       assert.equal(get("dashboard-event-action").href, "attivita.html?event=10&vista=programma&ora=1");
@@ -294,7 +294,7 @@ test("non-admin dashboard does not request or show server statistics", () => {
       assert.equal(get("dashboard-branch-tools").children[0].href, "attivita.html?event=10&vista=programma");
       now = new Date("2027-01-05T09:00:00Z");
       tick();
-      assert.equal(get("dashboard-event-moment").textContent, "10:00–10:15 · Cerchio");
+      assert.equal(get("dashboard-event-moment").textContent, "10:00 · Cerchio");
       now = new Date("2027-01-05T23:00:00Z");
       focus();
       assert.equal(get("dashboard-event-panel").hidden, true, "hide once the day's last scheduled moment has ended");

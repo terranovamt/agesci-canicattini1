@@ -84,27 +84,41 @@
   }
   function liveProgram(event, now = new Date()) {
     const local = clock(now);
-    const active = event.date <= local.date && (event.endDate || event.date) >= local.date;
-    const moments = (event.program || []).filter(item => item.date === local.date && item.time)
-      .slice().sort((a, b) => a.time.localeCompare(b.time));
-    const current = active ? moments.filter(item => item.time <= local.time &&
-      (!item.endTime || local.time < item.endTime)).at(-1) || null : null;
-    const next = active ? moments.find(item => item.time > local.time) || null : null;
-    return { ...local, active, current, next,
+    const inDateRange = event.date <= local.date && (event.endDate || event.date) >= local.date;
+    const finished = event.kind === 'riunione' && event.date === local.date &&
+      event.endTime && local.time >= event.endTime;
+    const active = inDateRange && !finished;
+    const moments = (event.program || []).filter(item => item.date && item.time)
+      .slice().sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    const timedMoments = moments.map((item, index) => {
+      const next = moments[index + 1];
+      const endDate = next?.date || (event.kind === 'riunione' && item.date === event.date ? event.date : '');
+      const endTime = next?.time || (event.kind === 'riunione' && item.date === event.date ? event.endTime || '' : '');
+      return { ...item, endDate, endTime };
+    });
+    const todayMoments = timedMoments.filter(item => item.date === local.date);
+    const current = active ? todayMoments.filter(item => item.time <= local.time &&
+      (!item.endDate || item.endDate > local.date ||
+        item.endDate === local.date && (!item.endTime || local.time < item.endTime))).at(-1) || null : null;
+    const next = active ? todayMoments.find(item => item.time > local.time) || null : null;
+    return { ...local, active, finished: !!finished, current, next,
       unscheduled: active ? (event.program || []).filter(item => item.date === local.date && !item.time) : [] };
   }
   function nextEvent(events, now = new Date()) {
     const today = clock(now).date;
-    return events.filter(event => event.date && (event.endDate || event.date) >= today)
+    return events.filter(event => event.date && (event.endDate || event.date) >= today &&
+      !liveProgram(event, now).finished)
       .slice().sort((a, b) => {
-        const activeOrder = Number(b.date <= today) - Number(a.date <= today);
+        const activeOrder = Number(liveProgram(b, now).active) - Number(liveProgram(a, now).active);
         if (activeOrder) return activeOrder;
-        if (a.date <= today) {
+        if (a.date <= today && (a.endDate || a.date) >= today) {
           const first = liveProgram(a, now), second = liveProgram(b, now);
           const currentOrder = Number(!!second.current) - Number(!!first.current) ||
             (second.current?.time || '').localeCompare(first.current?.time || '');
           if (currentOrder) return currentOrder;
-          const nextOrder = (first.next?.time || '24:00').localeCompare(second.next?.time || '24:00');
+          const firstNext = first.next?.time || first.current?.time || a.startTime || '24:00';
+          const secondNext = second.next?.time || second.current?.time || b.startTime || '24:00';
+          const nextOrder = firstNext.localeCompare(secondNext);
           if (nextOrder) return nextOrder;
         }
         return a.date.localeCompare(b.date) || a.id - b.id;

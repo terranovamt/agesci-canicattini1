@@ -40,9 +40,11 @@ test("nonfrequentanti stay in the member register but are excluded from future a
   assert.equal((await r("activities")).members.some(member => member.id === inactive.id), false);
   assert.equal((await r("activities")).members.some(member => member.id === active.id), true);
   await r("activities/events", "POST", { branch: "E/G", kind: "riunione", title: "Prova",
-    date: "2026-11-15", attendance: [{ personId: inactive.id, status: "" }] }, 400);
+    date: "2026-11-15", startTime: "15:00", endTime: "17:00",
+    attendance: [{ personId: inactive.id, status: "" }] }, 400);
   const pastEvent = await r("activities/events", "POST", {
     branch: "E/G", kind: "riunione", title: "Presenza prima della sospensione", date: "2026-11-15",
+    startTime: "15:00", endTime: "17:00",
     feeCents: 1000, attendance: [{ personId: active.id, status: "presente", paidCents: 400 }], tasks: [],
   });
   const pastPath = await r("activities/paths", "POST", {
@@ -81,11 +83,12 @@ test("payments require presence and a payment added without presence records att
       attendance.push({ personId: member.id, status, due: false, paidCents: index === 0 ? 500 : 0 });
     }
     let event = await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
-      title: "Quota per tutti", date: "2026-11-10", feeCents: 1000, attendance, tasks: [] });
+      title: "Quota per tutti", date: "2026-11-10", startTime: "15:00", endTime: "17:00",
+      feeCents: 1000, attendance, tasks: [] });
     assert.deepEqual(event.attendance.map(person => person.due), [true, false, false, false]);
     assert.deepEqual(event.totals, { expected: 1000, paid: 500, remaining: 500, excess: 0, advance: 0 });
     await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
-      title: "Senza quota", date: "2026-11-11", feeCents: 0,
+      title: "Senza quota", date: "2026-11-11", startTime: "15:00", endTime: "17:00", feeCents: 0,
       attendance: [{ personId: attendance[0].personId, status: "presente", paidCents: 1 }] }, 400);
     await r("activities/events/" + event.id, "PATCH", { ...event, attendance: [
       ...event.attendance.slice(0, 1),
@@ -138,6 +141,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     const chief = (await r("people")).people.find(person => person.code === "7654321");
     await r("people/" + chief.id, "PATCH", { serviceBranch: "L/C" });
     const item = (branch, kind) => ({ branch, kind, title: "Incontro di prova", date: "2026-11-15",
+      ...(kind === "riunione" ? { startTime: "15:00", endTime: "17:00" } : {}),
       attendance: [{ personId: ids[branch], status: "" }], tasks: [{ title: "Preparare il materiale", done: false }] });
     const events = [];
     for (const [branch, kind] of [["L/C", "caccia"], ["E/G", "uscita"], ["R/S", "route"]])
@@ -175,7 +179,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
           branch: "E/G", kind: "uscita", title: "Campo invernale", date: "2027-01-02", endDate: "2027-01-05",
           feeCents: 2500, attendance: [], tasks: [{ title: "Ritirare le chiavi", done: false }],
           program: [
-            { date: "2027-01-02", time: "08:00", endTime: "09:00", title: "Lancio", place: "Sede scout", description: "Cerchio e lancio del campo", materials: "Cartellone e pennarelli" },
+            { date: "2027-01-02", time: "08:00", title: "Lancio", place: "Sede scout", description: "Cerchio e lancio del campo", materials: "Cartellone e pennarelli" },
             { date: "2027-01-02", time: "10:00", title: "Spostamento", place: "Fermata del pullman", description: "Partenza verso la base",
               materials: [{ title: "Cerchi", quantity: 6, unit: "pezzi" }], materialNote: "Da riportare" },
           ],
@@ -187,7 +191,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
         });
         assert.equal(camp.endDate, "2027-01-05");
         assert.equal(camp.program[0].time, "08:00");
-        assert.equal(camp.program[0].endTime, "09:00");
+        assert.equal(Object.hasOwn(camp.program[0], "endTime"), false);
         assert.equal(camp.program[1].place, "Fermata del pullman");
         assert.equal(Object.hasOwn(camp.program[1], "endTime"), false, "legacy moments keep their missing end time");
         assert.deepEqual(camp.program[1].materials, [{ title: "Cerchi", quantity: 6, unit: "pezzi" }]);
@@ -214,12 +218,14 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
           branch: "E/G", kind: "uscita", title: "Orario errato", date: "2027-01-02",
           attendance: [], tasks: [], program: [{ date: "2027-01-02", title: "Lancio", time: "25:90" }],
         }, 400);
-        await r("activities/events", "POST", {
+        const derivedProgram = await r("activities/events", "POST", {
           branch: "E/G", kind: "uscita", title: "Intervallo errato", date: "2027-01-02",
           attendance: [], tasks: [], program: [
             { date: "2027-01-02", title: "Lancio", time: "08:00", endTime: "08:00" },
           ],
-        }, 400);
+        });
+        assert.equal(Object.hasOwn(derivedProgram.program[0], "endTime"), false,
+          "moment end times are ignored and derived from the next start");
         await r("activities/events", "POST", {
           branch: "E/G", kind: "uscita", title: "Torneo non consentito", date: "2027-01-02",
           attendance: [], tasks: [], tournament: { members: [], presentations: [] },
@@ -244,7 +250,27 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
         };
         const meeting = await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
           title: "Riunione e torneo", date: "2026-11-14", endDate: "2026-11-14",
+          startTime: "15:00", endTime: "17:30",
+          program: [{ date: "2026-11-14", time: "15:30", endTime: "16:00", title: "Lancio" }],
           attendance, tasks: [], tournament });
+        assert.equal(meeting.endDate, meeting.date);
+        assert.equal(meeting.startTime, "15:00");
+        assert.equal(meeting.endTime, "17:30");
+        assert.equal(Object.hasOwn(meeting.program[0], "endTime"), false);
+        const hunt = await r("activities/events", "POST", { branch: "L/C", kind: "caccia",
+          title: "Caccia e torneo", date: "2026-11-15", endDate: "2026-11-16",
+          attendance, tasks: [], tournament });
+        assert.equal(hunt.tournament.members.length, roster.length);
+        await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
+          title: "Riunione su più giorni", date: "2026-11-14", endDate: "2026-11-15",
+          startTime: "15:00", endTime: "17:30", attendance, tasks: [], program: [] }, 400);
+        await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
+          title: "Orari riunione invertiti", date: "2026-11-14",
+          startTime: "17:00", endTime: "15:00", attendance, tasks: [], program: [] }, 400);
+        await r("activities/events", "POST", { branch: "L/C", kind: "riunione",
+          title: "Momento fuori riunione", date: "2026-11-14",
+          startTime: "15:00", endTime: "17:30", attendance, tasks: [],
+          program: [{ date: "2026-11-14", time: "14:59", title: "Lancio" }] }, 400);
         data = await r("activities");
         const { standings } = require("../assets/js/tournament-model.js");
         const results = standings(meeting.tournament.members, meeting.attendance, meeting.tournament.presentations);

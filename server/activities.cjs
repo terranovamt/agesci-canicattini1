@@ -101,6 +101,25 @@ function createActivities(db, people) {
       data.feeCents ??= 0;
       data.endDate ??= data.date;
       data.program ??= [];
+      if (data.kind === "riunione") {
+        const timed = data.program.filter(moment => moment.time).slice().sort((a, b) => a.time.localeCompare(b.time));
+        data.endDate = data.date;
+        data.startTime ||= timed[0]?.time || "";
+        data.endTime ||= timed.at(-1)?.endTime || "";
+        data.program = data.program.map(moment => {
+          const item = { ...moment };
+          delete item.endTime;
+          return { ...item, date: data.date };
+        });
+      } else {
+        delete data.startTime;
+        delete data.endTime;
+        data.program = data.program.map(moment => {
+          const item = { ...moment };
+          delete item.endTime;
+          return item;
+        });
+      }
       data.materials ??= [];
       data.shopping ??= [];
       const excluded = excludedMemberIds || nonFrequentMemberIds();
@@ -207,22 +226,34 @@ function createActivities(db, people) {
         let date;
         try { date = M.date(value.date); } catch { fail(400, "Data non valida"); }
         if (!date) fail(400, "Indica la data dell'attivita");
+        const meeting = value.kind === "riunione";
         let endDate;
-        try { endDate = M.date(value.endDate || existing?.endDate || date); } catch { fail(400, "Data finale non valida"); }
-        if (!endDate || endDate < date) fail(400, "La data finale deve essere uguale o successiva alla data iniziale");
+        if (meeting) {
+          if (value.endDate && value.endDate !== date) fail(400, "Una riunione deve svolgersi in un solo giorno");
+          endDate = date;
+        } else {
+          try { endDate = M.date(value.endDate || existing?.endDate || date); } catch { fail(400, "Data finale non valida"); }
+          if (!endDate || endDate < date) fail(400, "La data finale deve essere uguale o successiva alla data iniziale");
+        }
+        const startTime = meeting ? optionalText(value.startTime, 5) : "";
+        const meetingEndTime = meeting ? optionalText(value.endTime, 5) : "";
+        const validTime = time => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+        if (meeting && (!validTime(startTime) || !validTime(meetingEndTime) || meetingEndTime <= startTime))
+          fail(400, "Indica un orario di inizio e fine valido per la riunione");
         const program = value.program ?? existing?.program ?? [];
         if (!Array.isArray(program) || program.length > 300) fail(400, "Programma non valido");
         const schedule = program.map(item => {
           if (!object(item)) fail(400, "Momento del programma non valido");
           let day;
-          try { day = M.date(item.date); } catch { fail(400, "Data del programma non valida"); }
-          if (!day || day < date || day > endDate) fail(400, "La data del programma deve rientrare nell'attività");
-          const time = optionalText(item.time, 5), endTime = optionalText(item.endTime, 5);
-          if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time) ||
-              endTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime))
-            fail(400, "Orario del programma non valido");
-          if (endTime && (!time || endTime <= time))
-            fail(400, "L’orario di fine deve essere successivo all’inizio");
+          if (meeting) day = date;
+          else {
+            try { day = M.date(item.date); } catch { fail(400, "Data del programma non valida"); }
+            if (!day || day < date || day > endDate) fail(400, "La data del programma deve rientrare nell'attività");
+          }
+          const time = optionalText(item.time, 5);
+          if (time && !validTime(time)) fail(400, "Orario del programma non valido");
+          if (meeting && time && (time < startTime || time >= meetingEndTime))
+            fail(400, "L’orario del momento deve rientrare nella riunione");
           if (item.materials !== undefined && item.materials !== null &&
               typeof item.materials !== "string" && !Array.isArray(item.materials))
             fail(400, "Materiali del momento non validi");
@@ -238,7 +269,7 @@ function createActivities(db, people) {
                 unit: optionalText(material.unit, 32) };
             });
           }
-          return { date: day, time, ...(endTime ? { endTime } : {}), title: text(item.title, 200),
+          return { date: day, time, title: text(item.title, 200),
             place: optionalText(item.place, 200), description: optionalText(item.description, 2000),
             materials, materialNote: optionalText(item.materialNote, 1000) };
         }).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
@@ -270,15 +301,17 @@ function createActivities(db, people) {
           fail(400, "Non puoi rimuovere un socio con versamenti registrati: correggi prima il versamento");
         const eligibleById = new Map(eligible.map(person => [person.id, person]));
         const savedTournament = Object.hasOwn(value, "tournament") ? value.tournament : existing?.tournament;
-        if (savedTournament && (branch !== "L/C" || value.kind !== "riunione"))
-          fail(400, "Il torneo delle sestiglie è disponibile solo per le riunioni L/C");
+        const tournamentAllowed = branch === "L/C" && ["riunione", "caccia"].includes(value.kind);
+        if (savedTournament && !tournamentAllowed)
+          fail(400, "Il torneo delle sestiglie è disponibile solo per le riunioni e le cacce L/C");
         data = { kind: value.kind, title: text(value.title), date, endDate, feeCents,
+          ...(meeting ? { startTime, endTime: meetingEndTime } : {}),
           attendance: [...attendance, ...(existing?.[hiddenAttendance] || [])],
           tasks: steps(value.tasks), program: schedule,
           materials: checklist(value.materials ?? existing?.materials ?? []),
           shopping: checklist(value.shopping ?? existing?.shopping ?? [], true) };
         if (savedTournament) data.tournament = tournament(savedTournament, eligible, attendance, existing?.tournament);
-        else if (branch === "L/C" && value.kind === "riunione") {
+        else if (tournamentAllowed) {
           const previous = existing?.tournament;
           if (previous) data.tournament = tournament(previous, eligible, attendance, previous);
         }

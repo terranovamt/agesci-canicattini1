@@ -162,7 +162,9 @@
 #event-attendance .activity-person[data-status="assente"] { background: #fff1ef; border-color: #b3564e; }
 #event-form[data-view="presenze"] #event-attendance .activity-person { display: grid; grid-template-columns: minmax(0, 1fr) 44px; column-gap: 8px; align-items: start; }
 #event-form[data-view="presenze"] .activity-person-summary { grid-column: 1; grid-row: 1; }
-#event-form[data-view="presenze"] .activity-person-quick-actions { grid-column: 1 / -1; }
+#event-form[data-view="presenze"] .activity-person[data-card-action="cycle"] { cursor: pointer; }
+#event-form[data-view="presenze"] .activity-person[data-card-action="cycle"]:hover { box-shadow: 0 2px 8px #50336a24; }
+#event-form[data-view="presenze"] .activity-person[data-card-action="cycle"]:focus-visible { outline: 3px solid #50336a; outline-offset: 2px; }
 #event-form[data-view="presenze"] .activity-presence-options { border: 0; }
 #event-form[data-view="presenze"] .activity-presence-options:not([open]) { grid-column: 2; grid-row: 1; }
 #event-form[data-view="presenze"] .activity-presence-options > summary { display: flex; align-items: center; justify-content: center; width: 44px; height: 48px; padding: 0; list-style: none; font-size: 1.3rem; }
@@ -177,9 +179,6 @@
 #event-form[data-view="quote"] .activity-person[data-balance-state="excess"] .activity-person-status { color: #79500d; }
 #event-form[data-view="presenze"] .activity-payment,
 #event-form[data-view="quote"] .activity-presence-options { display: none; }
-.activity-person-quick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.activity-person-quick-actions button { flex: 1 1 130px; min-height: 44px; padding: 7px 10px; font-size: .76rem; }
-#event-form[data-view="quote"] .activity-person-quick-actions { display: none; }
 .activity-presence-options > summary, .activity-payment > summary { min-height: 44px; box-sizing: border-box; font-size: .76rem; color: #625269; }
 .activity-presence-options label { padding-bottom: 10px; }
 .activity-person-profile { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 6px; color: #50336a; font-size: .85rem; }
@@ -212,7 +211,7 @@
 .activity-program-item:not([data-open]) > .program-legacy-place { display: none; }
 .activity-program-item[data-open] > .program-row-summary { background: #f0eaf5; }
 #event-form .activity-program-item input { min-width: 0; width: 100%; box-sizing: border-box; }
-#event-form .activity-program-times { display: grid; grid-template-columns: repeat(2, minmax(0, 130px)); gap: 8px; }
+#event-form .activity-program-times { display: grid; grid-template-columns: minmax(0, 130px); gap: 8px; }
 @media (min-width: 761px) {
   .program-row-summary { display: none; }
   .program-detail-toggle { display: inline-flex; align-items: center; justify-content: center; }
@@ -220,7 +219,7 @@
   #event-form .activity-program-item { grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; }
   #event-form .activity-program-item > .activity-program-times,
   #event-form .activity-program-item > label { display: grid !important; }
-  #event-form .activity-program-times { grid-template-columns: repeat(2, 7.5rem); }
+  #event-form .activity-program-times { grid-template-columns: 7.5rem; }
   #event-form .activity-program-times input { padding: 8px; }
   #event-form .activity-program-item > label input { font-size: .95rem; }
   .program-now { justify-self: end; }

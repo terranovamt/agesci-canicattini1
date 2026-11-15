@@ -257,6 +257,13 @@
         const [year, month, day] = date.split("-").map(Number);
         return Date.UTC(year, month - 1, day) / 86400000;
       };
+      const meeting = event.kind === "riunione" && event.startTime && event.endTime;
+      const meetingMinutesUntil = meeting
+        ? (dayNumber(event.date) - dayNumber(live.date)) * 1440 + minuteOf(event.startTime) - minuteOf(live.time)
+        : Infinity;
+      const meetingSoon = meetingMinutesUntil >= 0 && meetingMinutesUntil <= 15;
+      const meetingInProgress = meeting && active && live.date === event.date &&
+        live.time >= event.startTime && live.time < event.endTime;
       const upcoming = (event.program || [])
         .filter(moment => moment.date && moment.time)
         .map(moment => ({
@@ -269,8 +276,9 @@
       const upcomingMoment = live.next || upcoming;
       const minutesUntilNext = live.next
         ? minuteOf(live.next.time) - minuteOf(live.time)
-        : upcoming?.minutesUntil ?? Infinity;
-      const imminent = !!live.current || (!!upcomingMoment && minutesUntilNext >= 0 && minutesUntilNext <= 15);
+        : upcoming?.minutesUntil ?? meetingMinutesUntil;
+      const imminent = !!live.current || (!!upcomingMoment && minutesUntilNext >= 0 && minutesUntilNext <= 15) ||
+        meetingSoon || meetingInProgress;
       if (!imminent) {
         panel.hidden = true;
         panel.removeAttribute("data-event-branch");
@@ -278,7 +286,7 @@
       }
       panel.hidden = false;
       panel.setAttribute("data-active", String(active));
-      $("dashboard-event-heading").textContent = active && live.current
+      $("dashboard-event-heading").textContent = active && (live.current || meetingInProgress)
         ? "Oggi · " + event.branch : "Tra poco · " + event.branch;
       const dateText = start => {
         const [year, month, day] = start.split("-").map(Number);
@@ -289,7 +297,7 @@
       $("dashboard-event-title").textContent = event.title;
       $("dashboard-event-details").textContent = (active ? "Oggi · " : "") +
         (event.date === endDate ? dateText(event.date) : dateText(event.date) + " – " + dateText(endDate)) +
-        " · " + event.branch + " · " + event.kind;
+        (meeting ? ` · ${event.startTime}–${event.endTime}` : "") + " · " + event.branch + " · " + event.kind;
       const preparation = (event.program || []).filter(item => item.title).length;
       const outstanding = [...(event.materials || []), ...(event.shopping || []), ...(event.tasks || [])]
         .filter(item => !item.done).length;
@@ -326,18 +334,26 @@
         $("dashboard-event-now").hidden = false;
         $("dashboard-event-clock").textContent = live.current
           ? "Adesso · " + live.time + " · ora di Roma"
-          : `Inizia tra ${minutesUntilNext} min · ora di Roma`;
+          : meetingInProgress ? "Riunione in corso · " + live.time + " · ora di Roma"
+            : `Inizia tra ${minutesUntilNext} min · ora di Roma`;
         const moment = live.current || upcomingMoment;
-        const timeRange = moment ? `${moment.time}${moment.endTime ? "–" + moment.endTime : ""}` : "";
+        const endLabel = moment?.endTime
+          ? `${moment.endTime}${moment.endDate && moment.endDate !== moment.date
+            ? " · " + dateText(moment.endDate) : ""}` : "";
+        const timeRange = moment ? `${moment.time}${endLabel ? "–" + endLabel : ""}` : "";
+        const nextEndLabel = upcomingMoment?.endTime
+          ? `${upcomingMoment.endTime}${upcomingMoment.endDate && upcomingMoment.endDate !== upcomingMoment.date
+            ? " · " + dateText(upcomingMoment.endDate) : ""}` : "";
         $("dashboard-event-moment").textContent = live.current
           ? `${timeRange} · ${moment.title}`
-          : upcomingMoment ? `Si comincia alle ${timeRange} · ${moment.title}` : "Programma di oggi da definire";
+          : upcomingMoment ? `Si comincia alle ${timeRange} · ${moment.title}`
+            : meeting ? `${event.startTime}–${event.endTime} · ${event.title}` : "Programma di oggi da definire";
         $("dashboard-event-place").textContent = moment?.place ? "Dove: " + moment.place : "";
         $("dashboard-event-description").textContent = moment?.description ||
           (!moment ? "Aggiungi i momenti con giorno e ora per vedere qui cosa fare adesso." : "");
         $("dashboard-event-materials").textContent = moment?.materials ? "Materiali: " + moment.materials : "";
         $("dashboard-event-next").textContent = live.current && upcomingMoment
-          ? `A seguire · ${upcomingMoment.time}${upcomingMoment.endTime ? "–" + upcomingMoment.endTime : ""} · ${upcomingMoment.title}`
+          ? `A seguire · ${upcomingMoment.time}${nextEndLabel ? "–" + nextEndLabel : ""} · ${upcomingMoment.title}`
           : live.current ? "Ultimo momento con orario previsto per oggi." : "";
       }
       if (active && live.current) {

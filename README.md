@@ -162,8 +162,9 @@ Il comando ricrea da zero un database SQLite temporaneo che simula un anno
 di vita del gruppo: 30 soci L/C in 6 sestiglie, 35 soci E/G in 5 squadriglie
 e 17 soci R/S. Nomi e cognomi italiani, date di nascita, indirizzi e famiglie
 sono **inventati**; le email usano il dominio riservato `example.test`.
-Trovi oltre 150 attivita': riunioni settimanali, uscite mensili, campi estivi
-e invernali, programmi con inizio/fine e materiali, presenze e assenze,
+Trovi oltre 150 attivita': riunioni settimanali con orario di inizio e fine,
+uscite mensili e campi estivi e invernali con programmi a orari di solo inizio
+(la fine e' dedotta dal momento successivo), materiali, presenze e assenze,
 quote saldate, acconti, debiti e versamenti in eccesso. Il torneo L/C ha uno
 storico di valutazioni; i percorsi comprendono cacce aperte e concluse,
 specialita' e brevetti in vari stati, con riconoscimenti gia' assegnati.

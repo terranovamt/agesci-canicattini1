@@ -73,8 +73,9 @@ test("live program uses Rome time, includes the last camp day and switches at ex
   assert.equal(M.clock(new Date("2027-07-05T08:00:00Z")).time, "10:00", "summer time");
 });
 
-test("live program stops the current moment at its end time", () => {
-  const event = { date: "2027-01-05", program: [
+test("live program derives moment ends from the next start and meeting end", () => {
+  const event = { kind: "riunione", date: "2027-01-05", endDate: "2027-01-05",
+    startTime: "08:00", endTime: "10:00", program: [
     { date: "2027-01-05", time: "08:00", endTime: "09:00", title: "Lancio" },
     { date: "2027-01-05", time: "09:30", endTime: "10:00", title: "Gioco" },
   ] };
@@ -82,12 +83,27 @@ test("live program stops the current moment at its end time", () => {
   assert.equal(M.liveProgram(event, new Date("2027-01-05T07:00:00Z")).current.title, "Lancio");
   assert.equal(M.liveProgram(event, new Date("2027-01-05T07:59:00Z")).current.title, "Lancio");
   const between = M.liveProgram(event, new Date("2027-01-05T08:00:00Z"));
-  assert.equal(between.current, null);
-  assert.equal(between.next.title, "Gioco");
-  assert.equal(M.liveProgram(event, new Date("2027-01-05T08:30:00Z")).current.title, "Gioco");
+  assert.equal(between.current.title, "Lancio", "a moment lasts until the next moment starts");
+  assert.equal(between.current.endTime, "09:30");
+  const second = M.liveProgram(event, new Date("2027-01-05T08:30:00Z"));
+  assert.equal(second.current.title, "Gioco");
+  assert.equal(second.current.endTime, "10:00", "the last meeting moment ends with the meeting");
   const finished = M.liveProgram(event, new Date("2027-01-05T09:00:00Z"));
+  assert.equal(finished.finished, true);
+  assert.equal(finished.active, false);
   assert.equal(finished.current, null);
   assert.equal(finished.next, null);
+  const oldOuting = M.liveProgram({ date: "2027-01-05", program: [
+    { date: "2027-01-05", time: "08:00", endTime: "09:00", title: "Partenza" },
+  ] }, new Date("2027-01-05T08:30:00Z"));
+  assert.equal(oldOuting.current.title, "Partenza", "legacy endTime values do not shorten outdoor moments");
+  const overnight = M.liveProgram({ date: "2027-01-05", endDate: "2027-01-06", program: [
+    { date: "2027-01-05", time: "22:00", title: "Veglia" },
+    { date: "2027-01-06", time: "08:00", title: "Colazione" },
+  ] }, new Date("2027-01-05T22:30:00Z"));
+  assert.equal(overnight.current.title, "Veglia");
+  assert.equal(overnight.current.endDate, "2027-01-06");
+  assert.equal(overnight.current.endTime, "08:00");
 });
 
 test("agenda excludes expired events and prioritizes ongoing camps over future meetings", () => {
@@ -100,6 +116,10 @@ test("agenda excludes expired events and prioritizes ongoing camps over future m
   assert.equal(M.nextEvent(events, now).id, 3);
   assert.equal(M.nextEvent(events, new Date("2027-01-06T09:00:00Z")).id, 2);
   assert.equal(M.nextEvent(events, new Date("2027-01-07T09:00:00Z")), null);
+  const endedMeeting = { id: 4, kind: "riunione", date: "2027-01-05", endDate: "2027-01-05",
+    startTime: "08:00", endTime: "09:00", program: [] };
+  assert.equal(M.nextEvent([endedMeeting, events[1]], new Date("2027-01-05T08:00:00Z")).id, 2,
+    "a finished meeting is not treated as the current event");
   const untimed = M.liveProgram({ date: "2027-01-05", program: [
     { date: "2027-01-04", time: "08:00", title: "Ieri" }, { date: "2027-01-05", title: "Senza orario" },
   ] }, now);

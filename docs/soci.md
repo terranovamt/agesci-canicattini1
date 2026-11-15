@@ -179,18 +179,23 @@ di sovrascrivere modifiche concorrenti: in caso di conflitto copiare le
 modifiche prima di ricaricare la pagina.
 
 **Attivita** permette di creare riunioni o cacce L/C, riunioni o
-uscite E/G, riunioni o route R/S. Ogni incontro ha titolo, data, presenze
-(da registrare, presente, assente, giustificato) e una lista di attivita o
-cose da fare completabili. La lista presenze usa i ragazzi della branca
+uscite E/G, riunioni o route R/S. Ogni riunione si svolge in un solo giorno
+e ha ora di inizio e fine; cacce, uscite e route possono durare piu giorni.
+I momenti hanno solo l'ora di inizio: la fine coincide con l'inizio del
+momento successivo e, per l'ultimo momento di una riunione, con la fine
+della riunione. Ogni incontro ha titolo, presenze (da registrare, presente,
+assente, giustificato) e una lista di attivita o cose da fare completabili.
+La lista presenze usa i ragazzi della branca
 locale, escludendo i sospesi da oltre un anno; nomi e presenze gia registrati
 restano nell'incontro anche dopo un passaggio. I nuovi soci vengono proposti
 quando si riapre l'incontro, senza segnare assenze automatiche.
 
-Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni L/C,
+Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni e cacce L/C,
 **Torneo** mostrano solo i controlli pertinenti, senza ricreare il modulo.
 Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia,
-con colori dell'unita e card dei soci. Un tocco alterna Presente e Assente:
-lo stato e riconoscibile dal testo, dal simbolo e dal colore, non solo dal colore.
+con colori dell'unita e card dei soci. Cliccare la card registra il passaggio
+successivo del ciclo; lo stato e riconoscibile dal testo, dal simbolo e dal
+colore, non solo dal colore.
 Il menu della card permette anche Giustificato o Da registrare.
 R/S resta un elenco unico.
 Le attivita possono coprire piu giorni: ogni giornata ha un'intestazione e i
@@ -266,14 +271,18 @@ quote, percorsi o squadriglie. Un versamento e' registrato solo per un socio
 presente; se inserisci un importo positivo da **Quote**, la presenza viene
 registrata automaticamente, anche con un versamento parziale.
 
-Per ogni socio, **Presenze** offre azioni rapide: **Presente + quota pagata**,
-**Presente senza quota** e **Assente**. Se l'attivita non prevede una quota,
-restano solo **Presente** e **Assente** e la vista **Quote** non compare.
-Per inserire un versamento apri **Dettagli del versamento** e aggiorna
-**Versato totale**, che indica l'importo complessivamente ricevuto, non il
-singolo incremento. Usare **Presente senza quota** o **Assente** quando sono
-gia registrati versamenti richiede conferma per azzerarli. Poi usare
-**Salva attivita**.
+In **Presenze**, cliccare la card del socio avanza il suo stato. Con una quota
+prevista, il primo tocco registra **Presente senza quota**, il secondo
+registra **Presente + quota pagata** (saldo completo), il terzo registra
+**Assente** e azzera il versato; l'azzeramento richiede conferma. Un
+versamento parziale mantiene la presenza e mostra quanto manca; il tocco
+successivo completa il saldo. Senza quota, il pulsante alterna direttamente
+Presente e Assente. La vista **Quote** non compare se non e' prevista una
+quota e non ci sono versamenti da conservare.
+Per inserire o correggere un versamento apri **Dettagli del versamento** e
+aggiorna **Versato totale**, che indica l'importo complessivamente ricevuto,
+non il singolo incremento. Se inserisci un importo positivo, la presenza
+viene registrata automaticamente. Poi usare **Salva attivita**.
 
 Gli importi sono salvati come centesimi interi e accettano massimo due
 decimali. Il riepilogo mostra in riga **Totale atteso**, **Incassato**,
@@ -291,7 +300,7 @@ un vecchio client che omette i campi economici conserva quelli gia salvati;
 la rimozione di un socio con versamenti registrati viene rifiutata.
 
 La scheda **Torneo delle sestiglie** e disponibile in L/C e raccoglie i
-punteggi delle riunioni. La presentazione si assegna una sola volta per
+punteggi di riunioni e cacce. La presentazione si assegna una sola volta per
 sestiglia (0–5); le valutazioni individuali (puntualita, lealta, regole di
 Baloo, quaderno di caccia, stile, comportamento e occhio) usano 0–5. La presenza
 viene letta dal registro: la percentuale e presenti/componenti della sestiglia.
@@ -303,8 +312,8 @@ di componenti; stile e comportamento sono distinti in tabella ma pesano insieme
 come una categoria. I punteggi non assegnati non vengono considerati zero.
 La classifica mostra tutte le categorie e il totale in una sola tabella:
 toccare l'intestazione ordina per categoria; su telefono si scorre
-orizzontalmente mantenendo sestiglia e totale visibili. **Valuta riunione**
-apre la riunione di oggi, la prossima o l'ultima disponibile, con presentazione
+orizzontalmente mantenendo sestiglia e totale visibili. **Valuta attivita**
+apre l'attivita di oggi, la prossima o l'ultima disponibile, con presentazione
 per sestiglia e giudizi individuali in griglia.
 
 **Percorsi** raccoglie specialita L/C, specialita e brevetti E/G.

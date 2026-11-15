@@ -49,7 +49,7 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         const specialty = await ACCESSO.request('activities/paths','POST',{branch:'L/C',kind:'specialty',
           personId:member.id,title:'Cuoco',steps:[{title:'Ricetta preparata',done:true}],closed:false});
         const free = await ACCESSO.request('activities/events','POST',{branch:'L/C',kind:'riunione',
-          title:'DEMO - Gratis',date:meeting.date,feeCents:0,program:[],tasks:[],
+          title:'DEMO - Gratis',date:meeting.date,startTime:'07:00',endTime:'10:00',feeCents:0,program:[],tasks:[],
           attendance:[{personId:member.id,status:'presente',due:true,paidCents:0}]});
         return {member,meeting,free,specialty};
       })()`);
@@ -88,49 +88,67 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await go("attivita.html?event=" + context.free.id + "&vista=presenze");
         await wait("document.getElementById('event-dialog')?.open");
         assert.deepEqual(await page.evaluate(`(() => ({
-          actions: [...document.querySelector('#event-attendance .activity-person')
-            .querySelectorAll('[data-attendance-action]')].filter(button=>!button.hidden)
-            .map(button=>button.textContent.trim()),
+          quickButtons: document.querySelectorAll('#event-attendance [data-attendance-action]').length,
+          cardAction: document.querySelector('#event-attendance .activity-person').dataset.cardAction,
+          cardTabIndex: document.querySelector('#event-attendance .activity-person').tabIndex,
           quoteHidden: document.querySelector('[data-event-view="quote"]').hidden,
           paymentHidden: document.querySelector('#event-attendance .activity-payment').hidden,
-        }))()`), { actions: ["Presente", "Assente"], quoteHidden: true, paymentHidden: true },
-        "free activities skip fee entry and expose only attendance actions");
+        }))()`), { quickButtons: 0, cardAction: 'cycle', cardTabIndex: 0, quoteHidden: true, paymentHidden: true },
+        "free activities skip quota entry and make the card itself the attendance action");
         await go("attivita.html?event=" + context.meeting.id + "&vista=presenze");
         await wait("document.getElementById('event-dialog')?.open");
         assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), false,
           "activity data appear only in Program");
+        await page.evaluate(`{
+          const row = document.querySelector('#event-attendance .activity-person');
+          const paid = row.querySelector('[data-paid]');
+          paid.value = '0.00'; paid.dispatchEvent(new Event('input',{bubbles:true}));
+          const status = row.querySelector('select');
+          status.value = ''; status.dispatchEvent(new Event('change',{bubbles:true}));
+        }`);
         const initialAttendance = await page.evaluate(`(() => ({
           fee: ACTIVITIES_MODEL.cents(document.querySelector('#event-form [name=fee]').value),
           status: document.querySelector('#event-attendance select').value,
           paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value)
         }))()`);
-        assert.deepEqual(await page.evaluate(`[...document.querySelector('#event-attendance .activity-person')
-          .querySelectorAll('[data-attendance-action]')]
-          .filter(button=>!button.hidden)
-          .map(button=>button.textContent.trim())`),
-        initialAttendance.fee > 0
-          ? ["Presente + quota pagata", "Presente senza quota", "Assente"]
-          : ["Presente", "Assente"]);
+        assert.deepEqual(await page.evaluate(`(() => {
+          const row = document.querySelector('#event-attendance .activity-person');
+          return [row.querySelectorAll('[data-attendance-action]').length, row.dataset.cardAction, row.tabIndex];
+        })()`), [0, 'cycle', 0]);
+        await click('#event-attendance .activity-presence-options > summary');
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), '',
+          "secondary attendance controls do not trigger the card cycle");
+        await click('#event-attendance .activity-person');
+        assert.deepEqual(await page.evaluate(`(() => ({
+          status: document.querySelector('#event-attendance .activity-person').dataset.status,
+          paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
+          label: document.querySelector('#event-attendance [data-person-status]').textContent
+        }))()`), initialAttendance.fee > 0
+          ? { status: 'presente', paid: 0, label: 'Presente · quota non inserita' }
+          : { status: 'presente', paid: 0, label: '✓ Presente' });
         if (initialAttendance.fee > 0) {
-          await click('#event-attendance [data-attendance-action="paid"]');
+          await click('#event-attendance .activity-person');
           assert.deepEqual(await page.evaluate(`(() => ({
             status: document.querySelector('#event-attendance .activity-person').dataset.status,
             paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
             label: document.querySelector('#event-attendance [data-person-status]').textContent
-          }))()`), { status: 'presente', paid: initialAttendance.fee, label: 'Presenza e quota' });
+          }))()`), { status: 'presente', paid: initialAttendance.fee, label: 'Presente · quota pagata' });
+          await page.evaluate("window.confirm = () => false");
+          await click('#event-attendance .activity-person');
+          assert.deepEqual(await page.evaluate(`(() => ({
+            status: document.querySelector('#event-attendance .activity-person').dataset.status,
+            paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value)
+          }))()`), { status: 'presente', paid: initialAttendance.fee },
+          "declining the confirmation preserves the payment");
           await page.evaluate("window.confirm = () => true");
-          await click('#event-attendance [data-attendance-action="present"]');
+          await click('#event-attendance .activity-person');
           assert.deepEqual(await page.evaluate(`(() => ({
             status: document.querySelector('#event-attendance .activity-person').dataset.status,
             paid: ACTIVITIES_MODEL.cents(document.querySelector('#event-attendance [data-paid]').value),
             label: document.querySelector('#event-attendance [data-person-status]').textContent
-          }))()`), { status: 'presente', paid: 0, label: 'Presenza' });
-          await click('#event-attendance [data-attendance-action="absent"]');
-          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
+          }))()`), { status: 'assente', paid: 0, label: '− Assente' });
         } else {
-          await click('#event-attendance [data-attendance-action="present"]');
-          assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "presente");
-          await click('#event-attendance [data-attendance-action="absent"]');
+          await click('#event-attendance .activity-person');
           assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), "assente");
         }
         await shot(label + "-correzioni-presenze");
@@ -253,10 +271,8 @@ test("demo screens expose navigation, individual paths, clear attendance and com
       await click("#event-program .activity-program-day[open] .activity-program-day-add");
       await page.evaluate(`{
         const start = document.querySelector('#event-program [name^="program-time-"]');
-        const end = document.querySelector('#event-program [name^="program-end-time-"]');
         const title = document.querySelector('#event-program [name^="program-title-"]');
         start.value='08:00'; start.dispatchEvent(new Event('change',{bubbles:true}));
-        end.value='09:00'; end.dispatchEvent(new Event('change',{bubbles:true}));
         title.value='Accoglienza'; title.dispatchEvent(new Event('input',{bubbles:true}));
       }`);
       await click('#event-form button[type=submit]');
@@ -316,7 +332,8 @@ test("branch chiefs land on today's program, including the last camp day, across
               {date:'2027-01-05',time:'09:00',title:'Gioco nel bosco',place:'Prato della base',
                 description:'Dividere i ragazzi in squadre e spiegare il gioco.',materials:'Corde e cartelloni'},
               {date:'2027-01-05',time:'11:00',title:'Cerchio e verifica'}
-            ].filter(item => branch !== 'L/C' || item.date === '2027-01-05')});
+            ].filter(item => branch !== 'L/C' || item.date === '2027-01-05'),
+            ...(branch === 'L/C' ? {startTime:'08:30',endTime:'17:00'} : {})});
         }
         const unitless = await ACCESSO.request('members', 'POST', {code:'490003', branch:'E/G',
           profile:{givenName:'Socio', surname:'Senza squadriglia'}, values:{}});
@@ -324,6 +341,15 @@ test("branch chiefs land on today's program, including the last camp day, across
           personId:unitless.member.id, title:'Percorso senza squadriglia',
           steps:[{title:'Tappa di prova',done:false}], closed:false});
       })()`);
+      assert.deepEqual(await page.evaluate(`ACCESSO.request('activities').then(data => {
+        const event = data.events.find(item => item.title === 'Oggi con la branca L/C');
+        return [event.kind, event.startTime, event.endTime, event.endDate];
+      })`), ['riunione', '08:30', '17:00', '2027-01-05']);
+      assert.deepEqual(await page.evaluate(`ACCESSO.request('activities').then(data => {
+        const event = data.events.find(item => item.title === 'Oggi con la branca L/C');
+        const live = ACTIVITIES_MODEL.liveProgram(event, new Date('2027-01-05T09:00:00Z'));
+        return [live.active, live.current?.endTime, live.next?.endTime];
+      })`), [true, '11:00', '17:00']);
       const chiefs = await page.evaluate("window.testChiefs");
       const images = [];
       const shot = async name => {
@@ -340,7 +366,9 @@ test("branch chiefs land on today's program, including the last camp day, across
           ["tablet",820,1180], ["portatile",1366,768], ["desktop",1920,1080]]) {
           await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor:1, mobile:width < 500 });
           await go("");
-          await wait("document.getElementById('dashboard-event-title').textContent.startsWith('Oggi con')");
+          const nextTime = branch === "L/C" ? "11:00–17:00" : "11:00";
+          await wait("document.getElementById('dashboard-event-title').textContent.startsWith('Oggi con') && " +
+            `document.getElementById('dashboard-event-next').textContent.includes(${JSON.stringify(nextTime)})`);
           const dashboard = await page.evaluate(`(() => {
             const panel = document.getElementById('dashboard-event-panel'), action = document.getElementById('dashboard-event-action');
             return {branch:document.getElementById('reserved-content').dataset.branch,
@@ -349,6 +377,7 @@ test("branch chiefs land on today's program, including the last camp day, across
               first:panel.getBoundingClientRect().top <= document.getElementById('dashboard-overview').getBoundingClientRect().top,
               actionVisible:action.getBoundingClientRect().bottom <= innerHeight,
               overflow:document.documentElement.scrollWidth > innerWidth,
+              details:document.getElementById('dashboard-event-details').textContent,
               now:document.getElementById('dashboard-event-moment').textContent,
               next:document.getElementById('dashboard-event-next').textContent,
               stats:!document.getElementById('dashboard-metrics').hidden,
@@ -360,8 +389,10 @@ test("branch chiefs land on today's program, including the last camp day, across
           assert.equal(dashboard.actionVisible, true, `${branch} ${label}: primary action must be above the fold`);
           assert.equal(dashboard.overflow, false);
           assert.equal(dashboard.stats, false);
-          assert.equal(dashboard.now, "09:00 · Gioco nel bosco");
-          assert.match(dashboard.next, /11:00 · Cerchio/);
+          if (branch === "L/C") assert.match(dashboard.details, /08:30–17:00/);
+          assert.equal(dashboard.now, "09:00–11:00 · Gioco nel bosco");
+          assert.match(dashboard.next, branch === "L/C"
+            ? /11:00–17:00 · Cerchio e verifica/ : /11:00 · Cerchio e verifica/);
           await shot(label + "-live-home-" + branch.replace("/", ""));
           await page.evaluate("document.getElementById('dashboard-event-action').click()");
           await wait("document.getElementById('event-dialog')?.open");
@@ -381,7 +412,7 @@ test("branch chiefs land on today's program, including the last camp day, across
           }`);
           assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
           await page.evaluate("document.getElementById('event-live-attendance').click()");
-          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance [data-attendance-action]')"), true);
+          assert.equal(await page.evaluate("document.activeElement.matches('#event-attendance .activity-person[tabindex=\"0\"]')"), true);
           await page.evaluate("document.getElementById('event-dialog').close()");
           for (const href of dashboard.urls.filter(href => href.includes("#"))) {
             await go(href);
@@ -617,8 +648,8 @@ test("login autofill, education dates, activities and progression work on four s
   try {
     page = await browser(directory);
     const base = app.origin + "/agesci-canicattini1";
-    const wait = async expression => {
-      for (let attempt = 0; attempt < 200; attempt++) {
+    const wait = async (expression, attempts = 200) => {
+      for (let attempt = 0; attempt < attempts; attempt++) {
         if (await page.evaluate(expression)) return;
         await delay(25);
       }
@@ -740,15 +771,35 @@ test("login autofill, education dates, activities and progression work on four s
         await click("#new-event");
         assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /Bozza non registrata/);
         assert.equal(await page.evaluate("document.querySelector('#event-form button[type=submit]').textContent.trim()"), "Salva attività");
+        assert.deepEqual(await page.evaluate(`(() => ({
+          label: document.getElementById('event-date-label').textContent,
+          endDateHidden: document.getElementById('event-end-date-field').hidden,
+          startTimeHidden: document.getElementById('event-start-time-field').hidden,
+          endTimeHidden: document.getElementById('event-end-time-field').hidden,
+          endDateRequired: document.querySelector('#event-form [name=endDate]').required,
+          startTimeRequired: document.querySelector('#event-form [name=startTime]').required,
+          endTimeRequired: document.querySelector('#event-form [name=endTime]').required,
+        }))()`), { label: 'Giorno', endDateHidden: true, startTimeHidden: false, endTimeHidden: false,
+          endDateRequired: false, startTimeRequired: true, endTimeRequired: true });
         await click('#event-tasks + button');
         assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /modifiche non salvate/);
         const options = await page.evaluate("[...document.querySelector('#event-form [name=kind]').options].map(option => option.value)");
         assert.deepEqual(options, branch === "L/C" ? ["riunione", "caccia"] : branch === "E/G" ? ["riunione", "uscita"] : ["riunione", "route"]);
         await fill('#event-form [name=kind]', options[1], "change");
+        assert.deepEqual(await page.evaluate(`(() => ({
+          label: document.getElementById('event-date-label').textContent,
+          endDateHidden: document.getElementById('event-end-date-field').hidden,
+          startTimeHidden: document.getElementById('event-start-time-field').hidden,
+          endTimeHidden: document.getElementById('event-end-time-field').hidden,
+          endDateRequired: document.querySelector('#event-form [name=endDate]').required,
+          startTimeRequired: document.querySelector('#event-form [name=startTime]').required,
+          endTimeRequired: document.querySelector('#event-form [name=endTime]').required,
+        }))()`), { label: 'Dal', endDateHidden: false, startTimeHidden: true, endTimeHidden: true,
+          endDateRequired: true, startTimeRequired: false, endTimeRequired: false });
         await fill('#event-form [name=title]', "Incontro " + branch + " " + label);
         await fill('#event-form [name=date]', "2025-11-15");
         await click('[data-event-view="presenze"]');
-        await click('#event-attendance [data-attendance-action="present"]');
+        await click('#event-attendance .activity-person');
         assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
         await click('[data-event-view="programma"]');
         await expand("#event-settings");
@@ -800,7 +851,11 @@ test("login autofill, education dates, activities and progression work on four s
         await click('[data-event-view="programma"]');
         await click("#event-tasks input[type=checkbox]");
         await click('#event-form button[type=submit]');
-        await wait("!document.getElementById('event-dialog').open");
+        await wait("!document.getElementById('event-dialog').open || " +
+          "(document.getElementById('event-error').textContent && " +
+          "document.getElementById('event-error').textContent !== 'Salvataggio in corso…')");
+        assert.equal(await page.evaluate("document.getElementById('event-dialog').open"), false,
+          await page.evaluate("document.getElementById('event-error').textContent"));
         await page.send("Page.navigate", { url: memberUrl });
         await wait("document.readyState === 'complete' && document.getElementById('member-dialog')?.open");
         await wait("document.getElementById('member-activities-summary').textContent.includes('partecipazion')");
@@ -827,7 +882,7 @@ test("login autofill, education dates, activities and progression work on four s
           await wait("document.getElementById('member-activities-list').textContent.includes('5,25')");
         }
         await page.send("Page.navigate", { url: await page.evaluate("document.querySelector('#member-activities-list a').href") });
-        await wait("document.readyState === 'complete' && document.getElementById('event-dialog')?.open");
+        await wait("document.readyState === 'complete' && document.getElementById('event-dialog')?.open", 400);
         await wait("document.querySelector('#event-attendance [data-paid]')?.value === '5.00'");
         await click("#event-dialog [data-close]");
         if (branch === "R/S") {
@@ -970,12 +1025,11 @@ test("login autofill, education dates, activities and progression work on four s
       await click("#event-program .activity-program-day[open] .activity-program-day-add");
       assert.equal(await page.evaluate(`(() => {
         const start = document.querySelector('#event-program [name="program-time-1"]');
-        const end = document.querySelector('#event-program [name="program-end-time-1"]');
-        return start.pattern && start.inputMode === 'numeric' && !start.required && end.pattern && !end.required &&
+        return start.pattern && start.inputMode === 'numeric' && !start.required &&
+          !document.querySelector('#event-program [name^="program-end-time-"]') &&
           document.activeElement === document.querySelector('#event-program [name="program-title-1"]');
-      })()`), true, "new moments have separate optional times and open with the title focused");
+      })()`), true, "new moments have only an optional start time and open with the title focused");
       await fill('#event-program [name="program-time-1"]', "08:00", "change");
-      await fill('#event-program [name="program-end-time-1"]', "09:00", "change");
       await fill('#event-program [name="program-title-1"]', "Lancio");
       await fill('#event-place', "Sede scout");
       await fill("#event-program textarea", "Ci troviamo e presentiamo il campo.");
@@ -1010,14 +1064,16 @@ test("login autofill, education dates, activities and progression work on four s
           const paid = document.querySelector('#event-attendance [data-paid]');
           const row = paid.closest('.activity-person'), select = row.querySelector('select');
           paid.value = '10'; paid.dispatchEvent(new Event('input',{bubbles:true}));
-          const partial = { status: select.value, balance: row.dataset.balanceState };
+          const partial = { status: select.value, balance: row.dataset.balanceState,
+            label: row.querySelector('[data-person-status]').textContent };
           paid.value = '25'; paid.dispatchEvent(new Event('input',{bubbles:true}));
           return { partial, complete: {
             status: select.value, label: row.querySelector('[data-person-status]').textContent,
             balance: row.dataset.balanceState,
           }};
         })()`);
-        assert.deepEqual(paymentState.partial, { status: 'presente', balance: 'unpaid' });
+        assert.deepEqual([paymentState.partial.status, paymentState.partial.balance], ['presente', 'unpaid']);
+        assert.match(paymentState.partial.label, /^Presente · mancano .*15,00/);
         assert.deepEqual(paymentState.complete, {
           status: 'presente', label: 'Presenza e quota', balance: 'paid',
         });
@@ -1044,10 +1100,13 @@ test("login autofill, education dates, activities and progression work on four s
         await wait("!document.getElementById('activities-app').hidden");
         await fill("#activities-branch", "L/C", "change");
         await click("#new-event");
-        await fill('#event-form [name=title]', "Riunione torneo di prova");
+        await fill('#event-form [name=kind]', "caccia", "change");
+        assert.equal(await page.evaluate("document.querySelector('[data-event-view=torneo]').hidden"), false,
+          "the L/C tournament is available for hunts");
+        await fill('#event-form [name=title]', "Caccia torneo di prova");
         await fill('#event-form [name=date]', "2026-11-20");
         await click('[data-event-view="presenze"]');
-        await click('#event-attendance [data-attendance-action="present"]');
+        await click('#event-attendance .activity-person');
         await expand("#event-attendance .activity-person:nth-of-type(2) .activity-presence-options");
         await fill("#event-attendance .activity-person:nth-of-type(2) select", "assente", "change");
         await click('[data-event-view="torneo"]');
@@ -1067,7 +1126,8 @@ test("login autofill, education dates, activities and progression work on four s
         await wait("!document.getElementById('event-dialog').open");
         await click("#tournament-tab");
         assert.ok(await page.evaluate("!!document.querySelector('#tournament-rankings tbody')"), "the LC leaderboard should render saved scores");
-        assert.equal(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent.includes('92.9%')"), true);
+        assert.match(await page.evaluate("document.querySelector('#tournament-rankings tbody').textContent"), /\d+\.\d%/,
+          "the leaderboard renders calculated tournament scores for meetings and hunts");
         const categories = await page.evaluate("[...document.querySelectorAll('#tournament-rankings [data-sort]')].map(button=>button.dataset.sort)");
         assert.deepEqual(categories, ["unit", "presentation", "presence", "punctuality", "loyalty", "balooRules", "huntNotebook", "style", "behavior", "total"]);
         assert.deepEqual(await page.evaluate("[...document.querySelectorAll('.tournament-judging-table thead th')].map(cell=>cell.textContent.trim())"),

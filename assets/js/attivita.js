@@ -4,6 +4,8 @@
     AM = window.ACTIVITIES_MODEL, TM = window.TOURNAMENT_MODEL;
   const eventForm = $('event-form'), pathForm = $('path-form');
   const kinds = { 'L/C': ['riunione', 'caccia'], 'E/G': ['riunione', 'uscita'], 'R/S': ['riunione', 'route'] };
+  const isMeetingEvent = () => eventForm.elements.kind.value === 'riunione';
+  const tournamentEvent = kind => branch() === 'L/C' && ['riunione', 'caccia'].includes(kind);
   const pathLabels = { hunt: 'Stagione di caccia', specialty: 'Specialità', badge: 'Brevetto' };
   const pathFilterKinds = { 'L/C': ['specialty'], 'E/G': ['badge', 'specialty'] };
   const pathDrafts = new Map();
@@ -37,12 +39,14 @@
   function updateProgramTimeline() {
     if (!eventForm.elements.date.value) return;
     const live = AM.liveProgram({ date: eventForm.elements.date.value,
-      endDate: eventForm.elements.endDate.value, program: readProgram() });
+      endDate: eventForm.elements.endDate.value, kind: eventForm.elements.kind.value,
+      startTime: eventForm.elements.startTime.value, endTime: eventForm.elements.endTime.value,
+      program: readProgram() });
     const today = AM.clock().date;
     for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
       const date = row.querySelector('input[name^="program-date-"]').value;
       const time = row.querySelector('input[name^="program-time-"]').value;
-      const endTime = row.querySelector('input[name^="program-end-time-"]').value;
+      const endTime = momentEndTime(row);
       const current = date === today && live.active && live.current &&
         live.current.time === time && live.current.title === row.querySelector('input[name^="program-title-"]').value;
       const past = date < today || date === today && live.active && time &&
@@ -75,6 +79,25 @@
       if (event.inputType?.startsWith('delete')) return;
       const digits = input.value.replace(/\D/g, '').slice(0, 4);
       input.value = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits.length === 2 ? digits + ':' : digits;
+    });
+  }
+  time24(eventForm.elements.startTime);
+  time24(eventForm.elements.endTime);
+  function checkMeetingTime() {
+    const start = eventForm.elements.startTime.value, end = eventForm.elements.endTime.value;
+    eventForm.elements.endTime.setCustomValidity(isMeetingEvent() && start && end && end <= start
+      ? 'L’orario di fine deve essere successivo all’inizio.' : '');
+    for (const input of $('event-program').querySelectorAll('input[name^="program-time-"]')) {
+      const time = input.value;
+      input.setCustomValidity(isMeetingEvent() && time && start && end && (time < start || time >= end)
+        ? 'L’orario del momento deve rientrare nella riunione.' : '');
+    }
+  }
+  for (const input of [eventForm.elements.startTime, eventForm.elements.endTime]) {
+    input.addEventListener('input', () => {
+      checkMeetingTime(); updateEventContext();
+      for (const row of $('event-program').querySelectorAll('.activity-program-item')) updateProgramSummary(row);
+      updateProgramTimeline();
     });
   }
   function roster() { return data.members.filter(member => member.branch === branch() && !M.isNonFrequentante(member)); }
@@ -153,8 +176,37 @@
     return label[0].toLocaleUpperCase('it') + label.slice(1) + (today ? ' · Oggi' : '');
   }
   function dateRange(item) {
-    return item.endDate && item.endDate !== item.date
+    const date = item.endDate && item.endDate !== item.date
       ? dateLabel(item.date) + ' – ' + dateLabel(item.endDate) : dateLabel(item.date);
+    return item.kind === 'riunione' && item.startTime && item.endTime
+      ? `${date} · ${item.startTime}–${item.endTime}` : date;
+  }
+  function updateEventContext() {
+    $('event-context').textContent = `${eventForm.elements.kind.value} · ` + dateRange({
+      kind: eventForm.elements.kind.value,
+      date: eventForm.elements.date.value,
+      endDate: eventForm.elements.endDate.value,
+      startTime: eventForm.elements.startTime.value,
+      endTime: eventForm.elements.endTime.value,
+    });
+  }
+  function syncEventKindFields() {
+    const meeting = isMeetingEvent(), date = eventForm.elements.date.value;
+    $('event-date-label').textContent = meeting ? 'Giorno' : 'Dal';
+    $('event-end-date-field').hidden = meeting;
+    eventForm.elements.endDate.required = !meeting;
+    if (meeting) eventForm.elements.endDate.value = date;
+    $('event-start-time-field').hidden = $('event-end-time-field').hidden = !meeting;
+    eventForm.elements.startTime.disabled = eventForm.elements.endTime.disabled = !meeting;
+    eventForm.elements.startTime.required = eventForm.elements.endTime.required = meeting;
+    for (const row of $('event-program').querySelectorAll('.activity-program-item')) {
+      if (meeting) row.querySelector('input[name^="program-date-"]').value = date;
+      const dayField = row.querySelector('.program-day-field');
+      const daySelect = row.querySelector('.program-day-select');
+      dayField.hidden = meeting;
+      daySelect.disabled = meeting;
+    }
+    updateEventContext();
   }
   function totals(target, event) {
     const sums = AM.totals(event);
@@ -399,7 +451,7 @@
       ...(form === eventForm ? [readProgram(), [...materialOptions.values()]] : [])]);
   }
   function setEventView(view) {
-    const tournamentEnabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
+    const tournamentEnabled = tournamentEvent(eventForm.elements.kind.value);
     if (!['presenze', 'quote', 'programma', 'torneo', 'ora'].includes(view) ||
         (view === 'torneo' && !tournamentEnabled)) view = 'programma';
     eventView = view;
@@ -506,10 +558,33 @@
   }
   function updateProgramSummary(row) {
     const value = name => row.querySelector(`[name^="program-${name}-"]`).value;
-    const time = value('time'), end = value('end-time'), place = value('place');
+    const time = value('time'), end = momentEndLabel(row), place = value('place');
     row.querySelector('.program-row-summary').replaceChildren(
       node('strong', (time || '--:--') + (end ? '–' + end : '')),
       node('span', value('title') || 'Nuovo momento'), ...(place ? [node('small', place)] : []));
+  }
+  function momentEnd(row) {
+    const date = row.querySelector('input[name^="program-date-"]').value;
+    const time = row.querySelector('input[name^="program-time-"]').value;
+    if (!date || !time) return null;
+    const moments = [...$('event-program').querySelectorAll('.activity-program-item')]
+      .map(item => ({ row: item, date: item.querySelector('input[name^="program-date-"]').value,
+        time: item.querySelector('input[name^="program-time-"]').value }))
+      .filter(item => item.date && item.time)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    const next = moments[moments.findIndex(item => item.row === row) + 1];
+    if (next) return { date: next.date, time: next.time };
+    return isMeetingEvent() && date === eventForm.elements.date.value
+      ? { date, time: eventForm.elements.endTime.value } : null;
+  }
+  function momentEndTime(row) {
+    return momentEnd(row)?.time || '';
+  }
+  function momentEndLabel(row) {
+    const end = momentEnd(row);
+    if (!end?.time) return '';
+    return end.date === row.querySelector('input[name^="program-date-"]').value
+      ? end.time : `${end.time} · ${dateShort(end.date)}`;
   }
   function refreshDaySelects() {
     const dates = [...$('event-program').children].map(group => group.dataset.date);
@@ -552,12 +627,11 @@
     const label = (name, control) => { const wrapper = node('label'); wrapper.append(node('span', name, 'program-label'), control); return wrapper; };
     const activeDay = [...$('event-program').children].findLast(group => group.open);
     const day = node('input'); day.type = 'hidden';
-    day.value = item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
+    day.value = isMeetingEvent() ? eventForm.elements.date.value :
+      item.date || activeDay?.dataset.date || eventForm.elements.endDate.value || eventForm.elements.date.value;
     day.name = `program-date-${index}`;
     const time = node('input'); time24(time, item.time);
     time.name = `program-time-${index}`;
-    const endTime = node('input'); time24(endTime, item.endTime);
-    endTime.name = `program-end-time-${index}`;
     const title = node('input'); title.type = 'text'; title.maxLength = 200; title.required = true; title.value = item.title || '';
     title.name = `program-title-${index}`;
     title.placeholder = 'es. Lancio o gioco uno';
@@ -579,9 +653,15 @@
       const row = appendProgramMaterial(materialList);
       row.querySelector('[data-material-name]').focus();
     });
-    const remove = button('Rimuovi momento', () => { row.remove(); renderDayTabs(); renderMaterialsSummary(); });
+    const remove = button('Rimuovi momento', () => {
+      row.remove(); renderDayTabs(); renderMaterialsSummary(); updateProgramTimeline();
+    });
     const extra = node('div', undefined, 'activity-program-extra');
     const daySelect = node('select', undefined, 'program-day-select');
+    const dayField = label('Giorno', daySelect);
+    dayField.className = 'program-day-field';
+    dayField.hidden = isMeetingEvent();
+    daySelect.disabled = isMeetingEvent();
     daySelect.addEventListener('change', () => {
       day.value = daySelect.value;
       programDay(day.value).querySelector('.activity-program-day-rows').append(row);
@@ -599,27 +679,26 @@
     materialsColumn.append(node('h4', 'Materiali'), materialList, addMaterial);
     const content = node('div', undefined, 'program-extra-content');
     content.append(descriptionColumn, materialsColumn);
-    extra.append(label('Giorno', daySelect), content, noteDetails, remove);
+    extra.append(dayField, content, noteDetails, remove);
     const legacyPlace = node('p', place.value ? 'Luogo: ' + place.value : 'Luogo non indicato', 'program-legacy-place members-note');
     legacyPlace.hidden = !$('event-place-note').dataset.mixed;
     const times = node('div', undefined, 'activity-program-times');
-    times.append(label('Inizio', time), label('Fine', endTime));
+    times.append(label('Inizio', time));
     const toggle = () => setRowOpen(row, row.dataset.open !== 'true');
     const summary = button('', toggle); summary.className = 'program-row-summary'; summary.dataset.rowToggle = '';
     const detail = button('Dettagli', toggle); detail.className = 'program-detail-toggle'; detail.dataset.rowToggle = '';
     for (const control of [summary, detail]) control.setAttribute('aria-expanded', 'false');
     const now = node('span', 'In corso', 'program-now'); now.hidden = true;
     row.append(day, place, summary, times, label('Momento', title), detail, now, legacyPlace, extra);
-    const checkRange = () => endTime.setCustomValidity(endTime.value && !time.value ? 'Indica anche l’ora di inizio' : '');
     time.addEventListener('change', () => {
-      checkRange();
+      checkMeetingTime();
       sortProgramDay(row.closest('.activity-program-day'));
       updateProgramTimeline();
     });
-    endTime.addEventListener('change', () => { checkRange(); updateProgramTimeline(); });
     programDay(day.value).querySelector('.activity-program-day-rows').append(row);
     sortProgramDay(programDay(day.value));
     updateProgramSummary(row);
+    checkMeetingTime();
     refreshDaySelects();
     if (isNew) { setRowOpen(row, true); renderDayTabs(); }
     return row;
@@ -655,6 +734,7 @@
         a.querySelector('input[name^="program-title-"]').value.localeCompare(
           b.querySelector('input[name^="program-title-"]').value, 'it');
     }).forEach(row => group.querySelector('.activity-program-day-rows').append(row));
+    for (const row of group.querySelectorAll('.activity-program-item')) updateProgramSummary(row);
   }
   function readProgram() {
     return [...$('event-program').querySelectorAll('.activity-program-item')].map(row => {
@@ -667,7 +747,7 @@
             Number(material.querySelector('[data-material-quantity]').value),
           unit: material.querySelector('[data-material-unit]').value,
         }));
-      return { date: field('date'), time: field('time'), endTime: field('end-time'), title: field('title'),
+      return { date: field('date'), time: field('time'), title: field('title'),
         place: field('place'), description: field('description'),
         materials, materialNote: row.dataset.legacyMaterials !== undefined && note === row.dataset.legacyMaterials ? '' : note };
     });
@@ -843,7 +923,7 @@
   }
   function renderTournament() {
     if (branch() !== 'L/C') return;
-    const events = data.events.filter(item => item.branch === 'L/C' && item.kind === 'riunione')
+    const events = data.events.filter(item => item.branch === 'L/C' && tournamentEvent(item.kind))
       .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
     const activeMemberIds = new Set(roster().map(member => member.id));
     const rows = new Map();
@@ -902,14 +982,14 @@
       row.append(node('td', rank), name);
       for (const { key } of columns.slice(1)) {
         const cell = node('td', item.values[key] === null ? '—' : item.values[key].toFixed(1) + '%');
-        cell.title = item.counts[key] + ' riunioni valutate'; row.append(cell);
+        cell.title = item.counts[key] + ' attività valutate'; row.append(cell);
       }
       body.append(row);
     });
     table.append(head, body);
     $('tournament-rankings').replaceChildren(...(scores.length ? [table] : [node('p', 'La classifica comparirà quando saranno salvati i primi punteggi.', 'members-note')]));
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
-    const current = events.find(event => event.date <= today && (event.endDate || event.date) >= today) ||
+    const current = events.find(event => AM.liveProgram(event).active) ||
       events.filter(event => event.date > today).at(-1) || events[0];
     const meeting = (event, primary) => {
       const card = node('article', undefined, 'tournament-meeting' + (primary ? ' tournament-current' : ''));
@@ -934,7 +1014,7 @@
         `Schede ${done}/${total}` + (done < total ? ` · mancano ${total - done}` : '') +
         ` · Presentazioni ${Math.min(presented, units.size)}/${units.size}` +
         (presented < units.size ? ` · mancano ${units.size - presented}` : '');
-      const action = button(complete ? 'Rivedi' : done || presented ? 'Completa valutazione' : 'Valuta riunione',
+      const action = button(complete ? 'Rivedi' : done || presented ? 'Completa valutazione' : 'Valuta attività',
         () => openEvent(event, false, true));
       if (primary && !complete) action.className = 'button button-primary';
       card.append(head, bar, node('p', detail, 'tournament-detail'), action);
@@ -942,7 +1022,7 @@
     };
     $('tournament-events').replaceChildren(...(current ? [meeting(current, true),
       ...events.filter(event => event !== current).map(event => meeting(event, false))] : []));
-    if (!events.length) $('tournament-events').append(node('p', 'Crea una riunione L/C per registrare i punteggi.', 'members-note'));
+    if (!events.length) $('tournament-events').append(node('p', 'Crea una riunione o una caccia L/C per registrare i punteggi.', 'members-note'));
   }
   function readAttendance() {
     return [...$('event-attendance').querySelectorAll('.activity-person')].map(row => ({
@@ -978,10 +1058,13 @@
       row.querySelector('[data-person-status]').textContent = eventView === 'quote'
         ? noFeeDue ? person.status[0].toLocaleUpperCase('it') + person.status.slice(1) + ' · nessuna quota'
           : !person.status ? 'Da registrare'
-            : remaining ? AM.money(remaining) + ' da ricevere' : excess ? AM.money(excess) + ' in più'
+            : remaining ? person.status === 'presente'
+              ? `Presente · mancano ${AM.money(remaining)}` : AM.money(remaining) + ' da ricevere'
+              : excess ? AM.money(excess) + ' in più'
               : feeCents > 0 ? 'Presenza e quota' : 'Saldato'
         : person.status === 'presente' ? feeCents > 0
-          ? person.paidCents >= feeCents ? 'Presenza e quota' : 'Presenza'
+          ? person.paidCents >= feeCents ? 'Presente · quota pagata'
+            : person.paidCents > 0 ? `Presente · mancano ${AM.money(remaining)}` : 'Presente · quota non inserita'
           : '✓ Presente'
           : person.status ? (person.status === 'assente' ? '− ' : '') +
             person.status[0].toUpperCase() + person.status.slice(1) : '○ Da registrare';
@@ -990,17 +1073,17 @@
       const paymentVisible = hasMoney;
       payment.hidden = !paymentVisible;
       if (!paymentVisible) payment.open = false;
-      const paidAction = row.querySelector('[data-attendance-action="paid"]');
-      const presentAction = row.querySelector('[data-attendance-action="present"]');
-      const absentAction = row.querySelector('[data-attendance-action="absent"]');
-      paidAction.hidden = !hasMoney;
-      presentAction.textContent = hasMoney ? 'Presente senza quota' : 'Presente';
-      presentAction.setAttribute('aria-label', hasMoney
-        ? `Registra ${row.dataset.memberName}: presente senza quota`
-        : `Registra ${row.dataset.memberName}: presente`);
-      paidAction.setAttribute('aria-pressed', String(hasMoney && person.status === 'presente' && person.paidCents >= feeCents));
-      presentAction.setAttribute('aria-pressed', String(person.status === 'presente' && (!hasMoney || person.paidCents === 0)));
-      absentAction.setAttribute('aria-pressed', String(person.status === 'assente'));
+      const nextAction = !hasMoney
+        ? person.status === 'presente' ? 'Assente' : 'Presente'
+        : person.status !== 'presente' ? 'Presente senza quota'
+          : person.paidCents >= feeCents ? 'Assente · azzera quota'
+            : person.paidCents > 0 ? `Completa quota · ${AM.money(remaining)}` : 'Presente + quota pagata';
+      row.dataset.cardAction = eventView === 'presenze' ? 'cycle' : '';
+      row.tabIndex = eventView === 'presenze' ? 0 : -1;
+      const currentStatus = row.querySelector('[data-person-status]').textContent;
+      row.setAttribute('aria-label', eventView === 'presenze'
+        ? `${row.dataset.memberName}: ${currentStatus}. Premi Invio o spazio per ${nextAction}.`
+        : `${row.dataset.memberName}: ${currentStatus}.`);
       row.querySelector('[data-balance]').replaceChildren(
         ...[['Atteso', expected], ['Ricevuto', person.paidCents], ['Da ricevere', remaining], ['Versato in più', excess]]
           .map(([label, amount]) => {
@@ -1031,22 +1114,34 @@
     const panel = $('event-live');
     panel.dataset.branch = branch();
     const live = AM.liveProgram({ date: eventForm.elements.date.value,
-      endDate: eventForm.elements.endDate.value, program: readProgram() });
+      endDate: eventForm.elements.endDate.value, kind: eventForm.elements.kind.value,
+      startTime: eventForm.elements.startTime.value, endTime: eventForm.elements.endTime.value,
+      program: readProgram() });
     panel.hidden = eventView !== 'ora';
     const nowButton = $('event-view-nav').querySelector('[data-event-view="ora"]');
     nowButton.hidden = !live.active;
     updateProgramTimeline();
     if (eventView !== 'ora') return;
     if (!live.active) {
-      $('event-live-clock').textContent = 'Fuori dai giorni dell’attività';
-      $('event-live-moment').replaceChildren(node('p', 'Il programma di oggi non è attivo. Apri Programma per preparare i prossimi momenti.'));
+      $('event-live-clock').textContent = live.finished ? 'Riunione conclusa' : 'Fuori dai giorni dell’attività';
+      $('event-live-moment').replaceChildren(node('p', live.finished
+        ? 'L’orario della riunione è terminato.' : 'Il programma di oggi non è attivo. Apri Programma per preparare i prossimi momenti.'));
       return;
     }
     $('event-live-clock').textContent = 'Oggi · ' + dateLabel(live.date) + ' · ' + live.time + ' · ora italiana';
     const content = $('event-live-moment'), moment = live.current || live.next;
-    const timeRange = moment ? `${moment.time}${moment.endTime ? '–' + moment.endTime : ''}` : '';
-    const noMoment = readProgram().some(item => item.date === live.date && item.time)
-      ? 'Programma di oggi concluso' : 'Nessun momento con orario per oggi';
+    const endLabel = moment?.endTime
+      ? `${moment.endTime}${moment.endDate && moment.endDate !== moment.date ? ' · ' + dateShort(moment.endDate) : ''}` : '';
+    const timeRange = moment ? `${moment.time}${endLabel ? '–' + endLabel : ''}` : '';
+    const nextEndLabel = live.next?.endTime
+      ? `${live.next.endTime}${live.next.endDate && live.next.endDate !== live.next.date
+        ? ' · ' + dateShort(live.next.endDate) : ''}` : '';
+    const hasTimedMoments = readProgram().some(item => item.date === live.date && item.time);
+    const meetingRange = eventForm.elements.kind.value === 'riunione' &&
+      eventForm.elements.startTime.value && eventForm.elements.endTime.value
+      ? `${eventForm.elements.startTime.value}–${eventForm.elements.endTime.value}` : '';
+    const noMoment = hasTimedMoments ? 'Programma di oggi concluso'
+      : meetingRange ? `Riunione · ${meetingRange}` : 'Nessun momento con orario per oggi';
     content.replaceChildren(node('h4', live.current ? `${timeRange} · ${moment.title}`
       : live.next ? `Si comincia alle ${timeRange} · ${moment.title}` : noMoment));
     if (moment) {
@@ -1059,15 +1154,16 @@
         content.append(node('p', 'Nota materiali: ' + (moment.materialNote || moment.materials)));
     } else content.append(node('p', noMoment === 'Programma di oggi concluso'
       ? 'Nessun altro momento con orario è previsto oggi.'
-      : 'Completa il programma indicando giorno e ora: non viene ipotizzata un’attività in corso.'));
+      : meetingRange && !hasTimedMoments ? 'Orario della riunione.'
+        : 'Completa il programma indicando giorno e ora: non viene ipotizzata un’attività in corso.'));
     if (live.current) content.append(node('p', live.next
-      ? `A seguire · ${live.next.time}${live.next.endTime ? '–' + live.next.endTime : ''} · ${live.next.title}`
+      ? `A seguire · ${live.next.time}${nextEndLabel ? '–' + nextEndLabel : ''} · ${live.next.title}`
       : 'Ultimo momento con orario previsto per oggi.'));
     for (const item of live.unscheduled) content.append(node('p', 'Oggi, senza orario · ' + item.title));
   }
   $('event-live-attendance').onclick = () => {
     setEventView('presenze');
-    [...$('event-attendance').querySelectorAll('[data-attendance-action]')].find(action => !action.hidden)?.focus();
+    [...$('event-attendance').querySelectorAll('.activity-person')].find(row => !row.hidden)?.focus();
   };
   window.setInterval(() => { if ($('event-dialog').open) renderLiveProgram(); }, 30000);
   window.addEventListener('focus', () => { if ($('event-dialog').open) renderLiveProgram(); });
@@ -1105,9 +1201,13 @@
     const todayText = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
     eventForm.elements.date.value = item?.date || (winterCamp ? '2027-01-02' : todayText);
     eventForm.elements.endDate.value = item?.endDate || item?.date || (winterCamp ? '2027-01-05' : todayText);
+    const timedMoments = (item?.program || []).filter(moment => moment.time)
+      .slice().sort((a, b) => a.time.localeCompare(b.time));
+    eventForm.elements.startTime.value = item?.startTime || timedMoments[0]?.time || '';
+    eventForm.elements.endTime.value = item?.endTime || timedMoments.at(-1)?.endTime || '';
     previousStartDate = eventForm.elements.date.value;
-    $('event-context').textContent = (item?.kind || (winterCamp ? 'uscita' : 'riunione')) + ' · ' +
-      dateRange({ date: eventForm.elements.date.value, endDate: eventForm.elements.endDate.value });
+    syncEventKindFields();
+    checkMeetingTime();
     if (winterCamp) eventForm.elements.title.value = 'Campo invernale';
     const attendance = item?.attendance || [];
     const savedUnits = new Map((item?.tournament?.members || []).map(person => [person.personId, person.unit]));
@@ -1139,13 +1239,27 @@
         row.dataset.memberName = person.name;
         row.dataset.unit = person.unit || '';
         row.dataset.role = person.role || '';
-        const quickAttendance = (status, paidMode) => {
+        const cycleAttendance = () => {
           try {
             const previous = AM.cents(paid.value);
             const fee = AM.cents(eventForm.elements.fee.value);
-            const received = paidMode === 'paid' ? Math.max(previous, fee)
-              : status === 'presente' && fee === 0 ? previous : 0;
-            if (received < previous && !confirm(`Azzerare i versamenti registrati per ${person.name}?`)) return;
+            let status, received = previous;
+            if (fee === 0) {
+              status = select.value === 'presente' ? 'assente' : 'presente';
+              if (status === 'assente' && previous > 0 &&
+                  !confirm(`Segnare ${person.name} assente e azzerare il versato di ${AM.money(previous)}?`)) return;
+              if (status === 'assente') received = 0;
+            } else if (select.value !== 'presente') {
+              status = 'presente';
+            } else if (previous < fee) {
+              status = 'presente';
+              received = fee;
+            } else {
+              if (previous > 0 &&
+                  !confirm(`Segnare ${person.name} assente e azzerare il versato di ${AM.money(previous)}?`)) return;
+              status = 'assente';
+              received = 0;
+            }
             select.value = status;
             paid.value = (received / 100).toFixed(2);
             paid.dataset.edited = 'manual';
@@ -1160,17 +1274,6 @@
         const status = node('span', undefined, 'activity-person-status');
         status.dataset.personStatus = '';
         summary.append(node('strong', person.name), status);
-        const quickActions = node('div', undefined, 'activity-person-quick-actions');
-        const paidAction = button('Presente + quota pagata', () => quickAttendance('presente', 'paid'));
-        paidAction.dataset.attendanceAction = 'paid';
-        paidAction.setAttribute('aria-label', `Registra ${person.name}: presente con quota pagata`);
-        const presentAction = button('Presente senza quota', () => quickAttendance('presente', 'none'));
-        presentAction.dataset.attendanceAction = 'present';
-        presentAction.setAttribute('aria-label', `Registra ${person.name}: presente senza quota`);
-        const absentAction = button('Assente', () => quickAttendance('assente', 'none'));
-        absentAction.dataset.attendanceAction = 'absent';
-        absentAction.setAttribute('aria-label', `Registra ${person.name}: assente`);
-        quickActions.append(paidAction, presentAction, absentAction);
         const label = node('label', 'Presenza'), select = node('select');
         select.name = 'attendance-' + person.personId; select.dataset.personId = person.personId;
         options(select, [['', 'Da registrare'], ['presente', 'Presente'], ['assente', 'Assente'], ['giustificato', 'Giustificato']]);
@@ -1213,7 +1316,19 @@
         paymentControls.append(paidLabel);
         const balance = node('div', undefined, 'activity-fee-balance'); balance.dataset.balance = '';
         payment.append(paymentControls, balance, node('p', 'Il versato è il totale ricevuto, acconti inclusi.', 'members-note'));
-        row.append(summary, quickActions, controls, payment);
+        row.setAttribute('role', 'group');
+        row.setAttribute('aria-keyshortcuts', 'Enter Space');
+        row.addEventListener('click', event => {
+          const control = event.target.closest('a,button,input,select,textarea,summary,details');
+          if (eventView !== 'presenze' || control && row.contains(control)) return;
+          cycleAttendance();
+        });
+        row.addEventListener('keydown', event => {
+          if (eventView !== 'presenze' || event.target !== row || !['Enter', ' '].includes(event.key)) return;
+          event.preventDefault();
+          cycleAttendance();
+        });
+        row.append(summary, controls, payment);
         return row;
       };
       const orderedGroup = branch() === 'E/G'
@@ -1244,10 +1359,11 @@
     $('event-program').replaceChildren();
     for (const programItem of item?.program || []) appendProgram(programItem);
     prepareProgramDays();
+    checkMeetingTime();
     renderMaterialsSummary();
     for (const filter of $('event-program-view').querySelectorAll('[data-material-filter]'))
       filter.setAttribute('aria-pressed', String(filter.dataset.materialFilter === materialFilter));
-    const tournamentEnabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
+    const tournamentEnabled = tournamentEvent(eventForm.elements.kind.value);
     $('event-tournament').hidden = !tournamentEnabled;
     $('event-tournament').open = focusTournament;
     if (tournamentEnabled) renderTournamentControls(persons.map(person), item);
@@ -1255,7 +1371,7 @@
     updateAttendance();
     openDialog('event-dialog', eventForm);
     if (focusAttendance) queueMicrotask(() =>
-      [...$('event-attendance').querySelectorAll('[data-attendance-action]')].find(action => !action.hidden)?.focus());
+      [...$('event-attendance').querySelectorAll('.activity-person')].find(row => !row.hidden)?.focus());
     if (focusTournament) queueMicrotask(() => $('event-tournament').querySelector('[data-presentation]')?.focus());
   }
   function guidance() {
@@ -1343,10 +1459,11 @@
     save('events', eventForm, editingEvent, {
       kind: eventForm.elements.kind.value, title: eventForm.elements.title.value, date: eventForm.elements.date.value,
       endDate: eventForm.elements.endDate.value, feeCents, attendance,
+      ...(isMeetingEvent() ? { startTime: eventForm.elements.startTime.value, endTime: eventForm.elements.endTime.value } : {}),
       tasks: readSteps($('event-tasks')),
       program: readProgram(), materials: [...materialOptions.values()],
       shopping: editingEvent?.shopping || [],
-      ...(branch() === 'L/C' && eventForm.elements.kind.value === 'riunione' ? { tournament: readTournament() } : {}),
+      ...(tournamentEvent(eventForm.elements.kind.value) ? { tournament: readTournament() } : {}),
     }, 'event-error', 'event-dialog');
   };
   pathForm.onsubmit = async event => {
@@ -1387,7 +1504,9 @@
   $('add-event-material').onclick = addActivityMaterial;
   $('add-path-step').onclick = () => { appendStep($('path-steps')).focus(); closure(); };
   eventForm.elements.kind.onchange = () => {
-    const enabled = branch() === 'L/C' && eventForm.elements.kind.value === 'riunione';
+    syncEventKindFields();
+    prepareProgramDays();
+    const enabled = tournamentEvent(eventForm.elements.kind.value);
     $('event-tournament').hidden = !enabled;
     if (enabled && !$('event-tournament').querySelector('.tournament-person')) {
       const attendance = readAttendance().map(person => {
@@ -1399,20 +1518,24 @@
     setEventView(eventView);
   };
   eventForm.elements.date.oninput = () => {
-    if (!eventForm.elements.endDate.value || eventForm.elements.endDate.value === previousStartDate ||
-        eventForm.elements.endDate.value < eventForm.elements.date.value)
+    if (!isMeetingEvent() && (!eventForm.elements.endDate.value || eventForm.elements.endDate.value === previousStartDate ||
+        eventForm.elements.endDate.value < eventForm.elements.date.value))
       eventForm.elements.endDate.value = eventForm.elements.date.value;
     previousStartDate = eventForm.elements.date.value;
-    for (const date of $('event-program').querySelectorAll('input[name^="program-date-"]'))
+    if (isMeetingEvent()) syncEventKindFields();
+    else for (const date of $('event-program').querySelectorAll('input[name^="program-date-"]'))
       if (date.value < eventForm.elements.date.value || date.value > eventForm.elements.endDate.value)
         date.value = eventForm.elements.date.value;
     prepareProgramDays();
+    updateEventContext();
   };
   eventForm.elements.endDate.oninput = () => {
+    if (isMeetingEvent()) return;
     for (const date of $('event-program').querySelectorAll('input[name^="program-date-"]'))
       if (date.value < eventForm.elements.date.value || date.value > eventForm.elements.endDate.value)
         date.value = eventForm.elements.endDate.value;
     prepareProgramDays();
+    updateEventContext();
   };
   pathForm.elements.kind.onchange = () => {
     pathForm.elements.closed.checked = false;

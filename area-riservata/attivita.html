@@ -98,8 +98,10 @@
         <summary>Dati dell’attività</summary>
         <div class="members-form-grid">
           <label>Tipo<select name="kind" required></select></label>
-          <label>Dal<input name="date" type="date" required></label>
-          <label>Al<input name="endDate" type="date" required></label>
+          <label><span id="event-date-label">Dal</span><input name="date" type="date" required></label>
+          <label id="event-end-date-field">Al<input name="endDate" type="date" required></label>
+          <label id="event-start-time-field" hidden>Ora di inizio<input name="startTime" type="text" disabled></label>
+          <label id="event-end-time-field" hidden>Ora di fine<input name="endTime" type="text" disabled></label>
           <label id="event-fee-setting">Quota per socio (€)<input name="fee" type="number" inputmode="decimal" min="0" max="1000000" step="0.01" value="0" required></label>
           <label class="members-wide">Titolo<input name="title" maxlength="200" required></label>
           <label class="members-wide">Luogo dell’attività<input id="event-place" name="place" maxlength="200" placeholder="Luogo o punto di ritrovo" aria-describedby="event-place-note"></label>

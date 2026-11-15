@@ -175,19 +175,19 @@ async function startNasDemo() {
           paidCents: 0,
         }));
         await request("activities/events", "POST", {
-          branch, kind: "riunione", title, date, feeCents: 0, attendance,
+          branch, kind: "riunione", title, date, startTime: "15:30", endTime: "17:30", feeCents: 0, attendance,
           tasks: [{ title: "Aprire la sede e preparare il materiale", done: true },
             { title: "Riordinare dopo la riunione", done: true }],
           program: [
-            { date, time: "15:30", endTime: "15:45", title: "Accoglienza e cerchio", place: places[branch],
+            { date, time: "15:30", title: "Accoglienza e cerchio", place: places[branch],
               description: "Saluto iniziale, presenze e lancio del pomeriggio.", materials: [] },
-            { date, time: "15:45", endTime: "17:15", title, place: places[branch],
+            { date, time: "15:45", title, place: places[branch],
               description: branch === "L/C" ? "Lancio del racconto, gioco per sestiglie e lavoro sulle prede." :
                 branch === "E/G" ? "Lavoro di squadriglia e prova pratica delle tecniche." :
                   "Confronto in comunita e preparazione del servizio.",
               materials: [{ title: "Corde", quantity: 6, unit: "pezzi" },
                 { title: "Cartelloni", quantity: 3, unit: "fogli" }] },
-            { date, time: "17:15", endTime: "17:30", title: "Verifica e saluti", place: places[branch],
+            { date, time: "17:15", title: "Verifica e saluti", place: places[branch],
               description: "Ogni gruppo racconta cosa ha imparato.", materials: [] },
           ],
           materials: [{ title: "Corde", done: true, reused: true },
@@ -212,19 +212,19 @@ async function startNasDemo() {
         for (let day = 0; day <= duration; day++) {
           const momentDate = dateAgo(month * 30 - day);
           program.push(
-            { date: momentDate, time: "08:30", endTime: "09:00", title: day ? "Colazione e cerchio" : "Ritrovo e partenza",
+            { date: momentDate, time: "08:30", title: day ? "Colazione e cerchio" : "Ritrovo e partenza",
               place: camp ? "Base scout del bosco" : "Parco comunale",
               description: "Controllo del materiale e presentazione del programma.",
               materials: [{ title: "Quaderni", quantity: memberCount, unit: "pezzi" }] },
-            { date: momentDate, time: "09:00", endTime: "12:00",
+            { date: momentDate, time: "09:00",
               title: branch === "L/C" ? "Grande gioco nella giungla" : branch === "E/G" ? "Hike e orientamento" : "Strada e servizio",
               place: camp ? "Base scout del bosco" : "Parco comunale",
               description: "Percorso a gruppi con prove pratiche e verifica finale.",
               materials: [{ title: "Corde", quantity: 8, unit: "pezzi" }] },
-            { date: momentDate, time: "12:00", endTime: "14:00", title: "Pranzo e riordino",
+            { date: momentDate, time: "12:00", title: "Pranzo e riordino",
               place: camp ? "Base scout del bosco" : "Parco comunale",
               materials: [{ title: "Pasta", quantity: 5, unit: "kg" }] },
-            { date: momentDate, time: "14:00", endTime: "16:30", title: day === duration ? "Verifica e rientro" : "Laboratori e imprese",
+            { date: momentDate, time: "14:00", title: day === duration ? "Verifica e rientro" : "Laboratori e imprese",
               place: camp ? "Base scout del bosco" : "Parco comunale", materials: [] });
         }
         await request("activities/events", "POST", {
@@ -245,16 +245,16 @@ async function startNasDemo() {
       }));
       const event = {
         branch, kind: "riunione", title: "Riunione di oggi - " + meetingTitles[branch][0],
-        date: today, feeCents: 1000, attendance,
+        date: today, startTime: "15:30", endTime: "17:30", feeCents: 1000, attendance,
         tasks: [{ title: "Ritirare le chiavi della sede", done: false }],
         program: [
-          { date: today, time: "15:30", endTime: "15:45", title: "Accoglienza", place: places[branch],
+          { date: today, time: "15:30", title: "Accoglienza", place: places[branch],
             materials: [{ title: "Cerchi", quantity: 6, unit: "pezzi" }] },
-          { date: today, time: "15:45", endTime: "17:00", title: "Gioco a squadre", place: places[branch],
+          { date: today, time: "15:45", title: "Gioco a squadre", place: places[branch],
             description: "Dividere i ragazzi in squadre e spiegare il gioco.",
             materials: [{ title: "Cerchi", quantity: 4, unit: "pezzi" },
               { title: "Cartelloni", quantity: 2, unit: "fogli" }] },
-          { date: today, time: "17:00", endTime: "17:30", title: "Cerchio e verifica", place: places[branch],
+          { date: today, time: "17:00", title: "Cerchio e verifica", place: places[branch],
             materials: "Nota di esempio: portare il quaderno." },
         ],
         materials: [
@@ -266,12 +266,12 @@ async function startNasDemo() {
       await request("activities/events", "POST", event);
       await request("activities/events", "POST", {
         ...event, kind: branch === "L/C" ? "caccia" : branch === "E/G" ? "uscita" : "route",
-        title: "Fine settimana al bosco - " + branch, tournament: undefined,
+        title: "Fine settimana al bosco - " + branch, tournament: undefined, startTime: undefined, endTime: undefined,
         date: tomorrow, endDate: new Date(followingDay.getTime() + 86400000).toISOString().slice(0, 10),
         attendance: members.map(member => ({ personId: member.id, status: "" })),
         program: event.program.map(moment => ({ ...moment, date: tomorrow })).concat({
           date: new Date(followingDay.getTime() + 86400000).toISOString().slice(0, 10),
-          time: "09:00", endTime: "12:00", title: "Esplorazione", place: "Bosco",
+          time: "09:00", title: "Esplorazione", place: "Bosco",
         }),
       });
       if (branch !== "R/S") for (const [number, member] of members.entries()) {
