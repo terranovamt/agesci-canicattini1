@@ -1209,7 +1209,9 @@
     syncEventKindFields();
     checkMeetingTime();
     if (winterCamp) eventForm.elements.title.value = 'Campo invernale';
-    const attendance = item?.attendance || [];
+    const attendance = (item?.attendance || []).map(person => ({
+      ...person, status: person.status || 'assente',
+    }));
     const savedUnits = new Map((item?.tournament?.members || []).map(person => [person.personId, person.unit]));
     const person = entry => {
       const current = data.members.find(member => member.id === entry.personId);
@@ -1217,7 +1219,7 @@
         role: current?.role ?? entry.role ?? '' };
     };
     const persons = [...attendance.map(person), ...roster().filter(member => !attendance.some(entry => entry.personId === member.id))
-      .map(member => ({ personId: member.id, name: member.name, status: '', unit: member.unit, role: member.role }))];
+      .map(member => ({ personId: member.id, name: member.name, status: 'assente', unit: member.unit, role: member.role }))];
     const grouped = branch() === 'R/S' ? [['', persons]] : [...persons.reduce((groups, person) => {
       const unit = person.unit || (branch() === 'L/C' ? 'Senza sestiglia' : 'Senza squadriglia');
       if (!groups.has(unit)) groups.set(unit, []);

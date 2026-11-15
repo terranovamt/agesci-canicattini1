@@ -188,7 +188,8 @@ assente, giustificato) e una lista di attivita o cose da fare completabili.
 La lista presenze usa i ragazzi della branca
 locale, escludendo i sospesi da oltre un anno; nomi e presenze gia registrati
 restano nell'incontro anche dopo un passaggio. I nuovi soci vengono proposti
-quando si riapre l'incontro, senza segnare assenze automatiche.
+come assenti quando si apre l'incontro; i soci senza uno stato salvato partono
+anch'essi assenti.
 
 Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni e cacce L/C,
 **Torneo** mostrano solo i controlli pertinenti, senza ricreare il modulo.

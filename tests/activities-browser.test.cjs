@@ -99,12 +99,14 @@ test("demo screens expose navigation, individual paths, clear attendance and com
         await wait("document.getElementById('event-dialog')?.open");
         assert.equal(await page.evaluate("document.getElementById('event-settings').checkVisibility()"), false,
           "activity data appear only in Program");
+        assert.equal(await page.evaluate("document.querySelectorAll('#event-attendance .activity-person[data-status=\"\"]').length"), 0,
+          "members without a saved status default to absent");
         await page.evaluate(`{
           const row = document.querySelector('#event-attendance .activity-person');
           const paid = row.querySelector('[data-paid]');
           paid.value = '0.00'; paid.dispatchEvent(new Event('input',{bubbles:true}));
           const status = row.querySelector('select');
-          status.value = ''; status.dispatchEvent(new Event('change',{bubbles:true}));
+          status.value = 'assente'; status.dispatchEvent(new Event('change',{bubbles:true}));
         }`);
         const initialAttendance = await page.evaluate(`(() => ({
           fee: ACTIVITIES_MODEL.cents(document.querySelector('#event-form [name=fee]').value),
@@ -116,7 +118,7 @@ test("demo screens expose navigation, individual paths, clear attendance and com
           return [row.querySelectorAll('[data-attendance-action]').length, row.dataset.cardAction, row.tabIndex];
         })()`), [0, 'cycle', 0]);
         await click('#event-attendance .activity-presence-options > summary');
-        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), '',
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-person').dataset.status"), 'assente',
           "secondary attendance controls do not trigger the card cycle");
         await click('#event-attendance .activity-person');
         assert.deepEqual(await page.evaluate(`(() => ({
@@ -799,6 +801,8 @@ test("login autofill, education dates, activities and progression work on four s
         await fill('#event-form [name=title]', "Incontro " + branch + " " + label);
         await fill('#event-form [name=date]', "2025-11-15");
         await click('[data-event-view="presenze"]');
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "assente",
+          "new activity attendance defaults to absent");
         await click('#event-attendance .activity-person');
         assert.equal(await page.evaluate("document.querySelector('#event-attendance select').value"), "presente");
         await click('[data-event-view="programma"]');
