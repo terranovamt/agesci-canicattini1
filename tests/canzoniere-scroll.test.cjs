@@ -77,6 +77,7 @@ test("autoscroll counts down three seconds, follows BPM timing, and stops at the
   const app = harness();
   app.button.listeners.get("click")();
   assert.equal(app.button.getAttribute("aria-pressed"), "true");
+  assert.equal(app.button.getAttribute("aria-label"), "Metti in pausa lo scorrimento automatico");
   assert.equal(app.status.textContent, "Partenza tra 3 secondi.");
   assert.equal(app.intervals.size, 1);
   const countdown = app.intervals.values().next().value;
@@ -97,6 +98,7 @@ test("autoscroll counts down three seconds, follows BPM timing, and stops at the
   await secondLine[1].callback();
   assert.equal(app.status.textContent, "Fine della canzone.");
   assert.equal(app.button.getAttribute("aria-pressed"), "false");
+  assert.equal(app.button.getAttribute("aria-label"), "Avvia lo scorrimento automatico");
 });
 
 test("manual touch pauses countdown and the correction slider updates the interval", () => {

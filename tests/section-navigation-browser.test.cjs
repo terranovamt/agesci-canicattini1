@@ -118,7 +118,7 @@ test('all screens fit real responsive viewports and section navigation preserves
               record({ wayfinding: visible(brand) && !!header.querySelector('.reserved-title')?.textContent &&
                 brand.getAttribute('href') === '/area-riservata/' &&
                 brand.getBoundingClientRect().height >= 44,
-                commonLinks: header.querySelector('.reserved-links').textContent === 'Home capiAttivitàSoci',
+                commonLinks: header.querySelector('.reserved-links').textContent === 'Home capiAttivitàSociDocumentiCanzoniere',
                 compactHeader: !compact || header.getBoundingClientRect().height <= 76,
                 menuBreakpoint: visible(toggle) === compact && visible(menu) === !compact,
                 menuAria: toggle.getAttribute('aria-controls') === menu.id && toggle.getAttribute('aria-expanded') === 'false' });

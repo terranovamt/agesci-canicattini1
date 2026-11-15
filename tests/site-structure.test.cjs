@@ -116,33 +116,35 @@ test("public Canzoniere has an index and a slug-based song detail page", () => {
   assert.match(read("canzoniere/index.html"), /id="song-list"[^>]*aria-busy="true"/);
   const songPage = read("canzoniere/canzone.html");
   assert.match(songPage, /id="song-detail"[^>]*aria-busy="true"/);
-  for (const id of ["auto-scroll", "scroll-correction", "song-settings-panel", "song-settings-toggle",
+  for (const id of ["auto-scroll", "notation-toggle", "notation-indicator", "scroll-correction",
+    "song-settings-panel", "song-settings-toggle",
     "playlist-controls", "playlist-previous", "playlist-next", "print-chords", "print-song", "playlist-print"])
     assert.match(songPage, new RegExp(`id="${id}"`));
   assert.doesNotMatch(songPage, /add-song-to-playlist|Aggiungi alla scaletta/);
-  assert.match(read("canzoniere/index.html"), /id="personal-playlist-items"/);
-  assert.match(read("canzoniere/index.html"), /id="song-filter-toggle"/);
-  assert.match(read("canzoniere/index.html"), /id="playlist-add-form"/);
-  assert.match(read("canzoniere/index.html"), /id="quick-presets"/);
-  assert.match(read("canzoniere/index.html"), /id="published-playlists"/);
+  const canzoniereIndex = read("canzoniere/index.html");
+  assert.match(canzoniereIndex, /id="song-filter-toggle"/);
+  assert.match(canzoniereIndex, /id="published-playlists"/);
+  assert.doesNotMatch(canzoniereIndex, /La tua scaletta|Genera una scaletta|personal-playlist|playlist-generator|quick-presets/);
   assert.match(read("assets/css/canzoniere.css"), /prefers-reduced-motion:\s*reduce/);
   assert.match(read("assets/css/canzoniere.css"), /@media print/);
   assert.doesNotMatch(read("canzoniere/index.html") + read("canzoniere/canzone.html"), /<script[^>]+(?:src|href)="https?:/);
 });
 
-test("admin Canzoniere exposes guarded CRUD, import preview, backup and rollback surfaces", () => {
+test("Canzoniere exposes manager CRUD, leader playlist tools, import preview and backup", () => {
   const page = read("area-riservata/canzoniere.html");
   const controller = read("assets/js/canzoniere-admin.js");
   assert.match(page, /name="robots" content="noindex"/);
   assert.match(page, /class="reserved-header"/);
   for (const id of ["admin-songs-panel", "admin-tags-panel", "admin-albums-panel",
     "admin-presets-panel", "admin-playlists-panel", "admin-backup-panel",
-    "admin-song-form", "admin-chordpro-preview", "admin-import-preview",
+    "admin-leader-tools-panel", "leader-playlist-add-form", "admin-song-form",
+    "admin-chordpro-preview", "admin-import-preview",
     "admin-import-confirm", "admin-backup-json", "admin-backup-chordpro"])
     assert.match(page, new RegExp(`id="${id}"`));
   assert.match(page, /accept="\.txt,\.cho,\.pro,text\/plain"/);
   assert.match(controller, /!window\.ACCESSO\?\.verificata\(\)/);
-  assert.match(controller, /!window\.NAS\?\.user\?\.admin/);
+  assert.match(controller, /user\.serviceBranch/);
+  assert.match(controller, /request\("\/manage"\)/);
   assert.match(controller, /window\.confirm\(/);
   assert.match(controller, /state\[kind\] = snapshot/);
   assert.match(controller, /M\.importChordText/);

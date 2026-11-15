@@ -6,8 +6,10 @@
     location.replace("./");
     return;
   }
-  if (!window.NAS?.user?.admin) {
-    accessStatus.textContent = "Gestione riservata all’amministratore.";
+  const user = window.NAS?.user;
+  const canManage = !!user && (user.admin || ["L/C", "E/G", "R/S"].includes(user.serviceBranch));
+  if (!canManage) {
+    accessStatus.textContent = "Gestione riservata ai capi con branca di servizio e all’amministratore.";
     accessStatus.dataset.state = "error";
     location.replace("./");
     return;
@@ -18,6 +20,13 @@
   const M = window.CANZONIERE_MODEL;
   const VIEW = window.CANZONIERE_VIEW;
   const state = { songs: [], tags: [], albums: [], presets: [], playlists: [] };
+  const playlistStore = window.CANZONIERE_PLAYLIST_STORE;
+  const storedLeaderPlaylist = playlistStore.read();
+  let leaderPlaylistSlugs = storedLeaderPlaylist.slugs;
+  let leaderPlaylistError = storedLeaderPlaylist.error;
+  let leaderPlaylistMessage = "";
+  let leaderGeneratedSlugs = [];
+  let lastLeaderPreset = null;
   const forms = {
     songs: $("admin-song-form"),
     tags: $("admin-tag-form"),
@@ -165,6 +174,140 @@
       (playlist) => (playlist.published ? "Pubblicata" : "Bozza") + " · " + playlist.songSlugs.length + " canzoni",
       editPlaylist);
     fillBackupSongs($("admin-backup-song").value);
+    renderLeaderTools();
+  }
+
+  function persistLeaderPlaylist(slugs, message) {
+    if (slugs.length > 100) {
+      $("leader-personal-status").textContent = "La scaletta può contenere al massimo 100 canzoni.";
+      $("leader-personal-status").dataset.state = "error";
+      return;
+    }
+    const result = playlistStore.write(slugs);
+    if (!result.ok) {
+      leaderPlaylistError = result.error;
+      $("leader-personal-status").textContent = "Salvataggio della scaletta non riuscito: " + result.error.message;
+      $("leader-personal-status").dataset.state = "error";
+      console.error("Salvataggio scaletta capi non riuscito", result.error);
+      return;
+    }
+    leaderPlaylistSlugs = [...slugs];
+    leaderPlaylistError = null;
+    leaderPlaylistMessage = message;
+    renderLeaderTools();
+  }
+
+  function renderLeaderSearchResults(query) {
+    const list = $("leader-playlist-search-results");
+    const status = $("leader-playlist-search-status");
+    list.replaceChildren();
+    const normalized = M.normalizeSearch(query);
+    if (!normalized) {
+      status.textContent = "Inserisci un titolo o un autore da cercare.";
+      return;
+    }
+    const matches = state.songs.filter(song => M.matchesSearch(song, normalized)).slice(0, 12);
+    matches.forEach(song => {
+      const item = node("li");
+      const title = node("span", song.author ? song.title + " · " + song.author : song.title);
+      const exists = leaderPlaylistSlugs.includes(song.slug);
+      const add = actionButton(exists ? "Già nella scaletta" : "Aggiungi", () => {
+        persistLeaderPlaylist([...leaderPlaylistSlugs, song.slug], "Canzone aggiunta alla scaletta.");
+        renderLeaderSearchResults($("leader-playlist-search").value);
+      }, "secondary", exists);
+      item.append(title, add);
+      list.append(item);
+    });
+    status.textContent = matches.length
+      ? "Mostrate " + matches.length + (matches.length === 1 ? " canzone." : " canzoni.")
+      : "Nessuna canzone trovata.";
+  }
+
+  function renderLeaderPlaylist() {
+    const list = $("leader-playlist-items");
+    list.replaceChildren();
+    const songs = new Map(state.songs.map(song => [song.slug, song]));
+    leaderPlaylistSlugs.forEach((slug, index) => {
+      const item = node("li", undefined, "playlist-item");
+      const position = node("span", String(index + 1), "playlist-item-position");
+      const song = songs.get(slug);
+      const title = node(song ? "a" : "span", song?.title || "Canzone non disponibile");
+      if (song) title.href = "../canzoniere/canzone.html?slug=" + encodeURIComponent(slug);
+      const remove = actionButton("Rimuovi", () => persistLeaderPlaylist(
+        leaderPlaylistSlugs.filter(itemSlug => itemSlug !== slug), "Canzone rimossa dalla scaletta."));
+      remove.className = "button button-secondary playlist-remove";
+      remove.setAttribute("aria-label", "Rimuovi " + (song?.title || "canzone non disponibile") + " dalla scaletta");
+      item.append(position, title, remove);
+      list.append(item);
+    });
+    const status = $("leader-personal-status");
+    status.dataset.state = leaderPlaylistError ? "error" : "";
+    status.textContent = leaderPlaylistError
+      ? "La scaletta non è disponibile in questo browser: " + leaderPlaylistError.message
+      : leaderPlaylistMessage || (leaderPlaylistSlugs.length
+        ? leaderPlaylistSlugs.length + " canzoni nella scaletta di questo browser."
+        : "Aggiungi una canzone per creare la tua scaletta.");
+    leaderPlaylistMessage = "";
+    $("leader-playlist-items").setAttribute("aria-busy", "false");
+    const share = $("leader-share-playlist"), clear = $("leader-clear-playlist"), open = $("leader-open-playlist");
+    share.disabled = clear.disabled = writing || !leaderPlaylistSlugs.length;
+    open.hidden = !leaderPlaylistSlugs.length;
+    $("leader-share-playlist-controls").hidden = true;
+    if (leaderPlaylistSlugs.length) {
+      open.href = playlistStore.shareUrl(leaderPlaylistSlugs, new URL("../canzoniere/", window.location.href).href);
+    }
+  }
+
+  function shuffleLeaderSongs(items) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index--) {
+      const target = Math.floor(Math.random() * (index + 1));
+      [result[index], result[target]] = [result[target], result[index]];
+    }
+    return result;
+  }
+
+  function generateLeaderPlaylist(preset) {
+    lastLeaderPreset = preset;
+    const fixed = Array.isArray(preset.songSlugs) && preset.songSlugs.length > 0;
+    const bySlug = new Map(state.songs.map(song => [song.slug, song]));
+    const candidates = fixed
+      ? preset.songSlugs.map(slug => bySlug.get(slug)).filter(Boolean)
+      : state.songs.filter(song => (preset.tagSlugs || []).every(slug => song.tagSlugs.includes(slug)));
+    const songs = (fixed ? candidates : shuffleLeaderSongs(candidates)).slice(0, preset.limit || 12);
+    leaderGeneratedSlugs = songs.map(song => song.slug);
+    const list = $("leader-generated-items");
+    list.replaceChildren(...songs.map((song, index) => {
+      const item = node("li", undefined, "playlist-item");
+      item.append(node("span", String(index + 1), "playlist-item-position"));
+      const title = node("a", song.title);
+      title.href = "../canzoniere/canzone.html?slug=" + encodeURIComponent(song.slug);
+      item.append(title);
+      return item;
+    }));
+    $("leader-regenerate-playlist").hidden = !songs.length;
+    $("leader-use-generated").hidden = !songs.length;
+    $("leader-generated-status").textContent = songs.length
+      ? "Proposta di " + songs.length + " canzoni per «" + preset.title + "»."
+      : "Nessuna canzone disponibile per «" + preset.title + "».";
+  }
+
+  function renderLeaderTools() {
+    renderLeaderPlaylist();
+    const moment = $("leader-playlist-moment"), selectedMoment = moment.value;
+    moment.replaceChildren();
+    option(moment, "Scegli un momento", "");
+    state.tags.filter(tag => tag.category === "momento")
+      .sort((a, b) => a.name.localeCompare(b.name, "it"))
+      .forEach(tag => option(moment, tag.name, tag.slug));
+    moment.value = [...moment.options].some(item => item.value === selectedMoment) ? selectedMoment : "";
+    $("leader-generate-moment").disabled = writing || moment.options.length < 2;
+    const presets = $("leader-quick-presets");
+    presets.replaceChildren(...state.presets.map(preset => {
+      const launch = actionButton(preset.title, () => generateLeaderPlaylist(preset));
+      return launch;
+    }));
+    if (!state.presets.length) presets.append(node("p", "Nessun preset rapido pubblicato.", "admin-hint"));
   }
 
   function showForm(kind, panel) {
@@ -296,9 +439,7 @@
 
   function translateSongChords() {
     const field = $("admin-song-text");
-    const hasItalianChords = /(?:\[(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?|\{key:\s*(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?)/i
-      .test(field.value);
-    const notation = hasItalianChords ? "en" : "it";
+    const notation = M.detectChordNotation(field.value) === "it" ? "en" : "it";
     try {
       const translated = M.translateChordPro(field.value, notation);
       if (translated === field.value) {
@@ -723,7 +864,7 @@
     main.setAttribute("aria-busy", "true");
     if (!quiet) setStatus("Caricamento del catalogo…");
     try {
-      const [catalog, songs] = await Promise.all([request(""), loadAllSongs()]);
+      const [catalog, songs] = await Promise.all([request("/manage"), loadAllSongs()]);
       if (!Array.isArray(catalog.tags) || !Array.isArray(catalog.albums) ||
           !Array.isArray(catalog.presets) || !Array.isArray(catalog.playlists))
         throw new Error("Catalogo Canzoniere non valido.");
@@ -756,6 +897,74 @@
     $("admin-song-cancel").addEventListener("click", () => closeForm("songs"));
     $("admin-song-text").addEventListener("input", previewSong);
     $("admin-song-translate-chords").addEventListener("click", translateSongChords);
+    $("leader-playlist-add-form").addEventListener("submit", event => {
+      event.preventDefault();
+      renderLeaderSearchResults($("leader-playlist-search").value);
+    });
+    $("leader-playlist-search").addEventListener("input", () => {
+      const query = $("leader-playlist-search").value.trim();
+      $("leader-playlist-search-results").replaceChildren();
+      $("leader-playlist-search-status").textContent = query
+        ? "Premi Cerca per visualizzare i risultati."
+        : "Cerca un titolo o un autore per aggiungere una canzone.";
+    });
+    $("leader-clear-playlist").addEventListener("click", () =>
+      persistLeaderPlaylist([], "Scaletta svuotata."));
+    $("leader-share-playlist").addEventListener("click", async () => {
+      try {
+        const href = playlistStore.shareUrl(leaderPlaylistSlugs,
+          new URL("../canzoniere/", window.location.href).href);
+        $("leader-share-playlist-link").value = href;
+        $("leader-share-playlist-controls").hidden = false;
+        $("leader-share-playlist-link").focus();
+        $("leader-share-playlist-link").select();
+        if (!navigator.clipboard?.writeText) {
+          $("leader-personal-status").textContent = "Link pronto: copialo dal campo qui sopra.";
+          return;
+        }
+        await navigator.clipboard.writeText(href);
+        $("leader-personal-status").textContent = "Link copiato negli appunti.";
+      } catch (error) {
+        $("leader-personal-status").textContent = "Non è stato possibile preparare il link: " + error.message;
+        console.error("Preparazione link scaletta capi non riuscita", error);
+      }
+    });
+    $("leader-copy-playlist-link").addEventListener("click", async () => {
+      try {
+        const field = $("leader-share-playlist-link");
+        field.focus();
+        field.select();
+        if (!navigator.clipboard?.writeText) {
+          $("leader-personal-status").textContent = "Seleziona e copia il link dal campo qui sopra.";
+          return;
+        }
+        await navigator.clipboard.writeText(field.value);
+        $("leader-personal-status").textContent = "Link copiato negli appunti.";
+      } catch (error) {
+        $("leader-personal-status").textContent = "Non è stato possibile copiare il link: " + error.message;
+        console.error("Copia link scaletta capi non riuscita", error);
+      }
+    });
+    $("leader-generate-moment").addEventListener("click", () => {
+      const tag = state.tags.find(item => item.slug === $("leader-playlist-moment").value);
+      if (!tag) {
+        $("leader-generated-status").textContent = "Scegli un momento per generare la scaletta.";
+        return;
+      }
+      generateLeaderPlaylist({ title: tag.name, tagSlugs: [tag.slug], songSlugs: [], limit: 12 });
+    });
+    $("leader-regenerate-playlist").addEventListener("click", () => {
+      if (lastLeaderPreset) generateLeaderPlaylist(lastLeaderPreset);
+    });
+    $("leader-use-generated").addEventListener("click", () => {
+      if (!leaderGeneratedSlugs.length) return;
+      const next = [...new Set([...leaderPlaylistSlugs, ...leaderGeneratedSlugs])];
+      if (next.length > 100) {
+        $("leader-generated-status").textContent = "La scaletta personale può contenere al massimo 100 canzoni.";
+        return;
+      }
+      persistLeaderPlaylist(next, "Scaletta generata aggiunta alla tua scaletta.");
+    });
     $("admin-import-file").addEventListener("change", readImportFile);
     $("admin-import-text").addEventListener("input", invalidateImportPreview);
     $("admin-import-preview").addEventListener("click", previewImport);

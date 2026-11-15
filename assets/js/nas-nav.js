@@ -88,7 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const links = document.createElement('nav');
   links.className = 'reserved-links';
   links.setAttribute('aria-label', 'Navigazione area riservata');
-  for (const [file, label] of [['', 'Home capi'], ['attivita.html', 'Attività'], ['soci.html', 'Soci']]) {
+  for (const [file, label] of [
+    ['', 'Home capi'],
+    ['attivita.html', 'Attività'],
+    ['soci.html', 'Soci'],
+    ['documenti.html', 'Documenti'],
+    ['canzoniere.html', 'Canzoniere'],
+  ]) {
     const link = linkTo(homePath + file, label);
     if (normalize(location.pathname) === normalize(link.pathname)) link.setAttribute('aria-current', 'page');
     links.append(link);

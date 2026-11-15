@@ -66,6 +66,15 @@ body.canzoniere-page .canzoniere-section h1 {
   font-size: 14px;
 }
 
+body.song-page #song-status:empty {
+  display: none;
+}
+
+body.song-page #song-controls-status:empty,
+body.song-page #scroll-status:empty {
+  display: none;
+}
+
 .song-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 255px), 1fr));
@@ -247,6 +256,12 @@ body.canzoniere-page .canzoniere-section h1 {
   min-height: 370px;
 }
 
+#song-content:not([hidden]) {
+  display: flex;
+  min-height: calc(100dvh - 180px);
+  flex-direction: column;
+}
+
 .song-loading {
   display: grid;
   gap: 14px;
@@ -302,18 +317,6 @@ body.canzoniere-page .canzoniere-section h1 {
 
 .song-detail-heading .song-tags {
   margin-top: 14px;
-}
-
-.song-controls {
-  display: flex;
-  min-inline-size: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 18px;
-  padding: 14px;
-  margin: 24px 0 16px;
-  border: 1px solid color-mix(in srgb, var(--vl) 48%, var(--w));
-  border-radius: var(--radius-lg);
 }
 
 .song-toggle {
@@ -373,11 +376,6 @@ body.canzoniere-page .canzoniere-section h1 {
   accent-color: var(--v);
 }
 
-.song-controls > .button {
-  min-height: 44px;
-  padding: 8px 14px;
-}
-
 .song-controls-status {
   flex-basis: 100%;
   min-height: 1.4em;
@@ -387,21 +385,28 @@ body.canzoniere-page .canzoniere-section h1 {
 }
 
 .song-score {
+  display: flex;
+  min-height: min(45vh, 560px);
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: .45em;
   max-width: 100%;
-  max-height: min(65vh, 720px);
-  padding: 16px;
+  max-height: none;
+  padding: 16px 68px 112px 16px;
   overflow: auto;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg) 72%, var(--w));
   color: var(--vd);
   font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
-  font-size: var(--song-font-size, 20px);
+  font-size: var(--song-font-size, clamp(22px, 3.5vw, 40px));
   line-height: 1.55;
   overscroll-behavior-inline: contain;
   scrollbar-gutter: stable;
 }
 
 .song-line {
+  flex: 0 0 auto;
   width: max-content;
   min-width: 100%;
   padding: 0 2ch 4px 0;
@@ -634,35 +639,123 @@ body.canzoniere-page .canzoniere-section h1 {
 
 .song-settings-panel {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
   margin: 24px 0 16px;
+}
+
+.song-settings-group {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--vl) 48%, var(--w));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg) 70%, var(--w));
+}
+
+.song-settings-group legend {
+  padding: 0 6px;
+  color: var(--v);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.song-settings-group-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.song-settings-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
 }
 
 .song-settings-panel .song-controls {
   margin: 0;
 }
 
-.scroll-settings {
+.song-settings-close {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: center;
-  gap: 8px 16px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--vl) 48%, var(--w));
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg) 70%, var(--w));
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  justify-self: end;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.song-settings-close-icon::before {
+  content: var(--fa, "\2715");
+}
+
+.scroll-settings .song-settings-group-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
 }
 
 .scroll-controls {
+  position: fixed;
+  z-index: 30;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
   gap: 8px;
-  margin: 0 0 16px;
+  margin: 0;
 }
 
 .scroll-controls > .button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: var(--shadow-card);
+  flex: none;
+}
+
+.scroll-controls #notation-toggle {
+  border: 1px solid color-mix(in srgb, var(--vl) 65%, var(--w));
+  background: var(--w);
+  color: var(--v);
+}
+
+.song-notation-indicator {
+  font: 800 11px/1 system-ui, sans-serif;
+}
+
+.scroll-controls #auto-scroll {
+  font: 800 18px/1 system-ui, sans-serif;
+}
+
+.scroll-controls #song-settings-toggle {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.scroll-controls .song-settings-icon {
+  width: 16px;
+  gap: 3px;
 }
 
 .scroll-correction {
@@ -759,14 +852,12 @@ body.canzoniere-dark .playlist-add-search input {
 }
 
 body.canzoniere-dark .song-settings-panel,
-body.canzoniere-dark .scroll-settings,
-body.canzoniere-dark .scroll-controls,
+body.canzoniere-dark .song-settings-group,
 body.canzoniere-dark .playlist-add-results li {
   border-color: #51445d;
 }
 
-body.canzoniere-dark .scroll-settings,
-body.canzoniere-dark .scroll-controls,
+body.canzoniere-dark .song-settings-group,
 body.canzoniere-dark .playlist-add-results li {
   background: #211a2a;
 }
@@ -928,7 +1019,7 @@ body.canzoniere-dark .published-playlists li {
 
   body.song-page main#contenuto {
     padding-top: 8px;
-    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
 
   body.song-page .song-back-link {
@@ -949,6 +1040,7 @@ body.canzoniere-dark .published-playlists li {
 
   #song-content:not([hidden]) {
     display: flex;
+    min-height: calc(100dvh - 160px);
     flex-direction: column;
     gap: 10px;
   }
@@ -971,77 +1063,85 @@ body.canzoniere-dark .published-playlists li {
 
   #song-score {
     order: 2;
-    max-height: calc(100dvh - 200px);
-    padding: 12px 8px;
-    font-size: var(--song-font-size, 18px);
+    height: calc(100dvh - 220px);
+    min-height: calc(100dvh - 220px);
+    max-height: calc(100dvh - 220px);
+    flex: none;
+    padding: 12px 8px calc(156px + env(safe-area-inset-bottom));
+    font-size: var(--song-font-size, clamp(18px, 4vw, 24px));
   }
 
   .song-settings-panel {
     order: 3;
+    grid-template-columns: 1fr;
     gap: 10px;
     margin: 0;
   }
 
-  .song-controls {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
+  #song-content.song-settings-open .song-settings-panel {
+    order: 2;
+  }
+
+  #song-content.song-settings-open #song-score {
+    order: 3;
+  }
+
+  #song-content.song-settings-open .scroll-controls #notation-toggle,
+  #song-content.song-settings-open .scroll-controls #auto-scroll {
+    display: none;
+  }
+
+  .song-settings-group {
+    padding: 8px 10px;
+  }
+
+  .song-settings-group legend {
+    font-size: 12px;
+  }
+
+  .song-settings-group-content {
+    gap: 6px;
+  }
+
+  .song-settings-inline {
+    align-items: center;
+    gap: 6px 10px;
+  }
+
+  .song-settings-inline > .button {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
 
   .transpose-controls {
+    display: grid;
     width: 100%;
+    grid-template-columns: max-content 40px minmax(0, 1fr) 40px max-content;
+    gap: 4px;
+  }
+
+  .transpose-controls .button {
+    min-width: 40px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .transpose-controls #transpose-original {
+    padding-inline: 8px;
+    font-size: 12px;
   }
 
   .font-control {
     width: 100%;
   }
 
-  .scroll-settings {
+  .scroll-settings .song-settings-group-content {
     grid-template-columns: 1fr;
-    padding: 12px;
-  }
-
-  .scroll-controls {
-    position: fixed;
-    z-index: 20;
-    right: 12px;
-    bottom: calc(8px + env(safe-area-inset-bottom));
-    left: 12px;
-    order: 4;
-    justify-content: stretch;
-    padding: 8px;
-    margin: 0;
-    border: 1px solid color-mix(in srgb, var(--vl) 55%, var(--w));
-    border-radius: var(--radius-lg);
-    background: var(--w);
-    box-shadow: var(--shadow-card);
-  }
-
-  .scroll-controls #auto-scroll {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .scroll-controls #auto-scroll::before {
-    margin-right: 4px;
-    content: "▶";
-  }
-
-  .scroll-controls #auto-scroll[aria-pressed="true"]::before {
-    content: "Ⅱ";
   }
 
   .scroll-controls .song-settings-toggle {
-    display: inline-flex;
-    min-width: 48px;
-    flex: none;
-    gap: 7px;
-    padding: 8px 10px;
-  }
-
-  .song-settings-toggle .song-settings-icon {
-    width: 16px;
+    display: grid;
   }
 
   .playlist-actions .button {
@@ -1056,6 +1156,149 @@ body.canzoniere-dark .published-playlists li {
 
   .playlist-player-controls .playlist-actions {
     width: 100%;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  body.song-page main#contenuto {
+    width: calc(100% - 24px);
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  body.song-page .song-back-link,
+  body.song-page .site-footer {
+    display: none;
+  }
+
+  #song-content:not([hidden]) {
+    min-height: calc(100dvh - 90px);
+    gap: 6px;
+  }
+
+  .song-detail-heading {
+    order: 1;
+  }
+
+  .song-detail-heading .eyebrow,
+  .song-detail-heading .song-byline,
+  .song-detail-heading .song-meta,
+  .song-detail-heading .song-tags,
+  .song-extra {
+    display: none !important;
+  }
+
+  .song-detail-heading h1 {
+    font-size: clamp(18px, 4vw, 26px);
+  }
+
+  #song-score {
+    order: 2;
+    height: calc(100dvh - 165px);
+    min-height: calc(100dvh - 165px);
+    max-height: calc(100dvh - 165px);
+    flex: none;
+    padding: 8px 56px 48px 8px;
+  }
+
+  .song-settings-panel {
+    order: 3;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .scroll-controls .song-settings-toggle {
+    display: grid;
+  }
+}
+
+@media (min-width: 641px) and (max-height: 560px) and (orientation: landscape) {
+  body.song-page .site-header {
+    min-height: 56px;
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+    padding: 4px 12px;
+  }
+
+  body.song-page .site-header .brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  body.song-page .site-header nav {
+    width: auto;
+    flex-wrap: nowrap;
+    gap: clamp(6px, 1vw, 12px);
+  }
+
+  body.song-page .site-header nav a {
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  body.song-page .site-header nav .nav-access {
+    padding-inline: 10px;
+  }
+
+  body.song-page main#contenuto {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  body.song-page .song-detail-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #song-content:not([hidden]) {
+    min-height: calc(100dvh - 96px);
+    gap: 4px;
+  }
+
+  #song-score {
+    height: calc(100dvh - 210px);
+    min-height: calc(100dvh - 210px);
+    max-height: calc(100dvh - 210px);
+    padding: 4px 56px 48px 8px;
+  }
+}
+
+@media (max-width: 640px), (max-height: 560px) and (orientation: landscape) {
+  #song-score {
+    justify-content: flex-start;
+    gap: .12em;
+    line-height: 1.35;
+  }
+
+  .song-line {
+    padding: 0 0 2px;
+  }
+
+  .chord-line {
+    height: 1.3em;
+    line-height: 1.3;
+  }
+
+  .lyric-line {
+    min-height: 1.35em;
+    line-height: 1.35;
+  }
+
+  #song-content.song-content-compact {
+    min-height: 0;
+  }
+
+  #song-content.song-content-compact #song-score {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    flex: none;
+    padding: 8px;
+    overflow: visible;
   }
 }
 
@@ -1101,12 +1344,22 @@ body.canzoniere-dark .published-playlists li {
   }
 
   body.canzoniere-page .song-score {
+    display: block;
+    min-height: 0;
+    flex: none;
+    justify-content: initial;
+    gap: 0;
     max-height: none;
     padding: 0;
     overflow: visible;
     background: #fff;
     color: #000;
     font-size: 18px !important;
+  }
+
+  body.canzoniere-page #song-content {
+    display: block;
+    min-height: 0;
   }
 
   body.canzoniere-page .song-line {

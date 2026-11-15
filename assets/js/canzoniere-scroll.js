@@ -16,7 +16,10 @@
     }
 
     function setButton() {
-      button.textContent = running ? "Pausa scorrimento" : "Avvia scorrimento";
+      button.textContent = running ? "Ⅱ" : "▶";
+      button.setAttribute("aria-label", running
+        ? "Metti in pausa lo scorrimento automatico"
+        : "Avvia lo scorrimento automatico");
       button.setAttribute("aria-pressed", String(running));
     }
 

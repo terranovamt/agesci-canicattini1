@@ -24,10 +24,12 @@ procedura.
   giornaliero, mai chi/cosa); le azioni tracciate sono nella mappa `tracked` di
   `assets/js/nas-telemetry.js` e si leggono in Statistiche. Le letture pubbliche di
   configurazione, dati delle slide, calendari e documenti passano dal backend
-  quando richiesto da   `deploy/synology/nginx.conf`; il resto delle pagine è
+  quando richiesto da `deploy/synology/nginx.conf`; il resto delle pagine è
   servito staticamente. `server/canzoniere.cjs` gestisce il modello SQLite,
-  le letture pubbliche e le scritture riservate all'admin, condividendo
-  `assets/js/canzoniere-model.js` con i client.
+  le letture pubbliche e le scritture riservate all'admin e ai capi con branca
+  di servizio, condividendo `assets/js/canzoniere-model.js` con i client. La
+  rotta `/manage` include le scalette in bozza; il catalogo pubblico mostra
+  soltanto quelle pubblicate.
 - **Sviluppo locale:** `tools/nas-dev.cjs` avvia il gateway e il backend con
   database di test temporaneo; `tools/nas-demo.cjs` aggiunge dati fittizi e
   account demo. `tools/build-site.cjs`
@@ -127,7 +129,7 @@ questa guida, nei test o nella memoria dell'assistente.
 
 - Tutte le navbar riservate sono normalizzate da `assets/js/nas-nav.js`,
   con stile condiviso in `assets/css/nas.css`: logo, titolo della pagina,
-  Home capi, Attività, Soci e comandi specifici. Non aggiungere menu mobile
+  Home capi, Attività, Soci, Documenti, Canzoniere e comandi specifici. Non aggiungere menu mobile
   separati nelle singole pagine. Fino a 1024 px, anche in orizzontale, i
   collegamenti e i comandi sono nel menu hamburger; chiusura con Escape,
   clic esterno, navigazione o uscita del focus. Il cambio di larghezza azzera

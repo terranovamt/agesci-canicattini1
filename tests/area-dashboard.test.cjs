@@ -165,6 +165,8 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
   assert.match(get("dashboard-title").textContent, /capi E\/G/);
   assert.equal(get("dashboard-shortcuts-heading").hidden, false);
   assert.equal(get("dashboard-branch-tools").children.length, 3);
+  assert.equal(get("dashboard-canzoniere-tool").hidden, false,
+    "chiefs with a service branch can open the Canzoniere manager");
 });
 
 test("free activities hide fees even when attendance marks a member as due", async () => {
@@ -408,7 +410,7 @@ test("dashboard presents one operational layout without tabs or duplicate docume
   assert.doesNotMatch(documentsTool, /\bhidden\b/);
   assert.match(html, /id="dashboard-canzoniere-tool"[^>]*hidden/);
   assert.match(html, /href="canzoniere.html">Apri gestione Canzoniere/);
-  assert.match(dashboard, /canzoniereTool\.hidden = !user\?\.admin/);
+  assert.match(dashboard, /canzoniereTool\.hidden = !\(user\?\.admin \|\| \["L\/C", "E\/G", "R\/S"\]\.includes\(user\?\.serviceBranch\)\)/);
   assert.doesNotMatch(html, /winter-camp-panel|winter-camp-tool|Campo invernale/);
   assert.doesNotMatch(html, /id="people-tool"|id="people-access-tool"|id="activities-tool"/);
   assert.match(html, /id="dashboard-documents-title">Documenti pubblicati/);
@@ -600,7 +602,8 @@ test("unified dashboard and login adapt across six device layouts", { skip: !chr
       nav.className = "reserved-links";
       const actions = document.createElement("div");
       actions.className = "reserved-actions";
-      for (const [label, href] of [["Home capi", "./"], ["Attività", "attivita.html"], ["Soci", "soci.html"]]) {
+      for (const [label, href] of [["Home capi", "./"], ["Attività", "attivita.html"],
+        ["Soci", "soci.html"], ["Documenti", "documenti.html"], ["Canzoniere", "canzoniere.html"]]) {
         const link = document.createElement("a");
         link.href = href;
         link.textContent = label;

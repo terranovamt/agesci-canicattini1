@@ -11,7 +11,7 @@ function createStore(localStorage) {
   return window.CANZONIERE_PLAYLIST_STORE;
 }
 
-test("personal playlist storage persists only valid slugs and shares a slug-only URL", () => {
+test("leader playlist storage persists only valid slugs and shares a slug-only URL", () => {
   const values = new Map();
   const store = createStore({
     getItem: (key) => values.get(key) ?? null,

@@ -13,6 +13,7 @@ const TABLES = Object.freeze({
 const RIGHTS = new Set(["pubblico dominio", "autorizzato", "da verificare"]);
 const CATEGORIES = new Set(["momento", "branca", "altro"]);
 const BRANCH_TAGS = Object.freeze({ "L/C": "lc", "E/G": "eg", "R/S": "rs" });
+const SERVICE_BRANCHES = new Set(["L/C", "E/G", "R/S"]);
 
 function fail(status, message) {
   throw Object.assign(new Error(message), { status });
@@ -234,12 +235,13 @@ function createCanzoniere(db, people) {
     const { text, ...summary } = song;
     return summary;
   };
-  const publicPlaylists = (isAdmin) => records("playlists").filter((playlist) => isAdmin || playlist.published);
-  const catalog = (isAdmin) => ({
+  const publicPlaylists = (includeDrafts) =>
+    records("playlists").filter((playlist) => includeDrafts || playlist.published);
+  const catalog = (includeDrafts) => ({
     tags: records("tags"),
     albums: records("albums"),
     presets: records("presets"),
-    playlists: publicPlaylists(isAdmin),
+    playlists: publicPlaylists(includeDrafts),
   });
 
   const createRecord = (kind, value) => {
@@ -366,14 +368,22 @@ function createCanzoniere(db, people) {
     async handle(route, request, response, { body, send, sessionId, url }) {
       if (route !== BASE && route !== BASE + "/" && !route.startsWith(BASE + "/")) return false;
       const method = request.method;
+      const currentUser = () => people.user(sessionId(request));
+      const canManage = () => {
+        const current = currentUser();
+        return !!current && (current.admin || SERVICE_BRANCHES.has(current.serviceBranch));
+      };
       if (!["GET", "HEAD"].includes(method)) {
-        const current = people.user(sessionId(request));
-        if (!current?.admin) fail(403, "Operazione riservata all'amministratore");
+        if (!canManage()) fail(403, "Operazione riservata ai capi con branca di servizio e all'amministratore");
       }
-      const isAdmin = () => !!people.user(sessionId(request))?.admin;
+
+      if (method === "GET" && route === BASE + "/manage") {
+        if (!canManage()) fail(403, "Operazione riservata ai capi con branca di servizio e all'amministratore");
+        return send(response, 200, catalog(true));
+      }
 
       if (method === "GET" && (route === BASE || route === BASE + "/"))
-        return send(response, 200, catalog(isAdmin()));
+        return send(response, 200, catalog(false));
 
       const match = /^\/api\/canzoniere\/(songs|tags|albums|presets|playlists)(?:\/([a-z0-9-]+))?$/.exec(route);
       if (!match) fail(404, "Risorsa Canzoniere non trovata");
@@ -382,10 +392,10 @@ function createCanzoniere(db, people) {
 
       if (method === "GET") {
         if (kind === "songs" && !slug) return send(response, 200, listSongs(url));
-        if (kind === "playlists" && !slug) return send(response, 200, publicPlaylists(isAdmin()));
+        if (kind === "playlists" && !slug) return send(response, 200, publicPlaylists(false));
         if (!slug) return send(response, 200, records(kind));
         const result = record(kind, slug);
-        if (!result || (kind === "playlists" && !result.published && !isAdmin()))
+        if (!result || (kind === "playlists" && !result.published))
           fail(404, "Elemento non trovato");
         return send(response, 200, result);
       }

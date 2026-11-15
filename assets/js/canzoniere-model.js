@@ -237,6 +237,12 @@
         "{key: " + translateChordSymbol(key.trim(), notation) + "}");
   }
 
+  function detectChordNotation(source) {
+    if (typeof source !== "string") throw new TypeError("Il testo ChordPro deve essere una stringa");
+    const italianChord = /(?:\[(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?|\{key:\s*(?:Do|Re|Mi|Fa|Sol|La|Si)[#b\u266f\u266d]?)/i;
+    return italianChord.test(source) ? "it" : "en";
+  }
+
   function matchesSearch(song, query) {
     const needle = normalizeSearch(query);
     if (!needle) return true;
@@ -273,6 +279,7 @@
     DEFAULT_TAGS,
     METERS,
     beatsPerBar,
+    detectChordNotation,
     formatChordPro,
     importChordText,
     matchesSearch,

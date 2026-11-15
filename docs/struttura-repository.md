@@ -17,7 +17,7 @@ pubblicazione GitHub Pages restano separati.
 ├── area-riservata/                 Accesso e gestione del sito
 │   ├── index.html                 Login e dashboard
 │   ├── documenti.html             Gestione e pubblicazione dei PDF
-│   ├── canzoniere.html            Gestione amministrativa del Canzoniere
+│   ├── canzoniere.html           Gestione Canzoniere per admin e capi con branca di servizio
 │   ├── persone.html               Account e reset password (amministratore)
 │   ├── soci.html                  Libro soci, censimenti, percorsi e macro
 │   └── assemblea/                 Strumenti e applicazione assemblea
@@ -60,7 +60,7 @@ pubblicazione GitHub Pages restano separati.
 ├── server/                        Backend Node 24, SQLite e immagine Docker
 │   ├── nas.cjs                    Gateway HTTP, sessioni e dispatch delle API
 │   ├── members.cjs                Anagrafe e censimenti nel database esistente
-│   └── canzoniere.cjs             Modello SQLite e API pubbliche/admin del Canzoniere
+│   └── canzoniere.cjs             Modello SQLite e API pubbliche/admin/capi del Canzoniere
 ├── deploy/
 │   └── synology/                  Container, Nginx e aggiornamento dal branch NAS
 ├── docs/                          Documentazione tecnica e operativa, audit

@@ -25,7 +25,8 @@
   function personalize() {
     const user = window.NAS?.user;
     const canzoniereTool = $("dashboard-canzoniere-tool");
-    if (canzoniereTool) canzoniereTool.hidden = !user?.admin;
+    if (canzoniereTool)
+      canzoniereTool.hidden = !(user?.admin || ["L/C", "E/G", "R/S"].includes(user?.serviceBranch));
     $("reserved-content").dataset.view = user?.admin ? "admin" : "branch";
     const profiles = {
       "L/C": { title: "Area capi L/C", motto: "Lupetti e Coccinelle · Cerchio · Giungla e Bosco",

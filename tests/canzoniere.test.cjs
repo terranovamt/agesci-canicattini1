@@ -104,6 +104,9 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
     "[C]Sole [Dm7] [F#m7/C#]\n{key: Bb}");
   assert.equal(M.translateChordPro("[C]Sole [Dm7] [F#m7/C#]\n{key: Bb}", "it"),
     "[Do]Sole [Rem7] [Fa#m7/Do#]\n{key: Sib}");
+  assert.equal(M.detectChordNotation("[Do]Sole [C]"), "it");
+  assert.equal(M.detectChordNotation("[C]Sole [Dm7]"), "en");
+  assert.equal(M.detectChordNotation("{key: Sib}"), "it");
   assert.deepEqual(M.parseChordPro("[Do]Sole [Fa#m7/Do#]alto")[0], {
     lyric: "Sole alto",
     chords: [
@@ -141,8 +144,14 @@ test("admin song editor wires chord translation and bounds mobile text areas", a
     fs.readFile(path.join(__dirname, "../assets/js/canzoniere-admin.js"), "utf8"),
   ]);
   assert.match(html, /id="admin-song-translate-chords"[^>]*aria-label="Converti gli accordi tra notazione italiana e inglese"/);
+  assert.match(html, /id="admin-leader-tools-panel"/);
+  assert.match(html, /id="leader-playlist-add-form"/);
+  assert.match(html, /id="leader-playlist-moment"/);
+  assert.match(script, /request\("\/manage"\)/);
+  assert.match(script, /M\.detectChordNotation\(field\.value\)/);
   assert.match(script, /M\.translateChordPro\(field\.value, notation\)/);
   assert.match(script, /addEventListener\("click", translateSongChords\)/);
+  assert.match(script, /function renderLeaderTools\(\)/);
   const textareaRules = /#admin-song-form textarea\s*\{([^}]+)\}/s.exec(css)?.[1];
   assert.ok(textareaRules);
   assert.match(textareaRules, /width:\s*100%/);
@@ -186,19 +195,63 @@ test("Canzoniere migration preserves the existing SQLite database and runs only 
   }
 });
 
-test("public Canzoniere CRUD is admin-only for writes and public for reading", async () => {
+test("branch chiefs manage the Canzoniere while public playlists expose only published records", async () => {
   const directory = await temporaryDirectory("canzoniere-api-");
   let app;
   try {
     app = await openServer(directory);
     assert.equal((await app.api("", "GET", undefined, "")).status, 200);
     assert.equal((await app.api("/songs", "POST", demoSong(), "")).status, 403);
+    assert.equal((await app.api("/manage", "GET", undefined, "")).status, 403);
     const adminCookie = await app.login();
     const configuredPeople = await (await app.request("/api/people", "GET", undefined, adminCookie)).json();
     const chief = configuredPeople.people.find((person) => person.code === "7654321");
     assert.equal((await app.request("/api/people/" + chief.id, "PATCH", { serviceBranch: "E/G" }, adminCookie)).status, 200);
     assert.equal((await app.request("/api/auth/view-as", "POST", { personId: chief.id }, adminCookie)).status, 200);
-    assert.equal((await app.api("/songs", "POST", demoSong(), adminCookie)).status, 403);
+    assert.equal((await app.api("/manage", "GET", undefined, adminCookie)).status, 200);
+
+    assert.equal((await app.api("/tags", "POST", {
+      slug: "chief-tag", name: "Tag capo", category: "momento",
+    }, adminCookie)).status, 201);
+    assert.equal((await app.api("/albums", "POST", {
+      slug: "chief-album", title: "Album capo", author: "Capi", year: 2026,
+    }, adminCookie)).status, 201);
+    const chiefSongResponse = await app.api("/songs", "POST", demoSong({
+      slug: "canzone-capo", title: "Canzone capo", albumSlug: "chief-album", tagSlugs: ["chief-tag"],
+    }), adminCookie);
+    assert.equal(chiefSongResponse.status, 201);
+    const chiefSong = await chiefSongResponse.json();
+    assert.equal((await app.api("/songs/" + chiefSong.slug, "PATCH", {
+      revision: chiefSong.revision, title: "Canzone capo modificata",
+    }, adminCookie)).status, 200);
+    assert.equal((await app.api("/presets", "POST", {
+      slug: "preset-capo", title: "Preset capo", tagSlugs: ["chief-tag"], songSlugs: [chiefSong.slug], limit: 5,
+    }, adminCookie)).status, 201);
+    assert.equal((await app.api("/playlists", "POST", {
+      slug: "scaletta-capo-bozza", title: "Scaletta capo bozza",
+      songSlugs: [chiefSong.slug], published: false,
+    }, adminCookie)).status, 201);
+    const chiefPlaylist = await (await app.api("/playlists", "POST", {
+      slug: "scaletta-capo-pubblicata", title: "Scaletta capo pubblicata",
+      songSlugs: [chiefSong.slug], published: false,
+    }, adminCookie)).json();
+    const chiefPublished = await app.api("/playlists/" + chiefPlaylist.slug, "PATCH", {
+      revision: chiefPlaylist.revision, published: true,
+    }, adminCookie);
+    assert.equal(chiefPublished.status, 200);
+    const managerCatalog = await (await app.api("/manage", "GET", undefined, adminCookie)).json();
+    assert.ok(managerCatalog.playlists.some(item => item.slug === "scaletta-capo-bozza"));
+    const chiefPublicCatalog = await (await app.api("", "GET", undefined, adminCookie)).json();
+    assert.ok(!chiefPublicCatalog.playlists.some(item => item.slug === "scaletta-capo-bozza"));
+    assert.ok(chiefPublicCatalog.playlists.some(item => item.slug === "scaletta-capo-pubblicata"));
+    assert.equal((await app.api("/playlists/scaletta-capo-bozza", "GET", undefined, adminCookie)).status, 404);
+    assert.equal((await app.api("/playlists", "GET", undefined, "")).status, 200);
+    assert.equal((await app.api("/playlists/scaletta-capo-bozza", "DELETE", { revision: 1 }, adminCookie)).status, 200);
+    assert.equal((await app.api("/playlists/scaletta-capo-pubblicata", "DELETE", { revision: 2 }, adminCookie)).status, 200);
+    assert.equal((await app.api("/presets/preset-capo", "DELETE", { revision: 1 }, adminCookie)).status, 200);
+    assert.equal((await app.api("/songs/" + chiefSong.slug, "DELETE", { revision: 2 }, adminCookie)).status, 200);
+    assert.equal((await app.api("/albums/chief-album", "DELETE", { revision: 1 }, adminCookie)).status, 200);
+    assert.equal((await app.api("/tags/chief-tag", "DELETE", { revision: 1 }, adminCookie)).status, 200);
     assert.equal((await app.request("/api/auth/view-as", "DELETE", undefined, adminCookie)).status, 200);
 
     const albumResponse = await app.api("/albums", "POST", {
@@ -281,26 +334,12 @@ test("public Canzoniere CRUD is admin-only for writes and public for reading", a
     assert.equal((await app.api("/songs", "POST", demoSong({ meter: "5/4" }))).status, 400);
 
     await app.login("7654321");
-    const deniedWrites = [
-      ["POST", "/songs", demoSong()],
-      ["PATCH", "/songs/" + song.slug, { revision: 2, title: "No" }],
-      ["DELETE", "/songs/" + song.slug, { revision: 2 }],
-      ["POST", "/tags", { name: "No", category: "altro" }],
-      ["PATCH", "/tags/tag-demo", { revision: 1, name: "No" }],
-      ["DELETE", "/tags/tag-demo", { revision: 1 }],
-      ["POST", "/albums", { title: "No" }],
-      ["PATCH", "/albums/album-demo", { revision: 1, title: "No" }],
-      ["DELETE", "/albums/album-demo", { revision: 1 }],
-      ["POST", "/presets", { title: "No" }],
-      ["PATCH", "/presets/preset-demo", { revision: 1, title: "No" }],
-      ["DELETE", "/presets/preset-demo", { revision: 1 }],
-      ["POST", "/playlists", { title: "No" }],
-      ["PATCH", "/playlists/scaletta-pubblica", { revision: 2, title: "No" }],
-      ["DELETE", "/playlists/scaletta-pubblica", { revision: 2 }],
-    ];
-    for (const [method, route, value] of deniedWrites)
-      assert.equal((await app.api(route, method, value)).status, 403, method + " " + route);
-    assert.equal((await app.api("/songs", "GET")).status, 200);
+    const directChiefSong = await (await app.api("/songs", "POST", demoSong({
+      slug: "canzone-capo-diretto", title: "Canzone capo diretto", tagSlugs: [],
+    }))).json();
+    assert.equal(directChiefSong.slug, "canzone-capo-diretto");
+    assert.equal((await app.api("/manage", "GET")).status, 200);
+    assert.equal((await app.api("/songs/" + directChiefSong.slug, "DELETE", { revision: directChiefSong.revision })).status, 200);
 
     await app.login("23816938");
     const deletedAlbum = await app.api("/albums/album-demo", "DELETE", { revision: 1 }, adminCookie);
@@ -316,15 +355,15 @@ test("public Canzoniere CRUD is admin-only for writes and public for reading", a
     const preset = updatedPresets.find((item) => item.slug === "preset-demo");
     assert.deepEqual(preset.songSlugs, []);
     assert.equal(preset.tagSlugs.includes("tag-demo"), false);
-    const allPlaylists = await (await app.api("/playlists", "GET", undefined, adminCookie)).json();
-    const playlist = allPlaylists.find((item) => item.slug === "scaletta-pubblica");
+    const allPlaylists = await (await app.api("/manage", "GET", undefined, adminCookie)).json();
+    const playlist = allPlaylists.playlists.find((item) => item.slug === "scaletta-pubblica");
     assert.deepEqual(playlist.songSlugs, []);
     assert.equal(playlist.published, false);
     assert.equal((await app.api("/songs/" + song.slug, "GET", undefined, "")).status, 404);
 
     assert.equal((await app.api("/presets/preset-demo", "DELETE", { revision: preset.revision }, adminCookie)).status, 200);
     assert.equal((await app.api("/playlists/scaletta-pubblica", "DELETE", { revision: playlist.revision }, adminCookie)).status, 200);
-    const draft = allPlaylists.find((item) => item.slug === "scaletta-bozza");
+    const draft = allPlaylists.playlists.find((item) => item.slug === "scaletta-bozza");
     assert.equal((await app.api("/playlists/scaletta-bozza", "DELETE", { revision: draft.revision }, adminCookie)).status, 200);
     assert.equal((await app.api("/tags/tag-demo", "DELETE", { revision: 1 }, adminCookie)).status, 404);
     assert.equal((await app.api("/unknown", "POST", {})).status, 404);

@@ -60,12 +60,12 @@ restituisce solo metadati; il dettaglio della canzone include il testo.
 
 | Metodo | Percorso | Contratto |
 | --- | --- | --- |
-| GET | `/` | Tag, album, preset e scalette pubblicate |
+| GET | `/` | Tag, album, preset e sole scalette pubblicate |
 | GET | `/songs` | Elenco paginato; `q`, `tag`, `album`, `branch`, `limit`, `offset`, `slugs` |
 | GET | `/songs/:slug` | Scheda completa, incluso testo ChordPro |
 | GET | `/tags`, `/albums`, `/presets` | Collezioni pubbliche |
-| GET | `/playlists` | Scalette pubblicate; con sessione admin include anche le bozze |
-| GET | `/playlists/:slug` | Scaletta pubblicata; bozze non visibili al pubblico |
+| GET | `/playlists`, `/playlists/:slug` | Sole scalette pubblicate, anche con una sessione di capo |
+| GET | `/manage` | Catalogo completo, incluse le bozze; riservato ad admin e capi con branca di servizio |
 | POST | `/songs`, `/tags`, `/albums`, `/presets`, `/playlists` | Crea record; slug facoltativo e generato dal titolo |
 | PATCH | `/:collection/:slug` | Aggiornamento completo/parziale con `revision` |
 | DELETE | `/:collection/:slug` | Eliminazione con `revision` nel body |
@@ -77,10 +77,13 @@ contenere almeno una canzone. Se si elimina una canzone usata da una scaletta,
 il riferimento viene rimosso; una scaletta rimasta vuota viene ritirata dalla
 pubblicazione. Eliminazioni di tag e album rimuovono i rispettivi riferimenti.
 
-Ogni scrittura richiede una sessione dell'amministratore effettivo verificata lato server; una sessione in modalita' "Visualizza come"
-non mantiene i permessi admin. Le scritture senza sessione o di utenti non
-admin restituiscono 403. Si applicano inoltre il controllo same-origin del
-backend e le revisioni ottimistiche; revisioni obsolete restituiscono 409.
+Ogni scrittura richiede una sessione verificata di un amministratore o di un
+capo con branca di servizio L/C, E/G o R/S. In **Visualizza come** valgono i
+permessi effettivi del capo selezionato. Le scritture senza sessione o senza
+branca di servizio restituiscono 403. Si applicano inoltre il controllo
+same-origin del backend e le revisioni ottimistiche; revisioni obsolete
+restituiscono 409. La rotta pubblica `/playlists` non mostra mai le bozze;
+admin e capi le gestiscono tramite `/manage`.
 
 ## Pagine pubbliche
 
@@ -89,45 +92,55 @@ backend e le revisioni ottimistiche; revisioni obsolete restituiscono 409.
 titolo, nell'autore e nel testo, filtra per un tag, branca e album e carica
 risultati successivi a blocchi; i dati arrivano solo dalle API, mai da testi
 inclusi nell'HTML. Su telefono i filtri si aprono dal menu dedicato e i
-risultati sono righe compatte cliccabili; non hanno pulsanti separati per
-aprire o aggiungere una canzone. La ricerca nella sezione "La tua scaletta"
-permette di aggiungere canzoni senza uscire dalla gestione della scaletta.
+risultati sono righe compatte cliccabili. La pagina pubblica non contiene
+scaletta personale o generatore: mostra solo il catalogo e le scalette
+pubblicate.
 `canzoniere/canzone.html?slug=...` e' la scheda pubblica.
 
 La scheda visualizza gli accordi sopra le posizioni ChordPro, permette di
 nasconderli, trasporre tonalita' e accordi con ripristino all'originale,
-regolare la dimensione del testo, attivare il tema scuro e richiedere il
-Wake Lock quando il browser lo supporta. Gli input di ricerca e i risultati
-sono creati con API DOM e `textContent`; i caricamenti segnalano `aria-busy`,
-e gli skeleton rispettano `prefers-reduced-motion`. Su telefono il testo segue
-subito il titolo; le impostazioni restano nel menu in basso e il pulsante di
-scorrimento rimane fisso per avviare o mettere in pausa.
+convertire rapidamente gli accordi tra notazione ITA ed EN, regolare la
+dimensione del testo, attivare il tema scuro e richiedere il Wake Lock quando
+il browser lo supporta. Le impostazioni sono raggruppate in Accordi e tonalita',
+Testo e schermo, Scorrimento automatico e Stampa. I brani brevi restano compatti;
+quelli lunghi occupano l'area disponibile e mantengono lo scorrimento interno.
+Su telefono tutte le impostazioni restano visibili in una colonna compatta;
+su schermi ampi sono disposte in due colonne. Le righe sono ravvicinate e usano
+tutta la larghezza utile. La dimensione predefinita si adatta al viewport e
+cresce in orizzontale, mentre il cursore consente una regolazione manuale. Gli input di
+ricerca e i risultati sono creati con API DOM e `textContent`; i caricamenti
+segnalano `aria-busy`, e gli skeleton rispettano `prefers-reduced-motion`. Su
+telefono il testo segue subito il titolo. Le impostazioni si aprono dal
+pulsante in basso e si chiudono con lo stesso pulsante o con la X in alto; in
+lettura i controlli rapidi IT/EN e avvio/pausa sono impilati in basso a destra.
 
 Lo scorrimento automatico calcola i secondi per riga dal BPM e da
 `barsPerLine`, con correzione 50–200%, countdown di tre secondi e velocita'
-predefinita senza BPM. Tocco o scorrimento manuale mettono in pausa. La
-scaletta personale conserva in `localStorage` soltanto gli slug, con errori
-di lettura/scrittura comunicati (chiave `agesci-canicattini1.canzoniere.playlist.v1`);
-il link `canzone.html?slugs=...` contiene solo gli slug, senza titoli o testi.
-Le scalette pubblicate si aprono con `canzone.html?playlist=...`. La scheda
+predefinita senza BPM. Tocco o scorrimento manuale mettono in pausa. I capi
+compongono la scaletta personale nell'area riservata; `localStorage` conserva
+solo gli slug (chiave `agesci-canicattini1.canzoniere.playlist.v1`) e i link
+`canzone.html?slugs=...` non contengono titoli o testi. Le scalette pubblicate
+si aprono con `canzone.html?playlist=...`. La scheda
 supporta la navigazione sequenziale e l'avanzamento automatico tra le canzoni.
-La home mostra i preset rapidi e le scalette pubblicate; la stampa offre
-l'opzione di includere gli accordi.
+Il Canzoniere pubblico mostra le canzoni e le sole scalette pubblicate; la home
+mostra i preset rapidi e le scalette pubblicate. La stampa offre l'opzione di
+includere gli accordi.
 
-`area-riservata/canzoniere.html` e' l'interfaccia amministrativa, raggiungibile
-dalla dashboard dei capi. Il server resta l'autorita' per ogni scrittura: i
-controlli UI sono solo un aiuto, non sostituiscono il 403 server-side.
-L'editor offre anteprima ChordPro, conversione rapida ITA ⇄ EN degli accordi,
-import locale con anteprima/conferma e aree di testo con altezza limitata e
-scorrimento interno su telefono,
-gestione di tag/album/preset/scalette e backup JSON; ogni canzone puo' essere
-esportata in `.cho`. Una scrittura ottimistica ripristina lo snapshot locale
-se l'API rifiuta l'operazione.
+`area-riservata/canzoniere.html` e' l'interfaccia riservata agli amministratori
+e ai capi con branca di servizio, raggiungibile dalla dashboard e dalla navbar
+riservata. Offre anteprima ChordPro, conversione rapida ITA ⇄ EN degli
+accordi, import locale con anteprima/conferma e aree di testo con altezza
+limitata e scorrimento interno su telefono. Qui i capi trovano **La tua
+scaletta** (salvata solo nel browser) e **Genera una scaletta**; l'editor
+permette inoltre la gestione di canzoni, tag, album, preset e scalette
+pubblicate o in bozza, oltre al backup JSON e all'esportazione `.cho`.
+Il server resta l'autorita' per ogni permesso; le revisioni ottimistiche
+ripristinano lo snapshot locale se l'API rifiuta una scrittura.
 
 ## Verifica locale
 
 ```sh
-node --test tests/canzoniere.test.cjs tests/canzoniere-pages.test.cjs tests/canzoniere-playlist-store.test.cjs tests/canzoniere-scroll.test.cjs
+node --test tests/canzoniere.test.cjs tests/canzoniere-pages.test.cjs tests/canzoniere-playlist-store.test.cjs tests/canzoniere-scroll.test.cjs tests/canzoniere-admin-browser.test.cjs
 node tools/nas-demo.cjs
 ```
 

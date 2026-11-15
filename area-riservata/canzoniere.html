@@ -34,6 +34,7 @@
         <button type="button" data-section-target="admin-albums-panel">Album</button>
         <button type="button" data-section-target="admin-presets-panel">Preset</button>
         <button type="button" data-section-target="admin-playlists-panel">Scalette</button>
+        <button type="button" data-section-target="admin-leader-tools-panel">Strumenti capi</button>
         <button type="button" data-section-target="admin-backup-panel">Backup</button>
       </nav>
 
@@ -291,6 +292,67 @@
         </form>
       </section>
 
+      <section id="admin-leader-tools-panel" class="admin-panel" data-section-panel aria-labelledby="admin-leader-tools-title">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Area riservata ai capi</p>
+            <h2 id="admin-leader-tools-title">Scalette personali</h2>
+          </div>
+        </div>
+        <div class="leader-tools-grid">
+          <section class="leader-tool-panel playlist-panel" aria-labelledby="leader-personal-title">
+            <h3 id="leader-personal-title">La tua scaletta</h3>
+            <p class="admin-hint">Salvata solo in questo browser; il link condiviso contiene gli slug delle canzoni.</p>
+            <p id="leader-personal-status" class="admin-panel-status" role="status" aria-live="polite"></p>
+            <form id="leader-playlist-add-form" class="playlist-add-form leader-playlist-add-form">
+              <label for="leader-playlist-search">Cerca una canzone da aggiungere</label>
+              <div class="admin-actions">
+                <input id="leader-playlist-search" type="search" autocomplete="off" placeholder="Titolo o autore…" />
+                <button class="button button-secondary" type="submit">Cerca</button>
+              </div>
+              <p id="leader-playlist-search-status" class="admin-panel-status" role="status" aria-live="polite"></p>
+              <ul id="leader-playlist-search-results" class="leader-playlist-search-results" aria-busy="false"></ul>
+            </form>
+            <ol id="leader-playlist-items" class="playlist-items" aria-busy="false"></ol>
+            <div class="playlist-actions">
+              <button id="leader-share-playlist" class="button button-secondary" type="button" disabled>Prepara link da condividere</button>
+              <a id="leader-open-playlist" class="button button-primary" href="../canzoniere/canzone.html" hidden>Una canzone dopo l’altra</a>
+              <button id="leader-clear-playlist" class="button button-secondary" type="button" disabled>Svuota scaletta</button>
+            </div>
+            <div id="leader-share-playlist-controls" class="share-playlist-controls" hidden>
+              <label for="leader-share-playlist-link">Link con i soli slug delle canzoni</label>
+              <div>
+                <input id="leader-share-playlist-link" type="url" readonly />
+                <button id="leader-copy-playlist-link" class="button button-secondary" type="button">Copia link</button>
+              </div>
+            </div>
+          </section>
+          <section class="leader-tool-panel playlist-generator" aria-labelledby="leader-generator-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Componi insieme</p>
+                <h3 id="leader-generator-title">Genera una scaletta</h3>
+              </div>
+              <p class="section-description">Scegli un momento o un preset, poi rigenera finché la selezione ti convince.</p>
+            </div>
+            <div class="generator-controls">
+              <div>
+                <label for="leader-playlist-moment">Momento</label>
+                <select id="leader-playlist-moment" disabled>
+                  <option value="">Scegli un momento</option>
+                </select>
+              </div>
+              <button id="leader-generate-moment" class="button button-primary" type="button" disabled>Genera</button>
+              <button id="leader-regenerate-playlist" class="button button-secondary" type="button" hidden>Rigenera</button>
+            </div>
+            <div id="leader-quick-presets" class="quick-presets" role="group" aria-label="Preset rapidi"></div>
+            <p id="leader-generated-status" class="song-status" role="status" aria-live="polite"></p>
+            <ol id="leader-generated-items" class="playlist-items"></ol>
+            <button id="leader-use-generated" class="button button-secondary" type="button" hidden>Aggiungi alla tua scaletta</button>
+          </section>
+        </div>
+      </section>
+
       <section id="admin-backup-panel" class="admin-panel" data-section-panel aria-labelledby="admin-backup-title">
         <div class="admin-panel-heading">
           <div>
@@ -320,6 +382,7 @@
     <script src="../assets/js/nas-telemetry.js" defer></script>
     <script src="../assets/js/shared/accesso.js" defer></script>
     <script src="../assets/js/canzoniere-model.js" defer></script>
+    <script src="../assets/js/canzoniere-playlist-store.js" defer></script>
     <script src="../assets/js/canzoniere-view.js" defer></script>
     <script src="../assets/js/canzoniere-admin.js" defer></script>
     <script src="../assets/js/shared/section-nav.js" defer></script>

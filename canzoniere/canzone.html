@@ -9,6 +9,18 @@
     <link rel="icon" href="../assets/img/emblema-2colori-noname.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
     <link rel="stylesheet" href="../assets/css/home.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/fontawesome.min.css"
+      integrity="sha384-mj4mLShEAyWi4Bui9LmFkAjPYWof6WrG8DfS8ebHhjm4/MClMqMMHpQzehNk5HeM"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/solid.min.css"
+      integrity="sha384-LpGibDKKReBRP3epUOaN9WBgkrQ1pJIvrrTugkYxVQgDvYuMCRaXk6YkrZ/h3aWk"
+      crossorigin="anonymous"
+    />
     <link rel="stylesheet" href="../assets/css/canzoniere.css" />
   </head>
   <body class="docs-page canzoniere-page song-page">
@@ -56,52 +68,101 @@
             <ul id="song-tags" class="song-tags" aria-label="Tag della canzone"></ul>
           </header>
           <div id="song-settings-panel" class="song-settings-panel" hidden>
-            <fieldset class="song-controls" aria-label="Controlli di lettura">
-              <label class="song-toggle">
-                <input id="show-chords" type="checkbox" checked aria-controls="song-score" />
-                <span>Mostra accordi</span>
-              </label>
-              <div class="transpose-controls" role="group" aria-label="Trasposizione">
-                <span class="control-label">Tonalità <output id="song-key">—</output></span>
-                <button id="transpose-down" class="button button-secondary" type="button" aria-label="Abbassa di un semitono">
-                  −
-                </button>
-                <output id="transpose-value" aria-live="polite">Originale</output>
-                <button id="transpose-up" class="button button-secondary" type="button" aria-label="Alza di un semitono">
-                  +
-                </button>
-                <button id="transpose-original" class="button button-secondary" type="button">Originale</button>
+            <button
+              id="song-settings-close"
+              class="button button-secondary song-settings-close"
+              type="button"
+              aria-controls="song-settings-panel"
+              aria-label="Chiudi impostazioni"
+              hidden
+            >
+              <i class="fa-solid fa-xmark song-settings-close-icon" aria-hidden="true"></i>
+            </button>
+            <fieldset class="song-settings-group song-controls">
+              <legend>Accordi e tonalità</legend>
+              <div class="song-settings-group-content">
+                <div class="song-settings-inline">
+                  <label class="song-toggle">
+                    <input id="show-chords" type="checkbox" checked aria-controls="song-score" />
+                    <span>Mostra accordi</span>
+                  </label>
+                  <div class="transpose-controls" role="group" aria-label="Trasposizione">
+                    <span class="control-label">Tonalità <output id="song-key">—</output></span>
+                    <button id="transpose-down" class="button button-secondary" type="button" aria-label="Abbassa di un semitono">
+                      −
+                    </button>
+                    <output id="transpose-value" aria-live="polite">Originale</output>
+                    <button id="transpose-up" class="button button-secondary" type="button" aria-label="Alza di un semitono">
+                      +
+                    </button>
+                    <button id="transpose-original" class="button button-secondary" type="button">Originale</button>
+                  </div>
+                </div>
               </div>
-              <label class="font-control" for="song-font-size">
-                Dimensione testo <output id="font-size-value" for="song-font-size">20 px</output>
-                <input id="song-font-size" type="range" min="16" max="32" step="2" value="20" />
-              </label>
-              <label class="song-toggle">
-                <input id="dark-mode" type="checkbox" />
-                <span>Modalità scura</span>
-              </label>
-              <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
-                Schermo sempre acceso
-              </button>
-              <label class="song-toggle">
-                <input id="print-chords" type="checkbox" checked />
-                <span>Stampa accordi</span>
-              </label>
-              <button id="print-song" class="button button-secondary" type="button">Stampa</button>
-              <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
             </fieldset>
-            <div class="scroll-settings">
-              <label class="scroll-correction" for="scroll-correction">
-                Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
-                <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
-              </label>
-              <p id="scroll-speed" class="scroll-speed"></p>
-              <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
-            </div>
+            <fieldset class="song-settings-group">
+              <legend>Testo e schermo</legend>
+              <div class="song-settings-group-content">
+                <label class="font-control" for="song-font-size">
+                  Dimensione testo <output id="font-size-value" for="song-font-size">18 px</output>
+                  <input id="song-font-size" type="range" min="16" max="48" step="2" value="18" />
+                </label>
+                <div class="song-settings-inline">
+                  <label class="song-toggle">
+                    <input id="dark-mode" type="checkbox" />
+                    <span>Modalità scura</span>
+                  </label>
+                  <button id="wake-lock" class="button button-secondary" type="button" aria-pressed="false">
+                    Schermo sempre acceso
+                  </button>
+                </div>
+                <p id="song-controls-status" class="song-controls-status" role="status" aria-live="polite"></p>
+              </div>
+            </fieldset>
+            <fieldset class="song-settings-group scroll-settings">
+              <legend>Scorrimento automatico</legend>
+              <div class="song-settings-group-content">
+                <label class="scroll-correction" for="scroll-correction">
+                  Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
+                  <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
+                </label>
+                <p id="scroll-speed" class="scroll-speed"></p>
+                <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
+              </div>
+            </fieldset>
+            <fieldset class="song-settings-group print-settings">
+              <legend>Stampa</legend>
+              <div class="song-settings-group-content">
+                <div class="song-settings-inline">
+                  <label class="song-toggle">
+                    <input id="print-chords" type="checkbox" checked />
+                    <span>Stampa accordi</span>
+                  </label>
+                  <button id="print-song" class="button button-secondary" type="button">Stampa</button>
+                </div>
+              </div>
+            </fieldset>
           </div>
-          <div class="scroll-controls" aria-label="Scorrimento automatico">
-            <button id="auto-scroll" class="button button-primary" type="button" aria-pressed="false" disabled>
-              Avvia scorrimento
+          <div class="scroll-controls" role="group" aria-label="Controlli rapidi">
+            <button
+              id="notation-toggle"
+              class="button button-secondary song-floating-button"
+              type="button"
+              aria-label="Notazione inglese; passa alla notazione italiana"
+              aria-pressed="false"
+              disabled
+            >
+              <span id="notation-indicator" class="song-notation-indicator" aria-hidden="true">EN</span>
+            </button>
+            <button
+              id="auto-scroll"
+              class="button button-primary song-floating-button"
+              type="button"
+              aria-label="Avvia lo scorrimento automatico"
+              aria-pressed="false"
+              disabled
+            >
+              ▶
             </button>
             <button
               id="song-settings-toggle"
@@ -113,7 +174,7 @@
               hidden
             >
               <span class="song-settings-icon" aria-hidden="true"><span></span><span></span><span></span></span>
-              <span>Impostazioni</span>
+              <span class="visually-hidden">Impostazioni</span>
             </button>
           </div>
           <div id="song-score" class="song-score" role="group" aria-label="Testo e accordi" tabindex="0"></div>

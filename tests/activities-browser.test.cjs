@@ -392,9 +392,13 @@ test("branch chiefs land on today's program, including the last camp day, across
               `${branch}: the chief does not need a branch selector`);
             const navigationShortcuts = await page.evaluate(`(() => ({
               menuHasMembers:!!document.querySelector('.reserved-links a[href$="soci.html"]'),
+              menuHasDocuments:!!document.querySelector('.reserved-links a[href$="documenti.html"]'),
+              menuHasCanzoniere:!!document.querySelector('.reserved-links a[href$="canzoniere.html"]'),
               pageLinkCount:document.querySelectorAll('.activities-page > .members-heading > a[href="soci.html"]').length
             }))()`);
             assert.equal(navigationShortcuts.menuHasMembers, true, `${branch}: Libro soci remains in the shared menu`);
+            assert.equal(navigationShortcuts.menuHasDocuments, true, `${branch}: documenti are in the shared menu`);
+            assert.equal(navigationShortcuts.menuHasCanzoniere, true, `${branch}: Canzoniere is in the shared menu`);
             assert.equal(navigationShortcuts.pageLinkCount, 0,
               `${branch} ${label}: Libro soci uses only the shared navigation`);
             assert.deepEqual(await page.evaluate(`(() => ({

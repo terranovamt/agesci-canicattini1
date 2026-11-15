@@ -228,6 +228,73 @@ body.canzoniere-admin-page > #canzoniere-admin {
   font-size: 13px;
 }
 
+.leader-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+  gap: 14px;
+}
+
+.leader-tool-panel {
+  min-width: 0;
+  padding: clamp(14px, 2.5vw, 22px);
+  border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg) 42%, var(--w));
+}
+
+.leader-tool-panel h3 {
+  margin: 0;
+  color: var(--v);
+  font: 700 21px/1.2 Georgia, "Times New Roman", serif;
+}
+
+.leader-playlist-add-form {
+  margin: 12px 0;
+}
+
+.leader-playlist-search-results {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.leader-playlist-search-results li {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--vl) 45%, var(--w));
+  border-radius: var(--radius-sm);
+  background: var(--w);
+}
+
+.leader-playlist-search-results li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.leader-playlist-search-results .button {
+  flex: none;
+  min-height: 40px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+#admin-leader-tools-panel .section-heading {
+  margin-bottom: 12px;
+}
+
+#admin-leader-tools-panel .section-heading h3 {
+  margin: 0;
+  color: var(--vd);
+}
+
 #admin-song-form textarea {
   box-sizing: border-box;
   width: 100%;

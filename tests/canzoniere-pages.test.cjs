@@ -35,12 +35,12 @@ class Element {
   addEventListener(name, callback) {
     this.listeners.set(name, callback);
   }
-  select() {}
+  focus() {}
   querySelectorAll(selector) {
     const className = selector.startsWith(".") ? selector.slice(1) : "";
     const matches = [];
     const visit = (node) => {
-      if (node.className.split(/\s+/).includes(className)) matches.push(node);
+      if (className && node.className.split(/\s+/).includes(className)) matches.push(node);
       node.children.forEach(visit);
     };
     this.children.forEach(visit);
@@ -49,7 +49,6 @@ class Element {
   remove() {
     this.parent.children = this.parent.children.filter((child) => child !== this);
   }
-  focus() {}
 }
 
 function song(number) {
@@ -65,7 +64,11 @@ function song(number) {
   };
 }
 
-test("public list shows accessible skeletons, fetches in blocks, and inserts titles as text", async () => {
+test("public Canzoniere shows songs and published playlists, without leader playlist tools", async () => {
+  const html = fs.readFileSync(require.resolve("../canzoniere/index.html"), "utf8");
+  assert.doesNotMatch(html, /La tua scaletta|Genera una scaletta|personal-playlist|playlist-generator|quick-presets/);
+  assert.match(html, /id="published-playlists"/);
+
   const ids = [
     "song-list",
     "song-filters",
@@ -79,25 +82,6 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
     "songs-more",
     "songs-retry",
     "clear-song-filters",
-    "personal-playlist-status",
-    "personal-playlist-items",
-    "playlist-add-form",
-    "playlist-song-search",
-    "playlist-add-status",
-    "playlist-add-results",
-    "share-playlist",
-    "share-playlist-controls",
-    "share-playlist-link",
-    "copy-playlist-link",
-    "open-playlist",
-    "clear-playlist",
-    "playlist-moment",
-    "generate-moment",
-    "regenerate-playlist",
-    "quick-presets",
-    "generated-playlist-status",
-    "generated-playlist-items",
-    "use-generated-playlist",
     "published-playlist-status",
     "published-playlists",
   ];
@@ -110,7 +94,6 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   let releaseCatalog;
   let releaseSecondPage;
   const allSongs = Array.from({ length: 26 }, (_, number) => song(number));
-  let savedSlugs = [];
   const filterMedia = { matches: true, addEventListener() {} };
   const catalogResponse = new Promise((resolve) => {
     releaseCatalog = resolve;
@@ -126,36 +109,26 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
         releaseSecondPage = resolve;
       });
     const limit = Number(url.searchParams.get("limit")) || 24;
-    const slugs = url.searchParams.get("slugs")?.split(",");
-    const selected = slugs ? allSongs.filter((item) => slugs.includes(item.slug)) : allSongs;
     return Promise.resolve({
       ok: true,
       json: async () => ({
-        songs: selected.slice(offset, offset + limit),
-        total: selected.length,
-        hasMore: offset + limit < selected.length,
+        songs: allSongs.slice(offset, offset + limit),
+        total: allSongs.length,
+        hasMore: offset + limit < allSongs.length,
       }),
     });
   };
   const window = {
-    location: { href: "http://localhost/agesci-canicattini1/canzoniere/", search: "", pathname: "/agesci-canicattini1/canzoniere/" },
+    location: {
+      href: "http://localhost/agesci-canicattini1/canzoniere/",
+      search: "",
+      pathname: "/agesci-canicattini1/canzoniere/",
+    },
     history: { replaceState() {} },
     addEventListener() {},
     matchMedia: () => filterMedia,
     setTimeout,
     clearTimeout,
-    CANZONIERE_PLAYLIST_STORE: {
-      read: () => ({ slugs: [], error: null }),
-      write: (slugs) => {
-        savedSlugs = [...slugs];
-        return { ok: true, error: null };
-      },
-      shareUrl: (slugs, currentUrl) => {
-        const url = new URL("canzone.html", currentUrl);
-        url.searchParams.set("slugs", slugs.join(","));
-        return url.href;
-      },
-    },
   };
   const source = fs.readFileSync(require.resolve("../assets/js/canzoniere.js"), "utf8");
   vm.runInNewContext(source, {
@@ -180,12 +153,11 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   assert.equal(elements["song-filter-toggle"].attributes["aria-expanded"], "true");
   releaseCatalog({
     ok: true,
-  json: async () => ({
-    tags: [{ slug: "ingresso", name: "Ingresso", category: "momento" }],
-    albums: [],
-    presets: [{ slug: "preset-demo", title: "Preset demo", tagSlugs: ["ingresso"], songSlugs: [], limit: 2 }],
-    playlists: [{ slug: "pubblicata-demo", title: "Scaletta demo", songSlugs: ["demo-0"] }],
-  }),
+    json: async () => ({
+      tags: [{ slug: "ingresso", name: "Ingresso", category: "momento" }],
+      albums: [],
+      playlists: [{ slug: "pubblicata-demo", title: "Scaletta demo", songSlugs: ["demo-0"] }],
+    }),
   });
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
@@ -197,33 +169,9 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   assert.equal(elements["song-list"].querySelectorAll(".song-card-open").length, 0);
   assert.equal(elements["songs-more"].hidden, false);
   assert.match(elements["song-list"].children[0].children[0].href, /canzone\.html\?slug=demo-0/);
-  elements["playlist-song-search"].value = "Canzone";
-  await elements["playlist-add-form"].listeners.get("submit")({ preventDefault() {} });
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.ok(requests.some((url) => url.searchParams.get("q") === "Canzone"));
-  const addFirstSong = elements["playlist-add-results"].children[0].children[1];
-  addFirstSong.listeners.get("click")();
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(savedSlugs, ["demo-0"]);
-  assert.equal(elements["playlist-add-results"].children[0].children[1].disabled, true);
-  assert.equal(elements["personal-playlist-items"].children.length, 1);
-  assert.match(elements["open-playlist"].href, /canzone\.html\?slugs=demo-0/);
-  assert.match(elements["published-playlists"].children[0].children[0].href, /canzone\.html\?playlist=pubblicata-demo/);
-
-  elements["quick-presets"].children[0].listeners.get("click")();
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(elements["generated-playlist-items"].children.length, 2);
-  assert.equal(elements["use-generated-playlist"].hidden, false);
-  const generatedSlugs = elements["generated-playlist-items"].children
-    .map((item) => item.children[1].href.split("slug=")[1]);
-  elements["use-generated-playlist"].listeners.get("click")();
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(savedSlugs, [...new Set(["demo-0", ...generatedSlugs])]);
-  assert.match(elements["open-playlist"].href, /canzone\.html\?slugs=/);
+  assert.equal(elements["published-playlists"].children.length, 1);
+  assert.match(elements["published-playlists"].children[0].children[0].href,
+    /canzone\.html\?playlist=pubblicata-demo/);
 
   const loadingMore = elements["songs-more"].listeners.get("click")();
   assert.equal(elements["song-list"].children.length, 26);
@@ -239,16 +187,59 @@ test("public list shows accessible skeletons, fetches in blocks, and inserts tit
   assert.ok(requests.some((url) => url.searchParams.get("limit") === "24" && url.searchParams.get("offset") === "24"));
 });
 
-test("mobile song reading keeps lyrics first and places controls behind the bottom settings menu", () => {
+test("public song page groups settings and adapts notation, scroll and reading layout", () => {
   const html = fs.readFileSync(require.resolve("../canzoniere/canzone.html"), "utf8");
   const css = fs.readFileSync(require.resolve("../assets/css/canzoniere.css"), "utf8");
+  const script = fs.readFileSync(require.resolve("../assets/js/canzoniere-song.js"), "utf8");
   const mobileStyles = css.split("@media (max-width: 640px) {")[1];
+  const landscapeStyles = css.split("@media (max-height: 560px) and (orientation: landscape) {")[1];
+  const compactReadingStyles = css.split("@media (max-width: 640px), (max-height: 560px) and (orientation: landscape) {")[1];
 
   assert.doesNotMatch(html, /add-song-to-playlist|Aggiungi alla scaletta/);
   assert.match(html, /id="song-settings-panel" class="song-settings-panel" hidden/);
   assert.match(html, /id="song-settings-toggle"[\s\S]*?aria-controls="song-settings-panel"/);
+  assert.match(html, /id="song-settings-close"[^>]*aria-label="Chiudi impostazioni"/);
+  assert.match(html, /class="fa-solid fa-xmark song-settings-close-icon" aria-hidden="true"/);
+  assert.match(html, /fontawesome-free@7\.2\.0\/css\/solid\.min\.css/);
+  for (const section of ["Accordi e tonalità", "Testo e schermo", "Scorrimento automatico", "Stampa"])
+    assert.match(html, new RegExp(`<legend>${section}</legend>`));
+  assert.equal((html.match(/<fieldset class="song-settings-group/g) || []).length, 4);
+  assert.doesNotMatch(html, /<details class="song-settings-group/);
+  for (const id of ["show-chords", "transpose-down", "transpose-up", "transpose-original",
+    "song-font-size", "dark-mode", "wake-lock", "scroll-correction", "scroll-speed", "print-chords", "print-song"])
+    assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /id="notation-toggle"/);
+  assert.match(html, /id="notation-indicator"[^>]*>EN<\/span>/);
+  assert.match(html, /id="auto-scroll"[^>]*aria-label="Avvia lo scorrimento automatico"/);
+  assert.match(html, /id="font-size-value"[^>]*>18 px<\/output>/);
+  assert.match(html, /id="song-font-size" type="range" min="16" max="48"/);
   assert.match(mobileStyles, /\.song-detail-heading\s*\{\s*order:\s*1;/);
   assert.match(mobileStyles, /#song-score\s*\{\s*order:\s*2;/);
   assert.match(mobileStyles, /\.song-settings-panel\s*\{\s*order:\s*3;/);
-  assert.match(mobileStyles, /\.scroll-controls\s*\{\s*position:\s*fixed/);
+  assert.match(css, /\.song-settings-panel\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
+  assert.match(mobileStyles, /\.song-settings-panel\s*\{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(css, /\.scroll-controls\s*\{[^}]*position:\s*fixed/s);
+  assert.match(css, /\.scroll-controls\s*\{[^}]*flex-direction:\s*column/s);
+  assert.match(css, /\.song-settings-close-icon::before\s*\{[^}]*content:\s*var\(--fa,/s);
+  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #notation-toggle/);
+  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #auto-scroll/);
+  assert.match(css, /\.song-score\s*\{[^}]*min-height:\s*min\(45vh,\s*560px\)/s);
+  assert.match(css, /body\.song-page #song-status:empty\s*\{\s*display:\s*none;/);
+  assert.match(mobileStyles, /min-height:\s*calc\(100dvh - 220px\)/);
+  assert.ok(landscapeStyles, "short landscape screens have a dedicated reading layout");
+  assert.match(landscapeStyles, /#song-score\s*\{[\s\S]*?min-height:\s*calc\(100dvh/);
+  assert.match(script, /model\.detectChordNotation/);
+  assert.match(script, /model\.translateChordPro/);
+  assert.match(script, /settingsToggle\.hidden = !compact/);
+  assert.match(script, /settingsClose\.hidden = !compact \|\| !settingsOpen/);
+  assert.match(script, /content\.classList\.toggle\("song-settings-open", compact && settingsOpen\)/);
+  assert.match(script, /function updateAutomaticFontSize\(\)/);
+  assert.match(script, /function updateSongDensity\(\)/);
+  assert.match(script, /content\.classList\.toggle\("song-content-compact", compact\)/);
+  assert.match(script, /matchMedia\("\(orientation: landscape\)"\)/);
+  assert.match(script, /const minimum = landscape && viewportWidth >= 640 \? 26 : 18/);
+  assert.match(script, /Math\.max\(minimum,/);
+  assert.match(script, /window\.visualViewport/);
+  assert.match(compactReadingStyles, /justify-content:\s*flex-start/);
+  assert.match(compactReadingStyles, /padding:\s*0 0 2px/);
 });

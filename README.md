@@ -87,7 +87,7 @@ destinazione. Raggruppamento per anno di nascita e progressioni sono manuali.
 | [docs/ottimizzazione-synology.md](docs/ottimizzazione-synology.md) | backend NAS, DDNS Sky WiFi, auto-deployment, calendari DSM e backup          |
 | [docs/sviluppo-ia.md](docs/sviluppo-ia.md)                         | architettura NAS, comandi verificati, invarianti e checklist per lo sviluppo con IA |
 | [docs/soci.md](docs/soci.md)                                     | importazione AGESCI, schede, filtri, campi educativi, macro e documenti |
-| [docs/canzoniere.md](docs/canzoniere.md)                           | modello SQLite, API pubbliche e admin, ChordPro e scorrimento |
+| [docs/canzoniere.md](docs/canzoniere.md)                           | modello SQLite, API pubbliche e per capi, ChordPro e scorrimento |
 
 ## Indirizzi
 
@@ -103,7 +103,7 @@ restituisce 404; non viene creato un portfolio da questo repository.
 | Canzoniere                   | `.../canzoniere/` (pubblico, ricerca e scheda canzone)          |
 | Area riservata               | `.../area-riservata/` (codice censimento e password)           |
 | Gestione PDF                 | `.../area-riservata/documenti.html`                            |
-| Gestione Canzoniere          | `.../area-riservata/canzoniere.html` (solo amministratore)     |
+| Gestione Canzoniere | `.../area-riservata/canzoniere.html` (amministratore e capi con branca di servizio) |
 | Libro soci                   | `.../area-riservata/soci.html` (amministratore e capi assegnati) |
 | Documenti pubblici assemblea | `.../assemblea/` (nessun login)                                |
 | Archivio documenti           | `.../documenti/` (pubblico, ricerca per anno e testo)          |
