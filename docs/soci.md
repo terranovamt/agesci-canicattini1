@@ -196,12 +196,14 @@ Le viste **Presenze**, **Quote**, **Programma** e, nelle riunioni e cacce L/C,
 Le presenze L/C sono raggruppate per sestiglia e quelle E/G per squadriglia,
 con colori dell'unita e card dei soci. Cliccare la card registra il passaggio
 successivo del ciclo; lo stato e riconoscibile dal testo, dal simbolo e dal
-colore, non solo dal colore.
+colore, non solo dal colore. Le card E/G sono ordinate per ruolo e riportano
+CS, VC o PT prima del nome; il guidone identifica la squadriglia.
 Il menu della card permette anche Giustificato o Da registrare.
 R/S resta un elenco unico.
 Le attivita possono coprire piu giorni: ogni giornata ha un'intestazione e i
 momenti sono ordinati per ora, mostrata in una colonna a sinistra. Il momento
-in corso e' evidenziato e quelli passati attenuati. Il giorno viene ereditato
+in corso e' evidenziato con l'etichetta sopra la card; quelli passati sono
+attenuati. Il giorno viene ereditato
 dal blocco della giornata: non va reinserito per ogni momento.
 Il luogo si imposta una sola volta nei dati dell'attivita; eventuali luoghi
 diversi gia salvati nei momenti restano conservati finche il campo comune
@@ -280,10 +282,11 @@ versamento parziale mantiene la presenza e mostra quanto manca; il tocco
 successivo completa il saldo. Senza quota, il pulsante alterna direttamente
 Presente e Assente. La vista **Quote** non compare se non e' prevista una
 quota e non ci sono versamenti da conservare.
-Per inserire o correggere un versamento apri **Dettagli del versamento** e
-aggiorna **Versato totale**, che indica l'importo complessivamente ricevuto,
-non il singolo incremento. Se inserisci un importo positivo, la presenza
-viene registrata automaticamente. Poi usare **Salva attivita**.
+In **Quote**, clicca la card del socio per aprire o chiudere i dettagli del
+versamento, quindi aggiorna **Versato totale**: indica l'importo
+complessivamente ricevuto, non il singolo incremento. Se inserisci un importo
+positivo, la presenza viene registrata automaticamente. Poi usare
+**Salva attivita**.
 
 Gli importi sono salvati come centesimi interi e accettano massimo due
 decimali. Il riepilogo mostra in riga **Totale atteso**, **Incassato**,

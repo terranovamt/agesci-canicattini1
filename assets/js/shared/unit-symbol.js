@@ -5,6 +5,7 @@
   const guidoniRoot = scriptUrl
     ? new URL('../../img/guidoni/', scriptUrl).href
     : new URL(`${root.LIVE?.basePath || ''}/assets/img/guidoni/`, document.baseURI).href;
+  let symbolIndex = 0;
   root.SOCI_UNIT_SYMBOL = function (unit) {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
@@ -20,9 +21,22 @@
       svg.append(shape('path', { d: 'M110 10 L190 148.564 L30 148.564 Z', fill: unit.color, stroke: '#f5cb31', 'stroke-width': '10', 'stroke-linejoin': 'round' }));
     } else {
       const outline = 'M30 20 Q155 12 205 80 Q155 148 30 140 Z';
-      svg.append(shape('path', { d: 'M23 8 V153', stroke: '#76512d', 'stroke-width': '6', 'stroke-linecap': 'round' }));
-      svg.append(shape('path', { d: outline, fill: '#ffffff', stroke: '#5c5660', 'stroke-width': '2' }));
       const identity = M.patrolIdentity(unit.name);
+      const color = unit.color || identity?.color || '#ffffff';
+      const color2 = unit.color2 || identity?.color2 || color;
+      svg.append(shape('path', { d: 'M23 8 V153', stroke: '#76512d', 'stroke-width': '6', 'stroke-linecap': 'round' }));
+      svg.append(shape('path', { d: outline, fill: color }));
+      if (color2 !== color) {
+        const clipId = `soci-guidon-clip-${++symbolIndex}`;
+        const clip = shape('clipPath', { id: clipId });
+        clip.append(shape('path', { d: outline }));
+        const defs = shape('defs', {});
+        defs.append(clip);
+        svg.append(defs, shape('path', {
+          d: 'M115 10 H220 V150 H115 Z', fill: color2, 'clip-path': `url(#${clipId})`,
+        }));
+      }
+      svg.append(shape('path', { d: outline, fill: 'none', stroke: '#5c5660', 'stroke-width': '2' }));
       if (identity) {
         const image = shape('image', { href: guidoniRoot + identity.image, x: 0, y: 0, width: 220, height: 160, preserveAspectRatio: 'xMidYMid meet' });
         image.addEventListener('error', () => image.remove(), { once: true });

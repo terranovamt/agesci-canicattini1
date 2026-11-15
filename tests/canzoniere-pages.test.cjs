@@ -66,8 +66,10 @@ function song(number) {
 
 test("public Canzoniere shows songs and published playlists, without leader playlist tools", async () => {
   const html = fs.readFileSync(require.resolve("../canzoniere/index.html"), "utf8");
+  const css = fs.readFileSync(require.resolve("../assets/css/canzoniere.css"), "utf8");
   assert.doesNotMatch(html, /La tua scaletta|Genera una scaletta|personal-playlist|playlist-generator|quick-presets/);
   assert.match(html, /id="published-playlists"/);
+  assert.match(css, /body\.canzoniere-page \.canzoniere-section\s*\{\s*margin:\s*0 0 20px;/);
 
   const ids = [
     "song-list",
@@ -172,6 +174,10 @@ test("public Canzoniere shows songs and published playlists, without leader play
   assert.equal(elements["published-playlists"].children.length, 1);
   assert.match(elements["published-playlists"].children[0].children[0].href,
     /canzone\.html\?playlist=pubblicata-demo/);
+  const playlistPreview = elements["published-playlists"].children[0].children[2];
+  assert.equal(playlistPreview.className, "published-playlist-songs");
+  assert.equal(playlistPreview.children[0].children[0].textContent, "Canzone <b>demo</b>");
+  assert.match(playlistPreview.children[0].children[0].href, /canzone\.html\?slug=demo-0/);
 
   const loadingMore = elements["songs-more"].listeners.get("click")();
   assert.equal(elements["song-list"].children.length, 26);
@@ -185,6 +191,47 @@ test("public Canzoniere shows songs and published playlists, without leader play
   assert.equal(elements["song-list"]["aria-busy"], "false");
   assert.equal(elements["songs-more"].hidden, true);
   assert.ok(requests.some((url) => url.searchParams.get("limit") === "24" && url.searchParams.get("offset") === "24"));
+});
+
+test("public song scores wrap long lyrics within the available width and retain chord positions", () => {
+  class ScoreNode {
+    constructor(tagName) {
+      this.tagName = tagName;
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.className = "";
+      this.textContent = "";
+      this.clientWidth = 0;
+      this.classList = { add: name => { this.className = [this.className, name].filter(Boolean).join(" "); } };
+    }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    setAttribute(name, value) { this[name] = value; }
+    getContext() {
+      return { font: "", measureText: text => ({ width: text.length * 6 }) };
+    }
+  }
+  const document = { createElement: tagName => new ScoreNode(tagName) };
+  const window = {
+    document,
+    CANZONIERE_MODEL: require("../assets/js/canzoniere-model.js"),
+    getComputedStyle: () => ({ font: "10px monospace", fontSize: "10px", paddingLeft: "6px", paddingRight: "6px" }),
+  };
+  vm.runInNewContext(fs.readFileSync(require.resolve("../assets/js/canzoniere-view.js"), "utf8"), { window, document });
+  const score = new ScoreNode("div");
+  score.clientWidth = 132;
+  const lyric = "This is a very long lyric phrase that should wrap automatically without horizontal scrolling";
+  window.CANZONIERE_VIEW.renderScore(score, {
+    text: "[Am]This is a very long lyric phrase [F]that should wrap automatically without horizontal scrolling",
+  });
+  const rows = score.children;
+  assert.ok(rows.length > 2, "long lyrics split into readable rows");
+  assert.ok(rows.every(row => row.children[1].textContent.length <= 20), "each row fits the measured 20-character line");
+  assert.equal(rows.map(row => row.children[1].textContent).join(" "), lyric);
+  assert.deepEqual(rows.flatMap(row => row.children[0].children.map(marker => marker.textContent)), ["Am", "F"]);
+  assert.ok(rows.flatMap(row => row.children[0].children)
+    .every(marker => Number.parseFloat(marker.style.left) <= 20), "chord markers stay within their wrapped rows");
 });
 
 test("public song page groups settings and adapts notation, scroll and reading layout", () => {
@@ -205,11 +252,12 @@ test("public song page groups settings and adapts notation, scroll and reading l
     assert.match(html, new RegExp(`<legend>${section}</legend>`));
   assert.equal((html.match(/<fieldset class="song-settings-group/g) || []).length, 4);
   assert.doesNotMatch(html, /<details class="song-settings-group/);
-  for (const id of ["show-chords", "transpose-down", "transpose-up", "transpose-original",
+  for (const id of ["show-chords", "chords-toggle", "transpose-down", "transpose-up", "transpose-original",
     "song-font-size", "dark-mode", "wake-lock", "scroll-correction", "scroll-speed", "print-chords", "print-song"])
     assert.match(html, new RegExp(`id="${id}"`));
   assert.match(html, /id="notation-toggle"/);
   assert.match(html, /id="notation-indicator"[^>]*>EN<\/span>/);
+  assert.match(html, /id="chords-toggle"[\s\S]*?aria-label="Mostra solo il testo"/);
   assert.match(html, /id="auto-scroll"[^>]*aria-label="Avvia lo scorrimento automatico"/);
   assert.match(html, /id="font-size-value"[^>]*>18 px<\/output>/);
   assert.match(html, /id="song-font-size" type="range" min="16" max="48"/);
@@ -222,8 +270,11 @@ test("public song page groups settings and adapts notation, scroll and reading l
   assert.match(css, /\.scroll-controls\s*\{[^}]*flex-direction:\s*column/s);
   assert.match(css, /\.song-settings-close-icon::before\s*\{[^}]*content:\s*var\(--fa,/s);
   assert.match(css, /#song-content\.song-settings-open \.scroll-controls #notation-toggle/);
+  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #chords-toggle/);
   assert.match(css, /#song-content\.song-settings-open \.scroll-controls #auto-scroll/);
   assert.match(css, /\.song-score\s*\{[^}]*min-height:\s*min\(45vh,\s*560px\)/s);
+  assert.match(css, /\.song-score\s*\{[^}]*overflow-x:\s*hidden/s);
+  assert.match(css, /\.lyric-line\s*\{[^}]*white-space:\s*pre-wrap/);
   assert.match(css, /body\.song-page #song-status:empty\s*\{\s*display:\s*none;/);
   assert.match(mobileStyles, /min-height:\s*calc\(100dvh - 220px\)/);
   assert.ok(landscapeStyles, "short landscape screens have a dedicated reading layout");

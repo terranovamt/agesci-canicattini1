@@ -110,6 +110,16 @@
     };
     return order(a.role) - order(b.role) || a.name.localeCompare(b.name, 'it');
   }
+  function unitRoleBadge(person) {
+    const roles = M.unitRoles('E/G'), index = roles.indexOf(person?.role);
+    const code = index === 0 ? 'CS' : index === 1 ? 'VC' : index === 3 ? 'PT' : '';
+    if (!code) return null;
+    const style = index === 0 ? 'unit-chief' : index === 1 ? 'unit-deputy' : 'unit-newcomer';
+    const badge = node('abbr', code, `unit-role-badge ${style}`);
+    badge.title = person.role;
+    badge.setAttribute('aria-label', person.role);
+    return badge;
+  }
   function pathFilterMatch(item) {
     const selectedState = pathFilter.state, kind = pathFilter.kind;
     const hidden = !selectedState && !pathMember() && ['Conquistato', 'Conclusa'].includes(state(item));
@@ -325,7 +335,10 @@
           : members;
         list.append(...orderedMembers.flatMap(member => {
           const link = () => {
-            const anchor = node('a', member.name, 'path-member-link');
+            const anchor = node('a', undefined, 'path-member-link');
+            const roleBadge = branch() === 'E/G' ? unitRoleBadge(member) : null;
+            if (roleBadge) anchor.append(roleBadge);
+            anchor.append(node('span', member.name));
             anchor.href = `attivita.html?member=${member.id}#paths-panel`;
             return anchor;
           };
@@ -373,8 +386,13 @@
       const progress = node('progress'); progress.max = item.steps.length || 1;
       progress.value = item.steps.filter(step => step.done).length;
       progress.setAttribute('aria-label', `${progress.value} di ${item.steps.length} ${item.kind === 'hunt' ? 'prede conquistate' : 'tappe completate'}`);
+      const owner = node('p', undefined, 'activity-path-owner');
+      const ownerBadge = branch() === 'E/G'
+        ? unitRoleBadge(data.members.find(member => member.id === item.personId)) : null;
+      if (ownerBadge) owner.append(ownerBadge);
+      owner.append(node('span', item.memberName));
       card.append(node('p', pathLabels[item.kind], 'eyebrow'), node('h3', item.title),
-        node('p', item.memberName), badge, progress,
+        owner, badge, progress,
         node('p', `${progress.value}/${item.steps.length} ${item.kind === 'hunt' ? 'prede conquistate' : 'tappe completate'}`),
         ...(status === 'Conclusa' ? [node('p', 'Stagione di caccia conclusa.', 'activity-path-closure')] : []));
       const steps = node('div', undefined, 'path-inline-steps');
@@ -1078,12 +1096,16 @@
         : person.status !== 'presente' ? 'Presente senza quota'
           : person.paidCents >= feeCents ? 'Assente · azzera quota'
             : person.paidCents > 0 ? `Completa quota · ${AM.money(remaining)}` : 'Presente + quota pagata';
-      row.dataset.cardAction = eventView === 'presenze' ? 'cycle' : '';
-      row.tabIndex = eventView === 'presenze' ? 0 : -1;
+      row.dataset.cardAction = eventView === 'presenze' ? 'cycle' : eventView === 'quote' ? 'payment' : '';
+      row.tabIndex = ['presenze', 'quote'].includes(eventView) ? 0 : -1;
       const currentStatus = row.querySelector('[data-person-status]').textContent;
       row.setAttribute('aria-label', eventView === 'presenze'
         ? `${row.dataset.memberName}: ${currentStatus}. Premi Invio o spazio per ${nextAction}.`
-        : `${row.dataset.memberName}: ${currentStatus}.`);
+        : eventView === 'quote'
+          ? `${row.dataset.memberName}: ${currentStatus}. Premi Invio o spazio per ${payment.open ? 'chiudere' : 'aprire'} i dettagli del versamento.`
+          : `${row.dataset.memberName}: ${currentStatus}.`);
+      if (eventView === 'quote') row.setAttribute('aria-expanded', String(payment.open));
+      else row.removeAttribute('aria-expanded');
       row.querySelector('[data-balance]').replaceChildren(
         ...[['Atteso', expected], ['Ricevuto', person.paidCents], ['Da ricevere', remaining], ['Versato in più', excess]]
           .map(([label, amount]) => {
@@ -1100,7 +1122,8 @@
     for (const group of $('event-attendance').querySelectorAll('.activity-attendance-group')) {
       const rows = [...group.querySelectorAll('.activity-person')];
       group.hidden = rows.every(row => row.hidden);
-      group.querySelector('summary').textContent = `${group.dataset.unit} · ${rows.filter(row => row.dataset.status === 'presente').length}/${rows.length} presenti`;
+      group.querySelector('.activity-attendance-unit-label').textContent =
+        `${group.dataset.unit} · ${rows.filter(row => row.dataset.status === 'presente').length}/${rows.length} presenti`;
     }
     $('event-attendance-count').textContent = `${visible}/${attendance.length} soci · ${attendance.filter(person => person.status === 'presente').length} presenti`;
     updateTournamentAvailability();
@@ -1230,10 +1253,17 @@
     $('event-attendance').replaceChildren(...grouped.map(([unit, group]) => {
       const container = node('details', undefined, 'activity-attendance-group');
       container.dataset.unit = unit || 'Soci'; container.open = true;
+      container.dataset.branch = branch();
       const [color, color2] = attendanceColors(unit);
       container.style.setProperty('--unit-color', color);
       container.style.setProperty('--unit-color-secondary', color2);
-      container.append(node('summary', unit || 'Soci'));
+      const groupSummary = node('summary');
+      if (branch() === 'E/G') groupSummary.append(window.SOCI_UNIT_SYMBOL({
+        branch: branch(), name: unit, color, color2,
+      }));
+      const groupLabel = node('span', unit || 'Soci', 'activity-attendance-unit-label');
+      groupSummary.append(groupLabel);
+      container.append(groupSummary);
       const createPersonRow = person => {
         const row = node('section', undefined, 'activity-person');
         row.dataset.personId = person.personId;
@@ -1275,6 +1305,13 @@
         const summary = node('div', undefined, 'activity-person-summary');
         const status = node('span', undefined, 'activity-person-status');
         status.dataset.personStatus = '';
+        const roleBadge = branch() === 'E/G' ? unitRoleBadge(person) : null;
+        if (roleBadge) summary.append(roleBadge);
+        else if (branch() === 'E/G') {
+          const roleSlot = node('span', undefined, 'activity-role-badge-placeholder');
+          roleSlot.setAttribute('aria-hidden', 'true');
+          summary.append(roleSlot);
+        }
         summary.append(node('strong', person.name), status);
         const label = node('label', 'Presenza'), select = node('select');
         select.name = 'attendance-' + person.personId; select.dataset.personId = person.personId;
@@ -1313,22 +1350,31 @@
         controls.append(more, label, profile);
         const payment = node('details', undefined, 'activity-payment');
         payment.id = 'activity-payment-' + person.personId;
-        payment.append(node('summary', 'Dettagli del versamento'));
+        const paymentSummary = node('summary');
+        paymentSummary.setAttribute('aria-label', `Dettagli del versamento per ${person.name}`);
+        payment.append(paymentSummary);
         const paymentControls = node('div', undefined, 'activity-person-controls');
         paymentControls.append(paidLabel);
         const balance = node('div', undefined, 'activity-fee-balance'); balance.dataset.balance = '';
         payment.append(paymentControls, balance, node('p', 'Il versato è il totale ricevuto, acconti inclusi.', 'members-note'));
         row.setAttribute('role', 'group');
         row.setAttribute('aria-keyshortcuts', 'Enter Space');
+        const togglePayment = () => {
+          payment.open = !payment.open;
+          updateAttendance();
+        };
         row.addEventListener('click', event => {
           const control = event.target.closest('a,button,input,select,textarea,summary,details');
-          if (eventView !== 'presenze' || control && row.contains(control)) return;
-          cycleAttendance();
+          if (control && row.contains(control)) return;
+          if (eventView === 'presenze') cycleAttendance();
+          else if (eventView === 'quote') togglePayment();
         });
         row.addEventListener('keydown', event => {
-          if (eventView !== 'presenze' || event.target !== row || !['Enter', ' '].includes(event.key)) return;
+          if (!['presenze', 'quote'].includes(eventView) || event.target !== row ||
+              !['Enter', ' '].includes(event.key)) return;
           event.preventDefault();
-          cycleAttendance();
+          if (eventView === 'presenze') cycleAttendance();
+          else togglePayment();
         });
         row.append(summary, controls, payment);
         return row;
@@ -1336,23 +1382,7 @@
       const orderedGroup = branch() === 'E/G'
         ? group.slice().sort((a, b) => compareUnitRole(a, b, 'E/G'))
         : group;
-      if (branch() !== 'E/G') {
-        container.append(...orderedGroup.map(createPersonRow));
-        return container;
-      }
-      const roleGroups = new Map();
-      for (const person of orderedGroup) {
-        const role = M.unitRoles('E/G').includes(person.role) ? person.role : 'Ruolo da assegnare';
-        if (!roleGroups.has(role)) roleGroups.set(role, []);
-        roleGroups.get(role).push(person);
-      }
-      for (const role of [...M.unitRoles('E/G'), 'Ruolo da assegnare']) {
-        const members = roleGroups.get(role);
-        if (!members?.length) continue;
-        const lane = node('section', undefined, 'activity-attendance-role-group');
-        lane.append(node('h4', role, 'activity-attendance-role-heading'), ...members.map(createPersonRow));
-        container.append(lane);
-      }
+      container.append(...orderedGroup.map(createPersonRow));
       return container;
     }));
     if (!persons.length) $('event-attendance').append(node('p', 'Nessun socio disponibile: aggiungilo dal Libro soci.', 'members-note'));

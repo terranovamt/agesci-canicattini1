@@ -149,7 +149,7 @@ test("compact unit board supports fixed colors, ordered rows, dragging, moves an
           $('close-unit').click();
           check(JSON.stringify([...document.querySelector('[data-unit-id="1"]').querySelectorAll('[data-role]')].map(node => node.dataset.role)) ===
             JSON.stringify(M.unitRoles('E/G')), 'roleOrder');
-          check(document.querySelector('[data-unit-id="1"] .unit-chief abbr').textContent === 'C' &&
+          check(document.querySelector('[data-unit-id="1"] .unit-chief abbr').textContent === 'CS' &&
             document.querySelector('[data-unit-id="1"] .unit-deputy abbr').textContent === 'VC' &&
             !document.querySelector('[data-unit-id="1"] .unit-regular h4') &&
             !!document.querySelector('[data-unit-id="1"] .unit-newcomer'), 'compactRows');

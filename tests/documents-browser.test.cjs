@@ -69,10 +69,11 @@ test("public documents and management work in a browser at all required widths",
       "assets/js/home-calendars.js",
     ]),
     fixture("area-riservata/documenti.html", "assets/css/gestione-documenti.css", [
+      "assets/js/nas-nav.js",
       "assets/js/documents-model.js",
       "assets/js/documents-store.js",
       "assets/js/gestione-documenti.js",
-    ]),
+    ], { admin: false, serviceBranch: "E/G" }),
     fixture("area-riservata/assemblea/setup.html", "area-riservata/assemblea/core/setup.css", [
       "assets/js/nas-nav.js",
       "area-riservata/assemblea/core/salva-dati.js",
@@ -106,6 +107,23 @@ test("public documents and management work in a browser at all required widths",
         frame.srcdoc = pages[page];
         await loaded;
         const doc = frame.contentDocument;
+        if (page === 1) {
+          const marker = doc.querySelector(".branch-identity-marker");
+          const markerStyle = frame.contentWindow.getComputedStyle(marker);
+          const brandTitle = doc.querySelector(".reserved-brand .branch-heading-brand-title");
+          const brandTitleStyle = frame.contentWindow.getComputedStyle(brandTitle);
+          const titleBounds = brandTitle.querySelector(".reserved-title").getBoundingClientRect();
+          const markerBounds = marker.getBoundingClientRect();
+          results.push({
+            documentsBranchMarker: !marker.hidden && marker.textContent.trim() === "Branca E/G",
+            documentsBranchPill: markerStyle.display === "inline-flex" &&
+              markerStyle.backgroundColor === "rgb(237, 247, 239)" &&
+              markerStyle.borderLeftWidth === "3px",
+            documentsBrandTitleStacked: brandTitleStyle.display === "flex" &&
+              brandTitleStyle.flexDirection === "column" && brandTitleStyle.alignItems === "flex-start",
+            documentsBranchMarkerAligned: Math.abs(markerBounds.left - titleBounds.left) <= 1,
+          });
+        }
         for (const width of [375, 768, 1024, 1440]) {
           frame.style.width = width + 'px';
           frame.style.height = (width === 375 ? 740 : 1000) + 'px';
@@ -611,6 +629,11 @@ test("public documents and management work in a browser at all required widths",
     const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
     assert.ok(match, result.stdout.slice(-3000) + result.stderr.slice(-1500));
     const results = JSON.parse(match[1]);
+    assert.deepEqual(results.find((item) => "documentsBranchMarker" in item), {
+      documentsBranchMarker: true,
+      documentsBranchPill: true,
+      documentsBrandTitleInline: true,
+    });
     assert.deepEqual(results.find((item) => "latestTitles" in item).latestTitles, [
       "Nuovissimo",
       "Secondo",

@@ -404,6 +404,13 @@ test("branch chiefs land on today's program, including the last camp day, across
             row.querySelector('[name^="program-title-"]').value, row.dataset.timeState])`),
           branch === "L/C" ? [["Gioco nel bosco", "current"], ["Cerchio e verifica", "upcoming"]] :
             [["Il momento di ieri", "past"], ["Gioco nel bosco", "current"], ["Cerchio e verifica", "upcoming"]]);
+          assert.deepEqual(await page.evaluate(`(() => {
+            const row = [...document.querySelectorAll('#event-program .activity-program-item')]
+              .find(item => item.dataset.timeState === 'current');
+            const badge = row.querySelector('.program-now').getBoundingClientRect();
+            return { hidden: row.querySelector('.program-now').hidden,
+              above: badge.bottom <= row.getBoundingClientRect().top + 1 };
+          })()`), { hidden: false, above: true }, `${branch} ${label}: In corso sits above its program card`);
           assert.match(await page.evaluate("document.getElementById('event-live-moment').textContent"), /Gioco nel bosco.*Prato della base.*Corde e cartelloni/);
           await shot(label + "-live-programma-" + branch.replace("/", ""));
           // A clock refresh must not reset unsaved attendance or reopen the editor.
@@ -522,7 +529,7 @@ test("branch chiefs land on today's program, including the last camp day, across
     }
   });
 
-test("E/G attendance rows follow patrol role order", { skip: !chrome, timeout: 120000 }, async () => {
+test("E/G attendance groups show the patrol guidon and role badges without extra headings", { skip: !chrome, timeout: 120000 }, async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "agesci-role-attendance-"));
   const app = await startNasDev({ basePath: "/agesci-canicattini1", censusCodes: "7654321" });
   let page;
@@ -550,6 +557,7 @@ test("E/G attendance rows follow patrol role order", { skip: !chrome, timeout: 1
         ['491102', 'Vice', 'Vice capo squadriglia'],
         ['491103', 'Squadrigliere', 'Squadrigliere'],
         ['491104', 'Senza ruolo', ''],
+        ['491105', 'Piede tenero', 'Piede tenero'],
       ];
       for (const [code, surname, role] of roles) {
         const created = await ACCESSO.request('members', 'POST', {code, branch:'E/G',
@@ -568,16 +576,69 @@ test("E/G attendance rows follow patrol role order", { skip: !chrome, timeout: 1
     })()`);
     await go(`attivita.html?event=${fixture}&presenze=1`);
     await wait(`document.getElementById('event-dialog')?.open &&
-      document.querySelector('#event-attendance .activity-attendance-role-heading')?.textContent === 'Capo squadriglia'`);
-    const headings = await page.evaluate(`(() => {
+      document.querySelector('#event-attendance .activity-attendance-group[data-unit="Aironi"] > summary svg')`);
+    const group = await page.evaluate(`(() => {
       const group = [...document.querySelectorAll('.activity-attendance-group')]
         .find(item => item.dataset.unit === 'Aironi');
-      return group && [...group.querySelectorAll('.activity-attendance-role-heading')]
-        .map(heading => heading.textContent);
+      const symbol = group.querySelector(':scope > summary svg');
+      const identity = SOCI_MODEL.patrolIdentity('Aironi');
+      return group && {
+        summary: group.querySelector('.activity-attendance-unit-label')?.textContent,
+        guidon: {
+          label: symbol?.getAttribute('aria-label'),
+          colors: [...(symbol?.querySelectorAll('path') || [])]
+            .map(path => path.getAttribute('fill')).filter(color => color && color !== 'none'),
+          expectedColors: [identity.color, identity.color2],
+        },
+        roleHeadings: group.querySelectorAll('.activity-attendance-role-heading, .activity-attendance-role-group').length,
+        cards: [...group.querySelectorAll(':scope > .activity-person')].map(card => {
+          const badge = card.querySelector('.activity-person-summary > abbr');
+          return [card.querySelector('.activity-person-summary > strong').textContent,
+            badge?.textContent || '', badge?.getAttribute('aria-label') || ''];
+        }),
+        namesAligned: (() => {
+          const lefts = [...group.querySelectorAll('.activity-person-summary > strong')]
+            .map(name => name.getBoundingClientRect().left);
+          return Math.max(...lefts) - Math.min(...lefts) <= 1;
+        })(),
+      };
     })()`);
-    assert.deepEqual(headings,
-      ['Capo squadriglia', 'Vice capo squadriglia', 'Squadrigliere', 'Ruolo da assegnare'],
-      "E/G presences are grouped in patrol role order");
+    assert.deepEqual(group, {
+      summary: 'Aironi · 0/5 presenti',
+      guidon: {
+        label: 'Guidone della squadriglia Aironi',
+        colors: ['#398258', '#898989'],
+        expectedColors: ['#398258', '#898989'],
+      },
+      roleHeadings: 0,
+      cards: [
+        ['Socio Capo', 'CS', 'Capo squadriglia'],
+        ['Socio Vice', 'VC', 'Vice capo squadriglia'],
+        ['Socio Squadrigliere', '', ''],
+        ['Socio Piede tenero', 'PT', 'Piede tenero'],
+        ['Socio Senza ruolo', '', ''],
+      ],
+      namesAligned: true,
+    });
+    await page.evaluate("document.getElementById('event-dialog').close()");
+    await go('attivita.html#paths-panel');
+    await wait("!document.getElementById('paths-panel').hidden && document.querySelector('.activity-path-unit[data-branch=\"E/G\"] .path-member-link')");
+    const pathMembers = await page.evaluate(`(() => {
+      const group = [...document.querySelectorAll('.activity-path-unit')]
+        .find(item => item.dataset.branch === 'E/G' && item.textContent.includes('Aironi'));
+      return [...group.querySelectorAll('.path-row')].map(row => {
+        const link = row.querySelector('.path-member-link'), role = link.querySelector('abbr');
+        return [role?.textContent || '', link.querySelector('span')?.textContent || '',
+          role?.getAttribute('aria-label') || ''];
+      });
+    })()`);
+    assert.deepEqual(pathMembers, [
+      ['CS', 'Socio Capo', 'Capo squadriglia'],
+      ['VC', 'Socio Vice', 'Vice capo squadriglia'],
+      ['', 'Socio Squadrigliere', ''],
+      ['PT', 'Socio Piede tenero', 'Piede tenero'],
+      ['', 'Socio Senza ruolo', ''],
+    ], "path member lists follow unit role order with CS, VC and PT badges");
     assert.deepEqual(page.errors, []);
   } finally {
     if (page) await page.stop();
@@ -783,6 +844,39 @@ test("login autofill, education dates, activities and progression work on four s
           endTimeRequired: document.querySelector('#event-form [name=endTime]').required,
         }))()`), { label: 'Giorno', endDateHidden: true, startTimeHidden: false, endTimeHidden: false,
           endDateRequired: false, startTimeRequired: true, endTimeRequired: true });
+        const scheduleGeometry = await page.evaluate(`(() => {
+          const container = document.querySelector('#event-form .event-schedule-fields');
+          const bounds = container.getBoundingClientRect();
+          const labels = [...container.querySelectorAll('label:not([hidden])')];
+          return {
+            controls: labels.flatMap(label => [...label.querySelectorAll('input,select')].map(control => {
+              const rect = control.getBoundingClientRect();
+              return { name: control.name, width: rect.width, right: rect.right, top: rect.top };
+            })),
+            rowEnds: labels.map(label => Math.round(label.getBoundingClientRect().bottom)),
+            right: bounds.right,
+          };
+        })()`);
+        assert.equal(scheduleGeometry.controls.length, 5);
+        assert.ok(scheduleGeometry.controls.every(control =>
+          control.width <= 170 && control.right <= scheduleGeometry.right + 1),
+        `${label}: date and time inputs stay compact inside their schedule row`);
+        assert.ok(new Set(scheduleGeometry.rowEnds).size < scheduleGeometry.controls.length,
+          `${label}: schedule controls align side by side where space allows`);
+        assert.equal(new Set(scheduleGeometry.controls
+          .filter(control => ['startTime', 'endTime', 'fee'].includes(control.name))
+          .map(control => Math.round(control.top))).size, 1,
+        `${label}: start, end and fee controls share one line`);
+        const compactGeometry = await page.evaluate(`(() => {
+          const inputWidth = selector => document.querySelector(selector).getBoundingClientRect().width;
+          return {
+            fee: inputWidth('#event-form [name=fee]'),
+            title: inputWidth('#event-form [name=title]'),
+            place: inputWidth('#event-form [name=place]'),
+          };
+        })()`);
+        assert.ok(compactGeometry.fee <= 140 && compactGeometry.title <= 322 && compactGeometry.place <= 322,
+          `${label}: fee, title and place inputs stay compact`);
         await click('#event-tasks + button');
         assert.match(await page.evaluate("document.getElementById('event-save-state').textContent"), /modifiche non salvate/);
         const options = await page.evaluate("[...document.querySelector('#event-form [name=kind]').options].map(option => option.value)");
@@ -814,10 +908,18 @@ test("login autofill, education dates, activities and progression work on four s
           return [totals.includes('10,25'), totals.includes('20,50')];
         })()`), [true, false],
         "only present members owe the quota; unrecorded attendance is not due");
-        await click("#event-attendance .activity-payment > summary");
+        assert.deepEqual(await page.evaluate(`(() => {
+          const row = document.querySelector('#event-attendance .activity-person');
+          const summary = row.querySelector('.activity-payment > summary');
+          return [summary.textContent.trim(), summary.getBoundingClientRect().height <= 1,
+            row.dataset.cardAction];
+        })()`), ['', true, 'payment']);
+        await click('#event-attendance .activity-person');
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-payment').open"), true,
+          "clicking a member card opens its payment details");
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "0.00");
         await fill('#event-attendance [data-paid]', "5");
-        await click("#event-attendance .activity-person:nth-of-type(2) .activity-payment > summary");
+        await click("#event-attendance .activity-person:nth-of-type(2)");
         await page.evaluate(`{
           const row = document.querySelectorAll('#event-attendance .activity-person')[1];
           const paid = row.querySelector('[data-paid]'); paid.value='15';
@@ -842,7 +944,8 @@ test("login autofill, education dates, activities and progression work on four s
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "5.00");
         const memberUrl = await page.evaluate("document.querySelector('#event-attendance a.activity-person-profile').href");
         await click('[data-event-view="quote"]');
-        await click("#event-attendance .activity-payment > summary");
+        await click("#event-attendance .activity-person");
+        assert.equal(await page.evaluate("document.querySelector('#event-attendance .activity-payment').open"), true);
         assert.equal(await page.evaluate("document.querySelector('#event-attendance [data-paid]').value"), "5.00",
           "opening a payment editor must not invent or alter a payment");
         await fill('#event-attendance [data-paid]', "5");
@@ -1063,7 +1166,7 @@ test("login autofill, education dates, activities and progression work on four s
         await expand("#event-settings");
         await fill('#event-form [name=fee]', "25.00");
         await click('[data-event-view="quote"]');
-        await click("#event-attendance .activity-payment > summary");
+        await click("#event-attendance .activity-person");
         const paymentState = await page.evaluate(`(() => {
           const paid = document.querySelector('#event-attendance [data-paid]');
           const row = paid.closest('.activity-person'), select = row.querySelector('select');

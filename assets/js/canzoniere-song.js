@@ -15,6 +15,9 @@
   const autoScrollButton = document.getElementById("auto-scroll");
   const notationButton = document.getElementById("notation-toggle");
   const notationIndicator = document.getElementById("notation-indicator");
+  const chordsToggleButton = document.getElementById("chords-toggle");
+  const chordsToggleIndicator = document.getElementById("chords-toggle-indicator");
+  const showChordsToggle = document.getElementById("show-chords");
   const fontSizeInput = document.getElementById("song-font-size");
   const fontSizeValue = document.getElementById("font-size-value");
   const settingsMedia = window.matchMedia("(max-width: 640px), (max-height: 560px) and (orientation: landscape)");
@@ -96,11 +99,21 @@
       : "Notazione inglese; passa alla notazione italiana");
   }
 
+  function updateChordsToggle() {
+    const showChords = showChordsToggle.checked;
+    chordsToggleIndicator.textContent = showChords ? "−" : "+";
+    chordsToggleButton.setAttribute("aria-pressed", String(!showChords));
+    chordsToggleButton.setAttribute("aria-label", showChords ? "Mostra solo il testo" : "Mostra gli accordi");
+  }
+
   function renderCurrentScore() {
+    if (!song) return;
+    const scrollTop = score.scrollTop;
     const displayedSong = songInNotation(song);
-    window.CANZONIERE_VIEW.renderScore(score, displayedSong, transposition,
-      document.getElementById("show-chords").checked);
+    window.CANZONIERE_VIEW.renderScore(score, displayedSong, transposition, showChordsToggle.checked);
+    score.scrollTop = scrollTop;
     renderKey(displayedSong);
+    updateChordsToggle();
     updateSongDensity();
   }
 
@@ -149,6 +162,7 @@
     renderCurrentScore();
     document.getElementById("auto-scroll").disabled = false;
     notationButton.disabled = false;
+    chordsToggleButton.disabled = false;
     scrollPlayer.resetForSong();
     updatePlaylistPosition();
   }
@@ -368,7 +382,8 @@
       fontSizeInput.value = String(size);
       setFontSize(size);
     }
-    updateSongDensity();
+    if (song) renderCurrentScore();
+    else updateSongDensity();
   }
 
   updateAutomaticFontSize();
@@ -412,9 +427,13 @@
     score.scrollTop = scrollTop;
   });
 
-  document.getElementById("show-chords").addEventListener("change", (event) => {
-    score.dataset.chords = event.currentTarget.checked ? "on" : "off";
-    updateSongDensity();
+  showChordsToggle.addEventListener("change", () => {
+    renderCurrentScore();
+  });
+  chordsToggleButton.addEventListener("click", () => {
+    if (!song) return;
+    showChordsToggle.checked = !showChordsToggle.checked;
+    showChordsToggle.dispatchEvent(new Event("change", { bubbles: true }));
   });
   document.getElementById("transpose-down").addEventListener("click", () => {
     transposition = Math.max(-12, transposition - 1);
@@ -431,7 +450,7 @@
   fontSizeInput.addEventListener("input", (event) => {
     manualFontSize = true;
     setFontSize(Number(event.currentTarget.value));
-    updateSongDensity();
+    renderCurrentScore();
   });
   document.getElementById("scroll-correction").addEventListener("input", (event) => {
     document.getElementById("scroll-correction-value").textContent = event.currentTarget.value + "%";

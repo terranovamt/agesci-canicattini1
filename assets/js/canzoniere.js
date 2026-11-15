@@ -76,30 +76,62 @@
     updateFilterCount();
   }
 
-  function renderPublishedPlaylists(playlists) {
+  async function loadPlaylistSongs(playlists, signal) {
+    const slugs = [...new Set(playlists.flatMap((playlist) => {
+      if (!Array.isArray(playlist.songSlugs)) throw new Error("Scaletta pubblicata non valida.");
+      return playlist.songSlugs;
+    }))];
+    const songs = new Map();
+    for (let offset = 0; offset < slugs.length; offset += 100) {
+      const params = new URLSearchParams({
+        slugs: slugs.slice(offset, offset + 100).join(","),
+        limit: "100",
+      });
+      const page = await getJson("songs?" + params.toString(), signal);
+      if (!Array.isArray(page.songs)) throw new Error("Brani delle scalette non validi.");
+      for (const song of page.songs) songs.set(song.slug, song);
+    }
+    return songs;
+  }
+
+  function renderPublishedPlaylists(playlists, songs, errorMessage = "") {
     publishedList.replaceChildren();
     publishedList.setAttribute("aria-busy", "false");
     if (!playlists.length) {
       publishedStatus.textContent = "Non ci sono ancora scalette pubblicate.";
       return;
     }
-    publishedStatus.textContent = playlists.length + " scalette pubblicate.";
+    publishedStatus.textContent = errorMessage || playlists.length + " scalette pubblicate.";
     playlists.forEach((playlist) => {
+      const songSlugs = Array.isArray(playlist.songSlugs) ? playlist.songSlugs : [];
       const item = document.createElement("li");
       const link = document.createElement("a");
       link.href = "canzone.html?playlist=" + encodeURIComponent(playlist.slug);
       link.textContent = playlist.title;
       const count = document.createElement("span");
-      count.textContent = playlist.songSlugs.length + " canzoni";
+      count.textContent = songSlugs.length + " canzoni";
       item.append(link, count);
+      const songList = document.createElement("ul");
+      songList.className = "published-playlist-songs";
+      songList.setAttribute("aria-label", "Canzoni nella scaletta " + playlist.title);
+      songSlugs.forEach((slug) => {
+        const song = songs.get(slug);
+        if (!song) return;
+        const entry = document.createElement("li");
+        const songLink = document.createElement("a");
+        songLink.href = "canzone.html?slug=" + encodeURIComponent(song.slug);
+        songLink.textContent = song.title;
+        entry.append(songLink);
+        songList.append(entry);
+      });
+      if (songList.children.length) item.append(songList);
       publishedList.append(item);
     });
   }
 
-  function populateFilters(data) {
+  async function populateFilters(data, signal) {
     if (!Array.isArray(data.tags) || !Array.isArray(data.albums) || !Array.isArray(data.playlists))
       throw new Error("Catalogo del Canzoniere non valido.");
-    catalog = data;
     const selected = new URLSearchParams(window.location.search);
 
     tagFilter.replaceChildren();
@@ -120,7 +152,17 @@
     albumFilter.value = [...albumFilter.options].some((option) => option.value === selected.get("album"))
       ? selected.get("album") : "";
     [tagFilter, branchFilter, albumFilter].forEach((select) => { select.disabled = false; });
-    renderPublishedPlaylists(data.playlists);
+    let songs = new Map();
+    let playlistSongError = "";
+    try {
+      songs = await loadPlaylistSongs(data.playlists, signal);
+    } catch (error) {
+      if (error.name === "AbortError") throw error;
+      playlistSongError = "Brani delle scalette non disponibili: " + error.message;
+      console.error("Caricamento dei brani delle scalette non riuscito", error);
+    }
+    catalog = data;
+    renderPublishedPlaylists(data.playlists, songs, playlistSongError);
   }
 
   function updateLocation() {
@@ -216,7 +258,8 @@
       if (!catalog) {
         const data = await getJson("", controller.signal);
         if (id !== requestId) return;
-        populateFilters(data);
+        await populateFilters(data, controller.signal);
+        if (id !== requestId) return;
         applyLocation();
       }
       const page = await getJson("songs?" + filters().toString(), controller.signal);

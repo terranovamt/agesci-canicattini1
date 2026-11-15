@@ -422,7 +422,7 @@
           const occupants = assigned.filter(member => member.values[branch()]?.ruolo === role);
           if (index < 2) {
             const row = occupants.length ? memberCard(occupants[0]) : el('div', undefined, 'unit-member');
-            const badge = el('abbr', index === 0 ? 'C' : 'VC', 'unit-role-badge');
+            const badge = el('abbr', index === 0 ? 'CS' : 'VC', 'unit-role-badge');
             badge.title = role; row.prepend(badge);
             if (!occupants.length) row.append(el('span', 'Posto libero', 'unit-empty'));
             lane.append(row);
