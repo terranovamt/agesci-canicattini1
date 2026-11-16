@@ -1,6 +1,7 @@
 FROM node:24-alpine
 WORKDIR /app
 COPY server/nas.cjs /app/server/nas.cjs
+COPY server/private-documents.cjs /app/server/private-documents.cjs
 COPY server/people.cjs /app/server/people.cjs
 COPY server/members.cjs /app/server/members.cjs
 COPY server/activities.cjs /app/server/activities.cjs
