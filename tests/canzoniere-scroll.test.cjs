@@ -23,16 +23,19 @@ class EventTarget {
   }
 }
 
-function harness(onEnd = async () => false, reducedMotion = true) {
+function harness(onEnd = async () => false, reducedMotion = true, scrollFractions = [1, 1]) {
   const score = new EventTarget();
   const button = new EventTarget();
   const speedControl = new EventTarget();
   speedControl.value = "100";
+  const reducedMotionControl = new EventTarget();
+  reducedMotionControl.checked = reducedMotion;
   const speedLabel = new EventTarget();
   const status = new EventTarget();
   const scrollCalls = [];
-  const lines = [0, 100].map((top) => ({
-    getBoundingClientRect: () => ({ top: top - score.scrollTop }),
+  const lines = scrollFractions.map((scrollFraction, index) => ({
+    dataset: { scrollFraction: String(scrollFraction) },
+    getBoundingClientRect: () => ({ top: index * 100 - score.scrollTop }),
   }));
   score.getBoundingClientRect = () => ({ top: 0 });
   score.querySelectorAll = () => lines;
@@ -74,10 +77,14 @@ function harness(onEnd = async () => false, reducedMotion = true) {
     speedControl,
     speedLabel,
     status,
+    reducedMotionControl,
     getSong: () => ({ bpm: 120, meter: "4/4", barsPerLine: 2 }),
     onEnd,
   });
-  return { button, frames, intervals, player, score, scrollCalls, speedControl, speedLabel, status, timeouts };
+  return {
+    button, frames, intervals, player, score, scrollCalls, speedControl, speedLabel, status,
+    reducedMotionControl, timeouts,
+  };
 }
 
 test("autoscroll counts down three seconds, follows BPM timing, and stops at the last line", async () => {
@@ -92,7 +99,7 @@ test("autoscroll counts down three seconds, follows BPM timing, and stops at the
   countdown.callback();
   countdown.callback();
   assert.equal(app.status.textContent, "Scorrimento attivo.");
-  assert.equal(app.speedLabel.textContent, "Una riga ogni 4.0 s");
+  assert.equal(app.speedLabel.textContent, "Una riga musicale ogni 4.0 s");
   assert.equal(app.timeouts.values().next().value.delay, 4000);
 
   const firstLine = app.timeouts.entries().next().value;
@@ -106,6 +113,27 @@ test("autoscroll counts down three seconds, follows BPM timing, and stops at the
   assert.equal(app.status.textContent, "Fine della canzone.");
   assert.equal(app.button.getAttribute("aria-pressed"), "false");
   assert.equal(app.button.getAttribute("aria-label"), "Avvia lo scorrimento automatico");
+});
+
+test("wrapped visual rows share the BPM duration of their musical line", async () => {
+  const app = harness(undefined, true, [0.5, 0.5, 1, 1]);
+  app.button.listeners.get("click")();
+  const countdown = app.intervals.values().next().value;
+  countdown.callback();
+  countdown.callback();
+  countdown.callback();
+
+  const advanceOneRow = async () => {
+    const [id, timeout] = app.timeouts.entries().next().value;
+    app.timeouts.delete(id);
+    await timeout.callback();
+  };
+
+  assert.equal(app.timeouts.values().next().value.delay, 2000);
+  await advanceOneRow();
+  assert.equal(app.timeouts.values().next().value.delay, 2000);
+  await advanceOneRow();
+  assert.equal(app.timeouts.values().next().value.delay, 4000);
 });
 
 test("autoscroll moves gradually over each line interval", () => {
@@ -130,6 +158,23 @@ test("autoscroll moves gradually over each line interval", () => {
   assert.equal(app.timeouts.values().next().value.delay, 4000);
 });
 
+test("reduced-motion control can switch to fluid scrolling during playback", () => {
+  const app = harness(undefined, true);
+  app.button.listeners.get("click")();
+  const countdown = app.intervals.values().next().value;
+  countdown.callback();
+  countdown.callback();
+  countdown.callback();
+  assert.equal(app.timeouts.size, 1);
+
+  app.reducedMotionControl.checked = false;
+  app.reducedMotionControl.listeners.get("change")();
+
+  assert.equal(app.timeouts.size, 0);
+  assert.equal(app.frames.size, 1);
+  app.player.pause();
+});
+
 test("manual touch pauses countdown and the correction slider updates the interval", () => {
   const app = harness();
   app.button.listeners.get("click")();
@@ -138,5 +183,5 @@ test("manual touch pauses countdown and the correction slider updates the interv
   assert.equal(app.button.getAttribute("aria-pressed"), "false");
   app.speedControl.value = "150";
   app.speedControl.listeners.get("input")();
-  assert.equal(app.speedLabel.textContent, "Una riga ogni 2.7 s");
+  assert.equal(app.speedLabel.textContent, "Una riga musicale ogni 2.7 s");
 });

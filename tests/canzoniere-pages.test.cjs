@@ -228,6 +228,10 @@ test("public song scores wrap long lyrics within the available width and retain 
   const rows = score.children;
   assert.ok(rows.length > 2, "long lyrics split into readable rows");
   assert.ok(rows.every(row => row.children[1].textContent.length <= 20), "each row fits the measured 20-character line");
+  assert.ok(rows.every(row => Number(row.dataset.scrollFraction) > 0),
+    "each visual row records its share of the musical line");
+  assert.ok(Math.abs(rows.reduce((total, row) => total + Number(row.dataset.scrollFraction), 0) - 1) < 1e-8,
+    "wrapped visual rows add up to one musical line");
   assert.equal(rows.map(row => row.children[1].textContent).join(" "), lyric);
   assert.deepEqual(rows.flatMap(row => row.children[0].children.map(marker => marker.textContent)), ["Am", "F"]);
   assert.ok(rows.flatMap(row => row.children[0].children)
@@ -258,6 +262,8 @@ test("public song page groups settings and adapts notation, scroll and reading l
   assert.match(html, /id="display-mode-indicator"[^>]*>EN<\/span>/);
   assert.doesNotMatch(html, /id="notation-toggle"|id="chords-toggle"/);
   assert.match(html, /id="auto-scroll"[^>]*aria-label="Avvia lo scorrimento automatico"/);
+  assert.match(html, /id="scroll-reduced-motion" type="checkbox"/);
+  assert.match(html, /id="song-meta" class="song-meta" aria-label="Dettagli della canzone"/);
   assert.match(html, /id="font-size-value"[^>]*>18 px<\/output>/);
   assert.match(html, /id="song-font-size" type="range" min="16" max="48"/);
   assert.match(mobileStyles, /\.song-detail-heading\s*\{\s*order:\s*1;/);
@@ -265,6 +271,8 @@ test("public song page groups settings and adapts notation, scroll and reading l
   assert.match(mobileStyles, /\.song-settings-panel\s*\{\s*order:\s*3;/);
   assert.match(css, /\.song-settings-panel\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
   assert.match(mobileStyles, /\.song-settings-panel\s*\{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(mobileStyles, /\.song-card-meta\s*\{\s*display:\s*block;/s);
+  assert.match(mobileStyles, /\.song-detail-heading \.song-byline,\s*\.song-detail-heading \.song-meta\s*\{\s*display:\s*block;/s);
   assert.match(css, /\.scroll-controls\s*\{[^}]*position:\s*fixed/s);
   assert.match(css, /\.scroll-controls\s*\{[^}]*flex-direction:\s*column/s);
   assert.match(css, /\.song-settings-close-icon::before\s*\{[^}]*content:\s*var\(--fa,/s);
@@ -279,10 +287,14 @@ test("public song page groups settings and adapts notation, scroll and reading l
   assert.match(mobileStyles, /\.song-detail-card\s*\{[^}]*flex:\s*1 1 auto/s);
   assert.match(mobileStyles, /#song-score\s*\{[^}]*flex:\s*1 1 0/s);
   assert.match(html, /Velocità di scorrimento/);
+  assert.match(html, /Movimento ridotto/);
   assert.ok(landscapeStyles, "short landscape screens have a dedicated reading layout");
   assert.match(landscapeStyles, /#song-score\s*\{[\s\S]*?flex:\s*1 1 0/s);
   assert.match(script, /model\.detectChordNotation/);
   assert.match(script, /model\.translateChordPro/);
+  assert.match(script, /addMeta\("Tonalità", song\.key/);
+  assert.match(script, /addMeta\("Battute\/riga"/);
+  assert.match(script, /song-meta-key/);
   assert.match(script, /settingsToggle\.hidden = !compact/);
   assert.match(script, /settingsClose\.hidden = !compact \|\| !settingsOpen/);
   assert.match(script, /content\.classList\.toggle\("song-settings-open", compact && settingsOpen\)/);
