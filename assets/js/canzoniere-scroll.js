@@ -3,7 +3,9 @@
 
   const SCROLL_KEYS = new Set([" ", "ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End"]);
 
-  function createScrollPlayer({ score, button, speedControl, speedLabel, status, getSong, onEnd = async () => false }) {
+  function createScrollPlayer({
+    score, button, speedControl, speedLabel, status, reducedMotionControl, getSong, onEnd = async () => false,
+  }) {
     let running = false;
     let countingDown = false;
     let generation = 0;
@@ -11,6 +13,7 @@
     let timer = 0;
     let countdownTimer = 0;
     let animationFrame = null;
+    let advancing = false;
 
     function lines() {
       return [...score.querySelectorAll(".song-line")];
@@ -31,8 +34,17 @@
         return;
       }
       const seconds = root.CANZONIERE_MODEL.secondsPerLine(song, Number(speedControl.value));
-      speedLabel.textContent = "Una riga ogni " + seconds.toFixed(1) + " s" +
+      speedLabel.textContent = "Una riga musicale ogni " + seconds.toFixed(1) + " s" +
         (song.bpm === null || song.bpm === undefined ? " · velocità predefinita" : "");
+    }
+
+    function scrollFraction(line) {
+      const raw = line?.dataset?.scrollFraction;
+      if (raw === undefined || raw === "") return 1;
+      const fraction = Number(raw);
+      if (!Number.isFinite(fraction) || fraction <= 0 || fraction > 1)
+        throw new RangeError("Frazione di riga musicale non valida");
+      return fraction;
     }
 
     function cancelTimers() {
@@ -78,7 +90,9 @@
         pause("Riga non disponibile per lo scorrimento.");
         return;
       }
-      const reducedMotion = root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+      const reducedMotion = reducedMotionControl
+        ? reducedMotionControl.checked
+        : root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
       if (reducedMotion) {
         timer = root.setTimeout(() => {
           timer = 0;
@@ -108,15 +122,17 @@
     }
 
     function schedule(currentGeneration) {
-      if (!running || currentGeneration !== generation) return;
+      if (!running || currentGeneration !== generation || advancing) return;
       const currentLines = lines();
       if (!currentLines.length) {
         pause("Testo non disponibile per lo scorrimento.");
         return;
       }
       let seconds;
+      let duration;
       try {
         seconds = root.CANZONIERE_MODEL.secondsPerLine(getSong(), Number(speedControl.value));
+        duration = seconds * scrollFraction(currentLines[lineIndex]);
         updateSpeed();
       } catch (error) {
         console.error("Velocità di scorrimento non valida", error);
@@ -124,13 +140,13 @@
         return;
       }
       if (lineIndex + 1 < currentLines.length) {
-        scrollToLine(lineIndex + 1, seconds * 1000, currentGeneration);
+        scrollToLine(lineIndex + 1, duration * 1000, currentGeneration);
         return;
       }
       timer = root.setTimeout(() => {
         timer = 0;
         return advance(currentGeneration);
-      }, seconds * 1000);
+      }, duration * 1000);
     }
 
     function countdown(currentGeneration, label) {
@@ -158,25 +174,30 @@
     }
 
     async function advance(currentGeneration) {
-      if (!running || currentGeneration !== generation) return;
+      if (!running || currentGeneration !== generation || advancing) return;
       const currentLines = lines();
       if (!currentLines.length) {
         pause("Testo non disponibile per lo scorrimento.");
         return;
       }
+      advancing = true;
       try {
         const hasNextSong = await onEnd();
-        if (!running || currentGeneration !== generation) return;
         if (!hasNextSong) {
-          pause("Fine della canzone.");
+          if (running) pause("Fine della canzone.");
           return;
         }
+        if (!running) return;
         score.scrollTop = 0;
         lineIndex = 0;
-        countdown(currentGeneration, "La prossima canzone inizia");
+        countdown(generation, "La prossima canzone inizia");
       } catch (error) {
         console.error("Passaggio alla canzone successiva non riuscito", error);
-        pause("Scorrimento interrotto: " + error.message);
+        const message = "Scorrimento interrotto: " + error.message;
+        if (running) pause(message);
+        else status.textContent = message;
+      } finally {
+        advancing = false;
       }
     }
 
@@ -213,6 +234,7 @@
       try {
         updateSpeed();
         if (running && !countingDown) {
+          lineIndex = visibleLine();
           cancelTimers();
           schedule(generation);
         }
@@ -220,6 +242,12 @@
         console.error("Correzione scorrimento non valida", error);
         pause(error.message);
       }
+    });
+    reducedMotionControl?.addEventListener("change", () => {
+      if (!running || countingDown) return;
+      lineIndex = visibleLine();
+      cancelTimers();
+      schedule(generation);
     });
     score.addEventListener("pointerdown", manualInput);
     score.addEventListener("touchstart", manualInput, { passive: true });

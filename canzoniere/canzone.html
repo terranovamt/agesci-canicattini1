@@ -64,7 +64,7 @@
             <p class="eyebrow">Canzoniere</p>
             <h1 id="song-title"></h1>
             <p id="song-byline" class="song-byline"></p>
-            <dl id="song-meta" class="song-meta"></dl>
+            <dl id="song-meta" class="song-meta" aria-label="Dettagli della canzone"></dl>
             <ul id="song-tags" class="song-tags" aria-label="Tag della canzone"></ul>
           </header>
           <div id="song-settings-panel" class="song-settings-panel" hidden>
@@ -126,6 +126,13 @@
                   Velocità di scorrimento <output id="scroll-correction-value" for="scroll-correction">100%</output>
                   <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
                 </label>
+                <label class="song-toggle">
+                  <input id="scroll-reduced-motion" type="checkbox" aria-describedby="scroll-motion-help" />
+                  <span>Movimento ridotto</span>
+                </label>
+                <p id="scroll-motion-help" class="scroll-motion-help">
+                  Segue la preferenza del dispositivo; disattivandolo, il movimento diventa continuo.
+                </p>
                 <p id="scroll-speed" class="scroll-speed"></p>
                 <p id="scroll-status" class="song-controls-status" role="status" aria-live="polite"></p>
               </div>

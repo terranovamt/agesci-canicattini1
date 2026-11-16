@@ -75,6 +75,7 @@
       segments.forEach((segment, segmentIndex) => {
         const row = document.createElement("div");
         row.className = "song-line";
+        row.dataset.scrollFraction = String(1 / segments.length);
         const chordLine = document.createElement("div");
         chordLine.className = "chord-line";
         const lyricLine = document.createElement("div");

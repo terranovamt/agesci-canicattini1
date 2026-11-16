@@ -13,6 +13,7 @@
   const settingsToggle = document.getElementById("song-settings-toggle");
   const settingsClose = document.getElementById("song-settings-close");
   const autoScrollButton = document.getElementById("auto-scroll");
+  const scrollReducedMotion = document.getElementById("scroll-reduced-motion");
   const displayModeButton = document.getElementById("display-mode-toggle");
   const displayModeIndicator = document.getElementById("display-mode-indicator");
   const showChordsToggle = document.getElementById("show-chords");
@@ -63,11 +64,12 @@
     return node;
   }
 
-  function addMeta(label, value, href) {
+  function addMeta(label, value, href, descriptionId) {
     if (!value) return;
     const term = document.createElement("dt");
     term.textContent = label;
     const description = document.createElement("dd");
+    if (descriptionId) description.id = descriptionId;
     if (href) {
       const link = document.createElement("a");
       link.href = href;
@@ -124,8 +126,10 @@
 
     const album = catalog.albums.find((item) => item.slug === song.albumSlug);
     if (album) addMeta("Album", album.title, "./?album=" + encodeURIComponent(album.slug));
+    addMeta("Tonalità", song.key, null, "song-meta-key");
     addMeta("Tempo", song.meter, null);
     addMeta("BPM", song.bpm ? String(song.bpm) : "", null);
+    addMeta("Battute/riga", String(song.barsPerLine ?? 2), null);
     addMeta("Capotasto", song.capo ? String(song.capo) : "", null);
     addMeta("Diritti", song.rights, null);
 
@@ -162,6 +166,8 @@
 
   function renderKey(displayedSong = songInNotation(song)) {
     const currentKey = displayedSong.key ? model.transposeKey(displayedSong.key, transposition) : "—";
+    const metadataKey = document.getElementById("song-meta-key");
+    if (metadataKey) metadataKey.textContent = currentKey;
     document.getElementById("song-key").textContent = currentKey;
     document.getElementById("transpose-value").textContent = transposition
       ? (transposition > 0 ? "+" : "") + transposition + " semitoni"
@@ -332,9 +338,11 @@
     speedControl: document.getElementById("scroll-correction"),
     speedLabel: document.getElementById("scroll-speed"),
     status: document.getElementById("scroll-status"),
+    reducedMotionControl: scrollReducedMotion,
     getSong: () => song,
     onEnd: advancePlaylist,
   });
+  scrollReducedMotion.checked = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function syncSettingsVisibility() {
     const compact = settingsMedia.matches;

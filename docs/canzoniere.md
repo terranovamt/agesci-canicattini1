@@ -106,21 +106,25 @@ dimensione del testo, attivare il tema scuro e richiedere il Wake Lock quando
 il browser lo supporta. Le impostazioni sono raggruppate in Accordi e tonalita',
 Testo e schermo, Scorrimento automatico e Stampa. I brani brevi restano compatti;
 quelli lunghi occupano l'area disponibile e mantengono lo scorrimento interno.
-Su telefono tutte le impostazioni restano visibili in una colonna compatta;
-su schermi ampi sono disposte in due colonne. Le righe sono ravvicinate e usano
-tutta la larghezza utile. La dimensione predefinita si adatta al viewport e
-cresce in orizzontale, mentre il cursore consente una regolazione manuale. Gli input di
-ricerca e i risultati sono creati con API DOM e `textContent`; i caricamenti
-segnalano `aria-busy`, e gli skeleton rispettano `prefers-reduced-motion`. Su
-telefono il testo segue subito il titolo. Le impostazioni si aprono dal
-pulsante in basso e si chiudono con lo stesso pulsante o con la X in alto; in
+Su telefono le impostazioni sono disponibili in una colonna compatta e si
+aprono dal pulsante in basso; su schermi ampi sono disposte in due colonne. Le
+righe sono ravvicinate e usano tutta la larghezza utile. La dimensione
+predefinita si adatta al viewport e cresce in orizzontale, mentre il cursore
+consente una regolazione manuale. Gli input di ricerca e i risultati sono
+creati con API DOM e `textContent`; i caricamenti segnalano `aria-busy`, e gli
+skeleton rispettano `prefers-reduced-motion`. Su telefono restano visibili
+autore e metadati principali, sia nell'elenco sia nella scheda della canzone.
+Le impostazioni si chiudono con lo stesso pulsante o con la X in alto; in
 lettura i controlli rapidi IT/EN e avvio/pausa sono impilati in basso a destra.
 
 Lo scorrimento automatico interpola gradualmente la posizione tra una riga e
-la successiva per tutta la durata calcolata da BPM e `barsPerLine`; include un
-countdown di tre secondi e una velocita' predefinita senza BPM. La percentuale
-piu' alta accelera lo scorrimento. Con `prefers-reduced-motion` attivo avanza
-una riga alla volta. Tocco o scorrimento manuale mettono in pausa. I capi
+la successiva per tutta la durata calcolata da BPM e `barsPerLine`; le righe
+visive create quando il testo va a capo condividono la durata della riga
+musicale, evitando rallentamenti sui display stretti. Include un countdown di
+tre secondi e una velocita' predefinita senza BPM. La percentuale piu' alta
+accelera lo scorrimento. Il controllo Movimento ridotto segue la preferenza del
+dispositivo ma consente di scegliere il movimento continuo per la lettura
+corrente. Tocco o scorrimento manuale mettono in pausa. I capi
 compongono la scaletta personale nell'area riservata; `localStorage` conserva
 solo gli slug (chiave `agesci-canicattini1.canzoniere.playlist.v1`) e i link
 `canzone.html?slugs=...` non contengono titoli o testi. Le scalette pubblicate
