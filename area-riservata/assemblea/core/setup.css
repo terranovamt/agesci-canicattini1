@@ -31,7 +31,7 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--v) }
 .primary-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: 1; min-width: 280px }
 .tabs button { text-align: center; background: var(--w); color: var(--v); padding: 10px 16px }
 .tabs button.on { background: var(--v); color: var(--w) }
-.setup-tools { flex: 1; min-width: 280px; border: 1px solid var(--vl); border-radius: var(--radius-md); background: var(--w) }
+.setup-tools { flex: 1; min-width: 280px; border: 1px solid var(--v2); border-radius: var(--radius-md); background: var(--w) }
 .setup-tools > summary { min-height: 44px; padding: 8px 12px; cursor: pointer; color: var(--v); font-weight: 700 }
 .setup-tools > summary small { font-size: 11px; font-weight: 500; margin-left: 6px }
 .tools-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px }

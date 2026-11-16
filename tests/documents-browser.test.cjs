@@ -226,6 +226,25 @@ test("public documents and management work in a browser at all required widths",
             doc.querySelector('#calendar-info').open = false;
           }
           if (page === 2) {
+            const tools = doc.querySelector(".setup-tools");
+            const toolsStyle = frame.contentWindow.getComputedStyle(tools);
+            const canvas = doc.createElement("canvas");
+            const context = canvas.getContext("2d");
+            const luminance = color => {
+              context.fillStyle = color;
+              context.fillRect(0, 0, 1, 1);
+              const channels = [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).map(value => {
+                value /= 255;
+                return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+              });
+              return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+            };
+            const borderLuminance = luminance(toolsStyle.borderTopColor);
+            const backgroundLuminance = luminance(toolsStyle.backgroundColor);
+            results.push({
+              setupToolsBorderContrast: (Math.max(borderLuminance, backgroundLuminance) + 0.05) /
+                (Math.min(borderLuminance, backgroundLuminance) + 0.05),
+            });
             doc.querySelector('[data-tab="json"]').click();
             const financialOriginal = doc.querySelector('#json-text').value;
             doc.querySelector('[data-tab="bilancio"]').click();
@@ -940,6 +959,8 @@ test("public documents and management work in a browser at all required widths",
       for (const key of ["singleHeader", "compactHeader", "compactBar", "pairedCensus", "pairedHistory", "noInputZoom", "compactHistory", "barActionsFit"])
         assert.equal(item[key], true, key + " at setup width " + item.setupWidth);
     }
+    for (const item of results.filter((item) => "setupToolsBorderContrast" in item))
+      assert.ok(item.setupToolsBorderContrast >= 3, "Strumenti border contrast must be at least 3:1: " + item.setupToolsBorderContrast);
     for (const item of results.filter((item) => "slideEditorFits" in item)) {
       assert.equal(item.slideEditorFits, true, "slide editor fits at width " + item.width);
       assert.equal(item.canAddAfterEmpty, true, "empty lists remain editable at width " + item.width);
