@@ -169,6 +169,55 @@ test("branch dashboard highlights today's event, attendance, preparation and mis
     "chiefs with a service branch can open the Canzoniere manager");
 });
 
+test("branch greetings omit the unit descriptions", async () => {
+  for (const branch of ["L/C", "E/G", "R/S"]) {
+    const elements = new Map();
+    const element = () => ({
+      hidden: true, textContent: "", href: "", children: [], dataset: {},
+      replaceChildren(...children) { this.children = children; },
+      append(...children) { this.children.push(...children); },
+      setAttribute() {},
+      removeAttribute() {},
+      remove() {},
+    });
+    const greetings = [];
+    const title = element();
+    title.parentElement = { querySelector: () => null };
+    title.after = greeting => greetings.push(greeting);
+    const get = id => {
+      if (!elements.has(id)) elements.set(id, id === "dashboard-title" ? title : element());
+      return elements.get(id);
+    };
+    const window = {
+      ACTIVITIES_MODEL: { nextEvent: () => null },
+      NAS: { user: { admin: false, name: "Marta Capo", serviceBranch: branch } },
+      ACCESSO: { verificata: () => true, request: async route => {
+        if (route === "activities") return { events: [] };
+        if (route === "members") return { transfers: [] };
+        throw new Error("Unexpected request: " + route);
+      } },
+      DATI: { anno_esercizio: 2026, assemblea: { titolo: "Assemblea" }, slide: [] },
+    };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/js/area-dashboard.js"), "utf8"), {
+      window,
+      document: {
+        getElementById: get,
+        createElement: element,
+        head: { append(script) { script.onload(); } },
+      },
+      fetch: async () => ({ ok: true, json: async () => [] }),
+      Date,
+    });
+    window.AREA_DASHBOARD.load();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(title.textContent, `Area capi ${branch}`);
+    assert.equal(greetings.length, 1);
+    assert.equal(greetings[0].className, "dashboard-greeting");
+    assert.equal(greetings[0].textContent, "Bentornato, Marta Capo!");
+  }
+});
+
 test("free activities hide fees even when attendance marks a member as due", async () => {
   const elements = new Map();
   const element = () => ({
