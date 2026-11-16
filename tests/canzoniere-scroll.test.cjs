@@ -175,6 +175,87 @@ test("reduced-motion control can switch to fluid scrolling during playback", () 
   app.player.pause();
 });
 
+test("changing motion mode while a playlist advance is loading cannot advance twice", async () => {
+  let releaseEnd;
+  let endCalls = 0;
+  const pendingEnd = new Promise((resolve) => {
+    releaseEnd = resolve;
+  });
+  const app = harness(() => {
+    endCalls++;
+    return pendingEnd;
+  });
+  app.button.listeners.get("click")();
+  const countdown = app.intervals.values().next().value;
+  countdown.callback();
+  countdown.callback();
+  countdown.callback();
+
+  const [lineId, lineTimeout] = app.timeouts.entries().next().value;
+  app.timeouts.delete(lineId);
+  lineTimeout.callback();
+  const [endId, endTimeout] = app.timeouts.entries().next().value;
+  app.timeouts.delete(endId);
+  const firstAdvance = endTimeout.callback();
+  await Promise.resolve();
+  assert.equal(endCalls, 1);
+
+  app.reducedMotionControl.checked = false;
+  app.reducedMotionControl.listeners.get("change")();
+  const retry = app.timeouts.entries().next().value;
+  if (retry) {
+    app.timeouts.delete(retry[0]);
+    retry[1].callback();
+    await Promise.resolve();
+  }
+  assert.equal(app.timeouts.size, 0);
+  assert.equal(endCalls, 1);
+
+  releaseEnd(false);
+  await firstAdvance;
+});
+
+test("pausing and restarting while a playlist advance is loading does not schedule another advance", async () => {
+  let releaseEnd;
+  let endCalls = 0;
+  const pendingEnd = new Promise((resolve) => {
+    releaseEnd = resolve;
+  });
+  const app = harness(() => {
+    endCalls++;
+    return pendingEnd;
+  });
+  app.button.listeners.get("click")();
+  const countdown = app.intervals.values().next().value;
+  countdown.callback();
+  countdown.callback();
+  countdown.callback();
+
+  const advanceOneRow = () => {
+    const [id, timeout] = app.timeouts.entries().next().value;
+    app.timeouts.delete(id);
+    return timeout.callback();
+  };
+  advanceOneRow();
+  advanceOneRow();
+  await Promise.resolve();
+  assert.equal(endCalls, 1);
+
+  app.button.listeners.get("click")();
+  app.button.listeners.get("click")();
+  const restartCountdown = app.intervals.values().next().value;
+  restartCountdown.callback();
+  restartCountdown.callback();
+  restartCountdown.callback();
+  assert.equal(app.timeouts.size, 0);
+
+  releaseEnd(true);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(endCalls, 1);
+  assert.equal(app.status.textContent, "La prossima canzone inizia tra 3 secondi.");
+  assert.equal(app.intervals.size, 1);
+});
+
 test("manual touch pauses countdown and the correction slider updates the interval", () => {
   const app = harness();
   app.button.listeners.get("click")();
