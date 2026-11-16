@@ -13,10 +13,8 @@
   const settingsToggle = document.getElementById("song-settings-toggle");
   const settingsClose = document.getElementById("song-settings-close");
   const autoScrollButton = document.getElementById("auto-scroll");
-  const notationButton = document.getElementById("notation-toggle");
-  const notationIndicator = document.getElementById("notation-indicator");
-  const chordsToggleButton = document.getElementById("chords-toggle");
-  const chordsToggleIndicator = document.getElementById("chords-toggle-indicator");
+  const displayModeButton = document.getElementById("display-mode-toggle");
+  const displayModeIndicator = document.getElementById("display-mode-indicator");
   const showChordsToggle = document.getElementById("show-chords");
   const fontSizeInput = document.getElementById("song-font-size");
   const fontSizeValue = document.getElementById("font-size-value");
@@ -91,19 +89,16 @@
     };
   }
 
-  function updateNotationButton() {
-    notationIndicator.textContent = notation.toUpperCase();
-    notationButton.setAttribute("aria-pressed", String(notation === "it"));
-    notationButton.setAttribute("aria-label", notation === "it"
-      ? "Notazione italiana; passa alla notazione inglese"
-      : "Notazione inglese; passa alla notazione italiana");
-  }
-
-  function updateChordsToggle() {
-    const showChords = showChordsToggle.checked;
-    chordsToggleIndicator.textContent = showChords ? "−" : "+";
-    chordsToggleButton.setAttribute("aria-pressed", String(!showChords));
-    chordsToggleButton.setAttribute("aria-label", showChords ? "Mostra solo il testo" : "Mostra gli accordi");
+  function updateDisplayModeButton() {
+    const mode = showChordsToggle.checked ? notation : "text";
+    const labels = {
+      en: "Accordi in notazione inglese; passa alla notazione italiana",
+      it: "Accordi in notazione italiana; mostra solo il testo",
+      text: "Solo testo; mostra gli accordi in notazione inglese",
+    };
+    displayModeIndicator.textContent = mode === "text" ? "−" : mode.toUpperCase();
+    displayModeButton.dataset.mode = mode;
+    displayModeButton.setAttribute("aria-label", labels[mode]);
   }
 
   function renderCurrentScore() {
@@ -113,14 +108,13 @@
     window.CANZONIERE_VIEW.renderScore(score, displayedSong, transposition, showChordsToggle.checked);
     score.scrollTop = scrollTop;
     renderKey(displayedSong);
-    updateChordsToggle();
-    updateSongDensity();
+    updateDisplayModeButton();
   }
 
   function renderSongInfo(data) {
     song = data;
     notation = model.detectChordNotation(song.text + (song.key ? "\n{key: " + song.key + "}" : ""));
-    updateNotationButton();
+    updateDisplayModeButton();
     document.title = (playlistMode ? playlistTitle + " · " : "") +
       song.title + " · Canzoniere · AGESCI Canicattini 1";
     document.getElementById("song-title").textContent = song.title;
@@ -161,8 +155,7 @@
     detail.setAttribute("aria-busy", "false");
     renderCurrentScore();
     document.getElementById("auto-scroll").disabled = false;
-    notationButton.disabled = false;
-    chordsToggleButton.disabled = false;
+    displayModeButton.disabled = false;
     scrollPlayer.resetForSong();
     updatePlaylistPosition();
   }
@@ -336,7 +329,7 @@
   const scrollPlayer = window.CANZONIERE_SCROLL.createScrollPlayer({
     score,
     button: autoScrollButton,
-    correction: document.getElementById("scroll-correction"),
+    speedControl: document.getElementById("scroll-correction"),
     speedLabel: document.getElementById("scroll-speed"),
     status: document.getElementById("scroll-status"),
     getSong: () => song,
@@ -358,19 +351,6 @@
     fontSizeValue.textContent = size + " px";
   }
 
-  function updateSongDensity() {
-    if (!song) return;
-    const rows = [...score.querySelectorAll(".song-line")];
-    const rowGap = Number.parseFloat(window.getComputedStyle(score).rowGap) || 0;
-    const rowsHeight = rows.reduce((height, row) => height + row.getBoundingClientRect().height, 0) +
-      Math.max(0, rows.length - 1) * rowGap;
-    const emptyText = score.querySelector(".empty-song-text");
-    const contentHeight = rowsHeight || emptyText?.getBoundingClientRect().height || Number.POSITIVE_INFINITY;
-    const viewportHeight = window.visualViewport?.height || window.innerHeight;
-    const compact = settingsMedia.matches && contentHeight <= Math.max(180, viewportHeight * 0.45);
-    content.classList.toggle("song-content-compact", compact);
-  }
-
   function updateAutomaticFontSize() {
     if (!manualFontSize) {
       const viewportWidth = Math.round(window.visualViewport?.width ||
@@ -383,7 +363,6 @@
       setFontSize(size);
     }
     if (song) renderCurrentScore();
-    else updateSongDensity();
   }
 
   updateAutomaticFontSize();
@@ -416,24 +395,24 @@
   });
   syncSettingsVisibility();
 
-  notationButton.addEventListener("click", () => {
+  displayModeButton.addEventListener("click", () => {
     if (!song) return;
     if (autoScrollButton.getAttribute("aria-pressed") === "true")
-      scrollPlayer.pause("Scorrimento in pausa per la conversione degli accordi.");
-    notation = notation === "it" ? "en" : "it";
+      scrollPlayer.pause("Scorrimento in pausa per la modifica della visualizzazione.");
+    const mode = showChordsToggle.checked ? notation : "text";
+    if (mode === "en") notation = "it";
+    else if (mode === "it") showChordsToggle.checked = false;
+    else {
+      notation = "en";
+      showChordsToggle.checked = true;
+    }
     const scrollTop = score.scrollTop;
-    updateNotationButton();
     renderCurrentScore();
     score.scrollTop = scrollTop;
   });
 
   showChordsToggle.addEventListener("change", () => {
     renderCurrentScore();
-  });
-  chordsToggleButton.addEventListener("click", () => {
-    if (!song) return;
-    showChordsToggle.checked = !showChordsToggle.checked;
-    showChordsToggle.dispatchEvent(new Event("change", { bubbles: true }));
   });
   document.getElementById("transpose-down").addEventListener("click", () => {
     transposition = Math.max(-12, transposition - 1);

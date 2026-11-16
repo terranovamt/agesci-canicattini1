@@ -3,6 +3,23 @@
     ['convocazione', 'Convocazione'], ['regolamento', 'Regolamento'], ['peg', 'PEG'],
     ['bilancio', 'Bilancio'], ['verbale', 'Verbale'],
   ];
+  const documentCategories = [
+    ['public', 'Pubblico'], ['preparatory', 'Preparatorio assemblea'],
+    ['L/C', 'L/C'], ['E/G', 'E/G'], ['R/S', 'R/S'], ['group', 'Gruppo'],
+  ];
+  const branchCategories = ['L/C', 'E/G', 'R/S'];
+  const privateCategories = [...branchCategories, 'group'];
+  const categoryValues = new Set(documentCategories.map(([value]) => value));
+  const categoryLabel = category => documentCategories.find(([value]) => value === category)?.[1] || '';
+  function categoryOf(item) {
+    if (categoryValues.has(item?.category)) return item.category;
+    return item?.assemblyYear !== undefined || item?.assemblyType !== undefined ? 'preparatory' : 'public';
+  }
+  const filterCategory = (items, selected) =>
+    selected === 'all' ? items : items.filter(item => categoryOf(item) === selected);
+  const defaultCategory = user => !user?.admin && branchCategories.includes(user?.serviceBranch)
+    ? user.serviceBranch : 'all';
+  const editableCategories = () => documentCategories;
   function assemblyType(item) {
     if (item.assemblyType) return item.assemblyType;
     const name = [item.title, item.file].join(' ').toLocaleLowerCase('it');
@@ -18,7 +35,11 @@
       if (!safeName(item?.file) || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 160
         || typeof item.description !== 'string' || !item.description.trim() || item.description.length > 500 || names.has(item.file)
         || (item.assemblyYear !== undefined && (!Number.isInteger(item.assemblyYear) || item.assemblyYear < 2000 || item.assemblyYear > 9999))
-        || (item.assemblyType !== undefined && !assemblyTypes.some(([type]) => type === item.assemblyType))) {
+        || (item.assemblyType !== undefined && !assemblyTypes.some(([type]) => type === item.assemblyType))
+        || (item.category !== undefined && !categoryValues.has(item.category))
+        || (item.visibility !== undefined && item.visibility !== 'public')
+        || (item.category === 'public' && (item.assemblyYear !== undefined || item.assemblyType !== undefined))
+        || (item.category === 'preparatory' && item.assemblyYear === undefined && item.assemblyType === undefined)) {
         throw new Error('Indice documenti non valido: controlla file, titoli e descrizioni');
       }
       names.add(item.file);
@@ -63,7 +84,11 @@
       type, label, document: available.find(item => assemblyType(item) === type) || null,
     }));
   };
-  const model = { apply, validate, safeName, preparatory, preparatorySlots, assemblyType, assemblyTypes };
+  const model = {
+    apply, validate, safeName, preparatory, preparatorySlots, assemblyType, assemblyTypes,
+    documentCategories, branchCategories, privateCategories, categoryLabel, categoryOf,
+    filterCategory, defaultCategory, editableCategories,
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   else window.DOCUMENTS_MODEL = model;
 })();

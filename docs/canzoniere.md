@@ -44,11 +44,13 @@ riconosciute. Sono riconosciute le note italiane e inglesi; `translateChordPro`
 converte gli accordi e la direttiva di tonalita' tra le due notazioni senza
 modificare testo, suffissi o bassi. La tonalita' usa la stessa trasposizione.
 
-`secondsPerLine(song, correctionPercent)` applica
-`(battiti per battuta × battute per riga) × 60 / BPM`. Per `6/8` il modello
+`secondsPerLine(song, speedPercent)` applica
+`(battiti per battuta × battute per riga) × 60 / BPM × 100 / speedPercent`.
+Il 100% e' la velocita' di riferimento: aumentare la percentuale riduce il
+tempo per riga, diminuirla lo allunga. Per `6/8` il modello
 conta sei battiti per battuta (BPM riferito alla suddivisione in ottavi).
 Il valore iniziale di battute per riga e' 2; se manca il BPM il default e' 8
-secondi per riga. La correzione e' un moltiplicatore percentuale tra 50 e 200.
+secondi per riga. La velocita' selezionabile va dal 50% al 200%.
 La ricerca usa Unicode NFD, rimuove i segni diacritici e non distingue le
 maiuscole.
 
@@ -114,9 +116,11 @@ telefono il testo segue subito il titolo. Le impostazioni si aprono dal
 pulsante in basso e si chiudono con lo stesso pulsante o con la X in alto; in
 lettura i controlli rapidi IT/EN e avvio/pausa sono impilati in basso a destra.
 
-Lo scorrimento automatico calcola i secondi per riga dal BPM e da
-`barsPerLine`, con correzione 50–200%, countdown di tre secondi e velocita'
-predefinita senza BPM. Tocco o scorrimento manuale mettono in pausa. I capi
+Lo scorrimento automatico interpola gradualmente la posizione tra una riga e
+la successiva per tutta la durata calcolata da BPM e `barsPerLine`; include un
+countdown di tre secondi e una velocita' predefinita senza BPM. La percentuale
+piu' alta accelera lo scorrimento. Con `prefers-reduced-motion` attivo avanza
+una riga alla volta. Tocco o scorrimento manuale mettono in pausa. I capi
 compongono la scaletta personale nell'area riservata; `localStorage` conserva
 solo gli slug (chiave `agesci-canicattini1.canzoniere.playlist.v1`) e i link
 `canzone.html?slugs=...` non contengono titoli o testi. Le scalette pubblicate

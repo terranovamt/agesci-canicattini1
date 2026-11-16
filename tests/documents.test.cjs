@@ -32,9 +32,14 @@ test("preparatory slots follow the five categories across filenames, years and p
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/documents-store.js"), "utf8");
 const document = { file: "Progetto.pdf", title: "Progetto educativo", description: "Il progetto del gruppo." };
 
-function store(fetch, basePath = "") {
+function store(fetch, basePath = "", request = async () => []) {
   const context = {
-    window: { LIVE: { basePath }, DOCUMENTS_MODEL: model },
+    window: {
+      LIVE: { basePath },
+      NAS: { basePath },
+      ACCESSO: { request },
+      DOCUMENTS_MODEL: model,
+    },
     fetch,
     TextDecoder,
     Uint8Array,
@@ -56,6 +61,20 @@ test("document operations use only the NAS API and send metadata without credent
   assert.equal(calls[1].options.headers.Authorization, undefined);
   assert.equal(calls[1].options.method, "POST");
   assert.deepEqual(JSON.parse(calls[1].options.body), { operation: "save", document });
+});
+
+test("private document operations use the authenticated NAS API and private PDF route", async () => {
+  const calls = [];
+  const items = [{ id: "private-id", category: "L/C", visibility: "private" }];
+  const change = { operation: "delete", previous: items[0] };
+  const { api } = store(() => {}, "/agesci-canicattini1", async (...args) => {
+    calls.push(args);
+    return args[0] === "private-documents" && args.length === 1 ? items : null;
+  });
+  assert.deepEqual(await api.loadPrivate(), items);
+  assert.equal(await api.savePrivate(change), null);
+  assert.deepEqual(calls, [["private-documents"], ["private-documents", "POST", change]]);
+  assert.equal(api.privatePdfHref("private-id"), "/agesci-canicattini1/api/private-documents/private-id/pdf");
 });
 
 test("document API respects the site prefix", async () => {
@@ -117,6 +136,33 @@ test("preparatory documents are an annual subset of the full archive", () => {
     assert.throws(() => model.validate([{ ...document, assemblyYear }]), /non valido/);
   const updated = model.apply([current], { operation: "save", previous: current, document });
   assert.equal(updated[0].assemblyYear, undefined);
+});
+
+test("document categories default to the chief's branch and distinguish public from private storage", () => {
+  const doc = (file, category, extra = {}) => ({
+    file, title: file, description: "Test", year: 2026, publishedAt: "2026-01-01",
+    category, visibility: "public", ...extra,
+  });
+  const items = [
+    doc("public.pdf", "public"),
+    doc("preparatory.pdf", "preparatory", { assemblyYear: 2026, assemblyType: "convocazione" }),
+    doc("lc.pdf", "L/C"),
+    doc("eg.pdf", "E/G"),
+    doc("rs.pdf", "R/S"),
+    doc("group.pdf", "group"),
+  ];
+  assert.equal(model.defaultCategory({ admin: false, serviceBranch: "E/G" }), "E/G");
+  assert.equal(model.defaultCategory({ admin: false, serviceBranch: "" }), "all");
+  assert.equal(model.defaultCategory({ admin: true }), "all");
+  assert.deepEqual(model.filterCategory(items, "E/G").map(item => item.file), ["eg.pdf"]);
+  assert.deepEqual(model.filterCategory(items, "all"), items);
+  assert.equal(model.categoryOf({ assemblyYear: 2026 }), "preparatory");
+  assert.equal(model.categoryOf({}), "public");
+  assert.deepEqual(model.editableCategories({ admin: false, serviceBranch: "E/G" }).map(([value]) => value),
+    ["public", "preparatory", "L/C", "E/G", "R/S", "group"]);
+  assert.deepEqual(model.editableCategories({ admin: true }).map(([value]) => value),
+    ["public", "preparatory", "L/C", "E/G", "R/S", "group"]);
+  assert.throws(() => model.validate([doc("private.pdf", "E/G", { visibility: "private" })]), /Indice documenti non valido/);
 });
 
 test("document API reports load and save failures", async () => {

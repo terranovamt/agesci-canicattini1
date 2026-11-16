@@ -119,6 +119,61 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
   assert.equal(M.transposeChordPro("[N.C.]pausa", 5), "[N.C.]pausa");
   assert.equal(M.importChordText("C     G\nHello, world"), "[C]Hello,[G] world");
   assert.equal(M.importChordText("[Am]Testo già in ChordPro"), "[Am]Testo già in ChordPro");
+  const imported = M.parseChordProDocument([
+    "{title: Brano importato}",
+    "{subtitle: Sottotitolo}",
+    "{artist: Canti Scout}",
+    "{composer: Compositore}",
+    "{lyricist: Paroliere}",
+    "{album: Album importato}",
+    "{year: 2001}",
+    "{key: Do}",
+    "{tempo: 110 (Stimato)}",
+    "{time: 4/4}",
+    "{capo: Nessuno}",
+    "{source: Fonte di prova}",
+    "{comment: Nota di prova}",
+    "{start_of_verse: Strofa}",
+    "[Do]Riga di prova",
+    "{end_of_verse}",
+    "# Fonte verificabile",
+    "# ====================",
+  ].join("\n"));
+  assert.deepEqual({
+    title: imported.title,
+    author: imported.author,
+    albumTitle: imported.albumTitle,
+    key: imported.key,
+    bpm: imported.bpm,
+    meter: imported.meter,
+    capo: imported.capo,
+    source: imported.source,
+    notes: imported.notes,
+    text: imported.text,
+  }, {
+    title: "Brano importato",
+    author: "Canti Scout",
+    albumTitle: "Album importato",
+    key: "C",
+    bpm: 110,
+    meter: "4/4",
+    capo: 0,
+    source: "Fonte di prova",
+    notes: [
+      "Sottotitolo: Sottotitolo",
+      "Compositore: Compositore",
+      "Paroliere: Paroliere",
+      "Anno: 2001",
+      "Indicazione tempo: 110 (Stimato)",
+      "Nota di prova",
+      "Fonte verificabile",
+    ].join("\n"),
+    text: "{start_of_verse: Strofa}\n[Do]Riga di prova\n{end_of_verse}",
+  });
+  assert.equal(M.parseChordProDocument("[Am]Testo semplice").text, "[Am]Testo semplice");
+  const descriptiveKey = M.parseChordProDocument("{key: LA maggiore (arrangiamento pubblicato)}");
+  assert.equal(descriptiveKey.key, "A");
+  assert.equal(descriptiveKey.notes, "Tonalità indicata nel file: LA maggiore (arrangiamento pubblicato)");
   assert.match(M.formatChordPro({
     title: "Titolo demo",
     author: "Autore demo",
@@ -133,7 +188,8 @@ test("ChordPro parsing, transposition, accent-insensitive search and scroll timi
   assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }), 4);
   assert.equal(M.secondsPerLine({ bpm: 120, meter: "6/8", barsPerLine: 2 }), 6);
   assert.equal(M.secondsPerLine({ bpm: null, meter: "3/4", barsPerLine: 2 }), M.DEFAULT_SECONDS_PER_LINE);
-  assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 50), 2);
+  assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 50), 8);
+  assert.equal(M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 150), 8 / 3);
   assert.throws(() => M.secondsPerLine({ bpm: 120, meter: "4/4", barsPerLine: 2 }, 201), RangeError);
 });
 

@@ -17,5 +17,19 @@
     return validate(await response.json());
   }
 
-  window.DOCUMENTS = { apply, load, save, validate, safeName };
+  async function loadPrivate() {
+    const items = await window.ACCESSO.request("private-documents");
+    if (!Array.isArray(items)) throw new Error("Elenco documenti riservati non valido");
+    return items;
+  }
+
+  function savePrivate(change) {
+    return window.ACCESSO.request("private-documents", "POST", change);
+  }
+
+  function privatePdfHref(id) {
+    return (window.NAS.basePath || "") + "/api/private-documents/" + encodeURIComponent(id) + "/pdf";
+  }
+
+  window.DOCUMENTS = { apply, load, save, loadPrivate, savePrivate, privatePdfHref, validate, safeName };
 })();

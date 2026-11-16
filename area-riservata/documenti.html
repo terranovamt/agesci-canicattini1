@@ -20,8 +20,8 @@
     <main id="documents-app" hidden>
       <div class="top-bar">
         <p id="publish-destination" class="public-warning">
-          <strong>PDF pubblici.</strong> Ogni file caricato qui è scaricabile da chiunque nell’archivio pubblico e i
-          quattro più recenti compaiono in home. Non caricare dati personali o riservati.
+          <strong>Documenti pubblici e privati.</strong> “Pubblico” e “Preparatorio assemblea” sono sempre accessibili
+          a chiunque. L/C, E/G, R/S e Gruppo possono essere pubblici o privati; i privati sono consultabili solo dai capi.
         </p>
         <section class="source-bar" aria-label="Sorgente dei documenti">
           <div class="source-status">
@@ -44,35 +44,64 @@
           <button type="button" data-section-target="documents-edit-panel">Carica / modifica</button>
         </nav>
         <section id="documents-library-panel" class="panel" data-section-panel aria-labelledby="library-heading">
-          <div class="panel-head">
-            <h2 id="library-heading">Documenti pubblicati</h2>
-            <button id="new-document" type="button">Nuovo documento</button>
+          <div class="category-filter">
+            <label for="documents-category-filter">Categoria</label>
+            <select id="documents-category-filter" aria-describedby="documents-category-hint"></select>
+            <p id="documents-category-hint" class="hint">La categoria iniziale è quella della tua branca; scegli “Tutte le categorie” per ampliare la ricerca.</p>
           </div>
-          <section class="preparatory" aria-labelledby="preparatory-heading">
+          <section id="private-library" class="private-library" aria-labelledby="private-documents-heading">
+            <div class="panel-head">
+              <div>
+                <h2 id="private-documents-heading">Documenti privati</h2>
+                <p class="hint">Visibili solo ai capi autorizzati e raggruppati per categoria.</p>
+              </div>
+              <button id="new-private-document" type="button">Nuovo documento privato</button>
+            </div>
+            <p id="private-documents-status" role="status" aria-live="polite">Caricamento documenti privati…</p>
+            <div id="private-documents-list" class="document-list" aria-busy="true"></div>
+            <button id="private-documents-retry" type="button" class="secondary" hidden>Ricarica documenti privati</button>
+          </section>
+          <div class="panel-head">
+            <h2 id="library-heading">Documenti pubblici</h2>
+            <button id="new-document" type="button">Nuovo documento pubblico</button>
+          </div>
+          <section id="preparatory-section" class="preparatory" aria-labelledby="preparatory-heading">
             <h3 id="preparatory-heading">Preparatori assemblea <span id="preparatory-year"></span></h3>
             <p class="hint">Ordine fisso, uguale alla pagina pubblica dell’assemblea.</p>
             <ol id="preparatory-slots" class="slots" aria-busy="true"></ol>
           </section>
-          <h3 class="list-heading">Tutti i documenti <span id="documents-count" class="count"></span></h3>
+          <h3 id="documents-list-heading" class="list-heading">Documenti <span id="documents-count" class="count"></span></h3>
           <div id="managed-documents" class="document-list"></div>
         </section>
         <section id="documents-edit-panel" class="panel" data-section-panel aria-labelledby="edit-heading">
           <h2 id="edit-heading">Nuovo documento</h2>
           <form id="document-form">
-            <fieldset class="kind" aria-describedby="kind-hint">
-              <legend>Tipo di documento</legend>
-              <div class="kind-options">
-                <label class="choice"
-                  ><input type="radio" name="document-kind" id="document-kind-general" value="general" checked />
-                  Generale</label
-                >
-                <label class="choice"
-                  ><input type="radio" name="document-kind" id="document-kind-preparatory" value="preparatory" />
-                  Preparatorio assemblea</label
-                >
+            <div id="document-category-row" class="document-category-row">
+              <div>
+                <label for="document-category">Categoria</label>
+                <select id="document-category">
+                  <option value="public">Pubblico</option>
+                  <option value="preparatory">Preparatorio assemblea</option>
+                  <option value="L/C">L/C</option>
+                  <option value="E/G">E/G</option>
+                  <option value="R/S">R/S</option>
+                  <option value="group">Gruppo</option>
+                </select>
               </div>
-              <p id="kind-hint" class="hint">I preparatori restano anche nell’archivio pubblico.</p>
-            </fieldset>
+              <div id="document-visibility-field" hidden>
+                <label for="document-visibility-toggle">Visibilità</label>
+                <input id="document-visibility" type="hidden" value="public" />
+                <button
+                  id="document-visibility-toggle"
+                  class="visibility-toggle"
+                  type="button"
+                  aria-label="Visibilità del documento"
+                  aria-pressed="false"
+                  aria-describedby="visibility-hint"
+                >Pubblico</button>
+                <p id="visibility-hint" class="hint">Privato è la scelta predefinita per i documenti di branca e Gruppo.</p>
+              </div>
+            </div>
             <div id="assembly-fields" class="field-pair" hidden>
               <div>
                 <label for="document-assembly-year">Anno assemblea</label>
@@ -110,8 +139,8 @@
               required
               aria-describedby="upload-hint"
             />
-            <p id="upload-hint" class="hint">PDF pubblico, inferiore a 20 MiB (limite NAS).</p>
-            <label for="document-title">Titolo nella pagina pubblica</label>
+            <p id="upload-hint" class="hint">PDF inferiore a 20 MiB (limite NAS).</p>
+            <label for="document-title">Titolo del documento</label>
             <input
               id="document-title"
               type="text"

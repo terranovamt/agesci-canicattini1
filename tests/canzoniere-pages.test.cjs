@@ -252,12 +252,11 @@ test("public song page groups settings and adapts notation, scroll and reading l
     assert.match(html, new RegExp(`<legend>${section}</legend>`));
   assert.equal((html.match(/<fieldset class="song-settings-group/g) || []).length, 4);
   assert.doesNotMatch(html, /<details class="song-settings-group/);
-  for (const id of ["show-chords", "chords-toggle", "transpose-down", "transpose-up", "transpose-original",
+  for (const id of ["show-chords", "display-mode-toggle", "transpose-down", "transpose-up", "transpose-original",
     "song-font-size", "dark-mode", "wake-lock", "scroll-correction", "scroll-speed", "print-chords", "print-song"])
     assert.match(html, new RegExp(`id="${id}"`));
-  assert.match(html, /id="notation-toggle"/);
-  assert.match(html, /id="notation-indicator"[^>]*>EN<\/span>/);
-  assert.match(html, /id="chords-toggle"[\s\S]*?aria-label="Mostra solo il testo"/);
+  assert.match(html, /id="display-mode-indicator"[^>]*>EN<\/span>/);
+  assert.doesNotMatch(html, /id="notation-toggle"|id="chords-toggle"/);
   assert.match(html, /id="auto-scroll"[^>]*aria-label="Avvia lo scorrimento automatico"/);
   assert.match(html, /id="font-size-value"[^>]*>18 px<\/output>/);
   assert.match(html, /id="song-font-size" type="range" min="16" max="48"/);
@@ -269,24 +268,26 @@ test("public song page groups settings and adapts notation, scroll and reading l
   assert.match(css, /\.scroll-controls\s*\{[^}]*position:\s*fixed/s);
   assert.match(css, /\.scroll-controls\s*\{[^}]*flex-direction:\s*column/s);
   assert.match(css, /\.song-settings-close-icon::before\s*\{[^}]*content:\s*var\(--fa,/s);
-  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #notation-toggle/);
-  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #chords-toggle/);
+  assert.match(css, /#song-content\.song-settings-open \.scroll-controls #display-mode-toggle/);
+  assert.doesNotMatch(css, /#chords-toggle/);
   assert.match(css, /#song-content\.song-settings-open \.scroll-controls #auto-scroll/);
   assert.match(css, /\.song-score\s*\{[^}]*min-height:\s*min\(45vh,\s*560px\)/s);
   assert.match(css, /\.song-score\s*\{[^}]*overflow-x:\s*hidden/s);
   assert.match(css, /\.lyric-line\s*\{[^}]*white-space:\s*pre-wrap/);
   assert.match(css, /body\.song-page #song-status:empty\s*\{\s*display:\s*none;/);
-  assert.match(mobileStyles, /min-height:\s*calc\(100dvh - 220px\)/);
+  assert.match(mobileStyles, /body\.song-page main#contenuto\s*\{[^}]*display:\s*flex/s);
+  assert.match(mobileStyles, /\.song-detail-card\s*\{[^}]*flex:\s*1 1 auto/s);
+  assert.match(mobileStyles, /#song-score\s*\{[^}]*flex:\s*1 1 0/s);
+  assert.match(html, /Velocità di scorrimento/);
   assert.ok(landscapeStyles, "short landscape screens have a dedicated reading layout");
-  assert.match(landscapeStyles, /#song-score\s*\{[\s\S]*?min-height:\s*calc\(100dvh/);
+  assert.match(landscapeStyles, /#song-score\s*\{[\s\S]*?flex:\s*1 1 0/s);
   assert.match(script, /model\.detectChordNotation/);
   assert.match(script, /model\.translateChordPro/);
   assert.match(script, /settingsToggle\.hidden = !compact/);
   assert.match(script, /settingsClose\.hidden = !compact \|\| !settingsOpen/);
   assert.match(script, /content\.classList\.toggle\("song-settings-open", compact && settingsOpen\)/);
   assert.match(script, /function updateAutomaticFontSize\(\)/);
-  assert.match(script, /function updateSongDensity\(\)/);
-  assert.match(script, /content\.classList\.toggle\("song-content-compact", compact\)/);
+  assert.doesNotMatch(script, /updateSongDensity|song-content-compact/);
   assert.match(script, /matchMedia\("\(orientation: landscape\)"\)/);
   assert.match(script, /const minimum = landscape && viewportWidth >= 640 \? 26 : 18/);
   assert.match(script, /Math\.max\(minimum,/);

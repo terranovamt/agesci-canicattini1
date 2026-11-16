@@ -159,7 +159,10 @@
               : shown.length + " documenti PDF disponibili.";
       shown.forEach((entry) => {
         const file = panel.onlyPreparatory ? entry.document : entry;
-        const detail = preparatory.find((item) => item.type === (panel.onlyPreparatory ? entry.type : window.DOCUMENTS_MODEL.assemblyType(file)));
+        const category = panel.onlyPreparatory ? "preparatory" : window.DOCUMENTS_MODEL.categoryOf(file);
+        const detail = category === "preparatory"
+          ? preparatory.find((item) => item.type === (panel.onlyPreparatory ? entry.type : window.DOCUMENTS_MODEL.assemblyType(file)))
+          : null;
         const card = document.createElement("article");
         card.className = "document-card document-" + (detail?.theme || "rules");
         const top = document.createElement("div");
@@ -173,7 +176,9 @@
         top.append(emblem, type);
         const label = document.createElement("span");
         label.className = "document-label";
-        label.textContent = (detail?.label || "Documenti del gruppo") + (file?.year ? " · " + file.year : "");
+        const categoryName = window.DOCUMENTS_MODEL.categoryLabel(category);
+        label.textContent = (detail ? categoryName + " · " + detail.label : categoryName) +
+          (file?.year ? " · " + file.year : "");
         if (list.dataset.order === "latest" && /^\d{4}-\d{2}-\d{2}/.test(file?.publishedAt || ""))
           label.textContent += " · pubblicato il " + file.publishedAt.slice(0, 10).split("-").reverse().join("/");
         const heading = document.createElement("h3");

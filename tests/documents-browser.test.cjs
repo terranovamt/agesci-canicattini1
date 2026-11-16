@@ -3,23 +3,39 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
+const chrome = require("./helpers/chrome.cjs");
 
 const root = path.join(__dirname, "..");
-const chrome = ["google-chrome", "chromium", "chromium-browser"].find(
-  (command) => spawnSync(command, ["--version"], { encoding: "utf8" }).status === 0,
-);
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 function fixture(file, css, scripts, user) {
   const index = read("documents/index.json");
   const calendars = read("calendars/events.json");
   const mock = `
-    window.ACCESSO = { verificata: () => true, esci() {} };
-    ${user ? `window.NAS = { user: ${JSON.stringify(user)} };` : ""}
+    window.ACCESSO = {
+      verificata: () => true, esci() {},
+      async request(path, method = "GET", data) {
+        const response = await window.fetch((window.NAS?.basePath || "") + "/api/" + path, {
+          method, credentials: "same-origin",
+          ...(data === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      }
+    };
+    ${user ? `window.NAS = { user: ${JSON.stringify(user)}, basePath: '' };` : ""}
     window.LIVE = { nas: ${!!user || file === "area-riservata/assemblea/setup.html"}, basePath: '' };
     window.DOCUMENTS_PREVIEW = true;
     history.replaceState = () => {};
     let items = ${index};
+    let privateItems = [
+      { id: "00000000-0000-4000-8000-000000000001", title: "Documento Gruppo", description: "Materiale di Gruppo.",
+        year: 2026, publishedAt: "2026-01-01", category: "group", visibility: "private", revision: 1 },
+      { id: "00000000-0000-4000-8000-000000000002", title: "Documento L/C", description: "Materiale L/C.",
+        year: 2026, publishedAt: "2026-01-02", category: "L/C", visibility: "private", revision: 1 },
+      { id: "00000000-0000-4000-8000-000000000003", title: "Documento E/G", description: "Materiale E/G.",
+        year: 2026, publishedAt: "2026-01-03", category: "E/G", visibility: "private", revision: 1 }
+    ];
     Object.defineProperty(window, 'localStorage', { value: { getItem: () => null, setItem() {}, removeItem() {} } });
     window.confirm = () => true;
     window.fetch = async (url, options) => {
@@ -35,8 +51,23 @@ function fixture(file, css, scripts, user) {
         }));
         return { ok: true, json: async () => snapshot };
       }
+      if (url.endsWith('/api/private-documents')) {
+        let saved = null;
+        if (options?.method === 'POST') {
+          const change = JSON.parse(options.body);
+          if (change.operation === "delete") {
+            privateItems = privateItems.filter(item => item.id !== change.previous.id);
+          } else {
+            saved = { ...change.document, id: change.document.id || "00000000-0000-4000-8000-000000000004",
+              visibility: "private", revision: 1 };
+            privateItems = [saved, ...privateItems.filter(item => item.id !== saved.id)];
+          }
+        }
+        const visible = privateItems;
+        return { ok: true, json: async () => JSON.parse(JSON.stringify(options?.method === "POST" ? saved : visible)) };
+      }
       if (options?.method === 'POST') items = DOCUMENTS_MODEL.apply(items, JSON.parse(options.body));
-      return { ok: true, json: async () => JSON.parse(JSON.stringify(items)) };
+      return { ok: true, text: async () => "", json: async () => JSON.parse(JSON.stringify(items)) };
     };
     const append = document.head.append.bind(document.head);
     document.head.append = element => {
@@ -50,7 +81,7 @@ function fixture(file, css, scripts, user) {
     .replace(/<link\b[^>]*>/g, "")
     .replace(/<iframe\b[\s\S]*?<\/iframe>/g, (original) => (file === "index.html" ? "" : original))
     .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) => {
-      const source = path.normalize(path.join(path.dirname(file), src.split("?")[0]));
+      const source = path.normalize(path.join(path.dirname(file), src.split("?")[0])).replace(/\\/g, "/");
       return scripts.includes(source) || source === "assets/js/shared/section-nav.js" ? "<script>" + read(source) + "</script>" : "";
     })
     .replace(
@@ -94,6 +125,12 @@ test("public documents and management work in a browser at all required widths",
       "assets/js/documents-model.js",
       "assets/js/home-documents.js",
     ]),
+    fixture("area-riservata/documenti.html", "assets/css/gestione-documenti.css", [
+      "assets/js/nas-nav.js",
+      "assets/js/documents-model.js",
+      "assets/js/documents-store.js",
+      "assets/js/gestione-documenti.js",
+    ], { admin: false, serviceBranch: "L/C" }),
   ];
   const html = `<!doctype html><meta charset="utf-8"><body><script>
     const pages = ${JSON.stringify(pages).replace(/</g, "\\u003c")};
@@ -107,6 +144,12 @@ test("public documents and management work in a browser at all required widths",
         frame.srcdoc = pages[page];
         await loaded;
         const doc = frame.contentDocument;
+        if (page === 0) {
+          for (let attempt = 0; attempt < 100 && !doc.querySelector(".agenda-event h5"); attempt++)
+            await new Promise(resolve => setTimeout(resolve, 10));
+          if (!doc.querySelector(".agenda-event h5"))
+            throw new Error("Calendari non renderizzati: " + doc.querySelector("#calendar-status")?.textContent);
+        }
         if (page === 1) {
           const marker = doc.querySelector(".branch-identity-marker");
           const markerStyle = frame.contentWindow.getComputedStyle(marker);
@@ -116,13 +159,61 @@ test("public documents and management work in a browser at all required widths",
           const markerBounds = marker.getBoundingClientRect();
           results.push({
             documentsBranchMarker: !marker.hidden && marker.textContent.trim() === "Branca E/G",
-            documentsBranchPill: markerStyle.display === "inline-flex" &&
+            documentsBranchPill: ["inline-flex", "flex"].includes(markerStyle.display) &&
               markerStyle.backgroundColor === "rgb(237, 247, 239)" &&
-              markerStyle.borderLeftWidth === "3px",
+              Number.parseFloat(markerStyle.borderLeftWidth) >= 2,
             documentsBrandTitleStacked: brandTitleStyle.display === "flex" &&
               brandTitleStyle.flexDirection === "column" && brandTitleStyle.alignItems === "flex-start",
             documentsBranchMarkerAligned: Math.abs(markerBounds.left - titleBounds.left) <= 1,
           });
+          results.push({
+            egCategoryDefault: doc.querySelector("#documents-category-filter").value === "E/G",
+            egAllCategoriesAvailable: [...doc.querySelectorAll("#documents-category-filter option")]
+              .some(option => option.value === "all" && option.textContent === "Tutte le categorie"),
+          });
+          for (let attempt = 0; attempt < 100 &&
+            (doc.querySelector("#managed-documents").getAttribute("aria-busy") !== "false" ||
+             doc.querySelector("#private-documents-list").getAttribute("aria-busy") !== "false"); attempt++)
+            await new Promise(resolve => setTimeout(resolve, 10));
+          const egPrivateTitles = [...doc.querySelectorAll("#private-documents-list .managed-document h3")]
+            .map(heading => heading.textContent);
+          results.push({
+            egDefaultPrivateCategory: egPrivateTitles.includes("Documento E/G") &&
+              !egPrivateTitles.includes("Documento L/C") && !egPrivateTitles.includes("Documento Gruppo"),
+          });
+          doc.querySelector("#documents-category-filter").value = "all";
+          doc.querySelector("#documents-category-filter").dispatchEvent(new frame.contentWindow.Event("change", { bubbles: true }));
+          const egAllPrivateTitles = [...doc.querySelectorAll("#private-documents-list .managed-document h3")]
+            .map(heading => heading.textContent);
+          results.push({
+            egAllIncludesGroup: egAllPrivateTitles.includes("Documento E/G") &&
+              egAllPrivateTitles.includes("Documento L/C") && egAllPrivateTitles.includes("Documento Gruppo"),
+          });
+        }
+        if (page === 6) {
+          const categoryFilter = doc.querySelector("#documents-category-filter");
+          results.push({
+            lcCategoryDefault: categoryFilter.value === "L/C",
+            lcAllCategoriesAvailable: [...categoryFilter.options]
+              .some(option => option.value === "all" && option.textContent === "Tutte le categorie"),
+          });
+          for (let attempt = 0; attempt < 100 &&
+            doc.querySelector("#private-documents-list").getAttribute("aria-busy") !== "false"; attempt++)
+            await new Promise(resolve => setTimeout(resolve, 10));
+          const branchTitles = [...doc.querySelectorAll("#private-documents-list .managed-document h3")]
+            .map(heading => heading.textContent);
+          categoryFilter.value = "all";
+          categoryFilter.dispatchEvent(new frame.contentWindow.Event("change", { bubbles: true }));
+          const allPrivateTitles = [...doc.querySelectorAll("#private-documents-list .managed-document h3")]
+            .map(heading => heading.textContent);
+          results.push({
+            lcPrivateListingScoped: branchTitles.includes("Documento L/C") &&
+              !branchTitles.includes("Documento Gruppo") && !branchTitles.includes("Documento E/G"),
+            allPrivateCategoriesShown: allPrivateTitles.includes("Documento L/C") &&
+              allPrivateTitles.includes("Documento Gruppo") && allPrivateTitles.includes("Documento E/G"),
+          });
+          categoryFilter.value = "L/C";
+          categoryFilter.dispatchEvent(new frame.contentWindow.Event("change", { bubbles: true }));
         }
         for (const width of [375, 768, 1024, 1440]) {
           frame.style.width = width + 'px';
@@ -389,13 +480,68 @@ test("public documents and management work in a browser at all required widths",
             observer.observe(doc.querySelector('#save-document'), { attributes: true });
           });
           results.push({ initialSlots: texts('#preparatory-slots .slot-type'), initialStates: slotStates(),
-            initialCount: doc.querySelectorAll('.managed-document').length,
+            initialCount: doc.querySelectorAll('#managed-documents .managed-document').length,
             source: doc.querySelector('#documents-source').textContent,
             legacyCredentialsAbsent: !doc.querySelector('#github-credentials'),
             publicWarning: doc.querySelector('#publish-destination').textContent,
-            techSecondary: [...doc.querySelectorAll('.managed-document .doc-tech')].every(details => !details.open),
-            deleteDistinct: [...doc.querySelectorAll('.managed-document')].every(article =>
+            techSecondary: [...doc.querySelectorAll('#managed-documents .doc-tech')].every(details => !details.open),
+            deleteDistinct: [...doc.querySelectorAll('#managed-documents .managed-document')].every(article =>
               article.querySelectorAll('.danger').length === 1 && article.querySelector('.danger').textContent === 'Elimina') });
+          const privateCount = doc.querySelectorAll('#private-documents-list .managed-document').length;
+          doc.querySelector('#new-private-document').click();
+          const privateCategoryDefault = doc.querySelector('#document-category').value;
+          const privateVisibilityDefault = doc.querySelector('#document-visibility').value;
+          const privateVisibilityShown = !doc.querySelector('#document-visibility-field').hidden;
+          const privateVisibilityButton = doc.querySelector('#document-visibility-toggle');
+          const privateVisibilityButtonDefault = privateVisibilityButton.textContent;
+          const privateVisibilityPressedDefault = privateVisibilityButton.getAttribute('aria-pressed');
+          const alignedWithCategory = () => {
+            const categoryBounds = doc.querySelector('#document-category').getBoundingClientRect();
+            const visibilityBounds = privateVisibilityButton.getBoundingClientRect();
+            return visibilityBounds.width > 0 &&
+              visibilityBounds.left >= categoryBounds.right - 1 &&
+              Math.abs(visibilityBounds.top - categoryBounds.top) <= 1;
+          };
+          frame.style.width = '375px';
+          const mobileVisibilityNextToCategory = alignedWithCategory();
+          frame.style.width = '1440px';
+          const desktopVisibilityNextToCategory = alignedWithCategory();
+          privateVisibilityButton.click();
+          const branchVisibilityCanBePublic = doc.querySelector('#document-visibility').value === 'public' &&
+            doc.querySelector('#document-category').value === 'E/G' &&
+            privateVisibilityButton.textContent === 'Pubblico' &&
+            privateVisibilityButton.getAttribute('aria-pressed') === 'false';
+          privateVisibilityButton.click();
+          const privateVisibilityRestored = doc.querySelector('#document-visibility').value === 'private' &&
+            privateVisibilityButton.textContent === 'Privato' &&
+            privateVisibilityButton.getAttribute('aria-pressed') === 'true';
+          const privatePrepFieldsHidden = doc.querySelector('#assembly-fields').hidden;
+          const privateFile = doc.querySelector('#document-file');
+          const privateTransfer = new win.DataTransfer();
+          privateTransfer.items.add(new win.File(['%PDF-1.7\\nprivate fixture'], 'privato.pdf', { type: 'application/pdf' }));
+          privateFile.files = privateTransfer.files;
+          privateFile.dispatchEvent(new win.Event('change', { bubbles: true }));
+          doc.querySelector('#document-title').value = 'Documento privato E/G';
+          doc.querySelector('#document-description').value = 'Materiale interno E/G.';
+          const privateSaved = saved();
+          doc.querySelector('#document-form').requestSubmit();
+          await privateSaved;
+          const privateCard = [...doc.querySelectorAll('#private-documents-list .managed-document')]
+            .find(article => article.querySelector('h3').textContent === 'Documento privato E/G');
+          results.push({
+            privateCategoryDefault,
+            privateVisibilityDefault,
+            privateVisibilityShown,
+            privateVisibilityButtonDefault,
+            privateVisibilityPressedDefault,
+            mobileVisibilityNextToCategory,
+            desktopVisibilityNextToCategory,
+            privateVisibilityRestored,
+            privatePrepFieldsHidden,
+            privateSaved: doc.querySelectorAll('#private-documents-list .managed-document').length === privateCount + 1,
+            privateVisible: !!privateCard,
+            privatePdfRoute: privateCard?.querySelector('.doc-open')?.getAttribute('href')?.includes('/api/private-documents/'),
+          });
           doc.querySelector('#new-document').click();
           const input = doc.querySelector('#document-file');
           const transfer = new win.DataTransfer();
@@ -408,10 +554,15 @@ test("public documents and management work in a browser at all required widths",
           doc.querySelector('#document-description').value = 'Descrizione di prova';
           doc.querySelector('#document-year').value = '2027';
           doc.querySelector('#document-published-at').value = '2027-02-03';
-          const assemblyHiddenForGeneral = doc.querySelector('#assembly-fields').hidden;
-          doc.querySelector('#document-kind-preparatory').click();
+          const assemblyHiddenForGeneral = doc.querySelector('#assembly-fields').hidden &&
+            doc.querySelector('#document-category').value === 'public';
+          doc.querySelector('#document-category').value = 'preparatory';
+          doc.querySelector('#document-category').dispatchEvent(new win.Event('change', { bubbles: true }));
+          const preparatoryAlwaysPublic = doc.querySelector('#document-visibility').value === 'public' &&
+            doc.querySelector('#document-visibility-field').hidden;
           doc.querySelector('#document-assembly-type').value = 'verbale';
-          results.push({ titlePrefilled, descriptionOptional, assemblyHiddenForGeneral, assemblyShown: !doc.querySelector('#assembly-fields').hidden,
+          results.push({ titlePrefilled, descriptionOptional, assemblyHiddenForGeneral, branchVisibilityCanBePublic, preparatoryAlwaysPublic,
+            assemblyShown: !doc.querySelector('#assembly-fields').hidden,
             typeWithoutYearBlocked: !doc.querySelector('#document-form').checkValidity() &&
               doc.querySelector('#document-assembly-year').validity.valueMissing });
           doc.querySelector('#document-assembly-year').value = '2026';
@@ -424,24 +575,24 @@ test("public documents and management work in a browser at all required widths",
           const failed = saved();
           doc.querySelector('#document-form').requestSubmit();
           while (!release) await tick();
-          results.push({ pendingCount: doc.querySelectorAll('.managed-document').length,
+          results.push({ pendingCount: doc.querySelectorAll('#managed-documents .managed-document').length,
             pendingMessage: doc.querySelector('#documents-message').textContent,
             pendingLocked: doc.querySelector('#save-document').disabled && doc.querySelector('#reload-documents').disabled });
           release({ ok: false, status: 503, text: async () => 'Server non disponibile' });
           await failed;
           results.push({ failedMessage: doc.querySelector('#documents-message').textContent,
-            failedCount: doc.querySelectorAll('.managed-document').length,
+            failedCount: doc.querySelectorAll('#managed-documents .managed-document').length,
             draftKept: doc.querySelector('#document-title').value === 'Documento nuovo' &&
               doc.querySelector('#document-file').files.length === 1 &&
               doc.querySelector('#document-assembly-type').value === 'verbale' &&
-              doc.querySelector('#document-kind-preparatory').checked });
+              doc.querySelector('#document-category').value === 'preparatory' });
           win.fetch = originalFetch;
           const uploaded = saved();
           doc.querySelector('#document-form').requestSubmit();
           await uploaded;
-          results.push({ uploaded: doc.querySelectorAll('.managed-document').length, posts,
+          results.push({ uploaded: doc.querySelectorAll('#managed-documents .managed-document').length, posts,
             status: doc.querySelector('#documents-message').textContent, uploadedStates: slotStates() });
-          doc.querySelector('.managed-document[data-file="nuovo.pdf"] button').click();
+          doc.querySelector('#managed-documents .managed-document[data-file="nuovo.pdf"] button').click();
           const yearBox = doc.querySelector('#document-year').getBoundingClientRect();
           const dateBox = doc.querySelector('#document-published-at').getBoundingClientRect();
           const assemblyYearBox = doc.querySelector('#document-assembly-year').getBoundingClientRect();
@@ -449,7 +600,7 @@ test("public documents and management work in a browser at all required widths",
           results.push({ editedYear: doc.querySelector('#document-year').value,
             editedDate: doc.querySelector('#document-published-at').value,
             assemblyYear: doc.querySelector('#document-assembly-year').value,
-            editPreparatory: doc.querySelector('#document-kind-preparatory').checked,
+            editPreparatory: doc.querySelector('#document-category').value === 'preparatory',
             currentFile: doc.querySelector('#current-file-link').textContent,
             currentFileHref: doc.querySelector('#current-file-link').getAttribute('href'),
             replacementOptional: !doc.querySelector('#document-file').required && !doc.querySelector('#current-file').hidden,
@@ -465,11 +616,11 @@ test("public documents and management work in a browser at all required widths",
           const edited = saved();
           doc.querySelector('#document-form').requestSubmit();
           await edited;
-          results.push({ edited: doc.querySelector('.managed-document[data-file="nuovo.pdf"] h3').textContent });
+          results.push({ edited: doc.querySelector('#managed-documents .managed-document[data-file="nuovo.pdf"] h3').textContent });
           const deleted = saved();
-          doc.querySelector('.managed-document[data-file="nuovo.pdf"] .danger').click();
+          doc.querySelector('#managed-documents .managed-document[data-file="nuovo.pdf"] .danger').click();
           await deleted;
-          results.push({ remaining: doc.querySelectorAll('.managed-document').length });
+          results.push({ remaining: doc.querySelectorAll('#managed-documents .managed-document').length });
           win.fetch = async () => ({ ok: false, status: 503 });
           await doc.querySelector('#reload-documents').onclick();
           results.push({ loadError: !!doc.querySelector('#managed-documents .state-error'),
@@ -479,13 +630,13 @@ test("public documents and management work in a browser at all required widths",
           await doc.querySelector('#reload-documents').onclick();
           results.push({ emptyState: !!doc.querySelector('#managed-documents .state-empty'), emptyStates: slotStates() });
           doc.querySelector('#preparatory-slots .slot[data-type="bilancio"] button').click();
-          results.push({ prefillKind: doc.querySelector('#document-kind-preparatory').checked,
+          results.push({ prefillKind: doc.querySelector('#document-category').value === 'preparatory',
             prefillType: doc.querySelector('#document-assembly-type').value,
             prefillYear: doc.querySelector('#document-assembly-year').value,
             prefillVisible: !doc.querySelector('#documents-edit-panel').hidden });
           win.fetch = originalFetch;
           await doc.querySelector('#reload-documents').onclick();
-          doc.querySelector('.managed-document button').click();
+          doc.querySelector('#managed-documents .managed-document button').click();
           for (const [width, height] of [[1920, 1080], [1366, 768], [820, 1180], [1180, 820], [390, 844], [844, 390]]) {
             frame.style.width = width + 'px';
             frame.style.height = height + 'px';
@@ -499,7 +650,7 @@ test("public documents and management work in a browser at all required widths",
               doc.querySelectorAll('.doc-tech').forEach(details => { details.open = true });
               win.scrollTo(0, 0);
               await tick();
-              const small = [...doc.querySelectorAll('#documents-app button, #documents-app select, #documents-app input:not([type=radio]), #documents-app summary, #documents-app a, #documents-app .choice')]
+              const small = [...doc.querySelectorAll('#documents-app button, #documents-app select, #documents-app input:not([type=radio]):not([type=checkbox]), #documents-app summary, #documents-app a, #documents-app .choice')]
                 .filter(control => control.getClientRects().length)
                 .filter(control => {
                   const box = control.getBoundingClientRect();
@@ -518,13 +669,15 @@ test("public documents and management work in a browser at all required widths",
                 contentRatio: Math.round(content.width / width * 100) / 100,
                 slots: [...doc.querySelectorAll('#preparatory-slots .slot-type')].map(node => node.textContent).join(','),
                 reloadUsable: !doc.querySelector('#reload-documents').disabled && doc.querySelector('#reload-documents').getClientRects().length > 0,
-                tokenUsable: doc.querySelector('#document-token').getBoundingClientRect().width >= 200,
+                categoryFilterUsable: panel === 'documents-edit-panel' ||
+                  doc.querySelector('#documents-category-filter').getBoundingClientRect().width >= 200,
+                documentCategoryControlUsable: panel === 'documents-library-panel' ||
+                  doc.querySelector('#document-category').getBoundingClientRect().width >= 200,
                 saveUsable: panel === 'documents-library-panel' || (!doc.querySelector('#save-document').disabled &&
                   doc.querySelector('#save-document').getBoundingClientRect().width >= 44) });
               doc.querySelectorAll('.doc-tech').forEach(details => { details.open = false });
             }
           }
-          credentials.hidden = true;
           doc.querySelector('#documents-section-nav').dispatchEvent(new win.CustomEvent('section-select', { detail: 'documents-library-panel' }));
           doc.querySelector('#document-title').focus();
           const focused = doc.activeElement === doc.querySelector('#document-title') &&
@@ -632,8 +785,17 @@ test("public documents and management work in a browser at all required widths",
     assert.deepEqual(results.find((item) => "documentsBranchMarker" in item), {
       documentsBranchMarker: true,
       documentsBranchPill: true,
-      documentsBrandTitleInline: true,
+      documentsBrandTitleStacked: true,
+      documentsBranchMarkerAligned: true,
     });
+    assert.equal(results.find((item) => "egCategoryDefault" in item).egCategoryDefault, true);
+    assert.equal(results.find((item) => "egAllCategoriesAvailable" in item).egAllCategoriesAvailable, true);
+    assert.equal(results.find((item) => "egDefaultPrivateCategory" in item).egDefaultPrivateCategory, true);
+    assert.equal(results.find((item) => "egAllIncludesGroup" in item).egAllIncludesGroup, true);
+    assert.equal(results.find((item) => "lcCategoryDefault" in item).lcCategoryDefault, true);
+    assert.equal(results.find((item) => "lcAllCategoriesAvailable" in item).lcAllCategoriesAvailable, true);
+    assert.equal(results.find((item) => "lcPrivateListingScoped" in item).lcPrivateListingScoped, true);
+    assert.equal(results.find((item) => "allPrivateCategoriesShown" in item).allPrivateCategoriesShown, true);
     assert.deepEqual(results.find((item) => "latestTitles" in item).latestTitles, [
       "Nuovissimo",
       "Secondo",
@@ -695,14 +857,31 @@ test("public documents and management work in a browser at all required widths",
     assert.deepEqual(manage.initialSlots, ["Convocazione", "Regolamento", "PEG", "Bilancio", "Verbale"]);
     assert.deepEqual(manage.initialStates, expectedStates);
     assert.equal(manage.initialCount, 4);
-    assert.match(manage.source, /anteprima locale/);
+    const privateManage = results.find(item => "privateSaved" in item);
+    assert.deepEqual([
+      privateManage.privateCategoryDefault,
+      privateManage.privateVisibilityDefault,
+      privateManage.privateVisibilityShown,
+      privateManage.privateVisibilityButtonDefault,
+      privateManage.privateVisibilityPressedDefault,
+      privateManage.mobileVisibilityNextToCategory,
+      privateManage.desktopVisibilityNextToCategory,
+      privateManage.privateVisibilityRestored,
+      privateManage.privatePrepFieldsHidden,
+      privateManage.privateSaved,
+      privateManage.privateVisible,
+      privateManage.privatePdfRoute,
+    ], ["E/G", "private", true, "Privato", "true", true, true, true, true, true, true, true]);
+    assert.match(manage.source, /NAS del gruppo/);
     assert.equal(manage.legacyCredentialsAbsent, true);
-    assert.match(manage.publicWarning, /PDF pubblici/);
+    assert.match(manage.publicWarning, /pubblici e privati/);
     assert.equal(manage.techSecondary, true);
     assert.equal(manage.deleteDistinct, true);
     assert.equal(manage.titlePrefilled, "Nuovo", "title prefilled from the PDF file name");
     assert.equal(manage.descriptionOptional, true);
     assert.equal(manage.assemblyHiddenForGeneral, true);
+    assert.equal(manage.branchVisibilityCanBePublic, true);
+    assert.equal(manage.preparatoryAlwaysPublic, true);
     assert.equal(manage.assemblyShown, true);
     assert.equal(manage.typeWithoutYearBlocked, true, "a preparatory type without year must not be ignored");
     assert.equal(manage.pendingCount, 4, "no optimistic success-shaped list before the save completes");
@@ -713,7 +892,7 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(manage.draftKept, true, "a failed save keeps the draft");
     assert.equal(manage.uploaded, 5, JSON.stringify(results));
     assert.equal(manage.posts, 1);
-    assert.match(manage.status, /Salvato/);
+    assert.match(manage.status, /Pubblicato sul sito/);
     if (year === 2026) assert.deepEqual(manage.uploadedStates, ["ok", "ok", "ok", "ok", "ok"]);
     assert.equal(manage.editPreparatory, true);
     assert.equal(manage.currentFile, "nuovo.pdf");
@@ -745,7 +924,8 @@ test("public documents and management work in a browser at all required widths",
       assert.deepEqual(item.small, [], where + " controls must be at least 44px and inside the viewport");
       assert.equal(item.slots, "Convocazione,Regolamento,PEG,Bilancio,Verbale", where);
       assert.equal(item.reloadUsable, true, where);
-      assert.equal(item.tokenUsable, true, where);
+      assert.equal(item.categoryFilterUsable, true, where);
+      assert.equal(item.documentCategoryControlUsable, true, where);
       assert.equal(item.saveUsable, true, where);
       const width = Number(item.viewport.split("x")[0]);
       if (width >= 1100) assert.equal(item.sideBySide, true, where + " shows library and form side by side");

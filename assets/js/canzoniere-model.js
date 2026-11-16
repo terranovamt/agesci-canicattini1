@@ -183,6 +183,158 @@
     return result.join("\n");
   }
 
+  function normalizeChordProKey(value) {
+    const text = String(value ?? "").trim();
+    const descriptive = /^(Do|Re|Mi|Fa|Sol|La|Si|[A-G])([#b\u266f\u266d]?)(?:\s+(maggiore|major|maj|minore|minor|min|m))?(?:\s*\([^)]*\))?$/i.exec(text);
+    if (descriptive) {
+      const note = noteParts(descriptive[1] + descriptive[2]);
+      if (!note || note.suffix) return "";
+      const mode = descriptive[3]?.toLowerCase();
+      const key = note.root + note.accidental +
+        (["minore", "minor", "min", "m"].includes(mode) ? "m" : "");
+      return /^[A-G](?:#|b)?(?:m|maj|min|major|minor|dim|aug)?$/i.test(key) ? key : "";
+    }
+
+    const translated = translateChordPro("{key: " + text + "}", "en");
+    const key = /^\{key:\s*([^}]+)\}$/i.exec(translated)?.[1]?.trim();
+    return key && /^[A-G](?:#|b)?(?:m|maj|min|major|minor|dim|aug)?$/i.test(key) ? key : "";
+  }
+
+  function parseChordProDocument(source) {
+    if (typeof source !== "string") throw new TypeError("Il documento ChordPro deve essere una stringa");
+    const text = source.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+    if (text.length > 100000) throw new RangeError("Il testo da importare supera 100000 caratteri");
+
+    const fields = {};
+    const notes = [];
+    const body = [];
+    const setField = (name, value) => {
+      const content = typeof value === "string" ? value.trim() : value;
+      if (content !== undefined && content !== null && content !== "") fields[name] = content;
+    };
+    const addNote = (label, value) => {
+      const content = String(value ?? "").trim();
+      if (content) notes.push(label ? label + ": " + content : content);
+    };
+    const addComment = (value) => {
+      const sourceComment = /^Fonte:\s*(.*)$/i.exec(value);
+      if (sourceComment) {
+        if (!fields.source) setField("source", sourceComment[1]);
+        else if (normalizeSearch(fields.source) !== normalizeSearch(sourceComment[1]))
+          addNote("", value);
+        return;
+      }
+      const rightsComment = /^Diritti:\s*(.*)$/i.exec(value);
+      if (rightsComment) {
+        setField("rights", rightsComment[1]);
+        return;
+      }
+      const notesComment = /^Note:\s*(.*)$/i.exec(value);
+      if (notesComment) {
+        addNote("", notesComment[1]);
+        return;
+      }
+      addNote("", value);
+    };
+
+    text.split("\n").forEach((line) => {
+      const directive = /^\{([a-z][a-z0-9_-]*)(?::([^}]*))?\}$/i.exec(line.trim());
+      if (!directive) {
+        const comment = /^\s*#\s?(.*)$/.exec(line);
+        if (comment) {
+          const value = comment[1].trim();
+          if (value && !/^[=*_~-]+$/.test(value)) addNote("", value);
+        } else body.push(line);
+        return;
+      }
+
+      const name = directive[1].toLowerCase();
+      const value = (directive[2] || "").trim();
+      switch (name) {
+        case "title":
+        case "t":
+          setField("title", value);
+          break;
+        case "artist":
+        case "author":
+        case "by":
+          setField("author", value);
+          break;
+        case "album":
+          setField("albumTitle", value);
+          break;
+        case "key": {
+          const key = normalizeChordProKey(value);
+          if (key) {
+            setField("key", key);
+            if (/\b(?:maggiore|major|maj|minore|minor|min)\b|\([^)]*\)/i.test(value))
+              addNote("Tonalità indicata nel file", value);
+          } else addNote("Tonalità indicata nel file", value);
+          break;
+        }
+        case "tempo": {
+          const tempo = /^(\d+)(?:\s+(.+))?$/.exec(value);
+          const bpm = tempo ? Number(tempo[1]) : NaN;
+          if (Number.isInteger(bpm) && bpm >= 20 && bpm <= 300) {
+            setField("bpm", bpm);
+            if (tempo[2]) addNote("Indicazione tempo", value);
+          } else addNote("Tempo indicato nel file", value);
+          break;
+        }
+        case "time":
+          if (Object.hasOwn(METERS, value)) setField("meter", value);
+          else addNote("Metro indicato nel file", value);
+          break;
+        case "capo": {
+          const capo = Number(value);
+          if (/^(?:nessuno|nessun capo|no capo|none)$/i.test(value)) setField("capo", 0);
+          else if (/^\d+$/.test(value) && Number.isInteger(capo) && capo <= 12) setField("capo", capo);
+          else addNote("Capotasto indicato nel file", value);
+          break;
+        }
+        case "source":
+          setField("source", value);
+          break;
+        case "rights":
+          setField("rights", value);
+          break;
+        case "subtitle":
+        case "st":
+          addNote("Sottotitolo", value);
+          break;
+        case "composer":
+          addNote("Compositore", value);
+          break;
+        case "lyricist":
+          addNote("Paroliere", value);
+          break;
+        case "year":
+          addNote("Anno", value);
+          break;
+        case "comment":
+        case "c":
+        case "comment_italic":
+        case "ci":
+        case "comment_box":
+        case "cb":
+          addComment(value);
+          break;
+        case "note":
+        case "notes":
+          addNote("", value);
+          break;
+        default:
+          body.push(line);
+      }
+    });
+
+    return {
+      ...fields,
+      notes: [...new Set(notes)].join("\n"),
+      text: importChordText(body.join("\n").replace(/^(?:\n)+|(?:\n)+$/g, "")),
+    };
+  }
+
   function formatChordPro(song, albumTitle = "") {
     const directiveValue = (value) => String(value ?? "").replace(/[{}\r\n]/g, " ").trim();
     const lines = [
@@ -254,9 +406,9 @@
     return METERS[meter] || 0;
   }
 
-  function secondsPerLine(song, correctionPercent = 100) {
-    if (!Number.isFinite(correctionPercent) || correctionPercent < 50 || correctionPercent > 200)
-      throw new RangeError("La correzione deve essere tra il 50% e il 200%");
+  function secondsPerLine(song, speedPercent = 100) {
+    if (!Number.isFinite(speedPercent) || speedPercent < 50 || speedPercent > 200)
+      throw new RangeError("La velocità deve essere tra il 50% e il 200%");
     const barsPerLine = song?.barsPerLine ?? 2;
     if (!Number.isSafeInteger(barsPerLine) || barsPerLine < 1 || barsPerLine > 16)
       throw new RangeError("Le battute per riga devono essere tra 1 e 16");
@@ -270,7 +422,7 @@
         ? (beats * barsPerLine * 60) / bpm
         : NaN;
     if (!Number.isFinite(seconds)) throw new RangeError("BPM non valido");
-    return seconds * correctionPercent / 100;
+    return seconds * 100 / speedPercent;
   }
 
   const model = Object.freeze({
@@ -284,6 +436,7 @@
     importChordText,
     matchesSearch,
     normalizeSearch,
+    parseChordProDocument,
     parseChordPro,
     slugify,
     secondsPerLine,

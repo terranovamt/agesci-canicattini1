@@ -8,15 +8,21 @@
   const M = window.DOCUMENTS_MODEL;
   const limitMiB = 20;
   const currentYear = new Date().getFullYear();
+  const currentUser = window.NAS?.user || {};
   const typeLabel = (type) => (M.assemblyTypes.find(([value]) => value === type) || [])[1] || "";
   let items = [],
+    privateItems = [],
     loadState = "loading",
     loadError = "",
+    privateLoadState = "loading",
+    privateLoadError = "",
     editing = null,
+    editingPrivate = null,
     pending = null,
     busy = false,
     formDirty = false;
   const pdfHref = (file) => "../documents/pdf/" + encodeURIComponent(file);
+  const privatePdfHref = (id) => D.privatePdfHref(id);
   const sorted = (list) =>
     [...list].sort(
       (a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || "") || a.title.localeCompare(b.title, "it"),
@@ -41,12 +47,44 @@
     element.onclick = onclick;
     return element;
   }
+  function renderCategoryFilter() {
+    const filter = $("documents-category-filter");
+    const all = node("option", "", "Tutte le categorie");
+    all.value = "all";
+    filter.replaceChildren(all, ...M.documentCategories.map(([value, label]) => {
+      const option = node("option", "", label);
+      option.value = value;
+      return option;
+    }));
+    filter.value = M.defaultCategory(currentUser);
+    $("documents-category-hint").textContent = currentUser.admin
+      ? "Scegli una categoria oppure visualizzale tutte."
+      : ["L/C", "E/G", "R/S"].includes(currentUser.serviceBranch)
+        ? "Sono mostrati prima i documenti della tua branca; scegli “Tutte le categorie” per ampliare la ricerca."
+        : "Scegli una categoria oppure visualizzale tutte.";
+    filter.onchange = () => {
+      render();
+      renderPrivate();
+    };
+  }
+  function selectedCategory() {
+    return $("documents-category-filter").value || "all";
+  }
+  function configureCategoryChoices() {
+    const editable = new Set(M.editableCategories(currentUser).map(([value]) => value));
+    [...$("document-category").options].forEach((option) => {
+      if (M.branchCategories.includes(option.value) || option.value === "group")
+        option.disabled = !editable.has(option.value);
+    });
+  }
 
   $("documents-app").hidden = false;
+  renderCategoryFilter();
+  configureCategoryChoices();
   $("preparatory-year").textContent = currentYear;
   $("documents-source").textContent = "Sorgente: NAS del gruppo";
-  $("upload-hint").textContent = "PDF pubblico, inferiore a " + limitMiB + " MiB (limite NAS).";
-  $("publish-timing").textContent = "Al salvataggio il NAS pubblica subito la modifica sul sito.";
+  $("upload-hint").textContent = "PDF inferiore a " + limitMiB + " MiB (limite NAS).";
+  $("publish-timing").textContent = "La visibilità viene impostata per ogni documento.";
 
   function message(text, kind = "") {
     $("documents-message").textContent = text;
@@ -58,8 +96,15 @@
       .forEach((element) => {
         if (!element.closest("[data-section-nav]")) element.disabled = busy;
       });
-    $("save-document").disabled = busy || loadState !== "ready";
+    $("document-category").disabled = busy;
+    $("document-category").querySelector('option[value="public"]').disabled = !!editingPrivate;
+    $("document-category").querySelector('option[value="preparatory"]').disabled = !!editingPrivate;
+    $("document-visibility").disabled = busy || !!editing || !!editingPrivate;
+    $("document-visibility-toggle").disabled = busy || !!editing || !!editingPrivate ||
+      !M.privateCategories.includes($("document-category").value);
+    $("save-document").disabled = busy || ($("document-visibility").value === "public" ? loadState : privateLoadState) !== "ready";
     $("managed-documents").setAttribute("aria-busy", String(busy || loadState === "loading"));
+    $("private-documents-list").setAttribute("aria-busy", String(busy || privateLoadState === "loading"));
     $("preparatory-slots").setAttribute("aria-busy", String(loadState === "loading"));
   }
   function lock(value) {
@@ -74,24 +119,51 @@
     return !formDirty || confirm(text);
   }
 
-  function setKind(kind) {
-    const preparatory = kind === "preparatory";
-    $("document-kind-general").checked = !preparatory;
-    $("document-kind-preparatory").checked = preparatory;
+  function updateVisibility() {
+    const category = $("document-category").value;
+    const supportsVisibility = M.privateCategories.includes(category);
+    const visibility = supportsVisibility ? $("document-visibility").value : "public";
+    $("document-visibility-field").hidden = !supportsVisibility;
+    $("document-category-row").classList.toggle("has-visibility", supportsVisibility);
+    $("document-visibility-toggle").textContent = visibility === "private" ? "Privato" : "Pubblico";
+    $("document-visibility-toggle").setAttribute("aria-pressed", String(visibility === "private"));
+    $("visibility-hint").textContent = visibility === "private"
+      ? "Questo PDF è accessibile solo ai capi autorizzati."
+      : "Questo PDF è accessibile a chiunque.";
+    $("publish-timing").textContent = visibility === "private"
+      ? "Il PDF privato resterà nel database NAS e non comparirà nell’archivio pubblico."
+      : "Il PDF sarà disponibile nell’archivio pubblico.";
+    $("save-document").textContent = editing || editingPrivate
+      ? "Salva modifiche"
+      : visibility === "private" ? "Salva documento privato" : "Pubblica documento";
+    syncDisabled();
+  }
+  function setCategory(category, resetVisibility = true) {
+    $("document-category").value = category;
+    const preparatory = category === "preparatory";
+    const supportsVisibility = M.privateCategories.includes(category);
+    if (supportsVisibility && resetVisibility && !editing && !editingPrivate)
+      $("document-visibility").value = "private";
+    if (!supportsVisibility) $("document-visibility").value = "public";
     $("assembly-fields").hidden = !preparatory;
     $("document-assembly-year").required = preparatory;
     $("document-assembly-type").required = preparatory;
-    const wasPreparatory = editing && (editing.assemblyYear !== undefined || editing.assemblyType !== undefined);
     let warning = "";
-    if (!preparatory && wasPreparatory)
-      warning = "Salvando come generale, il documento non comparirà più tra i preparatori assemblea.";
+    if (!preparatory && editing && M.categoryOf(editing) === "preparatory")
+      warning = "Salvando in un'altra categoria, il documento non comparirà più tra i preparatori assemblea.";
     else if (preparatory && editing && editing.assemblyYear === undefined && editing.assemblyType !== undefined)
       warning = "Questo documento ha un tipo preparatorio ma nessun anno: indica l’anno dell’assemblea.";
+    if (!preparatory) {
+      $("document-assembly-year").value = "";
+      $("document-assembly-type").value = "";
+    }
     $("kind-warning").textContent = warning;
     $("kind-warning").hidden = !warning;
+    updateVisibility();
   }
   function reset() {
     editing = null;
+    editingPrivate = null;
     formDirty = false;
     $("document-file").value = "";
     $("document-file").required = true;
@@ -105,14 +177,18 @@
     $("document-published-at").value = new Date().toLocaleDateString("sv-SE");
     $("document-assembly-year").value = "";
     $("document-assembly-type").value = "";
-    setKind("general");
+    $("document-category").querySelectorAll('option[value="public"],option[value="preparatory"]')
+      .forEach((option) => { option.disabled = false; });
+    setCategory("public");
     $("edit-heading").textContent = "Nuovo documento";
-    $("save-document").textContent = "Pubblica documento";
     $("cancel-document").hidden = true;
   }
   function startEdit(item) {
     if (busy || !discardDraft()) return;
+    reset();
     editing = { ...item };
+    setCategory(M.categoryOf(item), false);
+    $("document-visibility").value = "public";
     $("document-file").value = "";
     $("document-file").required = false;
     $("file-label").firstChild.textContent = "Sostituisci PDF ";
@@ -127,7 +203,7 @@
     $("document-assembly-year").value = item.assemblyYear ?? "";
     $("document-assembly-type").value =
       item.assemblyType || (item.assemblyYear !== undefined ? M.assemblyType(item) : "");
-    setKind(item.assemblyYear !== undefined || item.assemblyType !== undefined ? "preparatory" : "general");
+    updateVisibility();
     $("edit-heading").textContent = "Modifica documento";
     $("save-document").textContent = "Salva modifiche";
     $("cancel-document").hidden = false;
@@ -135,22 +211,66 @@
     showPanel("documents-edit-panel");
     $("document-title").focus();
     $("document-form").scrollIntoView({ block: "start", behavior: "instant" });
+    syncDisabled();
+  }
+  function startPrivateEdit(item) {
+    if (busy || !discardDraft()) return;
+    reset();
+    editingPrivate = { ...item };
+    $("document-category").querySelectorAll('option[value="public"],option[value="preparatory"]')
+      .forEach((option) => { option.disabled = true; });
+    $("document-visibility").value = "private";
+    setCategory(item.category, false);
+    $("document-file").value = "";
+    $("document-file").required = false;
+    $("file-label").firstChild.textContent = "Sostituisci PDF ";
+    $("file-hint").textContent = "(facoltativo, mantiene il PDF attuale)";
+    $("current-file").hidden = false;
+    $("current-file-link").href = privatePdfHref(item.id);
+    $("current-file-link").textContent = "Apri PDF privato";
+    $("document-title").value = item.title;
+    $("document-description").value = item.description;
+    $("document-year").value = item.year ?? "";
+    $("document-published-at").value = item.publishedAt || "";
+    $("document-assembly-year").value = "";
+    $("document-assembly-type").value = "";
+    $("edit-heading").textContent = "Modifica documento privato";
+    $("save-document").textContent = "Salva modifiche";
+    $("cancel-document").hidden = false;
+    formDirty = false;
+    showPanel("documents-edit-panel");
+    $("document-title").focus();
+    $("document-form").scrollIntoView({ block: "start", behavior: "instant" });
+    syncDisabled();
   }
   function startNew(type) {
     if (busy || !discardDraft()) return;
     reset();
     if (type) {
-      setKind("preparatory");
+      setCategory("preparatory");
       $("document-assembly-year").value = currentYear;
       $("document-assembly-type").value = type;
       $("edit-heading").textContent = "Nuovo preparatorio: " + typeLabel(type) + " " + currentYear;
     }
     showPanel("documents-edit-panel");
     $("document-file").focus();
+    syncDisabled();
+  }
+  function startPrivateDocument() {
+    if (busy || !discardDraft()) return;
+    reset();
+    const category = M.branchCategories.includes(currentUser.serviceBranch) ? currentUser.serviceBranch : "group";
+    setCategory(category);
+    $("edit-heading").textContent = "Nuovo documento privato";
+    showPanel("documents-edit-panel");
+    $("document-file").focus();
+    syncDisabled();
   }
 
   function renderSlots() {
     const list = $("preparatory-slots");
+    const category = selectedCategory();
+    $("preparatory-section").hidden = category !== "all" && category !== "preparatory";
     list.replaceChildren();
     const ready = loadState === "ready";
     const slots = ready ? M.preparatorySlots(items, currentYear) : [];
@@ -194,6 +314,11 @@
     const main = node("div", "doc-main");
     main.append(node("h3", "", item.title));
     const meta = node("p", "doc-meta");
+    const category = M.categoryOf(item);
+    meta.append(node("span", category === "preparatory" ? "chip chip-prep" : "chip chip-category",
+      M.categoryLabel(category)));
+    if (M.privateCategories.includes(category))
+      meta.append(node("span", "chip chip-visibility-public", "Pubblico"));
     if (item.year !== undefined) meta.append(node("span", "chip", "Anno " + item.year));
     if (item.publishedAt) meta.append(node("span", "chip", "Pubblicato " + formatDate(item.publishedAt)));
     if (item.assemblyYear !== undefined) {
@@ -231,18 +356,83 @@
     open.target = "_blank";
     open.rel = "noopener";
     open.setAttribute("aria-label", "Apri PDF " + item.title);
+    actions.append(open);
+    if (currentUser.admin || !M.branchCategories.includes(category) || category === currentUser.serviceBranch)
+      actions.append(
+        button("Modifica", "secondary", "Modifica " + item.title, () => startEdit(item)),
+        button("Elimina", "danger", "Elimina " + item.title, () => remove(item)),
+      );
+    article.append(main, actions);
+    return article;
+  }
+  function renderPrivateItem(item) {
+    const article = node("article", "managed-document");
+    article.dataset.privateId = item.id;
+    const main = node("div", "doc-main");
+    main.append(node("h3", "", item.title));
+    const meta = node("p", "doc-meta");
+    meta.append(
+      node("span", "chip chip-category", M.categoryLabel(item.category)),
+      node("span", "chip chip-visibility-private", "Privato · Solo capi"),
+      node("span", "chip", "Anno " + item.year),
+      node("span", "chip", "Pubblicato " + formatDate(item.publishedAt)),
+    );
+    main.append(meta, node("p", "doc-description", item.description));
+    const actions = node("div", "doc-actions");
+    const open = node("a", "doc-open", "Apri PDF");
+    open.href = privatePdfHref(item.id);
+    open.target = "_blank";
+    open.rel = "noopener";
+    open.setAttribute("aria-label", "Apri PDF privato " + item.title);
     actions.append(
       open,
-      button("Modifica", "secondary", "Modifica " + item.title, () => startEdit(item)),
-      button("Elimina", "danger", "Elimina " + item.title, () => remove(item)),
+      button("Modifica", "secondary", "Modifica " + item.title, () => startPrivateEdit(item)),
+      button("Elimina", "danger", "Elimina " + item.title, () => removePrivate(item)),
     );
     article.append(main, actions);
     return article;
   }
+  function renderPrivate() {
+    const list = $("private-documents-list");
+    const status = $("private-documents-status");
+    const category = selectedCategory();
+    const selected = M.filterCategory(privateItems, category);
+    $("private-library").hidden = category !== "all" && !M.privateCategories.includes(category);
+    list.replaceChildren();
+    $("private-documents-retry").hidden = privateLoadState !== "error";
+    status.className = privateLoadState === "error" ? "error" : "";
+    if (privateLoadState === "loading") {
+      status.textContent = "Caricamento documenti privati…";
+      for (let index = 0; index < 2; index++) {
+        const placeholder = node("article", "loading-skeleton");
+        placeholder.setAttribute("aria-hidden", "true");
+        list.append(placeholder);
+      }
+    } else if (privateLoadState === "error") {
+      status.textContent = "Impossibile caricare i documenti privati: " + privateLoadError;
+    } else {
+      status.textContent = selected.length + (selected.length === 1 ? " documento privato." : " documenti privati.");
+      if (!selected.length) list.append(node("p", "state-empty", "Nessun documento privato in questa categoria."));
+      else {
+        const categories = category === "all" ? M.privateCategories : [category];
+        categories.forEach((value) => {
+          const group = selected.filter((item) => item.category === value);
+          if (!group.length) return;
+          list.append(node("h3", "document-category-heading", M.categoryLabel(value)));
+          group.forEach((item) => list.append(renderPrivateItem(item)));
+        });
+      }
+    }
+    syncDisabled();
+  }
   function render() {
     const list = $("managed-documents");
+    const category = selectedCategory();
+    const visibleItems = M.filterCategory(items, category);
     list.replaceChildren();
-    $("documents-count").textContent = loadState === "ready" ? "(" + items.length + ")" : "";
+    $("documents-list-heading").childNodes[0].textContent =
+      (category === "all" ? "Tutte le categorie" : M.categoryLabel(category)) + " ";
+    $("documents-count").textContent = loadState === "ready" ? "(" + visibleItems.length + ")" : "";
     if (loadState === "loading") {
       for (let index = 0; index < 3; index++) {
         const placeholder = node("article", "loading-skeleton");
@@ -257,9 +447,9 @@
         button("Riprova", "secondary", "", reload),
       );
       list.append(box);
-    } else if (!items.length) {
+    } else if (!visibleItems.length) {
       list.append(node("p", "state-empty", "Nessun PDF pubblicato. Usa “Nuovo documento” per caricare il primo."));
-    } else items.forEach((item) => list.append(renderItem(item)));
+    } else visibleItems.forEach((item) => list.append(renderItem(item)));
     renderSlots();
     syncDisabled();
   }
@@ -267,22 +457,48 @@
   async function reload() {
     if (busy || !discardDraft("Scartare le modifiche al modulo e ricaricare?")) return;
     loadState = "loading";
+    privateLoadState = "loading";
     lock(true);
     render();
+    renderPrivate();
     message("Caricamento dei documenti…", "pending");
-    try {
-      items = sorted(await D.load());
+    const [publicResult, privateResult] = await Promise.allSettled([D.load(), D.loadPrivate()]);
+    if (publicResult.status === "fulfilled") {
+      items = sorted(publicResult.value);
       loadState = "ready";
+      loadError = "";
       reset();
       message("Documenti aggiornati dal NAS.");
-    } catch (error) {
+    } else {
       loadState = "error";
-      loadError = error.message;
-      message(error.message, "error");
-    } finally {
-      busy = false;
-      render();
+      loadError = publicResult.reason.message;
+      message(loadError, "error");
     }
+    if (privateResult.status === "fulfilled") {
+      privateItems = sorted(privateResult.value);
+      privateLoadState = "ready";
+      privateLoadError = "";
+    } else {
+      privateLoadState = "error";
+      privateLoadError = privateResult.reason.message;
+    }
+    busy = false;
+    render();
+    renderPrivate();
+  }
+  async function reloadPrivate() {
+    if (busy) return;
+    privateLoadState = "loading";
+    renderPrivate();
+    try {
+      privateItems = sorted(await D.loadPrivate());
+      privateLoadState = "ready";
+      privateLoadError = "";
+    } catch (error) {
+      privateLoadState = "error";
+      privateLoadError = error.message;
+    }
+    renderPrivate();
   }
   async function publish(change) {
     const deleting = change.operation === "delete";
@@ -297,6 +513,7 @@
       D.apply(items, change);
       const next = await D.save(change);
       items = sorted(next);
+      if (!deleting) $("documents-category-filter").value = M.categoryOf(change.document);
       pending = null;
       if (!deleting || editing?.file === change.previous.file) reset();
       message(deleting ? "Eliminato dal sito." : "Pubblicato sul sito.", "success");
@@ -315,6 +532,37 @@
       return;
     await publish({ operation: "delete", previous: item });
   }
+  async function publishPrivate(change) {
+    const deleting = change.operation === "delete";
+    let notice = "";
+    lock(true);
+    try {
+      const saved = await D.savePrivate(change);
+      privateItems = deleting
+        ? privateItems.filter((item) => item.id !== change.previous.id)
+        : sorted([saved, ...privateItems.filter((item) => item.id !== saved.id)]);
+      if (!deleting && selectedCategory() !== "all") $("documents-category-filter").value = saved.category;
+      privateLoadState = "ready";
+      privateLoadError = "";
+      if (!deleting || editingPrivate?.id === change.previous.id) reset();
+      notice = deleting ? "Documento privato eliminato." : "Documento privato salvato.";
+    } catch (error) {
+      notice = (deleting ? "Non eliminato: " : "Non salvato: ") + error.message;
+    } finally {
+      busy = false;
+      render();
+      renderPrivate();
+    }
+    $("private-documents-status").textContent = notice;
+    $("private-documents-status").className = notice.startsWith("Non ") ? "error" : "success";
+  }
+  async function removePrivate(item) {
+    if (busy || !confirm('Eliminare definitivamente "' + item.title + '" dall’archivio privato?'))
+      return;
+    if (editingPrivate?.id === item.id && !discardDraft("Il modulo aperto su questo documento verrà chiuso. Continuare?"))
+      return;
+    await publishPrivate({ operation: "delete", previous: item });
+  }
   async function readPdf(file) {
     if (!D.safeName(file.name)) throw new Error("Seleziona un file con estensione .pdf e un nome valido");
     if (file.size >= limitMiB * 1024 * 1024)
@@ -329,10 +577,17 @@
   $("document-form").oninput = () => {
     formDirty = true;
   };
+  $("document-visibility-toggle").onclick = () => {
+    if ($("document-visibility-toggle").disabled) return;
+    const visibility = $("document-visibility");
+    visibility.value = visibility.value === "private" ? "public" : "private";
+    formDirty = true;
+    updateVisibility();
+  };
   $("document-form").onchange = (event) => {
     formDirty = true;
-    if (event.target.name === "document-kind") setKind(event.target.value);
-    if (event.target.id === "document-file" && !editing) {
+    if (event.target.id === "document-category") setCategory(event.target.value);
+    if (event.target.id === "document-file" && !editing && !editingPrivate) {
       const title = $("document-title");
       const name = (event.target.files[0]?.name || "").replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
       if (name && (!title.value.trim() || title.dataset.auto === title.value)) {
@@ -343,7 +598,9 @@
   };
   $("document-form").onsubmit = async (event) => {
     event.preventDefault();
-    if (busy || loadState !== "ready") return;
+    const category = $("document-category").value;
+    const visibility = M.privateCategories.includes(category) ? $("document-visibility").value : "public";
+    if (busy || (visibility === "public" ? loadState : privateLoadState) !== "ready") return;
     const file = $("document-file").files[0];
     const title = $("document-title").value.trim();
     const description = $("document-description").value.trim() || title;
@@ -354,37 +611,59 @@
     lock(true);
     let change;
     try {
-      const preparatory = $("document-kind-preparatory").checked;
+      const content = file ? await readPdf(file) : undefined;
+      const preparatory = category === "preparatory";
       const assemblyYear = $("document-assembly-year").value.trim();
       const assemblyType = $("document-assembly-type").value;
-      if (preparatory && !assemblyYear && !assemblyType)
-        throw new Error("Indica anno e tipo del preparatorio, oppure scegli “Generale”.");
-      if (preparatory && !assemblyYear) throw new Error("Indica l’anno dell’assemblea per il tipo scelto.");
+      if (preparatory && !assemblyYear) throw new Error("Indica l’anno dell’assemblea.");
       if (preparatory && !assemblyType) throw new Error("Scegli il tipo di documento preparatorio.");
-      if (!file && !editing) throw new Error("Seleziona un PDF da caricare");
-      const content = file ? await readPdf(file) : undefined;
-      const metadata = {
-        ...editing,
-        file: editing?.file || file.name,
-        title,
-        description,
-        year: Number($("document-year").value),
-        publishedAt: $("document-published-at").value,
-      };
-      delete metadata.assemblyYear;
-      delete metadata.assemblyType;
-      if (preparatory) {
-        metadata.assemblyYear = Number(assemblyYear);
-        metadata.assemblyType = assemblyType;
+      if (visibility === "private") {
+        if (editing) throw new Error("La visibilità di un documento esistente non può essere cambiata.");
+        if (!file && !editingPrivate) throw new Error("Seleziona un PDF da caricare");
+        const privateDocument = {
+          ...editingPrivate,
+          title,
+          description,
+          year: Number($("document-year").value),
+          publishedAt: $("document-published-at").value,
+          category,
+          visibility: "private",
+        };
+        change = {
+          operation: "save",
+          previous: editingPrivate || undefined,
+          document: privateDocument,
+          content,
+        };
+      } else {
+        if (editingPrivate) throw new Error("La visibilità di un documento esistente non può essere cambiata.");
+        if (!file && !editing) throw new Error("Seleziona un PDF da caricare");
+        const metadata = {
+          ...editing,
+          file: editing?.file || file.name,
+          title,
+          description,
+          year: Number($("document-year").value),
+          publishedAt: $("document-published-at").value,
+          category,
+          visibility: "public",
+        };
+        delete metadata.assemblyYear;
+        delete metadata.assemblyType;
+        if (preparatory) {
+          metadata.assemblyYear = Number(assemblyYear);
+          metadata.assemblyType = assemblyType;
+        }
+        change = { operation: "save", previous: editing || undefined, document: metadata, content };
+        D.apply(items, change);
       }
-      change = { operation: "save", previous: editing || undefined, document: metadata, content };
-      D.apply(items, change);
     } catch (error) {
       message("Non salvato: " + error.message, "error");
       lock(false);
       return;
     }
-    await publish(change);
+    if (visibility === "public") await publish(change);
+    else await publishPrivate(change);
   };
   $("cancel-document").onclick = () => {
     if (discardDraft("Scartare le modifiche?")) {
@@ -393,7 +672,9 @@
     }
   };
   $("new-document").onclick = () => startNew();
+  $("new-private-document").onclick = startPrivateDocument;
   $("reload-documents").onclick = reload;
+  $("private-documents-retry").onclick = reloadPrivate;
   addEventListener("beforeunload", (event) => {
     if (formDirty || busy) event.preventDefault();
   });

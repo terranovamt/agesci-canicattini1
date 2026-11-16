@@ -60,7 +60,8 @@ pubblicazione GitHub Pages restano separati.
 ├── server/                        Backend Node 24, SQLite e immagine Docker
 │   ├── nas.cjs                    Gateway HTTP, sessioni e dispatch delle API
 │   ├── members.cjs                Anagrafe e censimenti nel database esistente
-│   └── canzoniere.cjs             Modello SQLite e API pubbliche/admin/capi del Canzoniere
+│   ├── canzoniere.cjs             Modello SQLite e API pubbliche/admin/capi del Canzoniere
+│   └── private-documents.cjs      Archivio PDF privati per categoria e branca
 ├── deploy/
 │   └── synology/                  Container, Nginx e aggiornamento dal branch NAS
 ├── docs/                          Documentazione tecnica e operativa, audit
@@ -120,8 +121,18 @@ al repository; il browser usa una sessione HttpOnly senza conservare la password
 Setup e regia mantengono i controlli di accesso già previsti. La presentazione
 resta leggibile dal pubblico durante la diretta anche se il suo codice è
 raggruppato sotto l'area riservata: il percorso non è un vincolo di sicurezza.
-I PDF pubblici restano in `documents/pdf/`; `area-riservata/documenti.html`
-è esclusivamente l'interfaccia di gestione.
+I PDF pubblici restano in `documents/pdf/` e `documents/index.json`.
+`area-riservata/documenti.html` gestisce anche i PDF privati: i metadati e i
+contenuti sono conservati nel database persistente `site.sqlite`, non nella
+cartella pubblica. Le categorie sono **Pubblico**, **Preparatorio assemblea**,
+**L/C**, **E/G**, **R/S** e **Gruppo**. La visibilità è scelta sul singolo
+documento, non sulla categoria. I preparatori sono sempre pubblici; le altre
+categorie possono essere pubbliche o private, con il privato come default.
+L'API `/api/private-documents` richiede una sessione capo: tutti i PDF privati
+sono visibili ai capi, indipendentemente dalla categoria. La categoria serve a
+raggruppare e filtrare, non è un vincolo di accesso. Il filtro iniziale
+seleziona la branca dell'utente;
+“Tutte le categorie” mostra anche le altre branche e Gruppo.
 
 ## Migrazione degli indirizzi
 

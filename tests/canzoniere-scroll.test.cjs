@@ -23,11 +23,11 @@ class EventTarget {
   }
 }
 
-function harness(onEnd = async () => false) {
+function harness(onEnd = async () => false, reducedMotion = true) {
   const score = new EventTarget();
   const button = new EventTarget();
-  const correction = new EventTarget();
-  correction.value = "100";
+  const speedControl = new EventTarget();
+  speedControl.value = "100";
   const speedLabel = new EventTarget();
   const status = new EventTarget();
   const scrollCalls = [];
@@ -42,10 +42,11 @@ function harness(onEnd = async () => false) {
   };
   const timeouts = new Map();
   const intervals = new Map();
+  const frames = new Map();
   let nextId = 0;
   const window = {
     CANZONIERE_MODEL: M,
-    matchMedia: () => ({ matches: true }),
+    matchMedia: () => ({ matches: reducedMotion }),
     setTimeout: (callback, delay) => {
       const id = ++nextId;
       timeouts.set(id, { callback, delay });
@@ -58,19 +59,25 @@ function harness(onEnd = async () => false) {
       return id;
     },
     clearInterval: (id) => intervals.delete(id),
+    requestAnimationFrame: (callback) => {
+      const id = ++nextId;
+      frames.set(id, callback);
+      return id;
+    },
+    cancelAnimationFrame: (id) => frames.delete(id),
   };
   const source = fs.readFileSync(require.resolve("../assets/js/canzoniere-scroll.js"), "utf8");
   vm.runInNewContext(source, { window, Set, Object, console });
   const player = window.CANZONIERE_SCROLL.createScrollPlayer({
     score,
     button,
-    correction,
+    speedControl,
     speedLabel,
     status,
     getSong: () => ({ bpm: 120, meter: "4/4", barsPerLine: 2 }),
     onEnd,
   });
-  return { button, correction, intervals, player, score, scrollCalls, speedLabel, status, timeouts };
+  return { button, frames, intervals, player, score, scrollCalls, speedControl, speedLabel, status, timeouts };
 }
 
 test("autoscroll counts down three seconds, follows BPM timing, and stops at the last line", async () => {
@@ -101,13 +108,35 @@ test("autoscroll counts down three seconds, follows BPM timing, and stops at the
   assert.equal(app.button.getAttribute("aria-label"), "Avvia lo scorrimento automatico");
 });
 
+test("autoscroll moves gradually over each line interval", () => {
+  const app = harness(undefined, false);
+  app.button.listeners.get("click")();
+  const countdown = app.intervals.values().next().value;
+  countdown.callback();
+  countdown.callback();
+  countdown.callback();
+  const frame = (timestamp) => {
+    const [id, callback] = app.frames.entries().next().value;
+    app.frames.delete(id);
+    callback(timestamp);
+  };
+
+  frame(0);
+  frame(2000);
+  assert.equal(app.score.scrollTop, 46);
+  frame(4000);
+  assert.equal(app.score.scrollTop, 92);
+  assert.equal(app.frames.size, 0);
+  assert.equal(app.timeouts.values().next().value.delay, 4000);
+});
+
 test("manual touch pauses countdown and the correction slider updates the interval", () => {
   const app = harness();
   app.button.listeners.get("click")();
   app.score.listeners.get("pointerdown")({ type: "pointerdown" });
   assert.equal(app.status.textContent, "Pausa al tocco o allo scorrimento manuale.");
   assert.equal(app.button.getAttribute("aria-pressed"), "false");
-  app.correction.value = "150";
-  app.correction.listeners.get("input")();
-  assert.equal(app.speedLabel.textContent, "Una riga ogni 6.0 s");
+  app.speedControl.value = "150";
+  app.speedControl.listeners.get("input")();
+  assert.equal(app.speedLabel.textContent, "Una riga ogni 2.7 s");
 });

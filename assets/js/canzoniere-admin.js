@@ -37,7 +37,7 @@
   let loading = false;
   let writing = false;
   let playlistSongOrder = [];
-  let importPreview = "";
+  let importPreview = null;
   let lastLoadError = "";
 
   function node(tagName, text, className) {
@@ -384,7 +384,7 @@
     $("admin-song-rights").value = "da verificare";
     fillSongAlbums();
     renderChecks("admin-song-tags", state.tags, [], (tag) => tag.name);
-    importPreview = "";
+    importPreview = null;
     $("admin-import-file").value = "";
     $("admin-import-text").value = "";
     $("admin-import-preview-box").replaceChildren();
@@ -458,19 +458,18 @@
   }
 
   function chordProImport(source) {
-    return M.importChordText(source);
+    return M.parseChordProDocument(source);
   }
 
   async function previewImport() {
     const source = $("admin-import-text").value;
     try {
       if (!source.trim()) throw new Error("Incolla o seleziona un testo da importare.");
-      const converted = chordProImport(source);
-      importPreview = converted;
-      VIEW.renderScore($("admin-import-preview-box"), { text: converted }, 0, true);
+      importPreview = chordProImport(source);
+      VIEW.renderScore($("admin-import-preview-box"), { text: importPreview.text }, 0, true);
       $("admin-import-preview-box").hidden = false;
       $("admin-import-confirm").disabled = false;
-      $("admin-import-status").textContent = "Anteprima pronta. Conferma per inserirla nell’editor.";
+      $("admin-import-status").textContent = "Anteprima pronta. Conferma per inserire testo e metadati nell’editor.";
     } catch (error) {
       importPreview = "";
       $("admin-import-preview-box").replaceChildren();
@@ -479,6 +478,16 @@
       $("admin-import-status").textContent = error.message;
       console.error("Anteprima import non riuscita", error);
     }
+  }
+
+  function readTextFile(file) {
+    if (typeof file.text === "function") return file.text();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(reader.error || new Error("Lettura del file non riuscita."));
+      reader.readAsText(file, "UTF-8");
+    });
   }
 
   async function readImportFile() {
@@ -493,7 +502,7 @@
       return;
     }
     try {
-      $("admin-import-text").value = await file.text();
+      $("admin-import-text").value = await readTextFile(file);
       invalidateImportPreview();
       $("admin-import-status").textContent = "File caricato localmente. Mostra l’anteprima prima di confermare.";
     } catch (error) {
@@ -504,14 +513,71 @@
 
   function confirmImport() {
     if ($("admin-import-confirm").disabled || !importPreview) return;
-    $("admin-song-text").value = importPreview;
+
+    const updates = new Map();
+    const notes = [
+      ...$("admin-song-notes").value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+      ...importPreview.notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+    ];
+    const setImportedField = (id, value, label) => {
+      if (value === undefined || value === null || value === "") return;
+      const field = $(id);
+      const content = String(value);
+      if (Number.isInteger(field.maxLength) && field.maxLength >= 0 && content.length > field.maxLength) {
+        notes.push(label + " (oltre il limite del campo): " + content);
+        return;
+      }
+      updates.set(id, content);
+    };
+
+    setImportedField("admin-song-title", importPreview.title, "Titolo");
+    setImportedField("admin-song-author", importPreview.author, "Artista");
+    setImportedField("admin-song-key", importPreview.key, "Tonalità");
+    setImportedField("admin-song-bpm", importPreview.bpm, "BPM");
+    setImportedField("admin-song-meter", importPreview.meter, "Tempo");
+    setImportedField("admin-song-capo", importPreview.capo, "Capotasto");
+    setImportedField("admin-song-source", importPreview.source, "Fonte");
+    if (importPreview.albumTitle) {
+      const album = state.albums.find((item) =>
+        M.normalizeSearch(item.title) === M.normalizeSearch(importPreview.albumTitle));
+      if (album) updates.set("admin-song-album", album.slug);
+      else {
+        updates.set("admin-song-album", "");
+        notes.push("Album: " + importPreview.albumTitle);
+      }
+    }
+    if (importPreview.rights) {
+      const rightsAliases = new Map([
+        ["public domain", "pubblico dominio"],
+        ["public-domain", "pubblico dominio"],
+        ["authorized", "autorizzato"],
+        ["unknown", "da verificare"],
+      ]);
+      const normalizedRights = M.normalizeSearch(importPreview.rights);
+      const rights = rightsAliases.get(normalizedRights) ||
+        [...$("admin-song-rights").options].find((option) =>
+          M.normalizeSearch(option.value) === normalizedRights)?.value;
+      if (rights) updates.set("admin-song-rights", rights);
+      else notes.push("Diritti indicati nel file: " + importPreview.rights);
+    }
+
+    const mergedNotes = [...new Set(notes)].join("\n");
+    if (mergedNotes.length > 4000) {
+      $("admin-import-status").textContent =
+        "Le note del file superano il limite di 4000 caratteri: riducile o dividile prima di importare.";
+      return;
+    }
+    updates.set("admin-song-notes", mergedNotes);
+    if (importPreview.text) updates.set("admin-song-text", importPreview.text);
+    updates.forEach((value, id) => { $(id).value = value; });
     previewSong();
-    $("admin-import-status").textContent = "Testo inserito nell’editor. Salva la canzone per pubblicarlo.";
+    $("admin-import-status").textContent =
+      "Testo e metadati inseriti nell’editor. Controlla i campi e salva per pubblicare.";
     $("admin-song-text").focus();
   }
 
   function invalidateImportPreview() {
-    importPreview = "";
+    importPreview = null;
     $("admin-import-confirm").disabled = true;
     $("admin-import-preview-box").hidden = true;
     $("admin-import-status").textContent = "Il testo è cambiato: genera una nuova anteprima prima di confermare.";

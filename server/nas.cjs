@@ -11,6 +11,7 @@ const { createMembers } = require("./members.cjs");
 const { createActivities } = require("./activities.cjs");
 const { createCanzoniere } = require("./canzoniere.cjs");
 const { createVotes } = require("./votes.cjs");
+const { createPrivateDocuments } = require("./private-documents.cjs");
 const documents = require("../assets/js/documents-model.js");
 
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -111,6 +112,7 @@ async function createNasServer({
   const activities = createActivities(database, people);
   const canzoniere = createCanzoniere(database, people);
   const votes = createVotes(database, people);
+  const privateDocuments = createPrivateDocuments(database);
   const streams = new Map();
   const presence = new Map();
   const attempts = new Map();
@@ -227,6 +229,23 @@ async function createNasServer({
       if (await members.handle(url.pathname, request, response, { body, send, sessionId })) return;
       if (await activities.handle(url.pathname, request, response, { body, send, sessionId })) return;
       if (await votes.handle(url.pathname, request, response, { body, send, sessionId, ip })) return;
+      if (url.pathname === "/api/private-documents") {
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        if (method === "GET") return send(response, 200, privateDocuments.list(current));
+        if (method === "POST")
+          return send(response, 200, privateDocuments.save(current, await body(request, 28 * 1024 * 1024)));
+        fail(405, "Metodo non consentito");
+      }
+      const privatePdf = /^\/api\/private-documents\/([0-9a-f-]{36})\/pdf$/i.exec(url.pathname);
+      if (privatePdf && ["GET", "HEAD"].includes(method)) {
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        const pdf = privateDocuments.pdf(current, privatePdf[1]);
+        return send(response, 200, method === "HEAD" ? "" : pdf, "application/pdf", {
+          "Content-Disposition": 'inline; filename="document.pdf"',
+        });
+      }
       if (url.pathname === "/api/telemetry/config" && method === "GET")
         return send(response, 200, { enabled: monitor.enabled });
       if (url.pathname === "/api/telemetry" && method === "POST") {
@@ -339,8 +358,10 @@ async function createNasServer({
       if (url.pathname === "/area-riservata/assemblea/dati.js" && ["GET", "HEAD"].includes(method))
         return send(response, 200, read("dati.js"), "application/javascript; charset=utf-8");
       if (url.pathname === "/api/documents" && method === "POST") {
-        if (!authorized(request)) fail(401, "Sessione scaduta: accedi di nuovo");
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
         const change = await body(request, 28 * 1024 * 1024);
+        if (!object(change)) fail(400, "Modifica documento non valida");
         const next = transaction(() => {
           let items;
           try {

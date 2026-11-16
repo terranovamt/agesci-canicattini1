@@ -123,7 +123,7 @@
               <legend>Scorrimento automatico</legend>
               <div class="song-settings-group-content">
                 <label class="scroll-correction" for="scroll-correction">
-                  Correzione velocità <output id="scroll-correction-value" for="scroll-correction">100%</output>
+                  Velocità di scorrimento <output id="scroll-correction-value" for="scroll-correction">100%</output>
                   <input id="scroll-correction" type="range" min="50" max="200" step="10" value="100" />
                 </label>
                 <p id="scroll-speed" class="scroll-speed"></p>
@@ -145,24 +145,13 @@
           </div>
           <div class="scroll-controls" role="group" aria-label="Controlli rapidi">
             <button
-              id="notation-toggle"
+              id="display-mode-toggle"
               class="button button-secondary song-floating-button"
               type="button"
-              aria-label="Notazione inglese; passa alla notazione italiana"
-              aria-pressed="false"
+              aria-label="Accordi in notazione inglese; passa alla notazione italiana"
               disabled
             >
-              <span id="notation-indicator" class="song-notation-indicator" aria-hidden="true">EN</span>
-            </button>
-            <button
-              id="chords-toggle"
-              class="button button-secondary song-floating-button"
-              type="button"
-              aria-label="Mostra solo il testo"
-              aria-pressed="false"
-              disabled
-            >
-              <span id="chords-toggle-indicator" aria-hidden="true">−</span>
+              <span id="display-mode-indicator" class="song-notation-indicator" aria-hidden="true">EN</span>
             </button>
             <button
               id="auto-scroll"

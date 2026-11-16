@@ -3,13 +3,14 @@
 
   const SCROLL_KEYS = new Set([" ", "ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End"]);
 
-  function createScrollPlayer({ score, button, correction, speedLabel, status, getSong, onEnd = async () => false }) {
+  function createScrollPlayer({ score, button, speedControl, speedLabel, status, getSong, onEnd = async () => false }) {
     let running = false;
     let countingDown = false;
     let generation = 0;
     let lineIndex = 0;
     let timer = 0;
     let countdownTimer = 0;
+    let animationFrame = null;
 
     function lines() {
       return [...score.querySelectorAll(".song-line")];
@@ -29,7 +30,7 @@
         speedLabel.textContent = "";
         return;
       }
-      const seconds = root.CANZONIERE_MODEL.secondsPerLine(song, Number(correction.value));
+      const seconds = root.CANZONIERE_MODEL.secondsPerLine(song, Number(speedControl.value));
       speedLabel.textContent = "Una riga ogni " + seconds.toFixed(1) + " s" +
         (song.bpm === null || song.bpm === undefined ? " · velocità predefinita" : "");
     }
@@ -37,8 +38,10 @@
     function cancelTimers() {
       root.clearTimeout(timer);
       root.clearInterval(countdownTimer);
+      if (animationFrame !== null) root.cancelAnimationFrame(animationFrame);
       timer = 0;
       countdownTimer = 0;
+      animationFrame = null;
     }
 
     function pause(message = "Scorrimento in pausa.") {
@@ -61,30 +64,73 @@
       return index;
     }
 
-    function scrollToLine(index) {
+    function targetScrollTop(index) {
       const currentLines = lines();
       const line = currentLines[index];
-      if (!line) return;
+      if (!line) return null;
       const offset = line.getBoundingClientRect().top - score.getBoundingClientRect().top;
-      const reducedMotion = root.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      score.scrollTo({
-        top: Math.max(0, score.scrollTop + offset - 8),
-        behavior: reducedMotion ? "auto" : "smooth",
-      });
+      return Math.max(0, score.scrollTop + offset - 8);
+    }
+
+    function scrollToLine(index, duration, currentGeneration) {
+      const target = targetScrollTop(index);
+      if (target === null) {
+        pause("Riga non disponibile per lo scorrimento.");
+        return;
+      }
+      const reducedMotion = root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+      if (reducedMotion) {
+        timer = root.setTimeout(() => {
+          timer = 0;
+          if (!running || currentGeneration !== generation) return;
+          score.scrollTo({ top: target, behavior: "auto" });
+          lineIndex = index;
+          schedule(currentGeneration);
+        }, duration);
+        return;
+      }
+
+      const start = score.scrollTop;
+      const distance = target - start;
+      let startedAt = null;
+      const animate = (timestamp) => {
+        animationFrame = null;
+        if (!running || currentGeneration !== generation) return;
+        if (startedAt === null) startedAt = timestamp;
+        const progress = Math.min(1, (timestamp - startedAt) / duration);
+        score.scrollTo({ top: start + distance * progress, behavior: "auto" });
+        if (progress >= 1) {
+          lineIndex = index;
+          schedule(currentGeneration);
+        } else animationFrame = root.requestAnimationFrame(animate);
+      };
+      animationFrame = root.requestAnimationFrame(animate);
     }
 
     function schedule(currentGeneration) {
       if (!running || currentGeneration !== generation) return;
+      const currentLines = lines();
+      if (!currentLines.length) {
+        pause("Testo non disponibile per lo scorrimento.");
+        return;
+      }
       let seconds;
       try {
-        seconds = root.CANZONIERE_MODEL.secondsPerLine(getSong(), Number(correction.value));
+        seconds = root.CANZONIERE_MODEL.secondsPerLine(getSong(), Number(speedControl.value));
         updateSpeed();
       } catch (error) {
         console.error("Velocità di scorrimento non valida", error);
         pause(error.message);
         return;
       }
-      timer = root.setTimeout(() => advance(currentGeneration), seconds * 1000);
+      if (lineIndex + 1 < currentLines.length) {
+        scrollToLine(lineIndex + 1, seconds * 1000, currentGeneration);
+        return;
+      }
+      timer = root.setTimeout(() => {
+        timer = 0;
+        return advance(currentGeneration);
+      }, seconds * 1000);
     }
 
     function countdown(currentGeneration, label) {
@@ -116,12 +162,6 @@
       const currentLines = lines();
       if (!currentLines.length) {
         pause("Testo non disponibile per lo scorrimento.");
-        return;
-      }
-      if (lineIndex + 1 < currentLines.length) {
-        lineIndex++;
-        scrollToLine(lineIndex);
-        schedule(currentGeneration);
         return;
       }
       try {
@@ -169,11 +209,11 @@
     }
 
     button.addEventListener("click", start);
-    correction.addEventListener("input", () => {
+    speedControl.addEventListener("input", () => {
       try {
         updateSpeed();
         if (running && !countingDown) {
-          root.clearTimeout(timer);
+          cancelTimers();
           schedule(generation);
         }
       } catch (error) {

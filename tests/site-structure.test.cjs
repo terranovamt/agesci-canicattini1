@@ -116,7 +116,7 @@ test("public Canzoniere has an index and a slug-based song detail page", () => {
   assert.match(read("canzoniere/index.html"), /id="song-list"[^>]*aria-busy="true"/);
   const songPage = read("canzoniere/canzone.html");
   assert.match(songPage, /id="song-detail"[^>]*aria-busy="true"/);
-  for (const id of ["auto-scroll", "notation-toggle", "notation-indicator", "scroll-correction",
+  for (const id of ["auto-scroll", "display-mode-toggle", "display-mode-indicator", "scroll-correction",
     "song-settings-panel", "song-settings-toggle",
     "playlist-controls", "playlist-previous", "playlist-next", "print-chords", "print-song", "playlist-print"])
     assert.match(songPage, new RegExp(`id="${id}"`));
@@ -141,13 +141,13 @@ test("Canzoniere exposes manager CRUD, leader playlist tools, import preview and
     "admin-chordpro-preview", "admin-import-preview",
     "admin-import-confirm", "admin-backup-json", "admin-backup-chordpro"])
     assert.match(page, new RegExp(`id="${id}"`));
-  assert.match(page, /accept="\.txt,\.cho,\.pro,text\/plain"/);
+  assert.match(page, /accept="\.txt,\.cho,\.pro,text\/plain,application\/octet-stream"/);
   assert.match(controller, /!window\.ACCESSO\?\.verificata\(\)/);
   assert.match(controller, /user\.serviceBranch/);
   assert.match(controller, /request\("\/manage"\)/);
   assert.match(controller, /window\.confirm\(/);
   assert.match(controller, /state\[kind\] = snapshot/);
-  assert.match(controller, /M\.importChordText/);
+  assert.match(controller, /M\.parseChordProDocument/);
   assert.match(controller, /M\.formatChordPro/);
   assert.doesNotMatch(controller, /innerHTML/);
 });

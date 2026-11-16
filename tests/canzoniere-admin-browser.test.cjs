@@ -135,6 +135,76 @@ test("chiefs see Canzoniere management and leader playlist tools; public view ha
         leaderTab: [...document.querySelectorAll('#admin-section-nav button')]
           .some(button => button.textContent.trim() === 'Strumenti capi'),
       }))()`), { role: "E/G", newSong: true, leaderTab: true });
+
+      const chordProFixture = [
+        "{title: Brano importato}",
+        "{subtitle: Sottotitolo}",
+        "{artist: Canti Scout}",
+        "{composer: Compositore}",
+        "{lyricist: Paroliere}",
+        "{album: Album esterno}",
+        "{year: 2001}",
+        "{key: Do}",
+        "{tempo: 110 (Stimato)}",
+        "{time: 4/4}",
+        "{capo: Nessuno}",
+        "{source: Fonte di prova}",
+        "{rights: Public Domain}",
+        "{comment: Nota di prova}",
+        "{start_of_verse: Strofa}",
+        "[Do]Riga di prova",
+        "{end_of_verse}",
+        "# Fonte verificabile",
+      ].join("\n");
+      await page.evaluate(`{
+        document.getElementById("admin-new-song").click();
+        document.querySelector(".import-panel").open = true;
+        const input = document.getElementById("admin-import-file");
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([${JSON.stringify(chordProFixture)}], "brano.cho",
+          { type: "application/octet-stream" }));
+        input.files = transfer.files;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }`);
+      await wait("document.getElementById('admin-import-status').textContent.includes('File caricato')");
+      await page.evaluate(`document.getElementById("admin-import-preview").click()`);
+      await wait("!document.getElementById('admin-import-confirm').disabled");
+      await page.evaluate(`document.getElementById("admin-import-confirm").click()`);
+      assert.deepEqual(await page.evaluate(`(() => ({
+        title: document.getElementById("admin-song-title").value,
+        author: document.getElementById("admin-song-author").value,
+        album: document.getElementById("admin-song-album").value,
+        key: document.getElementById("admin-song-key").value,
+        bpm: document.getElementById("admin-song-bpm").value,
+        meter: document.getElementById("admin-song-meter").value,
+        capo: document.getElementById("admin-song-capo").value,
+        rights: document.getElementById("admin-song-rights").value,
+        source: document.getElementById("admin-song-source").value,
+        notes: document.getElementById("admin-song-notes").value,
+        text: document.getElementById("admin-song-text").value,
+      }))()`), {
+        title: "Brano importato",
+        author: "Canti Scout",
+        album: "",
+        key: "C",
+        bpm: "110",
+        meter: "4/4",
+        capo: "0",
+        rights: "pubblico dominio",
+        source: "Fonte di prova",
+        notes: [
+          "Sottotitolo: Sottotitolo",
+          "Compositore: Compositore",
+          "Paroliere: Paroliere",
+          "Anno: 2001",
+          "Indicazione tempo: 110 (Stimato)",
+          "Nota di prova",
+          "Fonte verificabile",
+          "Album: Album esterno",
+        ].join("\n"),
+        text: "{start_of_verse: Strofa}\n[Do]Riga di prova\n{end_of_verse}",
+      });
+
       await page.evaluate(`document.querySelector('[data-section-target="admin-leader-tools-panel"]').click()`);
       await wait("!document.getElementById('admin-leader-tools-panel').hidden");
 
@@ -171,8 +241,33 @@ test("chiefs see Canzoniere management and leader playlist tools; public view ha
       assert.deepEqual(await page.evaluate(`(() => ({
         personal: !!document.getElementById('personal-playlist-title'),
         generator: !!document.getElementById('playlist-generator-title'),
-        published: document.querySelectorAll('#published-playlists li').length,
+        published: document.querySelectorAll('#published-playlists > li').length,
       }))()`), { personal: false, generator: false, published: 1 });
+
+      await page.send("Page.navigate", {
+        url: app.origin + "/agesci-canicattini1/canzoniere/canzone.html?slug=il-ponte-di-carta-demo",
+      });
+      await wait("!document.getElementById('display-mode-toggle')?.disabled && document.querySelector('#song-score .song-line')");
+      assert.deepEqual(await page.evaluate(`(() => {
+        const button = document.getElementById("display-mode-toggle");
+        const readMode = () => ({
+          label: document.getElementById("display-mode-indicator").textContent,
+          chords: document.getElementById("song-score").dataset.chords,
+        });
+        const modes = [readMode()];
+        button.click();
+        modes.push(readMode());
+        button.click();
+        modes.push(readMode());
+        button.click();
+        modes.push(readMode());
+        return modes;
+      })()`), [
+        { label: "EN", chords: "on" },
+        { label: "IT", chords: "on" },
+        { label: "−", chords: "off" },
+        { label: "EN", chords: "on" },
+      ]);
       assert.deepEqual(page.errors, []);
     } finally {
       if (page) await page.stop();
