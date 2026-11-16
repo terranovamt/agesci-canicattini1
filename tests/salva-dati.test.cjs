@@ -37,7 +37,9 @@ test('moving, hiding, adding and deleting are written correctly', () => {
   d.slide.splice(2, 0, titolo);
   d.slide[1].nascosta = true;
   d.slide.push({ tipo: 'slide_grazie', testo: 'Ciao' });
-  d.slide[5].persone.pop();
+  const organo = d.slide.find(slide => slide.tipo === 'slide_composizione_organo');
+  assert.ok(organo?.persone.length);
+  organo.persone.pop();
   delete d.nota_beni_durevoli;
   d.nuovo = { a: [1, 2] };
   const out = genera(testo, d);

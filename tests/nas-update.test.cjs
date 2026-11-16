@@ -40,7 +40,9 @@ test("NAS builds revision-tagged images and calendar jobs use the current tag", 
   assert.doesNotMatch(script, /docker (?:system|image|builder) prune/);
 });
 
-test("NAS updater preserves data, retains two healthy releases and rolls back failed deployments", () => {
+test("NAS updater preserves data, retains two healthy releases and rolls back failed deployments", {
+  skip: process.platform === "win32" ? "POSIX shell integration; run on Linux" : false,
+}, () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "nas-updater-"));
   const root = path.join(directory, "installed");
   const repository = path.join(directory, "source");
@@ -123,6 +125,11 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     const releases = () => fs.readdirSync(path.join(root, "releases")).filter(name => /^[a-f0-9]{40}$/.test(name)).sort();
     const statusPath = path.join(root, "deployment/status.json");
     const deployment = () => JSON.parse(fs.readFileSync(statusPath, "utf8"));
+    const assertCompletedFailure = error => {
+      assert.notEqual(error.code, "ETIMEDOUT", error.message);
+      assert.ok(Number.isInteger(error.status) && error.status !== 0, error.message);
+      assert.equal(error.signal, null, error.message);
+    };
     run();
     const revision = fs.readFileSync(path.join(root, "current-revision"), "utf8");
     assert.deepEqual(deployment(), { previous: "", next: revision.trim() });
@@ -153,7 +160,8 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     assert.match(run(), /NAS gia' aggiornato/);
     assert.ok(releases().includes(legacy));
     fs.mkdirSync(path.join(root, "releases", "manual-backup"));
-    fs.symlinkSync(path.join(root, "data"), path.join(root, "releases", "b".repeat(40)));
+    fs.symlinkSync(path.join(root, "data"), path.join(root, "releases", "b".repeat(40)),
+      process.platform === "win32" ? "junction" : "dir");
     const second = commit("second");
     run();
     assert.deepEqual(deployment(), { previous: revision.trim(), next: second });
@@ -175,17 +183,20 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     const beforeFailure = fs.readFileSync(path.join(root, "current-configuration"), "utf8");
     const failed = commit("failed");
     assert.throws(() => run({ FAIL_BUILD_REVISION: failed }), error => {
+      assertCompletedFailure(error);
       assert.match(error.stderr.toString(), /fallito durante: build delle immagini app e web/);
       return true;
     });
     const beforeGateFailure = fs.readFileSync(path.join(root, "operations.log"), "utf8");
     assert.throws(() => run({ FAIL_GATE_REVISION: failed }), error => {
+      assertCompletedFailure(error);
       assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
       return true;
     });
     const gateFailure = fs.readFileSync(path.join(root, "operations.log"), "utf8").slice(beforeGateFailure.length);
     assert.doesNotMatch(gateFailure, new RegExp(failed + " compose .*up .*app web"));
     assert.throws(() => run({ FAIL_REVISION: failed, FAIL_PS_REVISION: failed }), error => {
+      assertCompletedFailure(error);
       assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
       assert.match(error.stdout.toString(), /fixture backend startup log/);
       assert.match(error.stderr.toString(), /tento comunque il ripristino/);
@@ -209,6 +220,7 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     fs.writeFileSync(path.join(root, "legacy-listener"), "");
     const beforeLegacy = fs.readFileSync(path.join(root, "operations.log"), "utf8");
     assert.throws(() => run({ FAIL_REVISION: failed, FAIL_LOGS_REVISION: failed }), error => {
+      assertCompletedFailure(error);
       assert.match(error.stdout.toString(), new RegExp("Ripristinato il codice precedente: " + third));
       assert.match(error.stderr.toString(), /Impossibile leggere i log/);
       assert.doesNotMatch(error.stderr.toString(), /no such service|port 8080 already in use/);
@@ -226,6 +238,7 @@ if [ "$1 $2 $3" = "image ls --quiet" ]; then printf 'fixture-image\\n'; fi
     assert.equal(fs.existsSync(path.join(root, "update.lock")), false);
     fs.writeFileSync(path.join(root, "current-revision"), 'invalid"commit');
     assert.throws(() => run(), error => {
+      assertCompletedFailure(error);
       assert.match(error.stderr.toString(), /commit non validi/);
       return true;
     });

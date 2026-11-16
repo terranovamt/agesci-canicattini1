@@ -92,6 +92,12 @@ test('all screens fit real responsive viewports and section navigation preserves
           const win = frame.contentWindow;
           const visible = node => !!node && node.checkVisibility() &&
             win.getComputedStyle(node).visibility !== 'hidden';
+          const waitFor = async predicate => {
+            const deadline = Date.now() + 200;
+            while (!predicate() && Date.now() < deadline)
+              await new Promise(resolve => setTimeout(resolve, 20));
+            return predicate();
+          };
           for (const [width, height] of ${JSON.stringify(viewports)}) {
             frame.style.width = width + 'px';
             frame.style.height = height + 'px';
@@ -153,11 +159,11 @@ test('all screens fit real responsive viewports and section navigation preserves
                 next.remove();
                 toggle.click();
                 frame.style.width = '1366px';
-                await new Promise(resolve => setTimeout(resolve, 40));
-                record({ resizeDesktop: visible(menu) && !visible(toggle) && toggle.getAttribute('aria-expanded') === 'false' });
+                record({ resizeDesktop: await waitFor(() =>
+                  visible(menu) && !visible(toggle) && toggle.getAttribute('aria-expanded') === 'false') });
                 frame.style.width = width + 'px';
-                await new Promise(resolve => setTimeout(resolve, 40));
-                record({ resizeMobile: !visible(menu) && visible(toggle) && toggle.getAttribute('aria-expanded') === 'false' });
+                record({ resizeMobile: await waitFor(() =>
+                  !visible(menu) && visible(toggle) && toggle.getAttribute('aria-expanded') === 'false') });
               }
             }
             const navs = [...doc.querySelectorAll('[data-section-nav]')];

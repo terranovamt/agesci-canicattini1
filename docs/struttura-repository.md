@@ -197,7 +197,7 @@ La [guida alle sorgenti di pubblicazione](https://docs.github.com/en/pages/getti
 conferma che si può continuare a pubblicare dalla radice senza introdurre
 compilazione o cambiare le impostazioni Pages.
 
-Comandi di verifica: `node --test tests/*.test.cjs` per il sito,
+Comandi di verifica: `node --test --test-concurrency=1 tests/*.test.cjs` per il sito,
 `python -m unittest discover -s tests -p test_calendar_sync.py` per il
 sincronizzatore e `node tools/nas-dev.cjs` per il backend locale.
 I test della struttura controllano risorse, link interni, manifest,

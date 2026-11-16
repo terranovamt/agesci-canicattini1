@@ -102,8 +102,8 @@ function run(directory, scenario, width, height) {
   const browser = spawnSync(chrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
     "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, `profile-${scenario}-${width}`),
     "--window-size=" + width + ",1200", "--virtual-time-budget=6000", "--dump-dom", pathToFileURL(file).href],
-  { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: root } });
-  assert.equal(browser.status, 0, browser.stderr);
+  { encoding: "utf8", timeout: 60000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: root } });
+  assert.equal(browser.status, 0, browser.error ? browser.error.message : browser.stderr);
   const encoded = /<pre id="view-as-result">([^<]+)<\/pre>/.exec(browser.stdout)?.[1];
   assert.ok(encoded, browser.stdout.slice(-2000));
   const measured = JSON.parse(Buffer.from(encoded, "base64").toString("latin1"));

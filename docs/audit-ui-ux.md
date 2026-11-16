@@ -8,7 +8,7 @@
 - Stack: HTML statico, CSS e JavaScript senza framework o bundler; il branch NAS
   usa Node.js e SQLite per login, regia, setup e documenti.
   Non ci sono `package.json`, Tailwind o component library. I test sono Node
-  (`node --test tests/*.test.cjs`).
+  (`node --test --test-concurrency=1 tests/*.test.cjs`).
 - Stili: fogli CSS distinti per home, setup, regia e presentazione; la
   presentazione carica un foglio comune e stili per slide orizzontali/verticali.
   I token CSS esistenti sono principalmente `--v`, `--vd`, `--y`, `--v2`,

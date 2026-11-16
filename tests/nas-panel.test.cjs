@@ -4,6 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 const source = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/core/monitoraggio.js"), "utf8");
+const regia = fs.readFileSync(path.join(__dirname, "../area-riservata/assemblea/regia.html"), "utf8");
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 test("NAS panel displays measured values and clears live values when monitoring fails", async () => {
@@ -79,7 +80,8 @@ test("NAS panel displays measured values and clears live values when monitoring 
   assert.equal(get("nas-devices").textContent, "2");
   assert.equal(get("nas-host-cpu").textContent, "-");
   assert.equal(get("nas-streams").textContent, "6 / 500");
-  assert.equal(get("legacy-service-metrics").hidden, true);
+  assert.doesNotMatch(regia, /<[^>]*\s+id\s*=\s*["']?legacy-service-metrics["']?(?=\s|\/?>)/i);
+  assert.equal(elements.has("legacy-service-metrics"), false);
   failed = true;
   await context.window.NAS_MONITOR.refresh();
   assert.equal(get("nas-online").textContent, "-");

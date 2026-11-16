@@ -9,6 +9,7 @@ test('invisible groups never enter presentation scenes or trigger unknown-type w
   const start = source.slice(source.indexOf('function start(data)'), source.indexOf('/* carica dati.js'));
   const warnings = [];
   const context = {
+    window: {},
     started: false, ALIAS: {}, T: { slide_titolo: () => () => ({}) },
     document: { getElementById: () => ({ style: {} }) },
     st: { querySelectorAll: () => [] }, pm: {}, location: { hash: '' },

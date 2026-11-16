@@ -180,10 +180,12 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       };
       document.querySelector('#nas-monitor-dialog').scrollTop = 10000;
       modal.closeAfterScroll = visible(document.querySelector('#nas-close'));
+      const dialog = document.querySelector('#nas-monitor-dialog');
+      dialog.addEventListener('close', () => {
+        const out = document.createElement('pre');
+        out.id = 'results'; out.textContent = JSON.stringify({ results, measurements, modal, phone, navbar, viewport: [innerWidth, innerHeight] }); document.body.append(out);
+      }, { once: true });
       document.querySelector('#nas-close').click();
-      // L'evento close è asincrono: il ripristino viene verificato dal contenitore.
-      const out = document.createElement('pre');
-      out.id = 'results'; out.textContent = JSON.stringify({ results, measurements, modal, phone, navbar, viewport: [innerWidth, innerHeight] }); document.body.append(out);
     </script></body>`);
   try {
     const file = path.join(dir, 'regia.html');
@@ -193,19 +195,23 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       const [width, height] = viewport.split(',').map(Number);
       const wrapper = path.join(dir, 'viewport.html');
       fs.writeFileSync(wrapper, `<!doctype html><iframe src="regia.html" style="border:0;width:${width}px;height:${height}px"
-        onload="const out = document.createElement('pre'); out.id = 'results';
-          const inner = this.contentDocument;
-          const node = inner.querySelector('#results');
-          const result = node ? JSON.parse(node.textContent) : { error: inner.documentElement.dataset.lastError || 'No layout results' };
-          result.focusRestored = this.contentDocument.activeElement.id === 'nas-expand';
-          out.textContent = JSON.stringify(result); document.body.append(out)"></iframe>`);
+        onload="const inner = this.contentDocument;
+          const timer = setInterval(() => {
+            const node = inner.querySelector('#results');
+            if (!node) return;
+            clearInterval(timer);
+            const result = JSON.parse(node.textContent);
+            result.focusRestored = inner.activeElement.id === 'nas-expand';
+            const out = document.createElement('pre'); out.id = 'results';
+            out.textContent = JSON.stringify(result); document.body.append(out);
+          }, 20)"></iframe>`);
       const result = spawnSync(chrome, [
         '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-zygote', '--allow-file-access-from-files',
         '--no-first-run', '--no-default-browser-check', '--no-proxy-server',
-        '--user-data-dir=' + path.join(dir, 'profile'), '--window-size=' + viewport,
-        '--dump-dom', pathToFileURL(wrapper).href
-      ], { encoding: 'utf8', timeout: 30000, maxBuffer: 5 * 1024 * 1024 });
-      assert.equal(result.status, 0, result.stderr);
+        '--user-data-dir=' + path.join(dir, 'profile-' + width + '-' + height), '--window-size=' + viewport,
+        '--virtual-time-budget=1000', '--dump-dom', pathToFileURL(wrapper).href
+      ], { encoding: 'utf8', timeout: 60000, maxBuffer: 5 * 1024 * 1024 });
+      assert.equal(result.status, 0, result.error ? result.error.message : result.stderr);
       const match = result.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
       assert.ok(match, 'browser must return measured layout results at ' + viewport + ': ' +
         result.stderr + result.stdout.slice(-3000));
@@ -251,6 +257,6 @@ test('regia adapts desktop, laptop, tablet and mobile without obscuring controls
       assert.equal(focusRestored, true, 'monitor restores focus at ' + viewport);
     }
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 });

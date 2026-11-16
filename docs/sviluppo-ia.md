@@ -55,11 +55,16 @@ node tools/nas-dev.cjs
 node tools/build-site.cjs
 
 # Suite Node del sito e del backend
-node --test tests/*.test.cjs
+node --test --test-concurrency=1 tests/*.test.cjs
 
 # Test del sincronizzatore dei calendari
 python -m unittest discover -s tests -p test_calendar_sync.py
 ```
+
+La suite usa test browser che avviano Chrome e server locali: eseguirla in sequenza evita contese e timeout. Il test d'integrazione completo dell'updater NAS richiede semantica POSIX; su Windows viene saltato e va eseguito su Linux.
+
+Il test Python richiede un virtualenv con le dipendenze fissate in
+[tools/calendar-requirements.txt](../tools/calendar-requirements.txt); non installarle nell'interprete di sistema.
 
 La build può ricevere una destinazione come argomento, ma non deve sovrascrivere
 i sorgenti pubblici. Per una verifica mirata del server e del deploy si possono
