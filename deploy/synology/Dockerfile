@@ -13,6 +13,7 @@ COPY peg/ peg/
 COPY tools/build-site.cjs tools/build-site.cjs
 COPY tools/site-layout.cjs tools/site-layout.cjs
 COPY tools/partials/ tools/partials/
+ARG NAS_RELEASE_REVISION=manual
 RUN node tools/build-site.cjs /site
 
 FROM nginxinc/nginx-unprivileged:1.28-alpine

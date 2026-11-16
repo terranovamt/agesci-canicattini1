@@ -48,6 +48,8 @@ services:
     build:
       context: ../..
       dockerfile: deploy/synology/Dockerfile
+      args:
+        NAS_RELEASE_REVISION: ${NAS_RELEASE_REVISION:-manual}
     restart: unless-stopped
     depends_on:
       app:

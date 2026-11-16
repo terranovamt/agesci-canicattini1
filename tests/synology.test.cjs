@@ -102,6 +102,14 @@ test("NAS image copies only public site directories, not development tools or se
   assert.match(dockerfile, /nginx-unprivileged:/);
 });
 
+test("static site build receives the deployed release revision", () => {
+  const compose = read("deploy/synology/compose.yaml");
+  const dockerfile = read("deploy/synology/Dockerfile");
+  const web = compose.split(/^  web:\s*$/m)[1].split(/^  gate:\s*$/m)[0];
+  assert.match(web, /args:\s*\r?\n\s+NAS_RELEASE_REVISION:\s*\$\{NAS_RELEASE_REVISION:-manual\}/);
+  assert.match(dockerfile, /^ARG NAS_RELEASE_REVISION=manual$/m);
+});
+
 test("NAS app image includes every local runtime module required by the server", () => {
   const dockerfile = read("server/Dockerfile");
   const copied = new Set([...dockerfile.matchAll(/^COPY (\S+) \/app\/\S+$/gm)].map(([, source]) => source));

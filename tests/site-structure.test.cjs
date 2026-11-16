@@ -57,6 +57,16 @@ test("shared HTML fragments render relative links, escape parameters and reject 
   assert.throws(() => renderHtml('<!-- include:brand -->', "../index.html"), /Percorso pagina/);
 });
 
+test("shared footer shows the seven-character release commit beneath the footer", () => {
+  const revision = "ad6f354" + "0".repeat(33);
+  const html = renderHtml("<!-- include:footer -->", "index.html", revision);
+  assert.match(
+    html,
+    /<\/footer>\s*<p class="site-build" aria-label="Versione del sito"><code>ad6f354<\/code><\/p>/,
+  );
+  assert.throws(() => renderHtml("<!-- include:footer -->", "index.html", "not-a-commit"), /commit/i);
+});
+
 test("static build publishes only site files and refuses to overwrite source directories", () => {
   const { buildSite } = require("../tools/build-site.cjs");
   const directory = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "agesci-static-"));

@@ -202,6 +202,9 @@ h1, h2, h3, p { overflow-wrap: anywhere }
 .site-footer a { min-height: 44px; display: inline-flex; align-items: center; color: var(--w); text-decoration: none }
 .site-footer .footer-brand { gap: 6px; font-size: 13px; letter-spacing: .08em }
 .site-footer .footer-brand b { color: var(--y) }
+.site-build { margin: 0; padding: 7px 24px 10px; border-top: 1px solid color-mix(in srgb, var(--w) 12%, transparent); background: var(--vd); color: color-mix(in srgb, var(--w) 76%, var(--vd)); font-size: 10px; line-height: 1.4; text-align: right }
+.site-build code { font: inherit; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .04em }
+@media print { .site-build { display: none !important } }
 
 /* Area riservata */
 body.reserved-page { align-items: stretch }
@@ -325,6 +328,7 @@ body.reserved-page .assembly-overview .eyebrow { color: var(--y) }
   .access-band { gap: 20px; padding: 25px 20px }
   .access-band .button { width: 100% }
   .site-footer { align-items: flex-start; flex-direction: column; gap: 4px; padding: 20px 18px }
+  .site-build { padding-inline: 18px }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }
@@ -549,17 +553,17 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
 .dashboard-page #reserved-content[data-branch="L/C"] .dashboard-intro::before { background-image: url("../img/branca-lc-cappellino.svg") }
 .dashboard-page #reserved-content[data-branch="E/G"] .dashboard-intro::before { background-image: url("../img/branca-eg-tenda.svg") }
 .dashboard-page #reserved-content[data-branch="R/S"] .dashboard-intro::before { background-image: url("../img/branca-rs-forcola.svg"); background-size: 34px }
-.dashboard-page .branch-motto { flex-basis: 100%; order: 2; margin: 0; color: var(--branch-ink); font-size: 13px; font-weight: 700 }
+.dashboard-page .dashboard-greeting { flex-basis: 100%; order: 2; margin: 0; color: var(--branch-ink); font-size: 13px; font-weight: 700 }
 .dashboard-page #reserved-content[data-branch] .dashboard-intro h1 { flex: 1 1 auto }
 @media (max-width: 600px) {
   .dashboard-page #reserved-content[data-branch] .dashboard-intro { padding-left: 84px; gap: 2px 8px }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro h1 { flex-basis: 100% }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro .text-button { order: 3; min-height: 44px; padding: 0 }
-  .dashboard-page .branch-motto { font-size: 12px }
+  .dashboard-page .dashboard-greeting { font-size: 12px }
 }
 @media (max-width: 600px) {
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > #esci { order: 3; margin: 0 }
-  .dashboard-page #reserved-content[data-branch] .dashboard-intro > .branch-motto { order: 2 }
+  .dashboard-page #reserved-content[data-branch] .dashboard-intro > .dashboard-greeting { order: 2 }
   .dashboard-page #reserved-content[data-branch] .dashboard-intro > h1 { order: 1 }
 }
 
@@ -590,5 +594,5 @@ body.docs-page .document-grid { grid-template-columns: repeat(auto-fill, minmax(
 
 @media (min-width: 900px) {
   main#contenuto { width: 80% }
-  .site-header, .site-footer { padding-inline: 10% }
+  .site-header, .site-footer, .site-build { padding-inline: 10% }
 }

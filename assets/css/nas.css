@@ -142,8 +142,8 @@ body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#log
   box-sizing: border-box !important; width: calc(100% - 48px) !important; max-width: none !important;
   margin: 24px auto !important; padding-inline: 0 !important;
 }
-body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 24px !important }
-@media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 12px !important } }
+body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.site-footer, .site-build) { padding-inline: 24px !important }
+@media (max-width: 600px) { body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.site-footer, .site-build) { padding-inline: 12px !important } }
 @media (max-width: 600px) {
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { width: calc(100% - 24px) !important }
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))) { margin-block: 16px !important }
@@ -153,7 +153,7 @@ body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-
 @media (min-width: 900px) {
   body > :is(#reserved-content, #documents-app, #statistics-content):not(:has(#login:not([hidden]))),
   body.reserved-page.dashboard-page > #reserved-content:has(#riservata:not([hidden])) { width: 80% !important }
-  body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > .site-footer { padding-inline: 10% !important }
+  body:has(> :is(#reserved-content, #documents-app, #statistics-content)) > :is(.site-footer, .site-build) { padding-inline: 10% !important }
 }
 
 /* Un solo header per dashboard, gestionali e strumenti assemblea. */

@@ -56,7 +56,8 @@ aggregato conservato sul NAS per 365 giorni. Persone e unici della diretta parto
 deploy che attiva il conteggio e i campioni dell'ultima ora si accumulano al
 ritmo di uno al minuto; i dati precedenti sono indicati come non raccolti.
 La pagina mostra anche il commit deployato e permette di confrontarlo con
-l'ultimo commit del branch `NAS`. La raccolta browser e' disattivabile e le API
+l'ultimo commit del branch `NAS`; il footer pubblico riporta i primi sette
+caratteri del commit in uso. La raccolta browser e' disattivabile e le API
 dei report richiedono una sessione amministrativa.
 
 **Libro soci:** dalla dashboard amministrativa apri **Libro soci**

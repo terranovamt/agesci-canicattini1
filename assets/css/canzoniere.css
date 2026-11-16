@@ -881,6 +881,11 @@ body.canzoniere-dark .site-footer {
   color: var(--vd);
 }
 
+body.canzoniere-dark .site-build {
+  background: #211a2a;
+  color: var(--vd);
+}
+
 body.canzoniere-dark .site-header nav a,
 body.canzoniere-dark .brand,
 body.canzoniere-dark .footer-brand {
@@ -1102,7 +1107,7 @@ body.canzoniere-dark .published-playlist-songs {
     display: none;
   }
 
-  body.song-page .site-footer {
+  body.song-page :is(.site-footer, .site-build) {
     display: none;
   }
 
@@ -1259,7 +1264,7 @@ body.canzoniere-dark .published-playlist-songs {
   }
 
   body.song-page .song-back-link,
-  body.song-page .site-footer {
+  body.song-page :is(.site-footer, .site-build) {
     display: none;
   }
 
