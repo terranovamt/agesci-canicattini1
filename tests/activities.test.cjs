@@ -359,6 +359,12 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/paths", "POST", { ...pathValue, kind: "badge" }, 400);
     await r("activities/paths", "POST", { ...pathValue, branch: "R/S", personId: ids["R/S"], kind: "specialty" }, 400);
     await r("activities/paths/" + specialty.id, "PATCH", { ...specialty, revision: 0 }, 409);
+    const discarded = await r("activities/paths", "POST", { ...pathValue, kind: "specialty", title: "Artigiano" });
+    await r("activities/paths/" + discarded.id, "DELETE", { revision: 0 }, 409);
+    await r("activities/paths/999999", "DELETE", { revision: 1 }, 404);
+    assert.deepEqual(await r("activities/paths/" + discarded.id, "DELETE", { revision: discarded.revision }), { id: discarded.id });
+    assert.equal((await r("activities")).paths.some(item => item.id === discarded.id), false);
+    await r("activities/paths/" + discarded.id, "DELETE", { revision: discarded.revision }, 404);
 
     await r("auth/view-as", "POST", { personId: chief.id });
     const scoped = await r("activities");
@@ -372,6 +378,7 @@ test("branch activities persist dates, attendance and tasks; scoped paths enforc
     await r("activities/events", "POST", item("E/G", "riunione"), 403);
     await r("activities/events/" + badge.id, "PATCH", badge, 404);
     await r("activities/paths/" + badge.id, "PATCH", badge, 403);
+    await r("activities/paths/" + badge.id, "DELETE", { revision: badge.revision }, 403);
     await r("auth/view-as", "DELETE");
     await r("people/" + chief.id, "PATCH", { serviceBranch: "" });
     await r("auth/login", "POST", { code: "7654321", password, confirmation: password, temporary: "Canicattini1" });

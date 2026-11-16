@@ -420,6 +420,12 @@ un conflitto restituisce 409, non un salvataggio silenzioso.
   evitano il lungo modulo; ricerca soci solo oltre 12, filtri sotto un riepilogo.
   Le tappe dei percorsi sono modificabili in linea, con bozze in memoria,
   revisioni invariate e Salva percorsi; errori e filtri non le cancellano.
+  Il clic sulla scheda percorso apre la modifica, ma non da tappe, pulsanti o
+  link. Specialita/brevetti usano una `select` sui cataloghi di `SOCI_MODEL`
+  (titoli storici fuori elenco preservati, doppioni dello stesso socio
+  disabilitati); il server non impone il catalogo. `DELETE
+  /api/activities/paths/ID` richiede `{ revision }`, il perimetro di branca e
+  rimuove anche la bozza locale.
   La scheda socio apre lo storico cronologico e mostra il residuo vicino al nome.
   `activities-model.js` condivide selezione evento e momento corrente:
   date finali incluse, fuso Europe/Rome, solo momenti della giornata,

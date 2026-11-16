@@ -321,14 +321,21 @@ apre l'attivita di oggi, la prossima o l'ultima disponibile, con presentazione
 per sestiglia e giudizi individuali in griglia.
 
 **Percorsi** raccoglie specialita L/C, specialita e brevetti E/G.
-Il nome puo essere scelto dal catalogo o scritto liberamente; i capi aggiungono
+Per specialita e brevetti il nome si sceglie dall'elenco della branca
+(specialita L/C, specialita E/G o brevetti E/G); le voci gia presenti fra i
+percorsi dello stesso tipo del socio non si possono ripetere, mentre un titolo
+storico fuori elenco resta selezionabile come titolo attuale. La stagione di
+caccia L/C mantiene il nome libero. I capi aggiungono
 le tappe e ne registrano il completamento. Lo stato e calcolato: **Definito**
 con zero tappe completate (anche senza tappe), **In lavorazione** con alcune
 tappe completate, **Conquistato** solo con tutte le tappe completate e almeno
 una tappa. Schede con avanzamento, conteggi, ricerca per nome/titolo e filtro
 di stato consentono una lettura rapida. Le tappe si spuntano direttamente
-nella scheda socio e vengono salvate subito con un tocco. Dalla gestione
-attivita si possono aggiungere percorsi o modificarne il titolo e le tappe.
+nella scheda socio e vengono salvate subito con un tocco. Nel percorso del
+socio un tocco sulla scheda (o sul titolo) apre **Gestisci percorso** per
+modificarne nome e tappe, mentre un tocco su una tappa la spunta soltanto.
+Da **Gestisci percorso**, **Elimina percorso** cancella il percorso con tappe
+e prede dopo una conferma.
 Completate tutte le tappe di una specialita o brevetto, **Assegna** registra
 il riconoscimento anche nei dati educativi del socio; la caccia L/C resta
 distinta e richiede **Concludi caccia**.

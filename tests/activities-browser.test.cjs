@@ -1045,12 +1045,18 @@ test("login autofill, education dates, activities and progression work on four s
               "all prey completed must not silently close the hunting season");
             await click("#new-path");
             await fill("#path-form [name=kind]", "specialty", "change");
-            await fill("#path-form [name=title]", "Specialità senza caccia conclusa");
+            assert.deepEqual(await page.evaluate(`(() => {
+              const choice = document.querySelector('#path-form [name=choice]');
+              return [document.getElementById('path-title-field').hidden, choice.checkVisibility(), choice.required,
+                choice.options.length - 1, choice.value];
+            })()`), [true, true, true, await page.evaluate("SOCI_MODEL.specialtyCatalogs['L/C'].length"), ""],
+            "specialties are chosen from the branch catalog instead of free text");
+            await fill("#path-form [name=choice]", "Artigiano", "change");
             await click("#add-path-step");
             await fill('#path-steps textarea', "Scegliere una tappa");
             await click('#path-form button[type=submit]');
             await wait("!document.getElementById('path-dialog').open");
-            assert.equal(await page.evaluate("document.getElementById('paths-list').textContent.includes('Specialità senza caccia conclusa')"), true,
+            assert.equal(await page.evaluate("[...document.querySelectorAll('#paths-list .path-card h3')].some(title => title.textContent === 'Artigiano')"), true,
               "a specialty can start before explicitly closing the hunting season");
             await page.evaluate(`{
               const hunt = [...document.querySelectorAll('#paths-list .path-card')]
@@ -1064,7 +1070,38 @@ test("login autofill, education dates, activities and progression work on four s
             await click("#new-path");
           }
           await fill("#path-form [name=kind]", branch === "L/C" ? "specialty" : "badge", "change");
-          await fill("#path-form [name=title]", branch === "L/C" ? "Amico della natura" : "Animazione");
+          if (branch === "L/C") assert.equal(await page.evaluate(`[...document.querySelector('#path-form [name=choice]').options]
+            .find(option => option.value === 'Artigiano')?.disabled`), true,
+          "a specialty already in the member's paths cannot be chosen twice");
+          await fill("#path-form [name=choice]", branch === "L/C" ? "Amico della Natura" : "Pioniere", "change");
+          await click("#add-path-step");
+          await fill('#path-steps textarea', "Concordare il progetto con i capi");
+          await click('#path-form button[type=submit]');
+          await wait("!document.getElementById('path-dialog').open");
+          const pathCard = branch === "L/C" ? "Amico della Natura" : "Pioniere";
+          const cardSelector = `[...document.querySelectorAll('#paths-list .path-card')].find(card => card.querySelector('h3').textContent === ${JSON.stringify(pathCard)})`;
+          await page.evaluate(`${cardSelector}.querySelector('.path-inline-steps input').click()`);
+          assert.equal(await page.evaluate("document.getElementById('path-dialog').open"), false,
+            "ticking a step from the card must not open the editor");
+          assert.equal(await page.evaluate(`${cardSelector}.querySelector('.path-inline-steps input').checked`), true);
+          await page.evaluate(`${cardSelector}.querySelector('.activity-path-owner').click()`);
+          assert.deepEqual(await page.evaluate(`[document.getElementById('path-dialog').open,
+            document.getElementById('path-heading').textContent, document.querySelector('#path-form [name=choice]').value,
+            document.getElementById('delete-path').hidden]`), [true, "Gestisci percorso", pathCard, false],
+          "tapping the card opens the editor with the current catalog choice and delete action");
+          await page.evaluate("window.confirm = () => false");
+          await click("#delete-path");
+          assert.equal(await page.evaluate("document.getElementById('path-dialog').open"), true, "cancelling keeps the path");
+          await page.evaluate("window.confirm = () => true");
+          await click("#delete-path");
+          await wait("!document.getElementById('path-dialog').open");
+          assert.equal(await page.evaluate(`!${cardSelector} && document.getElementById('paths-save-bar').hidden`), true,
+            "a confirmed deletion removes the path and its unsaved ticks");
+          assert.equal(await page.evaluate(`ACCESSO.request('activities').then(data => data.paths.some(item => item.title === ${JSON.stringify(pathCard)} &&
+            item.personId === Number(new URLSearchParams(location.search).get('member'))))`), false);
+          await click("#new-path");
+          await fill("#path-form [name=kind]", branch === "L/C" ? "specialty" : "badge", "change");
+          await fill("#path-form [name=choice]", pathCard, "change");
           await click("#add-path-step");
           await fill('#path-steps textarea', "Concordare il progetto con i capi");
           await click('#path-form button[type=submit]');
@@ -1106,8 +1143,7 @@ test("login autofill, education dates, activities and progression work on four s
           assert.equal(await page.evaluate("document.getElementById('paths-filters').checkVisibility()"), true,
             `${label}: filter groups open on demand`);
         }
-        await expand("#paths-list .path-more");
-        await click("#paths-list .path-more button");
+        await click("#paths-list .path-card-open");
         await shot(label + "-10-tappe-" + branch.replace("/", ""));
         await click("#path-dialog [data-close]");
         await page.evaluate(`[...document.querySelectorAll('#paths-filters button')].find(item => item.textContent.startsWith('Definito')).click()`);
@@ -1116,7 +1152,7 @@ test("login autofill, education dates, activities and progression work on four s
         if (branch === "L/C" && label !== "telefono") {
           await page.evaluate(`{
             const card = [...document.querySelectorAll('#paths-list article')].find(card=>card.textContent.includes('Stagione di caccia'));
-            card.querySelector('.path-more').open = true; card.querySelector('.path-more button').click();
+            card.querySelector('.path-card-open').click();
           }`);
           await shot(label + "-08-stagione-conclusa");
           await click("#path-dialog [data-close]");

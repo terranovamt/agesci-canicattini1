@@ -185,16 +185,16 @@
       <div class="members-form-grid">
         <label>Tipo<select name="kind" required></select></label>
         <label>Socio<select name="personId" required></select></label>
-        <label class="members-wide">Nome del percorso<input name="title" list="path-catalog" maxlength="200" required></label>
+        <label id="path-title-field" class="members-wide">Nome del percorso<input name="title" maxlength="200" required></label>
+        <label id="path-choice-field" class="members-wide" hidden><span id="path-choice-label">Specialità</span><select name="choice" required disabled></select></label>
       </div>
-      <datalist id="path-catalog"></datalist>
       <p id="path-guidance" class="members-note"></p>
       <h3 id="path-steps-title">Tappe</h3>
       <div id="path-steps" class="activities-steps"></div>
       <button id="add-path-step" type="button" class="button button-secondary">+ Aggiungi tappa</button>
       <label id="path-closure" class="activities-check"><input name="closed" type="checkbox">Stagione di caccia conclusa (dopo aver conquistato tutte le prede)</label>
       <p id="path-error" role="alert"></p>
-      <div class="members-dialog-actions"><button type="submit" class="button button-primary">Salva percorso</button></div>
+      <div class="members-dialog-actions"><button type="submit" class="button button-primary">Salva percorso</button><button id="delete-path" type="button" class="button button-secondary path-delete" hidden>Elimina percorso</button></div>
     </form>
   </dialog>
   <!-- include:footer {"top":"reserved-content"} -->

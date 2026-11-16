@@ -206,6 +206,18 @@ function createActivities(db, people) {
         return true;
       }
       const match = /^\/api\/activities\/(events|paths)(?:\/([1-9]\d*))?$/.exec(route);
+      if (match?.[1] === "paths" && match[2] && request.method === "DELETE") {
+        const id = Number(match[2]);
+        const value = await body(request, 4000);
+        const row = db.prepare("SELECT * FROM activities WHERE id=? AND category='paths'").get(id);
+        if (!row) fail(404, "Percorso non trovato");
+        access(row.branch);
+        if (!object(value) || value.revision !== row.revision) fail(409, "Dati modificati: ricarica prima di eliminare");
+        const result = db.prepare("DELETE FROM activities WHERE id=? AND category='paths' AND revision=?").run(id, row.revision);
+        if (!result.changes) fail(409, "Dati modificati: ricarica prima di eliminare");
+        send(response, 200, { id });
+        return true;
+      }
       if (!match || request.method !== (match[2] ? "PATCH" : "POST")) fail(404, "Operazione attivita non disponibile");
       const category = match[1], id = Number(match[2]);
       const value = await body(request, 128000);

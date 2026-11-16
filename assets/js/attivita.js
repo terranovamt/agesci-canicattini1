@@ -391,7 +391,15 @@
         ? unitRoleBadge(data.members.find(member => member.id === item.personId)) : null;
       if (ownerBadge) owner.append(ownerBadge);
       owner.append(node('span', item.memberName));
-      card.append(node('p', pathLabels[item.kind], 'eyebrow'), node('h3', item.title),
+      const heading = node('h3'), open = button(item.title, () => openPath(item));
+      open.className = 'path-card-open'; open.disabled = pathSaving;
+      open.setAttribute('aria-label', 'Modifica percorso ' + item.title);
+      heading.append(open);
+      card.onclick = event => {
+        if (pathSaving || event.target.closest('button, a, input, label, .path-inline-steps')) return;
+        openPath(item);
+      };
+      card.append(node('p', pathLabels[item.kind], 'eyebrow'), heading,
         owner, badge, progress,
         node('p', `${progress.value}/${item.steps.length} ${item.kind === 'hunt' ? 'prede conquistate' : 'tappe completate'}`),
         ...(status === 'Conclusa' ? [node('p', 'Stagione di caccia conclusa.', 'activity-path-closure')] : []));
@@ -413,10 +421,6 @@
         const close = button('Concludi stagione di caccia', () => { retainPathDraft({ ...item, closed: true }); render(); });
         close.disabled = pathSaving; card.append(close);
       }
-      const more = node('details', undefined, 'path-more');
-      const edit = button('Modifica percorso', () => openPath(item)); edit.disabled = pathSaving;
-      more.append(node('summary', 'Altro'), edit);
-      card.append(more);
       if (pathDrafts.has(item.id)) card.append(node('p', 'Modifiche da salvare', 'path-draft-label'));
       return card;
     }));
@@ -1406,7 +1410,7 @@
       [...$('event-attendance').querySelectorAll('.activity-person')].find(row => !row.hidden)?.focus());
     if (focusTournament) queueMicrotask(() => $('event-tournament').querySelector('[data-presentation]')?.focus());
   }
-  function guidance() {
+  function guidance(current = pathTitle()) {
     const kind = pathForm.elements.kind.value, hunt = kind === 'hunt';
     $('path-steps-title').textContent = hunt ? 'Prede scelte dal lupetto' : 'Tappe concordate con i capi';
     $('add-path-step').textContent = hunt ? '+ Aggiungi preda' : '+ Aggiungi tappa';
@@ -1414,9 +1418,37 @@
     $('path-guidance').textContent = hunt
       ? 'La caccia si conclude solo dopo tutte le prede, con una scelta esplicita.'
       : 'Le tappe si possono spuntare anche dalla scheda del percorso.';
-    const catalog = kind === 'badge' ? M.competencyBadges : kind === 'specialty' ? M.specialtyCatalogs[branch()] || [] : [];
-    $('path-catalog').replaceChildren(...catalog.map(value => { const option = node('option'); option.value = value; return option; }));
+    renderPathTitle(current);
     closure();
+  }
+  const titleKey = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('it');
+  function pathTitle() {
+    const choice = pathForm.elements.choice;
+    return choice.disabled ? pathForm.elements.title.value : choice.value;
+  }
+  function renderPathTitle(current) {
+    const kind = pathForm.elements.kind.value, choice = pathForm.elements.choice;
+    const catalog = kind === 'badge' ? M.competencyBadges : kind === 'specialty' ? M.specialtyCatalogs[branch()] || [] : [];
+    const choose = catalog.length > 0;
+    $('path-title-field').hidden = pathForm.elements.title.disabled = choose;
+    $('path-choice-field').hidden = choice.disabled = !choose;
+    if (!choose) return;
+    $('path-choice-label').textContent = kind === 'badge' ? 'Brevetto' : 'Specialità';
+    const personId = Number(pathForm.elements.personId.value);
+    const used = new Set(data.paths.map(path => pathDrafts.get(path.id) || path)
+      .filter(path => path.branch === branch() && path.personId === personId && path.kind === kind && path.id !== editingPath?.id)
+      .map(path => titleKey(path.title)));
+    const selected = catalog.find(value => titleKey(value) === titleKey(current)) || String(current || '').trim();
+    const placeholder = node('option', kind === 'badge' ? 'Scegli un brevetto…' : 'Scegli una specialità…');
+    placeholder.value = '';
+    const legacy = selected && !catalog.includes(selected) ? [selected] : [];
+    choice.replaceChildren(placeholder, ...[...legacy, ...catalog].map(value => {
+      const taken = used.has(titleKey(value)) && value !== selected;
+      const option = node('option', value + (legacy.includes(value) ? ' · titolo attuale' : taken ? ' · già nei percorsi' : ''));
+      option.value = value; option.disabled = taken;
+      return option;
+    }));
+    choice.value = selected;
   }
   function closure() {
     const steps = readSteps($('path-steps')), closed = pathForm.elements.closed;
@@ -1443,7 +1475,8 @@
     $('path-steps').replaceChildren();
     for (const step of item?.steps || []) appendStep($('path-steps'), step);
     pathForm.elements.closed.checked = !!item?.closed;
-    guidance(); openDialog('path-dialog', pathForm);
+    $('delete-path').hidden = !item;
+    guidance(pathForm.elements.title.value); openDialog('path-dialog', pathForm);
   }
   async function save(category, form, existing, payload, errorId, dialogId) {
     if (busy) return;
@@ -1507,7 +1540,7 @@
     }
     const payload = {
       kind: pathForm.elements.kind.value, personId: Number(pathForm.elements.personId.value),
-      title: pathForm.elements.title.value, steps: readSteps($('path-steps')),
+      title: pathTitle(), steps: readSteps($('path-steps')),
       closed: pathForm.elements.kind.value === 'hunt' && pathForm.elements.closed.checked,
     };
     if (payload.closed && (!payload.steps.length || !payload.steps.every(step => step.done))) {
@@ -1532,6 +1565,25 @@
   $('new-event').onclick = () => openEvent();
   $('new-winter-camp').onclick = () => openEvent(null, false, false, 'winter-camp');
   $('new-path').onclick = () => openPath();
+  $('delete-path').onclick = async () => {
+    const saved = editingPath && data.paths.find(item => item.id === editingPath.id);
+    if (!saved || busy || pathSaving) return;
+    const what = { hunt: 'la stagione di caccia', specialty: 'la specialità', badge: 'il brevetto' }[saved.kind] || 'il percorso';
+    if (!confirm(`Eliminare ${what} «${saved.title}» di ${saved.memberName}?\n\nTappe e prede registrate andranno perse.`)) return;
+    busy = pathSaving = true; pathForm.inert = true; pathForm.setAttribute('aria-busy', 'true');
+    $('path-error').textContent = 'Eliminazione in corso…';
+    try {
+      await A.request('activities/paths/' + saved.id, 'DELETE', { revision: saved.revision });
+      data.paths = data.paths.filter(item => item.id !== saved.id);
+      pathDrafts.delete(saved.id); pathSaveError = ''; editingPath = null;
+      $('path-dialog').close();
+      $('activities-status').textContent = 'Percorso eliminato.';
+    } catch (error) {
+      $('path-error').textContent = 'Percorso non eliminato: ' + error.message;
+    } finally {
+      busy = pathSaving = false; pathForm.inert = false; pathForm.setAttribute('aria-busy', 'false'); render();
+    }
+  };
   $('add-event-task').onclick = () => appendStep($('event-tasks')).focus();
   $('add-event-material').onclick = addActivityMaterial;
   $('add-path-step').onclick = () => { appendStep($('path-steps')).focus(); closure(); };
@@ -1572,9 +1624,9 @@
   pathForm.elements.kind.onchange = () => {
     pathForm.elements.closed.checked = false;
     pathForm.elements.title.value = pathForm.elements.kind.value === 'hunt' ? 'Stagione di caccia ' + new Date().getFullYear() : '';
-    guidance();
+    guidance(pathForm.elements.title.value);
   };
-  pathForm.elements.personId.onchange = guidance;
+  pathForm.elements.personId.onchange = () => guidance();
   pathForm.elements.closed.onchange = closure;
   for (const section of [$('event-settings'), $('event-tasks').closest('details')]) {
     section.open = true; section.classList.add('event-fixed-section');
