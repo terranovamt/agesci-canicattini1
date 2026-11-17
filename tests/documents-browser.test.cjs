@@ -66,6 +66,23 @@ function fixture(file, css, scripts, user) {
         const visible = privateItems;
         return { ok: true, json: async () => JSON.parse(JSON.stringify(options?.method === "POST" ? saved : visible)) };
       }
+      if (url.endsWith('/api/documents/visibility')) {
+        const change = JSON.parse(options.body);
+        let saved;
+        if (change.source === "public") {
+          items = DOCUMENTS_MODEL.apply(items, { operation: "delete", previous: change.previous });
+          saved = { ...change.document, id: "00000000-0000-4000-8000-000000000005",
+            visibility: "private", revision: 1 };
+          delete saved.file;
+          privateItems = [saved, ...privateItems];
+        } else {
+          const source = privateItems.find(item => item.id === change.previous.id);
+          saved = { ...change.document, file: "documento-" + source.id.slice(0, 8) + ".pdf", visibility: "public" };
+          items = DOCUMENTS_MODEL.apply(items, { operation: "save", document: saved });
+          privateItems = privateItems.filter(item => item.id !== source.id);
+        }
+        return { ok: true, json: async () => ({ visibility: saved.visibility, document: saved }) };
+      }
       if (options?.method === 'POST') items = DOCUMENTS_MODEL.apply(items, JSON.parse(options.body));
       return { ok: true, text: async () => "", json: async () => JSON.parse(JSON.stringify(items)) };
     };
@@ -547,6 +564,37 @@ test("public documents and management work in a browser at all required widths",
           await privateSaved;
           const privateCard = [...doc.querySelectorAll('#private-documents-list .managed-document')]
             .find(article => article.querySelector('h3').textContent === 'Documento privato E/G');
+          privateCard.querySelector('.secondary').click();
+          const privateEditVisibilityEnabled = !doc.querySelector('#document-visibility-field').hidden &&
+            !doc.querySelector('#document-visibility-toggle').disabled &&
+            doc.querySelector('#document-visibility').value === 'private';
+          let movedToPublic = false;
+          let publicEditVisibilityEnabled = false;
+          let movedBackToPrivate = false;
+          if (privateEditVisibilityEnabled) {
+            doc.querySelector('#document-visibility-toggle').click();
+            const makePublic = saved();
+            doc.querySelector('#document-form').requestSubmit();
+            await makePublic;
+            const publicCard = [...doc.querySelectorAll('#managed-documents .managed-document')]
+              .find(article => article.querySelector('h3').textContent === 'Documento privato E/G');
+            movedToPublic = !!publicCard &&
+              ![...doc.querySelectorAll('#private-documents-list .managed-document h3')]
+                .some(heading => heading.textContent === 'Documento privato E/G');
+            publicCard?.querySelector('.secondary')?.click();
+            publicEditVisibilityEnabled = !!publicCard &&
+              !doc.querySelector('#document-visibility-field').hidden &&
+              !doc.querySelector('#document-visibility-toggle').disabled &&
+              doc.querySelector('#document-visibility').value === 'public';
+            if (publicEditVisibilityEnabled) {
+              doc.querySelector('#document-visibility-toggle').click();
+              const makePrivate = saved();
+              doc.querySelector('#document-form').requestSubmit();
+              await makePrivate;
+              movedBackToPrivate = [...doc.querySelectorAll('#private-documents-list .managed-document h3')]
+                .some(heading => heading.textContent === 'Documento privato E/G');
+            }
+          }
           results.push({
             privateCategoryDefault,
             privateVisibilityDefault,
@@ -561,6 +609,7 @@ test("public documents and management work in a browser at all required widths",
             privateVisible: !!privateCard,
             privatePdfRoute: privateCard?.querySelector('.doc-open')?.getAttribute('href')?.includes('/api/private-documents/'),
           });
+          results.push({ privateEditVisibilityEnabled, movedToPublic, publicEditVisibilityEnabled, movedBackToPrivate });
           doc.querySelector('#new-document').click();
           const input = doc.querySelector('#document-file');
           const transfer = new win.DataTransfer();
@@ -620,6 +669,8 @@ test("public documents and management work in a browser at all required widths",
             editedDate: doc.querySelector('#document-published-at').value,
             assemblyYear: doc.querySelector('#document-assembly-year').value,
             editPreparatory: doc.querySelector('#document-category').value === 'preparatory',
+            editPreparatoryVisibilityHidden: doc.querySelector('#document-visibility-field').hidden &&
+              doc.querySelector('#document-visibility-toggle').disabled,
             currentFile: doc.querySelector('#current-file-link').textContent,
             currentFileHref: doc.querySelector('#current-file-link').getAttribute('href'),
             replacementOptional: !doc.querySelector('#document-file').required && !doc.querySelector('#current-file').hidden,
@@ -891,6 +942,8 @@ test("public documents and management work in a browser at all required widths",
       privateManage.privateVisible,
       privateManage.privatePdfRoute,
     ], ["E/G", "private", true, "Privato", "true", true, true, true, true, true, true, true]);
+    assert.deepEqual(Object.values(results.find(item => "privateEditVisibilityEnabled" in item)),
+      [true, true, true, true]);
     assert.match(manage.source, /NAS del gruppo/);
     assert.equal(manage.legacyCredentialsAbsent, true);
     assert.match(manage.publicWarning, /pubblici e privati/);
@@ -901,6 +954,7 @@ test("public documents and management work in a browser at all required widths",
     assert.equal(manage.assemblyHiddenForGeneral, true);
     assert.equal(manage.branchVisibilityCanBePublic, true);
     assert.equal(manage.preparatoryAlwaysPublic, true);
+    assert.equal(manage.editPreparatoryVisibilityHidden, true);
     assert.equal(manage.assemblyShown, true);
     assert.equal(manage.typeWithoutYearBlocked, true, "a preparatory type without year must not be ignored");
     assert.equal(manage.pendingCount, 4, "no optimistic success-shaped list before the save completes");

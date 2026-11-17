@@ -968,7 +968,7 @@
   $('clear-selection').onclick = () => { selected.clear(); render(); };
   $('new-member').onclick = () => {
     createMemberForm.reset();
-    createMemberForm.elements.branch.value = 'L/C';
+    createMemberForm.elements.branch.value = admin ? 'L/C' : currentUser.serviceBranch;
     $('member-create-error').textContent = '';
     $('member-create-dialog').showModal();
     createMemberForm.elements.givenName.focus();
@@ -1011,10 +1011,18 @@
   branchOptions(profileForm.elements.branch);
   branchOptions(createMemberForm.elements.branch);
   branchOptions($('field-form').elements.branch);
-  const admin = !!window.NAS?.user?.admin;
-  $('members-primary-actions').hidden = !admin;
-  $('members-access-link').hidden = $('new-member').hidden = $('open-import').hidden = $('template-form').hidden = !admin;
-  if (!window.NAS?.user || (!window.NAS.user.admin && !window.NAS.user.serviceBranch)) {
+  const currentUser = window.NAS?.user;
+  const admin = !!currentUser?.admin;
+  const branchChief = ['L/C', 'E/G', 'R/S'].includes(currentUser?.serviceBranch);
+  const canCreateMember = admin || branchChief;
+  if (branchChief && !admin) {
+    createMemberForm.elements.branch.value = currentUser.serviceBranch;
+    createMemberForm.elements.branch.disabled = true;
+  }
+  $('members-primary-actions').hidden = !canCreateMember;
+  $('new-member').hidden = !canCreateMember;
+  $('members-access-link').hidden = $('open-import').hidden = $('template-form').hidden = !admin;
+  if (!currentUser || (!admin && !branchChief)) {
     $('members-status').textContent = 'Accedi sul NAS; serve una branca di servizio assegnata dall’amministratore.';
     return;
   }

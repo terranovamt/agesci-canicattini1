@@ -535,6 +535,64 @@ test("educational schema upgrade preserves existing role values and custom defin
   } finally { db.close(); }
 });
 
+test("branch chiefs can create and archive members only in their assigned branch", async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-branch-member-create-"));
+  const app = await start(directory);
+  t.after(async () => { await app.close(); await fs.rm(directory, { recursive: true, force: true }); });
+  await app.login();
+  await app.import(csv([{ "CODICE SOCIO": "012351", BRANCA: "Branca E/G" }]));
+  let state = await app.snapshot();
+  const chief = state.members.find(member => member.code === "7654321");
+  let imported = state.members.find(member => member.code === "012351");
+  assert.ok(chief);
+  assert.ok(imported);
+  assert.equal((await app.request("people/" + chief.id, "PATCH", { serviceBranch: "E/G" })).status, 200);
+  await app.login("7654321");
+
+  let response = await app.request("members", "POST", {
+    branch: "E/G",
+    profile: { givenName: "Nuovo", surname: "Socio" },
+  });
+  assert.equal(response.status, 201, await response.clone().text());
+  const created = (await response.json()).member;
+  assert.equal(created.branch, "E/G");
+  assert.equal(created.code, "");
+  assert.equal(created.kind, "ragazzo");
+  assert.equal(created.censuses.length, 0);
+
+  for (const value of [
+    { branch: "L/C", profile: { givenName: "Fuori", surname: "Branca" } },
+    { branch: "E/G", code: "012352", profile: { givenName: "Codice", surname: "AGESCI" } },
+  ])
+    assert.equal((await app.request("members", "POST", value)).status, 403);
+  assert.equal((await app.request("members/import", "POST", { csv: csv() })).status, 403);
+
+  response = await app.request("members/" + imported.id, "PATCH", {
+    code: imported.code,
+    branch: imported.branch,
+    profile: { ...imported.profile, nonFrequentante: true },
+    values: imported.values[imported.branch] || {},
+    revision: imported.revision,
+  });
+  assert.equal(response.status, 200, await response.text());
+  state = await app.snapshot();
+  imported = state.members.find(member => member.id === imported.id);
+  assert.equal(imported.profile.nonFrequentante, true);
+  assert.equal(imported.censuses.length, 1);
+  assert.equal(imported.censuses[0].year, "2026");
+
+  response = await app.request("members/" + imported.id, "PATCH", {
+    code: imported.code,
+    branch: imported.branch,
+    profile: { ...imported.profile, nonFrequentante: false },
+    values: imported.values[imported.branch] || {},
+    revision: imported.revision,
+  });
+  assert.equal(response.status, 200, await response.text());
+  state = await app.snapshot();
+  assert.equal(state.members.find(member => member.id === imported.id).profile.nonFrequentante, false);
+});
+
 test("service branches constrain every staff operation and passages require a different destination chief", async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "nas-branch-access-"));
   let app = await start(directory, "7654321,7654322,7654323");
@@ -563,7 +621,7 @@ test("service branches constrain every staff operation and passages require a di
   assert.equal(state.members.every(m => m.branch === "L/C"), true);
   assert.equal(state.members[0].values["E/G"], undefined);
   assert.equal(state.fields.every(f => f.branch === "L/C"), true);
-  for (const route of ["members/import", "members/templates", "members"])
+  for (const route of ["members/import", "members/templates"])
     assert.equal((await app.request(route, "POST", {})).status, 403);
   assert.equal((await app.request("members/" + eg.id, "PATCH", { revision: eg.revision, branch: eg.branch, profile: eg.profile, values: {} })).status, 403);
   assert.equal((await app.request("members/fields", "POST", { branch: "E/G", key: "secret", label: "Secret", type: "text" })).status, 403);
@@ -914,7 +972,22 @@ test("admin view-as sees only the chief's branch and passages stay attributed to
     assert.equal((await app.request("members/transfers/" + transfers[index].id, "PATCH", { action, revision: 1 })).status, 200);
   assert.equal((await app.snapshot()).members.some(member => member.id === lc.id), true);
   assert.equal((await app.request("members/overview")).status, 403);
-  assert.equal((await app.request("members", "POST", {})).status, 403);
+  let created = await app.request("members", "POST", {
+    branch: "E/G",
+    profile: { givenName: "Vista", surname: "Capo" },
+  });
+  assert.equal(created.status, 201, await created.text());
+  created = await app.request("members", "POST", {
+    branch: "L/C",
+    profile: { givenName: "Fuori", surname: "Branca" },
+  });
+  assert.equal(created.status, 403);
+  created = await app.request("members", "POST", {
+    branch: "E/G",
+    code: "012399",
+    profile: { givenName: "Codice", surname: "Riservato" },
+  });
+  assert.equal(created.status, 403);
   assert.deepEqual(db.prepare("SELECT proposer_id,reviewer_id,status FROM member_transfers ORDER BY id").all()
     .map(row => ({ ...row })), [
     { proposer_id: adminId, reviewer_id: adminId, status: "confirmed" },

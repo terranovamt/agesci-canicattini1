@@ -146,6 +146,149 @@ test("private documents require a chief session while branch categories remain a
   }
 });
 
+test("document visibility transfers the same PDF atomically between public and private archives", async () => {
+  const app = await startNasDev({ basePath });
+  let cookie = "";
+  const request = async (route, method = "GET", data, authenticated = true) => {
+    const response = await fetch(app.origin + basePath + route, {
+      method,
+      headers: {
+        Origin: app.origin,
+        "Content-Type": "application/json",
+        ...(authenticated && cookie ? { Cookie: cookie } : {}),
+      },
+      body: data === undefined ? undefined : JSON.stringify(data),
+    });
+    if (response.headers.get("set-cookie")) cookie = response.headers.get("set-cookie").split(";")[0];
+    return response;
+  };
+  const login = async () => {
+    const response = await request("/api/auth/login", "POST", { code: "23816938", password: app.password });
+    if (response.status !== 200) throw new Error(await response.text());
+  };
+
+  try {
+    assert.equal((await request("/api/documents/visibility", "POST", {}, false)).status, 401);
+    await login();
+    const content = Buffer.from("%PDF-1.4\nvisibility transfer\n%%EOF\n");
+    const initial = {
+      file: "visibility-transfer.pdf",
+      title: "Documento da rendere privato",
+      description: "PDF di prova",
+      year: 2026,
+      publishedAt: "2026-03-10",
+      category: "L/C",
+      visibility: "public",
+    };
+    let response = await request("/api/documents", "POST", {
+      operation: "save",
+      document: initial,
+      content: content.toString("base64"),
+    });
+    assert.equal(response.status, 200);
+    let rows = await response.json();
+    let publicDocument = rows.find((item) => item.file === initial.file);
+    assert.ok(publicDocument);
+
+    response = await request("/api/documents/visibility", "POST", {
+      source: "public",
+      previous: publicDocument,
+      document: { ...initial, visibility: "private", category: "public" },
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await request("/documents/pdf/" + initial.file, "GET", undefined, false)).status, 200);
+    assert.equal((await (await request("/api/private-documents")).json()).length, 0);
+
+    response = await request("/api/documents", "POST", {
+      operation: "save",
+      previous: publicDocument,
+      document: { ...publicDocument, title: "Documento aggiornato" },
+    });
+    assert.equal(response.status, 200);
+    rows = await response.json();
+    response = await request("/api/documents/visibility", "POST", {
+      source: "public",
+      previous: publicDocument,
+      document: { ...initial, visibility: "private" },
+    });
+    assert.equal(response.status, 409);
+    publicDocument = rows.find((item) => item.file === initial.file);
+
+    response = await request("/api/documents/visibility", "POST", {
+      source: "public",
+      previous: publicDocument,
+      document: { ...initial, file: undefined, visibility: "private" },
+    });
+    assert.equal(response.status, 200);
+    let moved = await response.json();
+    assert.equal(moved.visibility, "private");
+    assert.equal(moved.document.visibility, "private");
+    assert.equal(moved.document.category, "L/C");
+    assert.equal((await (await request("/documents/index.json", "GET", undefined, false)).json())
+      .some((item) => item.file === initial.file), false);
+    assert.equal((await request("/documents/pdf/" + initial.file, "GET", undefined, false)).status, 404);
+    const privateId = moved.document.id;
+    assert.ok((await (await request("/api/private-documents")).json())
+      .some((item) => item.id === privateId));
+    assert.deepEqual(Buffer.from(await (await request("/api/private-documents/" + moved.document.id + "/pdf"))
+      .arrayBuffer()), content);
+
+    response = await request("/api/documents/visibility", "POST", {
+      source: "private",
+      previous: moved.document,
+      document: {
+        title: moved.document.title,
+        description: moved.document.description,
+        year: moved.document.year,
+        publishedAt: moved.document.publishedAt,
+        category: moved.document.category,
+        visibility: "public",
+      },
+    });
+    assert.equal(response.status, 200);
+    moved = await response.json();
+    assert.equal(moved.visibility, "public");
+    assert.equal(moved.document.visibility, "public");
+    assert.match(moved.document.file, /\.pdf$/);
+    assert.equal((await (await request("/api/private-documents")).json())
+      .some((item) => item.id === publicDocument.id), false);
+    rows = await (await request("/documents/index.json", "GET", undefined, false)).json();
+    assert.ok(rows.some((item) => item.file === moved.document.file && item.category === "L/C"));
+    assert.deepEqual(Buffer.from(await (await request("/documents/pdf/" + moved.document.file, "GET", undefined, false))
+      .arrayBuffer()), content);
+    assert.equal((await request("/api/private-documents/" + privateId + "/pdf")).status, 404);
+
+    const preparatory = {
+      ...initial,
+      file: "always-public.pdf",
+      title: "Preparatorio sempre pubblico",
+      category: "preparatory",
+      assemblyYear: 2026,
+      assemblyType: "convocazione",
+    };
+    response = await request("/api/documents", "POST", {
+      operation: "save",
+      document: preparatory,
+      content: content.toString("base64"),
+    });
+    assert.equal(response.status, 200);
+    rows = await response.json();
+    const preparatoryDocument = rows.find((item) => item.file === preparatory.file);
+    response = await request("/api/documents/visibility", "POST", {
+      source: "public",
+      previous: preparatoryDocument,
+      document: { ...preparatory, file: undefined, category: "group", visibility: "private" },
+    });
+    assert.equal(response.status, 400);
+    assert.ok((await (await request("/documents/index.json", "GET", undefined, false)).json())
+      .some((item) => item.file === preparatory.file));
+    assert.equal((await (await request("/api/private-documents")).json())
+      .some((item) => item.title === preparatory.title), false);
+  } finally {
+    await app.stop();
+  }
+});
+
 test("migrates prior private audience records into branch and Gruppo categories", () => {
   const database = new DatabaseSync(":memory:");
   try {

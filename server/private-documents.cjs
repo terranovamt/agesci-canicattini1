@@ -168,4 +168,4 @@ function createPrivateDocuments(database) {
   return { list, pdf, save };
 }
 
-module.exports = { createPrivateDocuments };
+module.exports = { createPrivateDocuments, decodePdf };

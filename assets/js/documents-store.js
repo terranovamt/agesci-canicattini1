@@ -17,6 +17,16 @@
     return validate(await response.json());
   }
 
+  async function changeVisibility(change) {
+    const response = await fetch((window.LIVE.basePath || "") + "/api/documents/visibility", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(change),
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
   async function loadPrivate() {
     const items = await window.ACCESSO.request("private-documents");
     if (!Array.isArray(items)) throw new Error("Elenco documenti riservati non valido");
@@ -31,5 +41,5 @@
     return (window.NAS.basePath || "") + "/api/private-documents/" + encodeURIComponent(id) + "/pdf";
   }
 
-  window.DOCUMENTS = { apply, load, save, loadPrivate, savePrivate, privatePdfHref, validate, safeName };
+  window.DOCUMENTS = { apply, load, save, changeVisibility, loadPrivate, savePrivate, privatePdfHref, validate, safeName };
 })();

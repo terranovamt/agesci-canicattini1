@@ -78,6 +78,13 @@
     });
   }
 
+  function canChangeVisibility() {
+    const category = $("document-category").value;
+    const sourceCategory = editing ? M.categoryOf(editing) : editingPrivate?.category;
+    return M.privateCategories.includes(category) &&
+      (sourceCategory === undefined || M.privateCategories.includes(sourceCategory));
+  }
+
   $("documents-app").hidden = false;
   renderCategoryFilter();
   configureCategoryChoices();
@@ -99,9 +106,8 @@
     $("document-category").disabled = busy;
     $("document-category").querySelector('option[value="public"]').disabled = !!editingPrivate;
     $("document-category").querySelector('option[value="preparatory"]').disabled = !!editingPrivate;
-    $("document-visibility").disabled = busy || !!editing || !!editingPrivate;
-    $("document-visibility-toggle").disabled = busy || !!editing || !!editingPrivate ||
-      !M.privateCategories.includes($("document-category").value);
+    $("document-visibility").disabled = busy || !canChangeVisibility();
+    $("document-visibility-toggle").disabled = busy || !canChangeVisibility();
     $("save-document").disabled = busy || ($("document-visibility").value === "public" ? loadState : privateLoadState) !== "ready";
     $("managed-documents").setAttribute("aria-busy", String(busy || loadState === "loading"));
     $("private-documents-list").setAttribute("aria-busy", String(busy || privateLoadState === "loading"));
@@ -121,7 +127,7 @@
 
   function updateVisibility() {
     const category = $("document-category").value;
-    const supportsVisibility = M.privateCategories.includes(category);
+    const supportsVisibility = canChangeVisibility();
     const visibility = supportsVisibility ? $("document-visibility").value : "public";
     $("document-visibility-field").hidden = !supportsVisibility;
     $("document-category-row").classList.toggle("has-visibility", supportsVisibility);
@@ -133,9 +139,12 @@
     $("publish-timing").textContent = visibility === "private"
       ? "Il PDF privato resterà nel database NAS e non comparirà nell’archivio pubblico."
       : "Il PDF sarà disponibile nell’archivio pubblico.";
-    $("save-document").textContent = editing || editingPrivate
-      ? "Salva modifiche"
-      : visibility === "private" ? "Salva documento privato" : "Pubblica documento";
+    const originalVisibility = editingPrivate ? "private" : editing ? "public" : "";
+    const changingVisibility = originalVisibility && originalVisibility !== visibility;
+    $("save-document").textContent = changingVisibility
+      ? "Salva e rendi " + (visibility === "private" ? "privato" : "pubblico")
+      : editing || editingPrivate ? "Salva modifiche"
+        : visibility === "private" ? "Salva documento privato" : "Pubblica documento";
     syncDisabled();
   }
   function setCategory(category, resetVisibility = true) {
@@ -556,6 +565,41 @@
     $("private-documents-status").textContent = notice;
     $("private-documents-status").className = notice.startsWith("Non ") ? "error" : "success";
   }
+
+  async function changeVisibility(change) {
+    const targetVisibility = change.source === "public" ? "private" : "public";
+    lock(true);
+    message("Aggiornamento della visibilità in corso…", "pending");
+    try {
+      const result = await D.changeVisibility(change);
+      if (!result || result.visibility !== targetVisibility || result.document?.visibility !== targetVisibility) {
+        throw new Error("Risposta di cambio visibilità non valida");
+      }
+      if (targetVisibility === "public") D.validate([result.document]);
+      else if (!M.privateCategories.includes(result.document.category) || typeof result.document.id !== "string") {
+        throw new Error("Risposta di documento privato non valida");
+      }
+      if (targetVisibility === "private") {
+        items = items.filter((item) => item.file !== change.previous.file);
+        privateItems = sorted([result.document, ...privateItems.filter((item) => item.id !== result.document.id)]);
+        privateLoadState = "ready";
+        privateLoadError = "";
+      } else {
+        privateItems = privateItems.filter((item) => item.id !== change.previous.id);
+        items = sorted([result.document, ...items.filter((item) => item.file !== result.document.file)]);
+      }
+      if (selectedCategory() !== "all") $("documents-category-filter").value = result.document.category;
+      reset();
+      message("Visibilità aggiornata: documento " + targetVisibility + ".", "success");
+    } catch (error) {
+      message("Non salvato: " + error.message, "error");
+    } finally {
+      busy = false;
+      render();
+      renderPrivate();
+    }
+  }
+
   async function removePrivate(item) {
     if (busy || !confirm('Eliminare definitivamente "' + item.title + '" dall’archivio privato?'))
       return;
@@ -599,7 +643,7 @@
   $("document-form").onsubmit = async (event) => {
     event.preventDefault();
     const category = $("document-category").value;
-    const visibility = M.privateCategories.includes(category) ? $("document-visibility").value : "public";
+    const visibility = canChangeVisibility() ? $("document-visibility").value : "public";
     if (busy || (visibility === "public" ? loadState : privateLoadState) !== "ready") return;
     const file = $("document-file").files[0];
     const title = $("document-title").value.trim();
@@ -617,7 +661,22 @@
       const assemblyType = $("document-assembly-type").value;
       if (preparatory && !assemblyYear) throw new Error("Indica l’anno dell’assemblea.");
       if (preparatory && !assemblyType) throw new Error("Scegli il tipo di documento preparatorio.");
-      if (visibility === "private") {
+      const originalVisibility = editingPrivate ? "private" : editing ? "public" : "";
+      if (originalVisibility && originalVisibility !== visibility) {
+        const document = { title, description, year: Number($("document-year").value),
+          publishedAt: $("document-published-at").value, category, visibility };
+        if (visibility === "public" && file) document.file = file.name;
+        if (preparatory) {
+          document.assemblyYear = Number(assemblyYear);
+          document.assemblyType = assemblyType;
+        }
+        change = {
+          source: originalVisibility,
+          previous: editing || editingPrivate,
+          document,
+          content,
+        };
+      } else if (visibility === "private") {
         if (editing) throw new Error("La visibilità di un documento esistente non può essere cambiata.");
         if (!file && !editingPrivate) throw new Error("Seleziona un PDF da caricare");
         const privateDocument = {
@@ -662,7 +721,8 @@
       lock(false);
       return;
     }
-    if (visibility === "public") await publish(change);
+    if (change.source) await changeVisibility(change);
+    else if (visibility === "public") await publish(change);
     else await publishPrivate(change);
   };
   $("cancel-document").onclick = () => {
