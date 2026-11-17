@@ -4,6 +4,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
 const { renderHtml } = require("../tools/site-layout.cjs");
+const browserChrome = require("./helpers/chrome.cjs");
 const M = require("../assets/js/soci-model.js");
 const root = path.join(__dirname, "..");
 const chrome = ["google-chrome", "chromium", "chromium-browser"].find(command =>
@@ -609,5 +610,126 @@ test("member UI edits, filters, imports, proposes passages and prints safely acr
       assert.equal(results.pending, true, JSON.stringify(results)); assert.equal(results.notMoved, true, JSON.stringify(results)); assert.equal(results.cancelled, true, JSON.stringify(results));
       assert.equal(results.confirm.version, "preview-token"); assert.equal(results.confirm.csv, "synthetic csv");
     }
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("branch chiefs can create members in their own branch from the member page", { skip: !browserChrome }, () => {
+  const directory = fs.mkdtempSync(path.join(__dirname, ".members-chief-browser-"));
+  try {
+    const snapshot = {
+      units: [],
+      lc: { environment: "Branco", revision: 1 },
+      members: [{
+        id: 1, code: "012345", name: "Socio E/G", kind: "ragazzo", branch: "E/G", revision: 1,
+        profile: { givenName: "Socio", surname: "E/G", nonFrequentante: true },
+        censuses: [], values: { "E/G": {} }, assignmentHistory: [],
+      }],
+      fields: M.defaultFields.filter(field => field.branch === "E/G"),
+      templates: [],
+      group: {},
+      currentYear: "2026",
+      transfers: [],
+    };
+    const mock = `
+      window.errors = [];
+      window.addEventListener('error', event => window.errors.push(event.message));
+      window.addEventListener('unhandledrejection', event => window.errors.push(event.reason.message));
+      window.confirm = () => true;
+      window.NAS = { user: { admin: false, serviceBranch: 'E/G' } };
+      let snapshot = ${JSON.stringify(snapshot).replace(/</g, "\\u003c")};
+      window.calls = [];
+      window.ACCESSO = { request: async (route, method = 'GET', value) => {
+        window.calls.push(structuredClone({ route, method, value }));
+        if (route === 'members' && method === 'POST') {
+          return { member: {
+            id: 2, code: '', name: value.profile.givenName + ' ' + value.profile.surname,
+            kind: 'ragazzo', branch: value.branch, revision: 1,
+            profile: { ...value.profile, nonFrequentante: false },
+            censuses: [], values: { [value.branch]: {} }, assignmentHistory: []
+          }};
+        }
+        return structuredClone(snapshot);
+      }};
+    `;
+    const source = renderHtml(read("area-riservata/soci.html"), "area-riservata/soci.html")
+      .replace(/<link\b[^>]*>/g, "")
+      .replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, src) =>
+        src.includes("soci-model.js") ? `<script>${read("assets/js/soci-model.js")}</script>` :
+          src.includes("unit-symbol.js") ? `<script>${read("assets/js/shared/unit-symbol.js")}</script>` :
+            src.includes("soci-units.js") ? `<script>${read("assets/js/soci-units.js")}</script>` :
+              src.includes("soci.js") ? `<script>${read("assets/js/soci.js")}</script>` :
+                src.includes("section-nav.js") ? `<script>${read("assets/js/shared/section-nav.js")}</script>` : "")
+      .replace("</head>", `<style>${["theme", "home", "nas", "soci", "section-nav"]
+        .map(name => read("assets/css/" + name + ".css")).join("\n")}</style><script>${mock}</script></head>`);
+    const exercise = `
+      (async () => {
+        const results = {}, $ = id => document.getElementById(id);
+        const settle = () => new Promise(resolve => setTimeout(resolve, 30));
+        try {
+          for (let attempt = 0; attempt < 80 && $('members-app').hidden; attempt++) await settle();
+          results.loaded = !$('members-app').hidden;
+          results.archivedMemberVisible = [...document.querySelectorAll('#members-list .member-code')]
+            .some(label => label.textContent === 'Non frequentante');
+          results.newMemberVisible = !$('members-primary-actions').hidden && !$('new-member').hidden;
+          results.adminActionsHidden = $('members-access-link').hidden && $('open-import').hidden &&
+            $('template-form').hidden;
+          const branch = $('member-create-form').elements.branch;
+          results.branchFixed = branch.disabled && branch.value === 'E/G';
+          $('new-member').click();
+          results.branchFixedOnCreate = branch.disabled && branch.value === 'E/G';
+          const form = $('member-create-form');
+          form.elements.givenName.value = 'Nuovo';
+          form.elements.surname.value = 'Socio';
+          form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          for (let attempt = 0; attempt < 80 && !$('member-dialog').open; attempt++) await settle();
+          const createCall = window.calls.find(call => call.route === 'members' && call.method === 'POST');
+          results.createdInOwnBranch = $('member-dialog').open && createCall?.value.branch === 'E/G' &&
+            !Object.hasOwn(createCall?.value || {}, 'code');
+          results.archivedMemberVisibleAfterCreate = [...document.querySelectorAll('#members-list .member-code')]
+            .some(label => label.textContent === 'Non frequentante');
+          const archived = $('member-form').elements['profile:nonFrequentante'];
+          results.archiveControlAvailable = !!archived && !archived.closest('label').hidden;
+          results.errors = window.errors;
+        } catch (error) {
+          results.failure = error.message;
+          results.errors = window.errors;
+        }
+        const output = document.createElement('pre');
+        output.id = 'chief-members-browser-result';
+        output.textContent = btoa(unescape(encodeURIComponent(JSON.stringify(results))));
+        document.body.append(output);
+      })();
+    `;
+    const page = source.replace("</body>", `<script>${exercise}</script></body>`);
+    const file = path.join(directory, "fixture.html");
+    fs.writeFileSync(file, `<!doctype html><body><script>
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'border:0;width:900px;height:900px';
+      document.body.append(frame);
+      frame.srcdoc = ${JSON.stringify(page).replace(/</g, "\\u003c")};
+      const timer = setInterval(() => {
+        const result = frame.contentDocument?.getElementById('chief-members-browser-result');
+        if (result) {
+          const copy = document.createElement('pre');
+          copy.id = result.id;
+          copy.textContent = result.textContent;
+          document.body.append(copy);
+          clearInterval(timer);
+        }
+      }, 50);
+    </script>`);
+    const browser = spawnSync(browserChrome, ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
+      "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + path.join(directory, "profile"),
+      "--window-size=1280,1000", "--virtual-time-budget=6000", "--dump-dom", "file://" + file],
+    { encoding: "utf8", timeout: 30000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, TMPDIR: root } });
+    assert.equal(browser.status, 0, browser.stderr);
+    const encoded = /<pre id="chief-members-browser-result">([^<]+)<\/pre>/.exec(browser.stdout)?.[1];
+    assert.ok(encoded, browser.stdout.slice(-4000));
+    const results = JSON.parse(Buffer.from(encoded, "base64").toString());
+    assert.equal(results.failure, undefined, JSON.stringify(results));
+    assert.deepEqual(results.errors, []);
+    for (const key of ["loaded", "archivedMemberVisible", "newMemberVisible", "adminActionsHidden", "branchFixed", "branchFixedOnCreate",
+      "createdInOwnBranch", "archivedMemberVisibleAfterCreate", "archiveControlAvailable"])
+      assert.equal(results[key], true, key + ": " + JSON.stringify(results));
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });

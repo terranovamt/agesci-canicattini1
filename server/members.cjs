@@ -315,10 +315,17 @@ function createMembers(db, people) {
       if (await units.handle(route, request, response,
         { body, send, access, transaction, get, requireRevision, writeValues, writeProfile })) return true;
       if (route === "/api/members" && method === "POST") {
-        admin();
+        user();
         const value = await body(request, 64000);
-        admin();
-        const branch = branchValue(value?.branch), profile = validateProfile(value.profile);
+        const current = user();
+        if (!object(value)) fail(400, "Nuovo socio non valido");
+        const branch = branchValue(value.branch);
+        if (!current.admin) {
+          access(branch);
+          if (Object.hasOwn(value, "code"))
+            fail(403, "Solo l'amministratore puo' assegnare il codice censimento");
+        }
+        const profile = validateProfile(value.profile);
         if (!profile.givenName || !profile.surname) fail(400, "Nome e cognome sono obbligatori");
         const requestedCode = optionalCode(value.code);
         if (requestedCode && !/^\d{5,9}$/.test(requestedCode)) fail(400, "Codice socio non valido");

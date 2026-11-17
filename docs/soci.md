@@ -8,7 +8,10 @@ della branca di servizio e reset delle password.
 
 L'amministratore assegna la branca di servizio L/C, E/G o R/S in **Persone e
 accessi**. I capi vedono e modificano solo i soci della propria branca locale;
-possono gestirne campi e macro.
+possono gestirne campi e macro e creare nuove schede solo nella propria branca.
+Il codice censimento e gli import restano riservati all'amministratore. Un socio
+creato da un capo ha un identificativo locale: prima del successivo import,
+l'amministratore deve collegarlo al codice AGESCI effettivo.
 La gestione accessi elenca esclusivamente i capi configurati in
 `NAS_CAPO_CODES`, escluso l'amministratore; non permette di creare account
 o cambiare tipologia. Anche il Libro soci esclude l'amministratore da elenco,
@@ -113,10 +116,11 @@ dall'import AGESCI; non entra nella ricerca generale del Libro soci.
 
 Per creare un socio sono richiesti solo **Nome**, **Cognome** e **Branca**.
 Dopo l'inserimento si apre la scheda completa con le sezioni applicabili;
-codice socio, contatti e altri dati si possono completare in seguito. Finche
-non si assegna il codice AGESCI la scheda usa un identificativo locale; inserire
-il codice reale prima del prossimo import per collegare l'importazione alla
-scheda esistente.
+contatti e altri dati si possono completare in seguito. Per rimuovere un ragazzo
+dalla gestione operativa, impostare **Non frequentante**: la scheda resta
+nell'elenco con l'etichetta e conserva censimenti, presenze e quote; non e'
+selezionabile per attività, macro e assegnazioni. Per riattivarlo, togliere il
+flag. Non viene cancellato alcun dato storico.
 
 Aprire il nome di un socio per consultare lo storico e modificare i dati
 consentiti. Le modifiche manuali non riscrivono lo storico ufficiale. Gli
