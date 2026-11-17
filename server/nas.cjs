@@ -11,7 +11,7 @@ const { createMembers } = require("./members.cjs");
 const { createActivities } = require("./activities.cjs");
 const { createCanzoniere } = require("./canzoniere.cjs");
 const { createVotes } = require("./votes.cjs");
-const { createPrivateDocuments } = require("./private-documents.cjs");
+const { createPrivateDocuments, decodePdf } = require("./private-documents.cjs");
 const documents = require("../assets/js/documents-model.js");
 
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -357,6 +357,109 @@ async function createNasServer({
       }
       if (url.pathname === "/area-riservata/assemblea/dati.js" && ["GET", "HEAD"].includes(method))
         return send(response, 200, read("dati.js"), "application/javascript; charset=utf-8");
+      if (url.pathname === "/api/documents/visibility" && method === "POST") {
+        const current = people.user(sessionId(request));
+        if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
+        const change = await body(request, 28 * 1024 * 1024);
+        if (!object(change) || !["public", "private"].includes(change.source) ||
+            !object(change.previous) || !object(change.document))
+          fail(400, "Cambio di visibilità documento non valido");
+        const targetVisibility = change.source === "public" ? "private" : "public";
+        if (change.document.visibility !== targetVisibility)
+          fail(400, "Visibilità di destinazione non valida");
+
+        const result = transaction(() => {
+          const items = JSON.parse(read("documents"));
+          if (change.source === "public") {
+            const category = documents.categoryOf(change.previous);
+            if (!documents.privateCategories.includes(category))
+              fail(400, "I documenti Pubblico e Preparatorio assemblea restano sempre pubblici");
+            if (!current.admin && documents.branchCategories.includes(category) &&
+                category !== current.serviceBranch)
+              fail(403, "Non puoi modificare i documenti di un'altra branca");
+            let nextItems;
+            try {
+              nextItems = documents.apply(items, {
+                operation: "delete",
+                previous: change.previous,
+              });
+            } catch (error) {
+              fail(409, error.message.replace(/su GitHub/g, "sul NAS"));
+            }
+            const sourcePdf = database.prepare("SELECT value FROM pdf WHERE name = ?")
+              .get(change.previous.file)?.value;
+            if (!sourcePdf) fail(404, "PDF pubblico non trovato");
+            const document = {
+              title: change.document.title,
+              description: change.document.description,
+              year: change.document.year,
+              publishedAt: change.document.publishedAt,
+              category: change.document.category,
+              visibility: "private",
+            };
+            const saved = privateDocuments.save(current, {
+              operation: "save",
+              document,
+              content: change.content === undefined ? Buffer.from(sourcePdf).toString("base64") : change.content,
+            });
+            const removed = database.prepare("DELETE FROM pdf WHERE name = ?").run(change.previous.file);
+            if (!removed.changes) fail(404, "PDF pubblico non trovato");
+            write("documents", JSON.stringify(nextItems));
+            return { visibility: "private", document: saved };
+          }
+
+          const sourcePdf = privateDocuments.pdf(current, change.previous.id);
+          const publicDocument = {
+            title: change.document.title,
+            description: change.document.description,
+            year: change.document.year,
+            publishedAt: change.document.publishedAt,
+            category: change.document.category,
+            visibility: "public",
+          };
+          ["assemblyYear", "assemblyType"].forEach((field) => {
+            if (change.document[field] !== undefined) publicDocument[field] = change.document[field];
+          });
+          if (change.document.file !== undefined) {
+            if (!documents.safeName(change.document.file)) fail(400, "Nome PDF non valido");
+            if (items.some((item) => item.file === change.document.file) ||
+                database.prepare("SELECT 1 FROM pdf WHERE name = ?").get(change.document.file))
+              fail(409, "Nome PDF già presente nell'archivio pubblico");
+            publicDocument.file = change.document.file;
+          } else {
+            const stem = String(publicDocument.title || "").normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLocaleLowerCase("it")
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "")
+              .slice(0, 80)
+              .replace(/-+$/g, "") || "documento";
+            const id = change.previous.id.replace(/-/g, "");
+            for (let length = 8; length <= id.length; length += 4) {
+              const candidate = stem + "-" + id.slice(0, length) + ".pdf";
+              const exists = items.some((item) => item.file === candidate) ||
+                database.prepare("SELECT 1 FROM pdf WHERE name = ?").get(candidate);
+              if (!exists) {
+                publicDocument.file = candidate;
+                break;
+              }
+            }
+            if (!publicDocument.file) fail(409, "Impossibile assegnare un nome univoco al PDF pubblico");
+          }
+          let nextItems;
+          try {
+            nextItems = documents.apply(items, { operation: "save", document: publicDocument });
+          } catch (error) {
+            fail(400, error.message.replace(/su GitHub/g, "sul NAS"));
+          }
+          const pdf = change.content === undefined ? sourcePdf : decodePdf(change.content);
+          privateDocuments.save(current, { operation: "delete", previous: change.previous });
+          database.prepare("INSERT INTO pdf(name, value) VALUES (?, ?)").run(publicDocument.file, pdf);
+          write("documents", JSON.stringify(nextItems));
+          return { visibility: "public", document: publicDocument };
+        });
+        return send(response, 200, result);
+      }
       if (url.pathname === "/api/documents" && method === "POST") {
         const current = people.user(sessionId(request));
         if (!current) fail(401, "Sessione scaduta: accedi di nuovo");
@@ -374,9 +477,7 @@ async function createNasServer({
           else if (change.content) {
             if (typeof change.content !== "string" || !/^[A-Za-z0-9+/]*={0,2}$/.test(change.content))
               fail(400, "PDF non valido");
-            const pdf = Buffer.from(change.content, "base64");
-            if (pdf.length >= PDF_LIMIT || pdf.subarray(0, 5).toString() !== "%PDF-")
-              fail(400, "PDF non valido o oltre 20 MiB");
+            const pdf = decodePdf(change.content);
             database
               .prepare(
                 "INSERT INTO pdf(name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",

@@ -77,6 +77,24 @@ test("private document operations use the authenticated NAS API and private PDF 
   assert.equal(api.privatePdfHref("private-id"), "/agesci-canicattini1/api/private-documents/private-id/pdf");
 });
 
+test("visibility changes use the transactional NAS endpoint", async () => {
+  const calls = [];
+  const result = { visibility: "private", document: { id: "private-id", category: "L/C", visibility: "private" } };
+  const change = {
+    source: "public",
+    previous: { file: "public.pdf", category: "L/C", visibility: "public" },
+    document: { category: "L/C", visibility: "private" },
+  };
+  const { api } = store(async (url, options) => {
+    calls.push({ url, options });
+    return { ok: true, json: async () => result };
+  }, "/agesci-canicattini1");
+
+  assert.deepEqual(await api.changeVisibility(change), result);
+  assert.deepEqual(calls.map(call => call.url), ["/agesci-canicattini1/api/documents/visibility"]);
+  assert.deepEqual(JSON.parse(calls[0].options.body), change);
+});
+
 test("document API respects the site prefix", async () => {
   const calls = [];
   const { api } = store(async url => {

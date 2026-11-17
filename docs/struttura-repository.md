@@ -128,6 +128,11 @@ cartella pubblica. Le categorie sono **Pubblico**, **Preparatorio assemblea**,
 **L/C**, **E/G**, **R/S** e **Gruppo**. La visibilità è scelta sul singolo
 documento, non sulla categoria. I preparatori sono sempre pubblici; le altre
 categorie possono essere pubbliche o private, con il privato come default.
+Dall’editor si può cambiare visibilità per L/C, E/G, R/S e Gruppo: il PDF
+viene trasferito atomicamente tra gli archivi, senza ricaricarlo. Se un PDF
+privato viene reso pubblico senza sostituirlo, il NAS genera un nome file
+pubblico sicuro e univoco. Pubblico e Preparatorio assemblea restano sempre
+pubblici.
 L'API `/api/private-documents` richiede una sessione capo: tutti i PDF privati
 sono visibili ai capi, indipendentemente dalla categoria. La categoria serve a
 raggruppare e filtrare, non è un vincolo di accesso. Il filtro iniziale
